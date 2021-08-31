@@ -70,7 +70,6 @@ if (is_mingw) {
     "$ark_root/libpandabase/os/unix/error.cpp",
     "$ark_root/libpandabase/os/unix/file.cpp",
     "$ark_root/libpandabase/os/unix/filesystem.cpp",
-    "$ark_root/libpandabase/os/unix/futex/mutex.cpp",
     "$ark_root/libpandabase/os/unix/library_loader.cpp",
     "$ark_root/libpandabase/os/unix/mem.cpp",
     "$ark_root/libpandabase/os/unix/native_stack.cpp",
@@ -91,9 +90,12 @@ if (is_mingw) {
   if (!is_mac) {
     libarkbase_sources += [
       "$ark_root/libpandabase/os/unix/exec.cpp",
+      "$ark_root/libpandabase/os/unix/futex/mutex.cpp",
       "$ark_root/libpandabase/os/unix/pipe.cpp",
       "$ark_root/libpandabase/os/unix/sighooklib/sighook.cpp",
     ]
+  } else {
+    libarkbase_sources += [ "$ark_root/libpandabase/os/unix/mutex.cpp" ]
   }
 }
 
