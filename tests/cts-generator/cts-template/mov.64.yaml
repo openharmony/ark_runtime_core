@@ -1,0 +1,480 @@
+# Copyright (c) 2021 Huawei Device Co., Ltd.
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+definitions: []
+tests:
+  - file-name: "mov.64"
+    isa:
+        title: Move register-to-register
+        description: Move values between registers.
+        exceptions:
+          - x_none
+    commands:
+      - file-name: "op_vs_4_vs_4"
+        isa:
+          instructions:
+            - sig: mov.64 v1:out:b64, v2:in:b64
+              acc: none
+              format: [op_v1_4_v2_4, op_v1_16_v2_16]
+        code-template: |
+          #
+              movi.64 %s, 0x123456789
+              mov.64 %s, %s
+              ldai.64 0x123456789
+              cmp.64 %s
+        description: Check mov.64 instruction with different register numbers (4 bit).
+        cases:
+          - values: [v0, v0, v0, v0]
+          - values: [v0, v1, v0, v1]
+          - values: [v0, v2, v0, v2]
+          - values: [v0, v4, v0, v4]
+          - values: [v0, v7, v0, v7]
+          - values: [v1, v1, v1, v1]
+          - values: [v1, v2, v1, v2]
+          - values: [v1, v4, v1, v4]
+          - values: [v1, v7, v1, v7]
+          - values: [v2, v2, v2, v2]
+          - values: [v2, v4, v2, v4]
+          - values: [v2, v7, v2, v7]
+          - values: [v4, v4, v4, v4]
+          - values: [v4, v7, v4, v7]
+          - values: [v7, v7, v7, v7]
+
+      - file-name: "op_vs_8_vs_8"
+        isa:
+          instructions:
+            - sig: mov.64 v1:out:b64, v2:in:b64
+              acc: none
+              format: [op_v1_4_v2_4, op_v1_16_v2_16]
+        code-template: |
+          #
+              movi.64 %s, 0x123456789
+              mov.64 %s, %s
+              ldai.64 0x123456789
+              cmp.64 %s
+        description: Check mov.64 instruction with different register numbers (8 bit)
+        cases:
+          - values: [v0, v8, v0, v8]
+          - values: [v0, v64, v0, v64]
+          - values: [v0, v128, v0, v128]
+          - values: [v0, v255, v0, v255]
+          - values: [v8,   v0, v8, v0]
+          - values: [v64,  v0, v64, v0]
+          - values: [v128, v0, v128, v0]
+          - values: [v255, v0, v255, v0]
+          - values: [v8, v8, v8, v8]
+          - values: [v8, v64, v8, v64]
+          - values: [v8, v128, v8, v128]
+          - values: [v8, v255, v8, v255]
+          - values: [v64, v64, v64, v64]
+          - values: [v64, v128, v64, v128]
+          - values: [v64, v255, v64, v255]
+          - values: [v128, v128, v128, v128]
+          - values: [v128, v255, v128, v255]
+          - values: [v255, v255, v255, v255]
+
+      - file-name: "op_vs_16_vs_16"
+        isa:
+          instructions:
+            - sig: mov.64 v1:out:b64, v2:in:b64
+              acc: none
+              format: [op_v1_4_v2_4, op_v1_16_v2_16]
+        code-template: |
+          #
+              movi.64 v0, 0x123456789
+              mov.64 %s, v0
+              mov.64 %s, %s
+              mov.64 v1, %s
+              ldai.64 0x123456789
+              cmp.64 v1
+        description: Check mov.64 instruction with different register numbers (16 bit)
+        cases:
+          - values: [v256, v256, v256, v256]
+          - values: [v256, v1024, v256, v1024]
+          - values: [v256, v32768, v256, v32768]
+          - values: [v256, v65535, v256, v65535]
+          - values: [v1024, v1024, v1024, v1024]
+          - values: [v1024, v32768, v1024, v32768]
+          - values: [v1024, v65535, v1024, v65535]
+          - values: [v32768, v32768, v32768, v32768]
+          - values: [v32768, v65535, v32768, v65535]
+          - values: [v65535, v65535, v65535, v65535]
+
+      - file-name: "err"
+        isa:
+          instructions:
+            - sig: mov.64 v1:out:b64, v2:in:b64
+              acc: none
+              format: [op_v1_4_v2_4, op_v1_16_v2_16]
+        code-template: |
+          #
+              mov.64 %s, %s
+        check-type: none
+        runner-options: [compile-failure]
+        description: Test erroneous code with mov.64 instruction.
+        cases:
+          - values: [v0, v65536]
+            description: Check when register number is out of range.
+          - values: [v65536, v65536]
+            description: Check when register number is out of range.
+          - values: [v65536, v0]
+            description: Check when register number is out of range.
+          - values: [v65536, a0]
+            description: Check when register number is out of range and incorrect register name.
+          - values: [a0, v65536]
+            description: Check when register number is out of range and incorrect register name.
+          - values: [a0, a0]
+            description: Check when register number is out of range and incorrect register name.
+          - values: [1, v65536]
+            description: Check with incorrect destination and register number out of range.
+
+      - file-name: "type_1"
+        isa:
+          instructions:
+            - sig: mov.64 v1:out:b64, v2:in:b64
+              acc: none
+              format: [op_v1_4_v2_4, op_v1_16_v2_16]
+        code-template: |
+          #
+              %s
+              mov.64 v1, v0
+              %s
+              %s
+        description: |
+          Check mov.64 with different type of source register - i32 (failure) values,
+          f64 values, Object (failure).
+        cases:
+          # 32 bit v using mov.64
+          - values:
+            - "movi v0, 0"
+            - "ldai 0"
+            - |
+              #
+                  jne v1, exit_failure
+                  ldai 0
+                  return
+              exit_failure:
+                  ldai 1
+                  return
+            bugid: ['1324', '2089']
+            tags: ['verifier']
+            runner-options: ['verifier-failure', 'verifier-debug-config']
+            description: There are two places where bytecode is incorrect - mov.64 and jne/cmp
+          - values: ["movi v0, 0", "ldai 0", "cmp.64 v1"]
+            bugid: ['1324', '2089']
+            tags: ['verifier']
+            runner-options: ['verifier-failure', 'verifier-debug-config']
+            description: There are two places where bytecode is incorrect - mov.64 and cmp.64
+          - values:
+            - "movi v0, 0x12345678"
+            - "ldai 0x12345678"
+            - |
+              #
+                  jne v1, exit_failure
+                  ldai 0
+                  return
+              exit_failure:
+                  ldai 1
+                  return
+            bugid: ['1324', '2089']
+            tags: ['verifier']
+            runner-options: ['verifier-failure', 'verifier-debug-config']
+          - values: ["movi v0, 0x12345678", "ldai 0x12345678", "cmp.64 v1"]
+            bugid: ['1324', '2089']
+            tags: ['verifier']
+            runner-options: ['verifier-failure', 'verifier-debug-config']
+
+          - values: ["fmovi.64 v0, 0x1234567890abcdef", "fldai.64 0x1234567890abcdef", "fcmpg.64 v1"]
+          - values: ["fmovi.64 v0, 0", "fldai.64 0", "fcmpg.64 v1"]
+          - values: ["fmovi.64 v0, 12345.6789", "fldai.64 12345.6789", "fcmpg.64 v1"]
+          - values: ["fmovi.64 v0, 0x1", "fldai.64 0x1", "fcmpg.64 v1"]
+
+          - values:
+            - mov.null v0
+            - lda.null
+            - |
+                jne.obj v1, return_ne_num
+                ldai 0
+                return
+                return_ne_num:
+                ldai 1
+                return
+            tags: ['verifier']
+            runner-options: ['verifier-failure', 'verifier-debug-config']
+            bugid: ['1324']
+
+      - file-name: "vals_int_pos"
+        isa:
+          instructions:
+            - sig: mov.64 v1:out:b64, v2:in:b64
+              acc: none
+              format: [op_v1_4_v2_4, op_v1_16_v2_16]
+        code-template: |
+          #
+              movi.64 v0, %s
+              mov.64 v1, v0
+              lda.64 v0
+              cmp.64 v1
+        description: Check mov.64 instruction moves values from register to register.
+        cases:
+          - values: ['0']
+          - values: ['1']
+          - values: ['0x80']
+          - values: ['0xff']
+          - values: ['0x8000']
+          - values: ['0xffff']
+          - values: ['0x80000000']
+          - values: ['0xffffffff']
+          - values: ['0x8000000000']
+          - values: ['0xffffffffff']
+          - values: ['0x800000000000']
+          - values: ['0xffffffffffff']
+          - values: ['0x80000000000000']
+          - values: ['0xffffffffffffff']
+          - values: ['0x8000000000000000']
+          - values: ['0xffffffffffffffff']
+          - values: ['0x12345678']
+          - values: ['0x87654321']
+          - values: ['0x1234567890ABCDEF']
+          - values: ['0xFEDCBA0987654321']
+
+      - file-name: "vals_neg"
+        isa:
+          instructions:
+            - sig: mov.64 v1:out:b64, v2:in:b64
+              acc: none
+              format: [op_v1_4_v2_4, op_v1_16_v2_16]
+        code-template: |
+          #
+              movi.64 v0, %s
+              mov.64 v1, v0
+              lda.64 v0
+              cmp.64 v1
+        description: Check mov.64 instruction moves values from register to register.
+        tags: ['tsan']
+        cases:
+          - values: ['-1']
+          - values: ['-0x80']
+          - values: ['-0xff']
+          - values: ['-0x8000']
+          - values: ['-0xffff']
+          - values: ['-0x80000000']
+          - values: ['-0xffffffff']
+          - values: ['-0x8000000000']
+          - values: ['-0xffffffffff']
+          - values: ['-0x800000000000']
+          - values: ['-0xffffffffffff']
+          - values: ['-0x80000000000000']
+          - values: ['-0xffffffffffffff']
+          - values: ['-0x8000000000000000']
+          - values: ['-0xffffffffffffffff']
+          - values: ['-0x12345678']
+          - values: ['-0x87654321']
+          - values: ['-0x1234567890ABCDEF']
+          - values: ['-0xFEDCBA0987654321']
+
+      - file-name: "vals_fp"
+        isa:
+          instructions:
+            - sig: mov.64 v1:out:b64, v2:in:b64
+              acc: none
+              format: [op_v1_4_v2_4, op_v1_16_v2_16]
+        code-template: |
+          #
+              fmovi.64 v0, %s
+              mov.64 v1, v0
+              lda.64 v0
+              fcmpg.64 v1
+        description: Check mov.64 instruction moves values from register to register (FP values).
+        cases:
+          - values: ['0']
+          - values: ['1']
+          - values: ['0.00000000000000000000000001']
+          - case-template: |
+              #
+                  fmovi.64 v0, 0x7ff8000000000000
+                  mov.64 v1, v0
+                  lda.64 v1
+            description: "Test NaN value."
+            case-check-type: check-acc-nan
+          - case-template: |
+              #
+                  fmovi.64 v0, 0xFFFFFFFFFFFFFFFF
+                  mov.64 v1, v0
+                  lda.64 v1
+            description: "Test NaN value."
+            case-check-type: check-acc-nan
+          - values: ['0x0']
+          - values: ['0x8000000000000000']
+            description: "Test -0.0."
+          - values: ['0x7ff0000000000000']
+            description: "Test +Inf."
+          - values: ['0xfff0000000000000']
+            description: "Test -Inf."
+          - values: ['0x7fefffffffffffff']
+            description: "Test +max."
+          - values: ['0xffefffffffffffff']
+            description: "Test -max."
+          - values: ['3.14159265358979323846']
+          - values: ['-3.14159265358979323846']
+          - values: ['3.14159265358979323846e200']
+          - values: ['-3.14159265358979323846e200']
+
+      - file-name: "type"
+        tags: ['verifier']
+        isa:
+          instructions:
+            - sig: mov.64 v1:out:b64, v2:in:b64
+              acc: none
+              format: [op_v1_4_v2_4, op_v1_16_v2_16]
+          verification:
+            - v2_type
+        runner-options: ['verifier-failure', 'verifier-debug-config']
+        header-template: []
+        code-template: |
+            #
+            .record A {}
+            .record B {}
+            .record panda.String <external>
+            .record panda.Object <external>
+            .function i32 main() {
+                %s
+                *s
+                mov.64 v0, v1
+                ldai 0
+        check-type: no-check
+        description: Check mov.64 with incorrect source register type. Destination type is not checked.
+        template-cases:
+
+          - values:
+              - |
+                #
+                    lda.type B
+                    sta.obj v0
+          - values:
+              - |
+                #
+                    lda.type B[]
+                    sta.obj v0
+          - values:
+              - |
+                #
+                    lda.type panda.String
+                    sta.obj v0
+          - values:
+              - |
+                #
+                    lda.type panda.Object
+                    sta.obj v0
+          - values:
+              - |
+                #
+                    movi v0, 10
+                    newarr v0, v0, i32[]
+          - values:
+              - mov.null v0
+          - values:
+              - movi v0, 0
+          - values:
+              - movi.64 v0, 0
+          - values:
+              - fmovi.64 v0, 0
+        cases:
+          - values:
+              - |
+                #
+                    lda.type A
+                    sta.obj v1
+          - values:
+              - |
+                #
+                    lda.type A[]
+                    sta.obj v1
+          - values:
+              - |
+                #
+                    lda.type panda.String
+                    sta.obj v1
+          - values:
+              - |
+                #
+                    lda.str "some string"
+                    sta.obj v1
+          - values:
+              - |
+                #
+                    lda.type panda.Object
+                    sta.obj v1
+          - values:
+              - |
+                #
+                    movi v1, 10
+                    newarr v1, v1, f64[]
+          - values:
+              - mov.null v1
+          - values:
+              - movi v1, 0
+
+      - file-name: uninitialized_regs
+        isa:
+          instructions:
+            - sig: mov.64 v1:out:b64, v2:in:b64
+              acc: none
+              format: [op_v1_4_v2_4, op_v1_16_v2_16]
+        description: Check mov.64 with uninitialized registers.
+        tags: ['verifier']
+        runner-options: ['verifier-failure', 'verifier-debug-config']
+        header-template: []
+        code-template: |
+          #
+          .function i32 main() {
+              %s
+              *s
+              mov.64 %s, *s
+              ldai 0
+        check-type: no-check
+        template-cases:
+          - values: ['', 'v0']
+          - values: ['', 'v256']
+          - values: ['', 'v65535']
+          - values:
+              - movi v2, 0
+              - v2
+          - values:
+              - |
+                #
+                    mov.null v1
+                    mov.obj v65534, v1
+              - v65534
+          - values:
+              - |
+                #
+                    mov.null v1
+                    mov.obj v257, v1
+              - v257
+        cases:
+          - values:
+              - ''
+              - v0
+          - values:
+              - ''
+              - v8
+          - values:
+              - ''
+              - v15
+          - values:
+              - ''
+              - v256
+          - values:
+              - ''
+              - v65535

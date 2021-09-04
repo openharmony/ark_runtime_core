@@ -1,0 +1,35 @@
+# Copyright (c) 2021 Huawei Device Co., Ltd.
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+#Assert that intrinsic Math.pow works fine
+.record Math <external>
+.function f32 Math.fpow (f32 a0, f32 a1) <external>
+.function f64 Math.absF64 (f64 a0) <external>
+
+.function u1 main(){
+    fmovi.64 v0, 2.5
+    fmovi.64 v1, 24.7052942201
+    fmovi.64 v2, 1e-6
+    fmovi.64 v3, 3.5
+    call.short Math.fpow, v0, v3
+    fsub2.64 v1
+    sta.64 v1
+    call.short Math.absF64, v1, v1
+    fcmpl.64 v2
+    jgez exit_failure
+    ldai 0
+    return
+exit_failure:
+    ldai 1
+    return
+}

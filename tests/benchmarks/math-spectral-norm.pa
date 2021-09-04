@@ -1,0 +1,211 @@
+# Copyright (c) 2021 Huawei Device Co., Ltd.
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+.record Math <external>
+.function f64 Math.sqrt(f64 a0) <external>
+.function f64 Math.absF64(f64 a0) <external>
+
+.function u1 main(){
+    movi v0, 6
+    movi v1, 480
+    fmovi.64 v2, 8.909361304388094
+    call test, v0, v1, v2, v0
+    return
+}
+
+.function u1 test(i32 a0, i32 a1, f64 a2){
+    fmovi.64 v3, 0.0              #total
+    mov v4, a0          #loop counter
+    lda a0
+loop:
+    jgt a1, loop_exit
+    call.short spectralnorm, v4, v4
+    fadd2.64 v3
+    sta.64 v3
+    lda v4
+    muli 2
+    sta v4
+    jmp loop
+loop_exit:
+    lda.64 v3
+    fsub2.64 a2
+    sta.64 v5
+    call.short Math.absF64, v5, v5
+    fldai.64 1e-13
+    fcmpl.64 v5
+    jltz exit_failure
+    ldai 0
+    return
+exit_failure:
+    ldai 1
+    return
+}
+
+.function f64 spectralnorm(i32 a0){
+    mov v0, a0
+    newarr v1, v0, f64[]              #u
+    newarr v2, v0, f64[]              #w
+    newarr v3, v0, f64[]              #v
+    fmovi.64 v4, 0.0       #vBv
+    fmovi.64 v5, 0.0       #vv
+    movi.64 v6, 0          #loop_counter
+    movi v20, 10
+    ldai 0
+loop:
+    jeq a0, loop_exit
+    fldai.64 1.0
+    fstarr.64 v1, v6
+    fldai.64 0.0
+    fstarr.64 v2, v6
+    fldai.64 0.0
+    fstarr.64 v3, v6
+    inci v6, 1
+    lda v6
+    jmp loop
+loop_exit:
+    movi v6, 0
+    ldai 0
+loop2:
+    jeq v20, loop2_exit
+    call AtAu, v1, v3, v2, v1
+    call AtAu, v3, v1, v2, v1
+    inci v6, 1
+    lda v6
+    jmp loop2
+loop2_exit:
+    movi v6, 0
+    ldai 0
+loop3:
+    jeq a0, loop3_exit
+    lda v6
+    fldarr.64 v1
+    sta.64 v7
+    lda.64 v6
+    fldarr.64 v3
+    fmul2.64 v7
+    fadd2.64 v4
+    sta.64 v4
+    lda v6
+    fldarr.64 v3
+    sta.64 v7
+    fmul2.64 v7
+    fadd2.64 v5
+    sta.64 v5
+    inci v6, 1
+    lda v6
+    jmp loop3
+loop3_exit:
+    lda.64 v4
+    fdiv2.64 v5
+    sta.64 v9
+    call.short Math.sqrt, v9, v9
+    return.64
+}
+
+.function void AtAu(f64[] a0, f64[] a1, f64[] a2){
+    call.short Au, a0, a2
+    call.short Atu, a2, a1
+    return.void
+}
+
+.function void Atu(f64[] a0, f64[] a1){
+    movi v2, 0                      #loop_counter
+    lenarr a0
+    sta v0
+    lenarr a1
+    sta v1
+    ldai 0
+loop:
+    jeq v1, loop_exit
+    fmovi.64 v3, 0.0                  #t
+    movi v4, 0                      #loop2_counter
+    ldai 0
+loop2:
+    jeq v0, loop2_exit
+    call.short A, v4, v2
+    sta.64 v5
+    lda v4
+    fldarr.64 a0
+    fmul2.64 v5
+    fadd2.64 v3
+    sta.64 v3
+    inci v4, 1
+    lda v4
+    jmp loop2
+loop2_exit:
+    lda.64 v3
+    fstarr.64 a1, v2
+    inci v2, 1
+    lda v2
+    jmp loop
+loop_exit:
+    return.void
+}
+
+.function void Au(f64[] a0, f64[] a1){
+    movi v2, 0                      #loop_counter
+    lenarr a0
+    sta v0
+    lenarr a1
+    sta v1
+    ldai 0
+loop:
+    jeq v1, loop_exit
+    fmovi.64 v3, 0.0                  #t
+    movi v4, 0                      #loop2_counter
+    ldai 0
+loop2:
+    jeq v0, loop2_exit
+    call.short A, v2, v4
+    sta.64 v5
+    lda v4
+    fldarr.64 a0
+    fmul2.64 v5
+    fadd2.64 v3
+    sta.64 v3
+    inci v4, 1
+    lda v4
+    jmp loop2
+loop2_exit:
+    lda.64 v3
+    fstarr.64 a1, v2
+    inci v2, 1
+    lda v2
+    jmp loop
+loop_exit:
+    return.void
+}
+
+.function f64 A(i32 a0, i32 a1){
+    fmovi.64 v10, 1.0
+    fmovi.64 v11, 2.0
+    lda a0
+    i32tof64
+    sta.64 a0
+    lda a1
+    i32tof64
+    sta.64 a1
+    fadd2.64 a0
+    fadd2.64 v10
+    sta.64 v2
+    lda.64 a0
+    fadd2.64 a1
+    fmul2.64 v2
+    fdiv2.64 v11
+    fadd2.64 a0
+    fadd2.64 v10
+    sta.64 v2
+    lda.64 v10
+    fdiv2.64 v2
+    return.64
+}

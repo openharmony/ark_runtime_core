@@ -1,0 +1,274 @@
+#!/bin/bash
+# Copyright (c) 2021 Huawei Device Co., Ltd.
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+#
+# Aux functions
+#
+
+function print_help
+{
+    HELP_MESSAGE="
+    It is the bootstrap script for Panda on Ubuntu 18.04 or 20.04.
+
+    This script installs all necessary packages for building and testing Panda
+    in your local environment, given that your environment is Ubuntu 18.04 or 20.04.
+    (detected with the contents of /etc/os-release).
+
+    The script should run with superuser privileges.
+
+    EXAMPLE
+
+    $ ./scripts/install-deps-ubuntu --help
+    $ ./scripts/install-deps-ubuntu --install=x86 --install=arm-all --install=dev
+
+    or
+
+    $ ./scripts/install-deps-ubuntu -h
+    $ ./scripts/install-deps-ubuntu -i=x86 -i=arm-all -i=dev
+
+    SYNOPSIS
+
+    $0 [OPTIONS]
+
+    OPTIONS
+
+    --help              | -h              Show this message and exit.
+
+    --install=dev       | -i=dev          Install tools needed for development.
+
+    --install=arm-all   | -i=arm-all      Install extra packages for cross-compiling for AArch32 and AArch64.
+
+    --install=x86       | -i=x86          Install extra packages for cross-compiling for x86.
+
+    --install=windows   | -i=windows      Install extra packages for cross-compiling for Windows.
+
+    --install=fuzzing   | -i=fuzzing      Install extra packages for fuzzing.
+
+    CAVEAT
+
+    * Packages for cross-compiling for aarch64 and x86 cannot co-exist, so the
+    script (read: apt) will replace any conflicting packages on each run.
+    * However, packages for cross-compiling for aarch64 and 32-bit ARM can
+    co-exist, so they are in a single 'arm-all' dependency list.
+    "
+
+    echo "$HELP_MESSAGE"
+}
+
+function install_dep
+{
+    local fname=$1
+
+    if [[ ! -f "$fname" ]] ; then
+        echo "FATAL: Dependency list $fname not found."
+        exit 1
+    fi
+
+    echo "Processing $fname"
+    grep --color=never -o '^[^#]*' "$fname" | xargs apt install -y --no-install-recommends -o Dpkg::Options::="--force-overwrite"
+}
+
+function install_qemu
+{
+    local needed_version="6.0.0"
+
+    local aarch64_version=$(qemu-aarch64 --version | grep version | awk '{print $3}')
+    local arm_version=$(qemu-arm --version | grep version | awk '{print $3}')
+
+    if [[ "$aarch64_version" == "$needed_version" && "$arm_version" == "$needed_version" ]] ; then
+        return
+    fi
+
+    local src_dir=$(mktemp -d)
+    local qemu_name="qemu-$needed_version"
+    local archive_name="$src_dir/$qemu_name.tar.xz"
+
+    echo "Dowloading qemu sources to $archive_name"
+    curl --progress https://download.qemu.org/$qemu_name.tar.xz --output "$archive_name"
+
+    echo "Extracting $archive_name"
+    tar -C $src_dir -xf $archive_name
+
+    echo "Installing qemu build dependencies"
+    apt-get install libglib2.0-dev libfdt-dev libpixman-1-dev zlib1g-dev pkg-config flex bison ninja
+
+    cd "$src_dir/$qemu_name"
+    ./configure --target-list=aarch64-linux-user,arm-linux-user
+    make -j install
+}
+
+function enable_llvm_repo
+{
+    local llvm_url=http://apt.llvm.org
+
+    local repo_name="deb ${llvm_url}/${UBUNTU_CODENAME}/  llvm-toolchain-${UBUNTU_CODENAME}-12  main"
+    curl https://apt.llvm.org/llvm-snapshot.gpg.key | apt-key add - \
+        && echo -e $repo_name > /etc/apt/sources.list.d/llvm-12.list \
+        && apt-get update
+}
+
+#
+# Main logic
+#
+
+#
+# Parse command-line arguments
+#
+
+# Set default flag values
+INSTALL_CI_TOOLS=no
+INSTALL_DEV=no
+INSTALL_CROSS_ARM_ALL=no
+INSTALL_CROSS_x86=no
+INSTALL_CROSS_WINDOWS=no
+INSTALL_FUZZING_TOOLS=no
+INSTALL_ARM_DEV=no
+SRC_LIST_STR='# This file is generated automatically by Panda install-deps-ubuntu script. DO NOT EDIT!!!\n'
+
+
+for i in "$@"
+do
+    case $i in
+    -h|--help)
+        print_help
+        exit 0
+        ;;
+    -i=*|--install=*)
+        FLAG_ARG=${i//[-a-zA-Z0-9]*=/}
+        if [[ $FLAG_ARG == "dev" ]] ; then
+            if [[ $INSTALL_ARM_DEV == "yes" ]] ; then
+                echo "FATAL: Parameter --install=dev excludes --install=arm-dev"
+                exit 1
+            else
+                INSTALL_DEV=yes
+            fi
+        fi
+        if [[ $FLAG_ARG == "arm-all" ]] ; then
+            INSTALL_CROSS_ARM_ALL=yes
+        fi
+        if [[ $FLAG_ARG == "x86" ]] ; then
+            INSTALL_CROSS_x86=yes
+        fi
+        if [[ $FLAG_ARG == "windows" ]] ; then
+            INSTALL_CROSS_WINDOWS=yes
+        fi
+        if [[ $FLAG_ARG == "ci-tools" ]] ; then
+            INSTALL_CI_TOOLS=yes
+        fi
+        if [[ $FLAG_ARG == "fuzzing" ]] ; then
+            if [[ $(arch) == "x86_64" ]] ; then
+               INSTALL_FUZZING_TOOLS=yes
+            else
+               echo "Fuzzing is supported only for amd64. Options will have no effect"
+            fi
+        fi
+        if [[ $FLAG_ARG == "arm-dev" ]] ; then
+            if [[ $INSTALL_DEV == "yes" ]] ; then
+                echo "FATAL: Parameter --install=arm-dev excludes --install=dev"
+                exit 1
+            else
+                INSTALL_ARM_DEV=yes
+            fi
+        fi
+      ;;
+    *)
+      echo "Error: Unsupported flag $i" >&2
+      exit 1
+      ;;
+  esac
+done
+
+#
+# Check 'sudo' and if script is running on Ubuntu
+#
+
+if [[ $(id -u) -ne 0 ]] ; then
+    echo "FATAL: Please run as root."
+    exit 1
+fi
+
+#
+# Check specific Ubuntu version
+#
+
+UBUNTU_NAME=ubuntu
+
+if [ ! -f /etc/os-release ]; then
+    echo "FATAL: /etc/os-release not found. Exiting..."
+    exit 1
+else
+    . /etc/os-release
+
+    if [[ $NAME == "Ubuntu" ]]; then
+        apt-get update \
+        && dpkg -l | grep curl  || apt-get -y install curl \
+        && dpkg -l | grep gnupg || apt-get -y install gnupg \
+        && apt-get update
+    else
+        echo "FATAL: Only Ubuntu is supported. This is not. Exiting..."
+        exit 1
+    fi
+fi
+
+if [[ $VERSION_ID == "18.04" ]]; then
+    echo "Installing packages for Ubuntu 18.04 LTS."
+    UBUNTU_NAME=ubuntu-18-04
+elif [[ $VERSION_ID == "20.04" ]]; then
+    echo "Installing packages for Ubuntu 20.04 LTS."
+    UBUNTU_NAME=ubuntu-20-04
+else
+    echo "Trying to install packages for Ubuntu with unpinned versions."
+fi
+
+set -e
+
+#
+# Install dependencies
+#
+
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd -P)"
+NEED_INSTALL_ADDITIONAL_FILES=false
+
+install_dep "$SCRIPT_DIR/dep-lists/$UBUNTU_NAME-build"
+
+if [[ "x$INSTALL_CI_TOOLS" == "xyes" ]] ; then
+    install_dep "$SCRIPT_DIR/dep-lists/$UBUNTU_NAME-ci"
+fi
+
+if [[ "x$INSTALL_FUZZING_TOOLS" == "xyes" ]] ; then
+    enable_llvm_repo
+    install_dep "$SCRIPT_DIR/dep-lists/$UBUNTU_NAME-fuzzing"
+fi
+
+if [[ "x$INSTALL_DEV" == "xyes" ]] ; then
+    install_dep "$SCRIPT_DIR/dep-lists/$UBUNTU_NAME-dev"
+fi
+
+if [[ "x$INSTALL_CROSS_ARM_ALL" == "xyes" ]] ; then
+    install_dep "$SCRIPT_DIR/dep-lists/$UBUNTU_NAME-cross-arm-all"
+    install_qemu
+fi
+
+if [[ "x$INSTALL_CROSS_x86" == "xyes" ]] ; then
+    install_dep "$SCRIPT_DIR/dep-lists/$UBUNTU_NAME-cross-x86"
+fi
+
+if [[ "x$INSTALL_CROSS_WINDOWS" == "xyes" ]] ; then
+    install_dep "$SCRIPT_DIR/dep-lists/$UBUNTU_NAME-cross-windows"
+fi
+
+if [[ "x$INSTALL_ARM_DEV" == "xyes" ]] ; then
+    install_dep "$SCRIPT_DIR/dep-lists/$UBUNTU_NAME-arm-dev"
+    install_qemu
+fi

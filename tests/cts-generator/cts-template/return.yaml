@@ -1,0 +1,307 @@
+# Copyright (c) 2021 Huawei Device Co., Ltd.
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+definitions:
+  - name: obj_ctor
+    template: |
+        .record Obj {}
+
+        .function void Obj.ctor(Obj a0) <ctor> {
+            return.void
+        }
+tests:
+  - file-name: "return"
+    isa:
+      title: Return value from method
+      description: >
+        Return from the current method, i.e. restore the frame of method invoker and return control to the
+        invoker. Return value should be in accumulator.
+      exceptions:
+        - x_none
+    commands:
+      - file-name: "op_none"
+        isa:
+          instructions:
+            - sig: return
+              acc: in:i32
+              format: [op_none]
+        description: Check 'return' returns control flow to caller.
+        tags: ['tsan']
+        header-template: []
+        code-template: |
+          .function i32 func(%s) {
+              ldai 0x12345678
+              return
+          }
+
+          .function i32 main() {
+              %s
+              call func%s
+              movi v0, 0x12345678
+              jne v0, set_failure
+              ldai 0
+              jmp fall_through
+          set_failure:
+              ldai 1
+          fall_through:
+        cases:
+          - values:
+              - ''
+              - ''
+              - ''
+
+          - values:
+              - 'i32 a0'
+              - 'movi v0, 0x12345678'
+              - ', v0'
+
+          - values:
+              - 'i32 a0, f64 a1'
+              - |
+                #
+                    movi v0, 0
+                    fmovi.64 v1, 1.2
+              - ', v0, v1'
+          - values:
+              - 'i32 a0, f64 a1, i64 a2'
+              - |
+                #
+                    movi v0, 0
+                    fmovi.64 v1, 1.2
+                    movi.64 v2, 0xFF
+              - ', v0, v1, v2'
+
+          - values:
+              - 'i32 a0, f64 a1, i64 a2, Obj a3'
+              - |
+                #
+                    movi v0, 0
+                    fmovi.64 v1, 1.2
+                    movi.64 v2, 0xFF
+                    mov.null v3
+              - ', v0, v1, v2, v3'
+            case-header-template: [obj_ctor]
+
+      - file-name: "type"
+        tags: [verifier]
+        bugid: ['1324']
+        runner-options: ['verifier-failure', 'verifier-debug-config']
+        isa:
+          instructions:
+            - sig: return
+              acc: in:i32
+              format: [op_none]
+          verification:
+            - acc_return_type
+        header-template: []
+        code-template: |
+          .function %s func() {
+              ldai 0x12345678
+              return
+          }
+
+          .function i32 main() {
+              call.short func
+        check-type: exit-positive
+        description: Check 'return' is used in function with not i32 return type and null value.
+        cases:
+          - values: [void]
+          - values: [i64]
+          - values: [f64]
+          - values:
+              - Obj
+            case-header-template: [obj_ctor]
+
+      - file-name: "wrong_return"
+        tags: [verifier]
+        runner-options: ['verifier-failure', 'verifier-debug-config']
+        isa:
+          instructions:
+            - sig: return
+              acc: in:i32
+              format: [op_none]
+        header-template: []
+        code-template: |
+          .function i32 func() {
+              ldai 0x12345678
+              %s
+          }
+
+          .function i32 main() {
+              call.short func
+        check-type: exit-positive
+        description: Check the verifier behavior when expected 'return' is not given.
+        cases:
+          - values: ['']
+          - values: ['return.void']
+          - values: ['return.64']
+          - values: ['return.obj']
+
+      - file-name: "type_ret_val"
+        tags: [verifier]
+        bugid: ['1324']
+        runner-options: ['verifier-failure', 'verifier-debug-config']
+        isa:
+          instructions:
+            - sig: return
+              acc: in:i32
+              format: [op_none]
+          verification:
+            - acc_return_type
+        header-template: []
+        code-template: |
+          .function i32 func() {
+              %s
+              return
+          }
+
+          .function i32 main() {
+              call.short func
+        check-type: exit-positive
+        description: Check 'return' is used in function with not i32 return type.
+        cases:
+          - values: [lda.null]
+          - values: [ldai.64 0x1234567890ABCDEF]
+          - values: [fldai.64 3.1415926535]
+          - values:
+              - initobj Obj.ctor
+            case-header-template: [obj_ctor]
+
+      - file-name: "regs_restore"
+        isa:
+          instructions:
+            - sig: return
+              acc: in:i32
+              format: [op_none]
+        header-template: []
+        code-template: |
+          .function i32 func(%s) {
+              %s
+              ldai 0
+              return
+          }
+
+          .function i32 main() {
+              %s
+              call func%s
+              %s
+        description: Check that after 'return' register are restored in caller.
+        cases:
+          - values:
+              - ''
+              - ''
+              - 'movi v0, 0x12345678'
+              - ''
+              - |
+                #
+                    ldai 0x12345678
+                    jne v0, set_failure
+                    ldai 0
+                    jmp fall_through
+                set_failure:
+                    ldai 1
+                fall_through:
+            description: "Register is not used in function."
+          - values:
+              - 'i32 a0'
+              - 'movi v0, 0x87654321'
+              - 'movi v0, 0x12345678'
+              - ', v0'
+              - |
+                #
+                    ldai 0x12345678
+                    jne v0, set_failure
+                    ldai 0
+                    jmp fall_through
+                set_failure:
+                    ldai 1
+                fall_through:
+            description: "Register is used in function."
+
+          - values:
+              - 'i32 a0'
+              - ''
+              - 'movi v0, 0x12345678'
+              - ', v0'
+              - |
+                #
+                    ldai 0x12345678
+                    jne v0, set_failure
+                    ldai 0
+                    jmp fall_through
+                set_failure:
+                    ldai 1
+                fall_through:
+            description: "Register is not used in function."
+
+          - values:
+              - 'f64 a0, i64 a1'
+              - |
+                #
+                    fmovi.64 v0, 0
+                    movi.64 v1, 0
+              - |
+                #
+                    fmovi.64 v0, 3.1415926535
+                    movi.64 v1, 0x123456789ABCDEF0
+              - ', v0, v1'
+              - |
+                #
+                    fldai.64 3.1415926535
+                    fcmpg.64 v0
+                    jeqz check2
+                    ldai 1
+                    return
+                check2:
+                    ldai.64 0x123456789ABCDEF0
+                    cmp.64 v1
+            description: "Registers are used in function."
+
+          - values:
+              - 'f64 a0, i64 a1, i32 a2, f64 a3'
+              - |
+                #
+                    fmovi.64 v0, 0
+                    movi.64 v1, 0
+                    movi v2, 0
+                    fmovi.64 v3, 0
+              - |
+                #
+                    fmovi.64 v0, 3.1415926535
+                    movi.64 v1, 0x123456789ABCDEF0
+                    movi v2, 123456789
+                    fmovi.64 v3, 0x8000000000000001
+              - ', v0, v1, v2, v3'
+              - |
+                #
+                    fldai.64 3.1415926535
+                    fcmpg.64 v0
+                    jeqz check1
+                    ldai 1
+                    return
+                check1:
+                    ldai.64 0x123456789ABCDEF0
+                    cmp.64 v1
+                    jeqz check2
+                    ldai 1
+                    return
+                check2:
+                    ldai 123456789
+                    jeq v2, check3
+                    ldai 1
+                    return
+                check3:
+                    fldai.64 0x8000000000000001
+                    fcmpg.64 v3
+
+            description: "Registers are used in function."

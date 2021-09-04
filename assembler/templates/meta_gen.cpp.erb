@@ -1,0 +1,46 @@
+/*
+ * Copyright (c) 2021 Huawei Device Co., Ltd.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+% Metadata::item_types.each do |item_type|
+std::optional<Metadata::Error>
+<%= MetadataGen::class_name(item_type) %>::Validate(<%= MetadataGen::validate_arg_list(item_type, true).join(', ') %>) const {
+<%= MetadataGen::validate_body(item_type, true).join("\n") %>
+}
+
+std::optional<Metadata::Error>
+<%= MetadataGen::class_name(item_type) %>::Validate(<%= MetadataGen::validate_arg_list(item_type, false).join(', ') %>) const {
+<%= MetadataGen::validate_body(item_type, false).join("\n") %>
+}
+
+% end
+%
+% Metadata::item_types.each do |item_type|
+void <%= MetadataGen::class_name(item_type) %>::SetFlags(<%= MetadataGen::flags_arg_list(item_type, true).join(', ') %>) {
+<%= MetadataGen::set_flags_body(item_type, true).join("\n") %>
+}
+
+void <%= MetadataGen::class_name(item_type) %>::SetFlags(<%= MetadataGen::flags_arg_list(item_type, false).join(', ') %>) {
+<%= MetadataGen::set_flags_body(item_type, false).join("\n") %>
+}
+
+void <%= MetadataGen::class_name(item_type) %>::RemoveFlags(<%= MetadataGen::flags_arg_list(item_type, true).join(', ') %>) {
+<%= MetadataGen::remove_flags_body(item_type, true).join("\n") %>
+}
+
+void <%= MetadataGen::class_name(item_type) %>::RemoveFlags(<%= MetadataGen::flags_arg_list(item_type, false).join(', ') %>) {
+<%= MetadataGen::remove_flags_body(item_type, false).join("\n") %>
+}
+
+% end

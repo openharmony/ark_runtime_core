@@ -1,0 +1,20 @@
+# Dependency list for testing Panda on Ubuntu 18.04
+clang-9=1:9-*
+clang-format-9=1:9-*
+clang-tidy-9=1:9-*
+
+clang=1:6.0-*
+g++-8=8.4.0-*
+ninja-build=1.8.*
+
+lcov=1.13-*                                          # For coverage calculation
+libc++-dev:arm64=6.0-*                               # For clang-tidy to find standard headers
+python3=3.6.7-*                                      # For running multilingual benchmarks
+openjdk-8-jdk=8u292-*                                # For running Java benchmarks
+libasm-java=7.0-*                                    # For running legacy Java files compilation
+doxygen=1.8.13-*                                     # For generate documentation
+graphviz=2.40.1-*                                    # For generate graphs in documentation
+unzip=6.0-*                                          # For unpacking jar
+parallel=20161222-*                                  # For rt.jar test
+
+llvm=1:6.0-*                                         # For Thread Sanitizer

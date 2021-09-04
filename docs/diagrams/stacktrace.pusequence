@@ -1,0 +1,33 @@
+' Copyright (c) 2021 Huawei Device Co., Ltd.
+' Licensed under the Apache License, Version 2.0 (the "License");
+' you may not use this file except in compliance with the License.
+' You may obtain a copy of the License at
+'
+' http://www.apache.org/licenses/LICENSE-2.0
+'
+' Unless required by applicable law or agreed to in writing, software
+' distributed under the License is distributed on an "AS IS" BASIS,
+' WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+' See the License for the specific language governing permissions and
+' limitations under the License.
+
+@startuml
+
+title Print Stacktraces at Safepoints
+
+skinparam monochrome true
+
+ManagedThread -> stacktrace.cpp: GetStacktrace
+stacktrace.cpp -> ManagedThread: stacktrace (array of function call instruction addresses)
+ManagedThread -> StackPrinter: Print the stacktrace
+StackPrinter -> "~/proc~/self~/maps": ReadVma (read used libraries and associated addresses)
+"~/proc~/self~/maps" -> StackPrinter: Array of VMA (virtual memory area)
+StackPrinter -> StackPrinter: For each address, find the corresponding VMA and determine the library file
+StackPrinter -> libdwarf: Read debug info from the library file
+libdwarf -> StackPrinter: Debug info
+StackPrinter -> libdwarf: Get function name, source file and line number
+libdwarf -> StackPrinter: Mangled function name (non-human readable), source file and line number
+StackPrinter -> "libstdc++": Demangled function name (Get human readable function name)
+"libstdc++" -> StackPrinter: human readable function name
+StackPrinter -> "output stream": Print
+@enduml

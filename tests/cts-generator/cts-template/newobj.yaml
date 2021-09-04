@@ -1,0 +1,666 @@
+# Copyright (c) 2021 Huawei Device Co., Ltd.
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+definitions:
+  - name: java
+    template: |
+      .language Java
+      .record R {}
+      .record E <java.extends=R> {}
+      .record A <java.annotation, java.annotation.type=runtime> {}
+      .record java.lang.String <external>
+      .record java.lang.Class <external>
+      .record java.lang.Object <external>
+  - name: pandasm
+    template: |
+      .record R {}
+      .record panda.String <external>
+      .record panda.Class <external>
+      .record panda.Object <external>
+
+tests:
+  - file-name: "newobj"
+    isa:
+      title: Create new object
+      description: |
+        Resolve class type from type_id, allocate memory for an object, initialize its fields with their
+        default values (i.e. 0 for primitives and null for objects) and put a reference to the newly created
+        object into register. The object should be initialized by calling initialization method before
+        further usage.
+      instructions:
+        - sig: newobj v:out:ref, type_id
+          acc: none
+          format: [op_v_8_id_16]
+    commands:
+
+
+      - file-name: "invalid_reg"
+        isa:
+          instructions:
+            - sig: newobj v:out:ref, type_id
+              acc: none
+              format: [op_v_8_id_16]
+        runner-options: [compile-failure]
+        description: Check 'newobj' instruction with invalid register.
+        header-template: []
+        code-template: |
+          .record A {}
+
+          .function i32 main() {
+              newobj %s
+        check-type: exit-positive
+        cases:
+          - values: ['v255, A']
+            runner-options: ['compile-only']
+          - values: ['']
+          - values: ['A']
+          - values: ['v256, A']
+          - values: ['v65535, A']
+          - values: ['v32767, A']
+          - values: ['a0, A']
+          - values: ['V0, A']
+          - values: ['A, A']
+          - values: ['}, A']
+          - values: ['v0, v0']
+
+
+      - file-name: "invalid_type"
+        isa:
+          verification:
+            - type_id_object
+        runner-options: [compile-failure]
+        description: Check 'newobj' instruction with invalid type id.
+        header-template: []
+        code-template: |
+          .record A {
+            i32   f32
+            A     fA
+            i32[] f32Array
+            A[]   fAArray
+          }
+          .function void aFunc(A a0) {
+            return.void
+          }
+          .function void bFunc() <static> {
+            return.void
+          }
+          .function i32 main() {
+          begin:
+              newobj v0, %s
+          end:
+        check-type: exit-positive
+        cases:
+          - values:
+              - ""
+          - values:
+              - "label:"
+          - values:
+              - "begin"
+          - values:
+              - "{}"
+          - values:
+              - "}"
+          - values:
+              - "# comment"
+          - values:
+              - "null"
+          - values:
+              - "0"
+          - values:
+              - "v0"
+          - values:
+              - "i32"
+          - values:
+              - '"A"'
+          - values:
+              - "A.f32"
+          - values:
+              - "A.fA"
+          - values:
+              - "A.f32Array"
+          - values:
+              - "A.fAArray"
+          - values:
+              - "panda.Object[]"
+          - values:
+              - "aFunc"
+          - values:
+              - "A.aFunc"
+          - values:
+              - "bFunc"
+          - values:
+              - "main"
+          - values:
+              - "panda"
+          - values:
+              - "Object"
+
+      - file-name: "valid_type_p"
+        isa:
+          verification:
+            - type_id_object
+        runner-options: ['verifier-only', 'verifier-debug-config']
+        tags: [verifier]
+        description: Check 'newobj' instruction with valid type id in PandaAssembly context.
+        header-template: [pandasm, main]
+        code-template: |
+          #
+              newobj v0, %s
+        check-type: exit-positive
+        cases:
+          - values:
+              - R
+          - values:
+              - panda.Class
+          - values:
+              - panda.Object
+          - values:
+              - panda.String
+            tags: ["tsan"]
+
+      - file-name: "valid_instance_p"
+        isa:
+          description: |
+            Resolve class type from type_id, allocate memory for an object, initialize its fields with their
+            default values (i.e. 0 for primitives and null for objects) and put a reference to the newly created
+            object into register.
+        description: Check type of object created by 'newobj' instruction with valid type in PandaAssembly context.
+        header-template: [pandasm, main]
+        code-template: |
+          #
+              lda.null
+              movi v2, 1
+              newobj v1, %s
+              lda.obj v1
+              isinstance %s
+              jeq v2, check2
+              ldai 1
+              return
+          check2:
+              lda.obj v1
+              isinstance panda.Object
+              jeq v2, ok
+              ldai 2
+              return
+          ok:
+        check-type: exit-positive
+        cases:
+          - values:
+              - R
+              - R
+          - values:
+              - panda.String
+              - panda.String
+          - values:
+              - panda.Class
+              - panda.Class
+            bugid: ["3540"]
+            ignore: true
+          - values:
+              - panda.Object
+              - panda.Object
+            tags: ["tsan"]
+
+      - file-name: "obj_ne_p"
+        isa:
+          description: |
+            Resolve class type from type_id, allocate memory for an object, initialize its fields with their
+            default values (i.e. 0 for primitives and null for objects) and put a reference to the newly created
+            object into register.
+        description: Check that two objects created by 'newobj' instructions are different in PandaAssembly context.
+        header-template: [pandasm, main]
+        code-template: |
+          #
+              newobj v1, %s
+              lda.null
+              newobj v0, %s
+              lda.obj v0
+              jne.obj v1, ok
+              ldai 1
+              return
+          ok:
+        check-type: exit-positive
+        cases:
+          - values:
+              - R
+              - R
+          - values:
+              - R
+              - panda.Object
+          - values:
+              - R
+              - panda.String
+          - values:
+              - R
+              - panda.Class
+            bugid: ["3540"]
+            ignore: true
+          - values:
+              - panda.Object
+              - panda.Object
+            tags: ["tsan"]
+          - values:
+              - panda.Object
+              - panda.String
+            tags: ["tsan"]
+          - values:
+              - panda.Object
+              - panda.Class
+            bugid: ["3540"]
+            ignore: true
+          - values:
+              - panda.String
+              - panda.String
+          - values:
+              - panda.String
+              - panda.Class
+            bugid: ["3540"]
+            ignore: true
+          - values:
+              - panda.Class
+              - panda.Class
+            bugid: ["3540"]
+            ignore: true
+
+      - file-name: "init_p"
+        isa:
+          description: |
+            Resolve class type from type_id, allocate memory for an object, initialize its fields with their
+            default values (i.e. 0 for primitives and null for objects) and put a reference to the newly created
+            object into register.
+        description: Check that objects fields are properly initialized in PandaAssembly context.
+        header-template: [pandasm]
+        tags: ["tsan"]
+        code-template: |
+          .record Z {
+            u1                  fu1
+            u8                  fu8
+            i8                  fi8
+            u16                 fu16
+            i16                 fi16
+            u32                 fu32
+            i32                 fi32
+            u64                 fu64
+            i64                 fi64
+            f32                 ff32
+            f64                 ff64
+
+            u1[]                fu1a
+            u8[]                fu8a
+            i8[]                fi8a
+            u16[]               fu16a
+            i16[]               fi16a
+            u32[]               fu32a
+            i32[]               fi32a
+            u64[]               fu64a
+            i64[]               fi64a
+            f32[]               ff32a
+            f64[]               ff64a
+
+            u1[][]              fu1aa
+            u8[][]              fu8aa
+            i8[][]              fi8aa
+            u16[][]             fu16aa
+            i16[][]             fi16aa
+            u32[][]             fu32aa
+            i32[][]             fi32aa
+            u64[][]             fu64aa
+            i64[][]             fi64aa
+            f32[][]             ff32aa
+            f64[][]             ff64aa
+
+            R                   fR
+            R[]                 fRa
+            R[][]               fRaa
+
+            panda.Object        fO
+            panda.Object[]      fOa
+            panda.Object[][]    fOaa
+
+            panda.String        fS
+            panda.String[]      fSa
+            panda.String[][]    fSaa
+
+            panda.Class         fC
+            panda.Class[]       fCa
+            panda.Class[][]     fCaa
+          }
+
+          .function i32 main() {
+              newobj v1, Z
+          label_u1:
+              ldai 111
+              ldobj v1, Z.fu1
+              jeqz label_u8
+              ldai 1
+              return
+          label_u8:
+              ldai 111
+              ldobj v1, Z.fu8
+              jeqz label_i8
+              ldai 2
+              return
+          label_i8:
+              ldai 111
+              ldobj v1, Z.fi8
+              jeqz label_u16
+              ldai 3
+              return
+          label_u16:
+              ldai 111
+              ldobj v1, Z.fu16
+              jeqz label_i16
+              ldai 4
+              return
+          label_i16:
+              ldai 111
+              ldobj v1, Z.fi16
+              jeqz label_u32
+              ldai 5
+              return
+          label_u32:
+              ldai 111
+              ldobj v1, Z.fu32
+              jeqz label_i32
+              ldai 6
+              return
+          label_i32:
+              ldai 111
+              ldobj v1, Z.fi32
+              jeqz label_u64
+              ldai 7
+              return
+          label_u64:
+              ldai 111
+              ldobj.64 v1, Z.fu64
+              movi.64 v2, 0
+              ucmp.64 v2
+              jeqz label_i64
+              ldai 8
+              return
+          label_i64:
+              ldai 111
+              ldobj.64 v1, Z.fi64
+              movi.64 v2, 0
+              cmp.64 v2
+              jeqz label_f32
+              ldai 9
+              return
+          label_f32:
+              ldai 111
+              ldobj.64 v1, Z.ff32
+              fmovi.64 v2, 0.0
+              fcmpg.64 v2
+              jeqz label_f64
+              ldai 10
+              return
+          label_f64:
+              ldai 111
+              ldobj.64 v1, Z.ff64
+              fmovi.64 v2, 0.0
+              fcmpg.64 v2
+              jeqz label_R
+              ldai 11
+              return
+          label_R:
+              ldai 111
+              ldobj.obj v1, Z.fR
+              jeqz.obj label_Ra
+              ldai 12
+              return
+          label_Ra:
+              ldai 111
+              ldobj.obj v1, Z.fRa
+              jeqz.obj label_Raa
+              ldai 13
+              return
+          label_Raa:
+              ldai 111
+              ldobj.obj v1, Z.fRaa
+              jeqz.obj label_O
+              ldai 14
+              return
+          label_O:
+              ldai 111
+              ldobj.obj v1, Z.fO
+              jeqz.obj label_Oa
+              ldai 15
+              return
+          label_Oa:
+              ldai 111
+              ldobj.obj v1, Z.fOa
+              jeqz.obj label_Oaa
+              ldai 16
+              return
+          label_Oaa:
+              ldai 111
+              ldobj.obj v1, Z.fOaa
+              jeqz.obj label_S
+              ldai 17
+              return
+          label_S:
+              ldai 111
+              ldobj.obj v1, Z.fS
+              jeqz.obj label_Sa
+              ldai 18
+              return
+          label_Sa:
+              ldai 111
+              ldobj.obj v1, Z.fSa
+              jeqz.obj label_Saa
+              ldai 19
+              return
+          label_Saa:
+              ldai 111
+              ldobj.obj v1, Z.fSaa
+              jeqz.obj label_C
+              ldai 20
+              return
+          label_C:
+              ldai 111
+              ldobj.obj v1, Z.fC
+              jeqz.obj label_Ca
+              ldai 21
+              return
+          label_Ca:
+              ldai 111
+              ldobj.obj v1, Z.fCa
+              jeqz.obj label_Caa
+              ldai 22
+              return
+          label_Caa:
+              ldai 111
+              ldobj.obj v1, Z.fCaa
+              jeqz.obj label_u1a
+              ldai 23
+              return
+          label_u1a:
+              ldai 111
+              ldobj.obj v1, Z.fu1a
+              jeqz.obj label_u8a
+              ldai 24
+              return
+          label_u8a:
+              ldai 111
+              ldobj.obj v1, Z.fu8a
+              jeqz.obj label_i8a
+              ldai 25
+              return
+          label_i8a:
+              ldai 111
+              ldobj.obj v1, Z.fi8a
+              jeqz.obj label_u16a
+              ldai 26
+              return
+          label_u16a:
+              ldai 111
+              ldobj.obj v1, Z.fu16a
+              jeqz.obj label_i16a
+              ldai 27
+              return
+          label_i16a:
+              ldai 111
+              ldobj.obj v1, Z.fi16a
+              jeqz.obj label_u32a
+              ldai 28
+              return
+          label_u32a:
+              ldai 111
+              ldobj.obj v1, Z.fu32a
+              jeqz.obj label_i32a
+              ldai 29
+              return
+          label_i32a:
+              ldai 111
+              ldobj.obj v1, Z.fi32a
+              jeqz.obj label_u64a
+              ldai 30
+              return
+          label_u64a:
+              ldai 111
+              ldobj.obj v1, Z.fu64a
+              jeqz.obj label_i64a
+              ldai 31
+              return
+          label_i64a:
+              ldai 111
+              ldobj.obj v1, Z.fi64a
+              jeqz.obj label_f32a
+              ldai 32
+              return
+          label_f32a:
+              ldai 111
+              ldobj.obj v1, Z.ff32a
+              jeqz.obj label_f64a
+              ldai 33
+              return
+          label_f64a:
+              ldai 111
+              ldobj.obj v1, Z.ff64a
+              jeqz.obj label_u1aa
+              ldai 34
+              return
+          label_u1aa:
+              ldai 111
+              ldobj.obj v1, Z.fu1aa
+              jeqz.obj label_u8aa
+              ldai 35
+              return
+          label_u8aa:
+              ldai 111
+              ldobj.obj v1, Z.fu8aa
+              jeqz.obj label_i8aa
+              ldai 36
+              return
+          label_i8aa:
+              ldai 111
+              ldobj.obj v1, Z.fi8aa
+              jeqz.obj label_u16aa
+              ldai 37
+              return
+          label_u16aa:
+              ldai 111
+              ldobj.obj v1, Z.fu16aa
+              jeqz.obj label_i16aa
+              ldai 38
+              return
+          label_i16aa:
+              ldai 111
+              ldobj.obj v1, Z.fi16aa
+              jeqz.obj label_u32aa
+              ldai 39
+              return
+          label_u32aa:
+              ldai 111
+              ldobj.obj v1, Z.fu32aa
+              jeqz.obj label_i32aa
+              ldai 40
+              return
+          label_i32aa:
+              ldai 111
+              ldobj.obj v1, Z.fi32aa
+              jeqz.obj label_u64aa
+              ldai 41
+              return
+          label_u64aa:
+              ldai 111
+              ldobj.obj v1, Z.fu64aa
+              jeqz.obj label_i64aa
+              ldai 42
+              return
+          label_i64aa:
+              ldai 111
+              ldobj.obj v1, Z.fi64aa
+              jeqz.obj label_f32aa
+              ldai 43
+              return
+          label_f32aa:
+              ldai 111
+              ldobj.obj v1, Z.ff32aa
+              jeqz.obj label_f64aa
+              ldai 44
+              return
+          label_f64aa:
+              ldai 111
+              ldobj.obj v1, Z.ff64aa
+              jeqz.obj ok
+              ldai 45
+              return
+          ok:
+        check-type: exit-positive
+
+      - file-name: "oome_p"
+        isa:
+          exceptions:
+            - x_oom
+        description: Create objects with newobj instruction until OutOfMemoryError in PandaAssembly context
+        header-template: []
+        panda-options: "--object-pool-size=67108864"
+        bugid: ["3578", "4170", "4171"]
+        ignore: true
+        code-template: |
+          .record panda.OutOfMemoryError <external>
+          .record Z {
+          %s
+          }
+          .function i32 main() {
+              movi v7, 50000   # array size
+              newarr v6, v7, Z[]       # array ref
+              movi v1, 0       # index
+          begin:
+              newobj v0, Z
+              lda.obj v0
+              starr.obj v6, v1
+              inci v1, 1
+              lda v1
+              jlt v7, begin
+          end:
+              ldai 1 # Should not reach this line
+              return
+
+          catch_OOME:
+              ldai 0 # Expected panda.OutOfMemoryError
+              return
+
+          catch_all:
+              ldai 2 # Unexpected exception, test failed
+              return
+
+          .catch panda.OutOfMemoryError, begin, end, catch_OOME
+          .catchall begin, end, catch_all
+        check-type: none
+        cases:
+          - values:
+              - "#{[*1..500].map do |i| \"    f64   f#{i}\\n\" end .join}"
+            tags: ["tsan"]
+

@@ -1,0 +1,179 @@
+# Copyright (c) 2021 Huawei Device Co., Ltd.
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+definitions: []
+tests:
+  - file-name: "neg"
+    isa:
+      title: Unary
+      description: >
+        Perform specified operation on accumulator
+      exceptions:
+      - x_none
+
+    commands:
+      - file-name: "op_none"
+        isa:
+          instructions:
+            - sig: neg
+              acc: inout:i32
+              format: [op_none]
+        code-template: |
+            #
+                ldai %s
+                neg
+                movi v0, %s
+                jne v0, set_failure
+                ldai 0
+                jmp fall_through
+            set_failure:
+                ldai 1
+            fall_through:
+        description: Check `neg` with various values.
+        tags: ['tsan', 'clang_release_sanitizer']
+        cases:
+          - values: ["0", "0x0"]
+          - values: ["1", "0xFFFFFFFF"]
+          - values: ["-1", "0x1"]
+          - values: ["0xF", "0xFFFFFFF1"]
+          - values: ["-0xF", "0xF"]
+          - values: ["0x7F", "0xFFFFFF81"]
+          - values: ["-0x7F", "0x7F"]
+          - values: ["0x80", "0xFFFFFF80"]
+          - values: ["-0x80", "0x80"]
+          - values: ["0xFF", "0xFFFFFF01"]
+          - values: ["-0xFF", "0xFF"]
+          - values: ["0xFFF", "0xFFFFF001"]
+          - values: ["-0xFFF", "0xFFF"]
+          - values: ["0xFFFF", "0xFFFF0001"]
+          - values: ["-0xFFFF", "0xFFFF"]
+          - values: ["0xFFFFF", "0xFFF00001"]
+          - values: ["-0xFFFFF", "0xFFFFF"]
+          - values: ["0xFFFFFF", "0xFF000001"]
+          - values: ["-0xFFFFFF", "0xFFFFFF"]
+          - values: ["0xFFFFFFF", "0xF0000001"]
+          - values: ["-0xFFFFFFF", "0xFFFFFFF"]
+          - values: ["0x7FFFFFFF", "0x80000001"]
+          - values: ["-0x7FFFFFFF", "0x7FFFFFFF"]
+          - values: ["0x80000000", "0x80000000"]
+          - values: ["-0x80000000", "0x80000000"]
+          - values: ["0xFFFFFFFF", "0x1"]
+          - values: ["-0xFFFFFFFF", "0xFFFFFFFF"]
+
+      - file-name: "vals"
+        isa:
+          instructions:
+            - sig: neg
+              acc: inout:i32
+              format: [op_none]
+        code-template: |
+          #
+              ldai %s
+              neg
+              movi v0, %s
+              jne v0, set_failure
+              ldai 0
+              jmp fall_through
+          set_failure:
+              ldai 1
+          fall_through:
+        description: Check `neg` with various values.
+        cases:
+          - values: ["0x2FEAEDB4", "0xD015124C"]
+          - values: ["0x9C6C30BF", "0x6393CF41"]
+          - values: ["0x1BF216CF", "0xE40DE931"]
+          - values: ["0xDF9CD1F7", "0x20632E09"]
+          - values: ["0xF40F9EF9", "0xBF06107"]
+          - values: ["0x7941CA86", "0x86BE357A"]
+          - values: ["0x50E20B50", "0xAF1DF4B0"]
+          - values: ["0xA6098C4", "0xF59F673C"]
+          - values: ["0x74FBE6DD", "0x8B041923"]
+          - values: ["0x337D0DA3", "0xCC82F25D"]
+          - values: ["0xF7E0915C", "0x81F6EA4"]
+          - values: ["0x4513D47D", "0xBAEC2B83"]
+          - values: ["0xC77ECE9", "0xF3881317"]
+          - values: ["0xFF812549", "0x7EDAB7"]
+          - values: ["0x19715C4F", "0xE68EA3B1"]
+          - values: ["0x8A8CB359", "0x75734CA7"]
+          - values: ["0x5C6E79E0", "0xA3918620"]
+          - values: ["0xC1D11086", "0x3E2EEF7A"]
+          - values: ["0x834E4631", "0x7CB1B9CF"]
+          - values: ["0x2F5F3BC2", "0xD0A0C43E"]
+
+      - file-name: type
+        bugid: ["964", "966"]
+        tags: ["verifier"]
+        isa:
+          instructions:
+            - sig: neg
+              acc: inout:i32
+              format: [op_none]
+          verification:
+            - acc_type
+        runner-options: ['verifier-failure', 'verifier-debug-config']
+        header-template: []
+        code-template: |
+            .record T {}
+            .record panda.String <external>
+            .record panda.Object <external>
+            #
+            .function i32 main() {
+                %s
+                neg
+        check-type: exit-positive
+        description: Check `neg` with incorrect accumulator type.
+        cases:
+          - values:
+            - ldai.64 1
+          - values:
+            - fldai.64 1.0
+          - values:
+            - lda.type T
+          - values:
+            - lda.type T[]
+          - values:
+            - lda.type panda.Object
+          - values:
+            - lda.type panda.String
+          - values:
+            - lda.str "x"
+          - values:
+            - |
+              newobj v0, T
+              lda.obj v0
+          - values:
+            - lda.null
+          - values:
+            - |
+              #
+                  movi v0, 10
+                  newarr v0, v0, i32[]
+                  lda.obj v0
+
+      - file-name: uninitialized_regs
+        bugid: ["2787"]
+        tags: ["verifier"]
+        isa:
+          instructions:
+            - sig: neg
+              acc: inout:i32
+              format: [op_none]
+        description: Check neg with uninitialized accumulator.
+        runner-options: ['verifier-failure', 'verifier-debug-config']
+        header-template: []
+        code-template: |
+          #
+          .function i32 main() {
+              # acc is undefined
+              neg
+        check-type: exit-positive

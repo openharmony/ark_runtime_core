@@ -1,0 +1,477 @@
+# Copyright (c) 2021 Huawei Device Co., Ltd.
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+definitions: []
+tests:
+  - file-name: "shr"
+    isa:
+      title: Three address binary operation
+      description: Perform specified binary operation on two registers and store result
+          into accumulator
+      exceptions:
+          - x_none
+    commands:
+      - file-name: "op_vs1_4_vs2_4_zero"
+        isa:
+          instructions:
+            - sig: shr v1:in:i32, v2:in:i32
+              acc: out:i32
+              prefix: bit
+              format: [pref_op_v1_4_v2_4]
+        code-template: |
+          #
+              movi v0, 0
+              movi v1, %s
+              mov v1, v0
+              shr v0, v1
+              movi v0, 0
+              jne v0, set_failure
+              ldai 0
+              jmp fall_through
+          set_failure:
+              ldai 1
+          fall_through:
+        description: Check shr with zero and various values.
+        cases:
+          - values:
+              - "0"
+          - values:
+              - "1"
+          - values:
+              - "-1"
+            bugid: ['1387']
+            tags: ["clang_release_sanitizer_jit"]
+          - values:
+              - "0x7FFFFFFF"
+            bugid: ['1387']
+            tags: ["clang_release_sanitizer_jit"]
+          - values:
+              - "0x80000000"
+            bugid: ['1387']
+            tags: ["clang_release_sanitizer_jit"]
+          - values:
+              - "-0x7FFFFFFF"
+            bugid: ['1387']
+            tags: ["clang_release_sanitizer_jit"]
+          - values:
+              - "-0x80000000"
+            bugid: ['1387']
+            tags: ["clang_release_sanitizer_jit"]
+          - values:
+              - "0xFFFFFFFF"
+            bugid: ['1387']
+            tags: ["clang_release_sanitizer_jit"]
+          - values:
+              - "-0xFFFFFFFF"
+
+      - file-name: "op_vs1_4_vs2_4_pone"
+        isa:
+          instructions:
+            - sig: shr v1:in:i32, v2:in:i32
+              acc: out:i32
+              prefix: bit
+              format: [pref_op_v1_4_v2_4]
+        code-template: |
+          #
+              movi v0, 1
+              movi v1, %s
+              shr v0, v1
+              movi v0, %s
+              jne v0, set_failure
+              ldai 0
+              jmp fall_through
+          set_failure:
+              ldai 1
+          fall_through:
+        description: Check shr with +1 and various values.
+        cases:
+          - values:
+              - "0"
+              - "1"
+          - values:
+              - "1"
+              - "0"
+          - values:
+              - "-1"
+              - "0"
+            bugid: ['1387']
+            tags: ["clang_release_sanitizer_jit"]
+          - values:
+              - "0x7FFFFFFF"
+              - "0"
+            bugid: ['1387']
+            tags: ["clang_release_sanitizer_jit"]
+          - values:
+              - "0x80000000"
+              - "1"
+            bugid: ['1387']
+            tags: ["clang_release_sanitizer_jit"]
+          - values:
+              - "-0x7FFFFFFF"
+              - "0"
+            bugid: ['1387']
+            tags: ["clang_release_sanitizer_jit"]
+          - values:
+              - "-0x80000000"
+              - "1"
+            bugid: ['1387']
+            tags: ["clang_release_sanitizer_jit"]
+          - values:
+              - "0xFFFFFFFF"
+              - "0"
+            bugid: ['1387']
+            tags: ["clang_release_sanitizer_jit"]
+          - values:
+              - "-0xFFFFFFFF"
+              - "0"
+      - file-name: "op_vs1_4_vs2_4_none"
+        isa:
+          instructions:
+            - sig: shr v1:in:i32, v2:in:i32
+              acc: out:i32
+              prefix: bit
+              format: [pref_op_v1_4_v2_4]
+        code-template: |
+          #
+              movi v0, -1
+              movi v1, %s
+              shr v0, v1
+              movi v0, %s
+              jne v0, set_failure
+              ldai 0
+              jmp fall_through
+          set_failure:
+              ldai 1
+          fall_through:
+        description: Check shr with -1 and various values.
+        cases:
+          - values:
+              - "0"
+              - "0xFFFFFFFF"
+          - values:
+              - "1"
+              - "0x7FFFFFFF"
+          - values:
+              - "-1"
+              - "1"
+            bugid: ['1387']
+            tags: ["clang_release_sanitizer_jit"]
+          - values:
+              - "0x7FFFFFFF"
+              - "1"
+            bugid: ['1387']
+            tags: ["clang_release_sanitizer_jit"]
+          - values:
+              - "0x80000000"
+              - "0xFFFFFFFF"
+            bugid: ['1387']
+            tags: ["clang_release_sanitizer_jit"]
+          - values:
+              - "-0x7FFFFFFF"
+              - "0x7FFFFFFF"
+            bugid: ['1387']
+            tags: ["clang_release_sanitizer_jit"]
+          - values:
+              - "-0x80000000"
+              - "0xFFFFFFFF"
+            bugid: ['1387']
+            tags: ["clang_release_sanitizer_jit"]
+          - values:
+              - "0xFFFFFFFF"
+              - "1"
+            bugid: ['1387']
+            tags: ["clang_release_sanitizer_jit"]
+          - values:
+              - "-0xFFFFFFFF"
+              - "0x7FFFFFFF"
+
+      - file-name: "op_vs1_4_vs2_4_pmax"
+        isa:
+          instructions:
+            - sig: shr v1:in:i32, v2:in:i32
+              acc: out:i32
+              prefix: bit
+              format: [pref_op_v1_4_v2_4]
+        code-template: |
+          #
+              movi v0, 0x7FFFFFFF
+              movi v1, %s
+              shr v0, v1
+              movi v0, %s
+              jne v0, set_failure
+              ldai 0
+              jmp fall_through
+          set_failure:
+              ldai 1
+          fall_through:
+        description: Check shr with +max and various values.
+        cases:
+          - values:
+              - "0"
+              - "0x7FFFFFFF"
+          - values:
+              - "1"
+              - "0x3FFFFFFF"
+          - values:
+              - "-1"
+              - "0"
+            bugid: ['1387']
+            tags: ["clang_release_sanitizer_jit"]
+          - values:
+              - "0x7FFFFFFF"
+              - "0"
+            bugid: ['1387']
+            tags: ["clang_release_sanitizer_jit"]
+          - values:
+              - "0x80000000"
+              - "0x7FFFFFFF"
+            bugid: ['1387']
+            tags: ["clang_release_sanitizer_jit"]
+          - values:
+              - "-0x7FFFFFFF"
+              - "0x3FFFFFFF"
+            bugid: ['1387']
+            tags: ["clang_release_sanitizer_jit"]
+          - values:
+              - "-0x80000000"
+              - "0x7FFFFFFF"
+            bugid: ['1387']
+            tags: ["clang_release_sanitizer_jit"]
+          - values:
+              - "0xFFFFFFFF"
+              - "0"
+            bugid: ['1387']
+            tags: ["clang_release_sanitizer_jit"]
+          - values:
+              - "-0xFFFFFFFF"
+              - "0x3FFFFFFF"
+
+      - file-name: "op_vs1_4_vs2_4_nmax"
+        isa:
+          instructions:
+            - sig: shr v1:in:i32, v2:in:i32
+              acc: out:i32
+              prefix: bit
+              format: [pref_op_v1_4_v2_4]
+        code-template: |
+          #
+              movi v0, -0x80000000
+              movi v1, %s
+              shr v0, v1
+              movi v0, %s
+              jne v0, set_failure
+              ldai 0
+              jmp fall_through
+          set_failure:
+              ldai 1
+          fall_through:
+        description: Check shr with -max and various values.
+        cases:
+          - values:
+              - "0"
+              - "0x80000000"
+          - values:
+              - "1"
+              - "0x40000000"
+          - values:
+              - "-1"
+              - "1"
+            bugid: ['1387']
+            tags: ["clang_release_sanitizer_jit"]
+          - values:
+              - "0x7FFFFFFF"
+              - "1"
+            bugid: ['1387']
+            tags: ["clang_release_sanitizer_jit"]
+          - values:
+              - "0x80000000"
+              - "0x80000000"
+            bugid: ['1387']
+            tags: ["clang_release_sanitizer_jit"]
+          - values:
+              - "-0x7FFFFFFF"
+              - "0x40000000"
+            bugid: ['1387']
+            tags: ["clang_release_sanitizer_jit"]
+          - values:
+              - "-0x80000000"
+              - "0x80000000"
+            bugid: ['1387']
+            tags: ["clang_release_sanitizer_jit"]
+          - values:
+              - "0xFFFFFFFF"
+              - "1"
+            bugid: ['1387']
+            tags: ["clang_release_sanitizer_jit"]
+          - values:
+              - "-0xFFFFFFFF"
+              - "0x40000000"
+
+      - file-name: "vals"
+        bugid: ['1387']
+        tags: ["clang_release_sanitizer_jit", "tsan"]
+        isa:
+          instructions:
+            - sig: shr v1:in:i32, v2:in:i32
+              acc: out:i32
+              prefix: bit
+              format: [pref_op_v1_4_v2_4]
+        code-template: |
+          #
+              movi v0, %s
+              movi v1, %s
+              shr v0, v1
+              movi v0, %s
+              jne v0, set_failure
+              ldai 0
+              jmp fall_through
+          set_failure:
+              ldai 1
+          fall_through:
+        description: Check shr with various values.
+        cases:
+          - values:
+              - "0x5A8D97D0"
+              - "0xDA783975"
+              - "0x2D4"
+          - values:
+              - "0x4A37BE"
+              - "0x257556A"
+              - "0x128D"
+          - values:
+              - "0xD631242"
+              - "0x47A1179D"
+              - "0x0"
+          - values:
+              - "0x153C1D64"
+              - "0xB3FD21B1"
+              - "0xA9E"
+          - values:
+              - "0x5499AF7B"
+              - "0x3939DE4C"
+              - "0x5499A"
+          - values:
+              - "0xB7C3B77F"
+              - "0xCCA63ED3"
+              - "0x16F8"
+          - values:
+              - "0x90F9BD15"
+              - "0xA8A9ADC"
+              - "0x9"
+          - values:
+              - "0x226BA4EA"
+              - "0x21A3F177"
+              - "0x44"
+          - values:
+              - "0x4A295B4C"
+              - "0x62F1D4C9"
+              - "0x2514AD"
+          - values:
+              - "0xCA310014"
+              - "0xC9A571C8"
+              - "0xCA3100"
+
+      - file-name: "vals_mod32_1"
+        bugid: ['1324', '2075']
+        tags: ['verifier']
+        runner-options: ['verifier-failure', 'verifier-debug-config']
+        isa:
+          instructions:
+            - sig: shr v1:in:i32, v2:in:i32
+              acc: out:i32
+              prefix: bit
+              format: [pref_op_v1_4_v2_4]
+        code-template: |
+          #
+              movi.64 v0, %s
+              movi.64 v1, %s
+              shr v0, v1
+              movi.64 v0, %s
+              cmp.64 v0
+        description: Check shr with incorrect register types.
+        cases:
+          - values:
+              - "0x17FFFFFFF"
+              - "0x1"
+              - "0x000000003FFFFFFF"
+          - values:
+              - "0x77777777FFFFFFFF"
+              - "0x1111111180000000"
+              - "0xFFFFFFFFFFFFFFFF"
+          - values:
+              - "0x180000000"
+              - "0x180000000"
+              - "0xFFFFFFFF80000000"
+
+      - file-name: "regs"
+        isa:
+          instructions:
+            - sig: shr v1:in:i32, v2:in:i32
+              acc: out:i32
+              prefix: bit
+              format: [pref_op_v1_4_v2_4]
+        runner-options: ['compile-only']
+        code-template: |
+          #
+              shr %s, %s
+        check-type: none
+        description: Check shr with various register numbers.
+        cases:
+          - values:
+              - v0
+              - v15
+          - values:
+              - v0
+              - v16
+            runner-options:
+              - compile-failure
+          - values:
+              - v15
+              - v0
+          - values:
+              - v16
+              - v0
+            runner-options:
+              - compile-failure
+
+      - file-name: "type"
+        bugid: ["964", "966", "2075"]
+        tags: ["verifier"]
+        isa:
+          instructions:
+            - sig: shr v1:in:i32, v2:in:i32
+              acc: out:i32
+              prefix: bit
+              format: [pref_op_v1_4_v2_4]
+          verification:
+            - v1_type
+            - v2_type
+        runner-options: ['verifier-failure', 'verifier-debug-config']
+        code-template: |
+          #
+              %s
+              %s
+              shr v0, v1
+              ldai 0
+        check-type: no-check
+        description: Check shr with incorrect register types.
+        cases:
+          - values:
+              - mov.null v0
+              - movi v1, 0
+          - values:
+              - movi v0, 0
+              - mov.null v1
+          - values:
+              - mov.null v0
+              - mov.null v1

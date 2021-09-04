@@ -1,0 +1,396 @@
+# Copyright (c) 2021 Huawei Device Co., Ltd.
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+definitions: []
+tests:
+  - file-name: "or2"
+    isa:
+      title: Two address binary operation on accumulator
+      description: >
+        Perform specified binary operation on accumulator and register and store result into accumulator
+      exceptions:
+        - x_none
+    commands:
+      - file-name: "op_vs_8_zero"
+        isa:
+          instructions:
+            - sig: or2 v:in:i32
+              acc: inout:i32
+              prefix: bit
+              format: [pref_op_v_8]
+        code-template: |
+          #
+              ldai 0
+              movi v0, %s
+              mov v1, v0
+              or2 v0
+              mov v0, v1
+              jne v0, set_failure
+              ldai 0
+              jmp fall_through
+          set_failure:
+              ldai 1
+          fall_through:
+        description: Check or2 with zero and various values.
+        cases:
+          - values:
+              - "0"
+          - values:
+              - "1"
+          - values:
+              - "-1"
+          - values:
+              - "0x7FFFFFFF"
+          - values:
+              - "0x80000000"
+          - values:
+              - "-0x7FFFFFFF"
+          - values:
+              - "-0x80000000"
+          - values:
+              - "0xFFFFFFFF"
+          - values:
+              - "-0xFFFFFFFF"
+
+      - file-name: "op_vs_8_pone"
+        isa:
+          instructions:
+            - sig: or2 v:in:i32
+              acc: inout:i32
+              prefix: bit
+              format: [pref_op_v_8]
+        code-template: |
+          #
+              ldai 1
+              movi v0, %s
+              or2 v0
+              movi v0, %s
+              jne v0, set_failure
+              ldai 0
+              jmp fall_through
+          set_failure:
+              ldai 1
+          fall_through:
+        description: Check or2 with +1 and various values.
+        cases:
+          - values:
+              - "0"
+              - "1"
+          - values:
+              - "1"
+              - "1"
+          - values:
+              - "-1"
+              - "-1"
+          - values:
+              - "0x7FFFFFFF"
+              - "0x7FFFFFFF"
+          - values:
+              - "0x80000000"
+              - "0x80000001"
+          - values:
+              - "-0x7FFFFFFF"
+              - "-0x7FFFFFFF"
+          - values:
+              - "-0x80000000"
+              - "0x80000001"
+          - values:
+              - "0xFFFFFFFF"
+              - "0xFFFFFFFF"
+          - values:
+              - "-0xFFFFFFFF"
+              - "1"
+      - file-name: "op_vs_8_none"
+        isa:
+          instructions:
+            - sig: or2 v:in:i32
+              acc: inout:i32
+              prefix: bit
+              format: [pref_op_v_8]
+        code-template: |
+          #
+              ldai -1
+              movi v0, %s
+              or2 v0
+              movi v0, -1
+              jne v0, set_failure
+              ldai 0
+              jmp fall_through
+          set_failure:
+              ldai 1
+          fall_through:
+        description: Check or2 with -1 and various values.
+        cases:
+          - values:
+              - "0"
+          - values:
+              - "1"
+          - values:
+              - "-1"
+          - values:
+              - "0x7FFFFFFF"
+          - values:
+              - "0x80000000"
+          - values:
+              - "-0x7FFFFFFF"
+          - values:
+              - "-0x80000000"
+          - values:
+              - "0xFFFFFFFF"
+          - values:
+              - "-0xFFFFFFFF"
+
+      - file-name: "op_vs_8_pmax"
+        isa:
+          instructions:
+            - sig: or2 v:in:i32
+              acc: inout:i32
+              prefix: bit
+              format: [pref_op_v_8]
+        code-template: |
+          #
+              ldai 0x7FFFFFFF
+              movi v0, %s
+              or2 v0
+              movi v0, %s
+              jne v0, set_failure
+              ldai 0
+              jmp fall_through
+          set_failure:
+              ldai 1
+          fall_through:
+        description: Check or2 with +max and various values.
+        cases:
+          - values:
+              - "0"
+              - "0x7FFFFFFF"
+          - values:
+              - "1"
+              - "0x7FFFFFFF"
+          - values:
+              - "-1"
+              - "0xFFFFFFFF"
+          - values:
+              - "0x7FFFFFFF"
+              - "0x7FFFFFFF"
+          - values:
+              - "0x80000000"
+              - "0xFFFFFFFF"
+          - values:
+              - "-0x7FFFFFFF"
+              - "0xFFFFFFFF"
+          - values:
+              - "-0x80000000"
+              - "0xFFFFFFFF"
+          - values:
+              - "0xFFFFFFFF"
+              - "0xFFFFFFFF"
+          - values:
+              - "-0xFFFFFFFF"
+              - "0x7FFFFFFF"
+
+      - file-name: "op_vs_8_nmax"
+        isa:
+          instructions:
+            - sig: or2 v:in:i32
+              acc: inout:i32
+              prefix: bit
+              format: [pref_op_v_8]
+        code-template: |
+          #
+              ldai -0x80000000
+              movi v0, %s
+              or2 v0
+              movi v0, %s
+              jne v0, set_failure
+              ldai 0
+              jmp fall_through
+          set_failure:
+              ldai 1
+          fall_through:
+        description: Check or2 with -max and various values.
+        cases:
+          - values:
+              - "0"
+              - "0x80000000"
+          - values:
+              - "1"
+              - "0x80000001"
+          - values:
+              - "-1"
+              - "0xFFFFFFFF"
+          - values:
+              - "0x7FFFFFFF"
+              - "0xFFFFFFFF"
+          - values:
+              - "0x80000000"
+              - "0x80000000"
+          - values:
+              - "-0x7FFFFFFF"
+              - "0x80000001"
+          - values:
+              - "-0x80000000"
+              - "0x80000000"
+          - values:
+              - "0xFFFFFFFF"
+              - "0xFFFFFFFF"
+          - values:
+              - "-0xFFFFFFFF"
+              - "0x80000001"
+
+      - file-name: "vals"
+        isa:
+          instructions:
+            - sig: or2 v:in:i32
+              acc: inout:i32
+              prefix: bit
+              format: [pref_op_v_8]
+        code-template: |
+          #
+              ldai %s
+              movi v0, %s
+              or2 v0
+              movi v0, %s
+              jne v0, set_failure
+              ldai 0
+              jmp fall_through
+          set_failure:
+              ldai 1
+          fall_through:
+        description: Check or2 with various values.
+        tags: ['tsan']
+        cases:
+          - values:
+              - "0xB98B551D"
+              - "0x86224577"
+              - "0xBFAB557F"
+          - values:
+              - "0xA395AE93"
+              - "0x7B843B94"
+              - "0xFB95BF97"
+          - values:
+              - "0xE8C8F0B9"
+              - "0x67A71796"
+              - "0xEFEFF7BF"
+          - values:
+              - "0x3E943F53"
+              - "0x46DDAA06"
+              - "0x7EDDBF57"
+          - values:
+              - "0xEB55B86B"
+              - "0xF33CDAA5"
+              - "0xFB7DFAEF"
+          - values:
+              - "0x26EA0C73"
+              - "0x76955D83"
+              - "0x76FF5DF3"
+          - values:
+              - "0x76E497AA"
+              - "0x8626722"
+              - "0x7EE6F7AA"
+          - values:
+              - "0xE645F7B6"
+              - "0xE78A8A5"
+              - "0xEE7DFFB7"
+          - values:
+              - "0x5193B1ED"
+              - "0x51FAC7A5"
+              - "0x51FBF7ED"
+          - values:
+              - "0x67A70527"
+              - "0x54B76EBF"
+              - "0x77B76FBF"
+
+      - file-name: "vals_mod32_1"
+        bugid: ['1324']
+        tags: ['verifier']
+        runner-options: ['verifier-failure', 'verifier-debug-config']
+        isa:
+          instructions:
+            - sig: or2 v:in:i32
+              acc: inout:i32
+              prefix: bit
+              format: [pref_op_v_8]
+        code-template: |
+          #
+              ldai.64 %s
+              movi.64 v0, %s
+              or2 v0
+              movi.64 v0, %s
+              cmp.64 v0
+        description: Check or2 with incorrect accumulator and register types.
+        cases:
+          - values:
+              - "0x17FFFFFFF"
+              - "0x17FFFFFFF"
+              - "0x7FFFFFFF"
+          - values:
+              - "0x77777777FFFFFFFF"
+              - "0x1111111180000000"
+              - "0xFFFFFFFFFFFFFFFF"
+          - values:
+              - "0x180000000"
+              - "0x180000000"
+              - "0xFFFFFFFF80000000"
+
+      - file-name: "regs"
+        isa:
+          instructions:
+            - sig: or2 v:in:i32
+              acc: inout:i32
+              prefix: bit
+              format: [pref_op_v_8]
+        runner-options: ['compile-only']
+        code-template: |
+          #
+              or2 %s
+        check-type: none
+        description: Check or2 with various register numbers.
+        cases:
+          - values:
+              - "v255"
+          - values:
+              - "v256"
+            runner-options: ['compile-failure']
+
+      - file-name: "type"
+        bugid: ["964", "966"]
+        tags: ["verifier"]
+        isa:
+          instructions:
+            - sig: or2 v:in:i32
+              acc: inout:i32
+              prefix: bit
+              format: [pref_op_v_8]
+          verification:
+            - acc_type
+            - v1_type
+        runner-options: ['verifier-failure', 'verifier-debug-config']
+        code-template: |
+          #
+              %s
+              %s
+              or2 v0
+              ldai 0
+        check-type: no-check
+        description: Check or2 with incorrect accumulator and register types.
+        cases:
+          - values:
+              - "lda.null"
+              - "movi v0, 0"
+          - values:
+              - "ldai 0 "
+              - "mov.null v0"
+          - values:
+              - "lda.null"
+              - "mov.null v0"

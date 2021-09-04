@@ -1,0 +1,57 @@
+/*
+ * Copyright (c) 2021 Huawei Device Co., Ltd.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+#define PANDA_INSTRUCTION_LIST(_)  \
+% Panda::instructions.group_by(&:mnemonic).each do |mnemonic, group|
+%   insn = group.first
+%   formats = group.map(&:format)
+%   pretty_format = insn.format.pretty.upcase.gsub(/[0-9]/, '')
+%   pretty_format.gsub!('IMM', 'ID') if insn.jump?
+%   pretty_format.gsub!('ID', 'TYPE') if insn.properties.include?('type_id')
+%
+%   flags = ["InstFlags::NONE"]
+%   flags << "InstFlags::CALL" if insn.simple_call?
+%   flags << "InstFlags::JUMP" if insn.jump?
+%   flags << "InstFlags::COND" if insn.conditional?
+%   flags << "InstFlags::RETURN" if insn.return?
+%   flags << "InstFlags::ACC_READ" if insn.properties.include? 'acc_read'
+%   flags << "InstFlags::ACC_WRITE" if insn.properties.include? 'acc_write'
+%   flags << "InstFlags::THROWING" if insn.throwing?
+%   flags << "InstFlags::METHOD_ID" if insn.properties.include? 'method_id'
+%   flags << "InstFlags::FIELD_ID" if insn.properties.include? 'field_id'
+%   flags << "InstFlags::TYPE_ID" if insn.properties.include? 'type_id'
+%   flags << "InstFlags::STRING_ID" if insn.properties.include? 'string_id'
+%   flags << "InstFlags::LITERALARRAY_ID" if insn.properties.include? 'literalarray_id'
+%   flags = "(#{flags.join(" | ")})"
+%
+%   max_width = group.map do |i|
+%     i.operands.select(&:reg?).map(&:width).max
+%   end.max
+%   max_width ||= 0
+%
+%   regs = insn.operands.select(&:reg?)
+%   dst_idx = regs.index(&:dst?) || 'INVALID_REG_IDX'
+%   use_idxs = regs.size.times.select { |idx| regs[idx].src? } || []
+%   use_idxs += (['INVALID_REG_IDX'] * (max_number_of_src_regs - use_idxs.size))
+%   use_idxs = "(std::array<int, #{ max_number_of_src_regs }>{{#{use_idxs.join(', ')}}})"
+%
+_(<%= insn.asm_token %>, "<%= insn.mnemonic %>", <%= pretty_format %>, <%= max_width %>, <%= flags %>, <%= dst_idx %>, <%= use_idxs %>)  \
+% end
+% Panda::pseudo_instructions.each do |insn|
+%   use_idxs = insn.use_idxs + ['INVALID_REG_IDX'] * (max_number_of_src_regs - insn.use_idxs.size)
+%   use_idxs = "(std::array<int, #{max_number_of_src_regs}>{{#{use_idxs.join(', ')}}})"
+_(<%= insn.opcode %> , "<%= insn.opcode %>", NONE, 0, (<%= insn.flags.join(" | ") %>), <%= insn.dst_idx %>, <%= use_idxs %>)  \
+% end
+

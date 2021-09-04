@@ -1,0 +1,136 @@
+# Copyright (c) 2021 Huawei Device Co., Ltd.
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+import("//ark/runtime_core/ark_config.gni")
+import("//build/ohos.gni")
+
+config("arkfile_public_config") {
+  include_dirs = [
+    "$ark_root/libpandafile",
+    "$ark_root/libziparchive",
+    "$target_gen_dir",
+    "$target_gen_dir/include",
+  ]
+
+  if (!ark_standalone_build) {
+    include_dirs += [
+      "//third_party/miniz/amalgamation",
+    ]
+  } else {
+    include_dirs += [
+      "$ark_third_party_root/miniz",
+    ]
+  }
+}
+
+libarkfile_sources = [
+  "annotation_data_accessor.cpp",
+  "ark_version.cpp",
+  "bytecode_emitter.cpp",
+  "class_data_accessor.cpp",
+  "code_data_accessor.cpp",
+  "debug_data_accessor.cpp",
+  "debug_info_extractor.cpp",
+  "field_data_accessor.cpp",
+  "file.cpp",
+  "file_item_container.cpp",
+  "file_items.cpp",
+  "file_writer.cpp",
+  "literal_data_accessor.cpp",
+  "method_data_accessor.cpp",
+  "method_handle_data_accessor.cpp",
+]
+
+libarkfile_configs = [
+  sdk_libc_secshared_config,
+  "$ark_root:ark_config",
+  "$ark_root/libpandabase:arkbase_public_config",
+  ":arkfile_public_config",
+]
+
+ohos_shared_library("libarkfile") {
+  sources = libarkfile_sources
+
+  configs = libarkfile_configs
+
+  deps = [
+    ":isa_gen_libarkfile_bytecode_emitter_def_gen_h",
+    ":isa_gen_libarkfile_bytecode_emitter_gen_h",
+    ":isa_gen_libarkfile_bytecode_instruction-inl_gen_h",
+    ":isa_gen_libarkfile_bytecode_instruction_enum_gen_h",
+    ":isa_gen_libarkfile_isa_checksum_h",
+    ":isa_gen_libarkfile_tests_bytecode_emitter_tests_gen_h",
+    ":libarkfile_bytecode_builtin_enum_gen_h",
+    ":libarkfile_type_gen_h",
+    "$ark_root/libpandabase:libarkbase",
+    "$ark_root/libziparchive:libarkziparchive",
+    sdk_libc_secshared_dep,
+  ]
+
+  if (!is_standard_system) {
+    relative_install_dir = "ark"
+  }
+  output_extension = "so"
+  subsystem_name = "ark"
+}
+
+ohos_static_library("libarkfile_frontend_static") {
+  sources = libarkfile_sources
+
+  configs = libarkfile_configs
+
+  deps = [
+    ":isa_gen_libarkfile_bytecode_emitter_def_gen_h",
+    ":isa_gen_libarkfile_bytecode_emitter_gen_h",
+    ":isa_gen_libarkfile_bytecode_instruction-inl_gen_h",
+    ":isa_gen_libarkfile_bytecode_instruction_enum_gen_h",
+    ":isa_gen_libarkfile_isa_checksum_h",
+    ":isa_gen_libarkfile_tests_bytecode_emitter_tests_gen_h",
+    ":libarkfile_bytecode_builtin_enum_gen_h",
+    ":libarkfile_type_gen_h",
+    "$ark_root/libpandabase:libarkbase_frontend_static",
+    "$ark_root/libziparchive:libarkziparchive_frontend_static",
+    sdk_libc_secshared_dep,
+  ]
+}
+
+ark_gen_file("libarkfile_type_gen_h") {
+  template_file = "templates/type.h.erb"
+  data_file = "types.yaml"
+  requires = [ "types.rb" ]
+  output_file = "$target_gen_dir/type.h"
+}
+
+ark_gen_file("libarkfile_bytecode_builtin_enum_gen_h") {
+  template_file = "templates/bytecode_builtin_enum_gen.h.erb"
+  data_file = "$ark_root/isa/builtins.yaml"
+  requires = [
+    "$ark_root/isa/builtinsapi.rb",
+  ]
+  output_file = "$target_gen_dir/bytecode_builtin_enum_gen.h"
+}
+
+ark_isa_gen("isa_gen_libarkfile") {
+  template_files = [
+    "bytecode_instruction_enum_gen.h.erb",
+    "bytecode_instruction-inl_gen.h.erb",
+    "bytecode_emitter_def_gen.h.erb",
+    "bytecode_emitter_gen.h.erb",
+    "isa_checksum.h.erb",
+    "tests/bytecode_emitter_tests_gen.h.erb",
+  ]
+  sources = "templates"  ## ark_root/templates
+  destination = "$target_gen_dir/include"  ## target_gen_dir/include
+  requires = [ "pandafile_isapi.rb" ]
+  extra_dependencies = [ ":libarkfile_bytecode_builtin_enum_gen_h" ]
+}

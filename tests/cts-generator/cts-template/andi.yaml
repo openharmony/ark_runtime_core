@@ -1,0 +1,345 @@
+# Copyright (c) 2021 Huawei Device Co., Ltd.
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+---
+definitions: []
+tests:
+  - file-name: andi
+    isa:
+      title: Two address binary operation with immediate on accumulator
+      description: >
+        Perform specified binary operation on accumulator and immediate and store result into accumulator.
+        Immediate is sign extended to operand size.
+      exceptions:
+        - x_none
+    commands:
+      - file-name: op_imm_32_zero
+        isa:
+          instructions:
+            - sig: andi imm:i32
+              acc: inout:i32
+              format: [op_imm_32]
+        code-template: |
+          #
+              ldai 0
+              andi %s
+              movi v0, 0
+              jne v0, set_failure
+              ldai 0
+              jmp fall_through
+          set_failure:
+              ldai 1
+          fall_through:
+        description: Check `andi` with zero and various values.
+        cases:
+          - values: ["0"]
+          - values: ["1"]
+          - values: ["-1"]
+          - values: ["0x7FFFFFFF"]
+          - values: ["-0x7FFFFFFF"]
+          - values: ["0x80000000"]
+          - values: ["-0x80000000"]
+          - values: ["0xFFFFFFFF"]
+          - values: ["-0xFFFFFFFF"]
+      - file-name: op_imm_32_pone
+        isa:
+          instructions:
+            - sig: andi imm:i32
+              acc: inout:i32
+              format: [op_imm_32]
+        code-template: |
+          #
+              ldai 1
+              andi %s
+              movi v0, %s
+              jne v0, set_failure
+              ldai 0
+              jmp fall_through
+          set_failure:
+              ldai 1
+          fall_through:
+        description: Check `andi` with +1 and various values.
+        cases:
+          - values: ["0", "0x0"]
+          - values: ["1", "0x1"]
+          - values: ["-1", "0x1"]
+          - values: ["0x7FFFFFFF", "0x1"]
+          - values: ["-0x7FFFFFFF", "0x1"]
+          - values: ["0x80000000", "0x0"]
+          - values: ["-0x80000000", "0x0"]
+          - values: ["0xFFFFFFFF", "0x1"]
+          - values: ["-0xFFFFFFFF", "0x1"]
+      - file-name: op_imm_32_none
+        isa:
+          instructions:
+            - sig: andi imm:i32
+              acc: inout:i32
+              format: [op_imm_32]
+        code-template: |
+          #
+              ldai -1
+              andi %s
+              movi v0, %s
+              jne v0, set_failure
+              ldai 0
+              jmp fall_through
+          set_failure:
+              ldai 1
+          fall_through:
+        description: Check `andi` with -1 and various values.
+        cases:
+          - values: ["0", "0x0"]
+          - values: ["1", "0x1"]
+          - values: ["-1", "0xFFFFFFFF"]
+          - values: ["0x7FFFFFFF", "0x7FFFFFFF"]
+          - values: ["-0x7FFFFFFF", "0x80000001"]
+          - values: ["0x80000000", "0x80000000"]
+          - values: ["-0x80000000", "0x80000000"]
+          - values: ["0xFFFFFFFF", "0xFFFFFFFF"]
+          - values: ["-0xFFFFFFFF", "0x1"]
+      - file-name: op_imm_32_pmax
+        isa:
+          instructions:
+            - sig: andi imm:i32
+              acc: inout:i32
+              format: [op_imm_32]
+        code-template: |
+          #
+              ldai 0x7FFFFFFF
+              andi %s
+              movi v0, %s
+              jne v0, set_failure
+              ldai 0
+              jmp fall_through
+          set_failure:
+              ldai 1
+          fall_through:
+        description: Check `andi` with +max and various values.
+        cases:
+          - values: ["0", "0x0"]
+          - values: ["1", "0x1"]
+          - values: ["-1", "0x7FFFFFFF"]
+          - values: ["0x7FFFFFFF", "0x7FFFFFFF"]
+          - values: ["-0x7FFFFFFF", "0x1"]
+          - values: ["0x80000000", "0x0"]
+          - values: ["-0x80000000", "0x0"]
+          - values: ["0xFFFFFFFF", "0x7FFFFFFF"]
+          - values: ["-0xFFFFFFFF", "0x1"]
+      - file-name: op_imm_32_nmax
+        isa:
+          instructions:
+            - sig: andi imm:i32
+              acc: inout:i32
+              format: [op_imm_32]
+        code-template: |
+          #
+              ldai -0x80000000
+              andi %s
+              movi v0, %s
+              jne v0, set_failure
+              ldai 0
+              jmp fall_through
+          set_failure:
+              ldai 1
+          fall_through:
+        description: Check `andi` with -max and various values.
+        cases:
+          - values: ["0", "0x0"]
+          - values: ["1", "0x0"]
+          - values: ["-1", "0x80000000"]
+          - values: ["0x7FFFFFFF", "0x0"]
+          - values: ["-0x7FFFFFFF", "0x80000000"]
+          - values: ["0x80000000", "0x80000000"]
+          - values: ["-0x80000000", "0x80000000"]
+          - values: ["0xFFFFFFFF", "0x80000000"]
+          - values: ["-0xFFFFFFFF", "0x0"]
+      - file-name: vals
+        isa:
+          instructions:
+            - sig: andi imm:i32
+              acc: inout:i32
+              format: [op_imm_32]
+        code-template: |
+          #
+              ldai %s
+              andi %s
+              movi v0, %s
+              jne v0, set_failure
+              ldai 0
+              jmp fall_through
+          set_failure:
+              ldai 1
+          fall_through:
+        description: Check `andi` with various values.
+        tags: ['tsan']
+        cases:
+          - values: ["0x2F588FCE", "0x92D0BE61", "0x2508E40"]
+          - values: ["0xFDD750F7", "0x8DEDAFA6", "0x8DC500A6"]
+          - values: ["0x550BDA41", "0x753E04EF", "0x550A0041"]
+          - values: ["0x18C66A4A", "0x209E1E3", "0x6042"]
+          - values: ["0x92B9866", "0xC42D014", "0x8029004"]
+          - values: ["0xFAA76C6D", "0xBD0634D1", "0xB8062441"]
+          - values: ["0xDD868BD3", "0x3D37BD89", "0x1D068981"]
+          - values: ["0x54509EE1", "0xE6DA082F", "0x44500821"]
+          - values: ["0x6BB97107", "0x1DF6E02E", "0x9B06006"]
+          - values: ["0x8325D28B", "0x90A3B91E", "0x8021900A"]
+      - file-name: type_1
+        bugid: ["964", "966"]
+        tags: ["verifier"]
+        isa:
+          instructions:
+            - sig: andi imm:i32
+              acc: inout:i32
+              format: [op_imm_32]
+          verification:
+            - acc_type
+        runner-options: ['verifier-failure', 'verifier-debug-config']
+        code-template: |
+          #
+              %s
+              andi 1
+              ldai 0
+        check-type: no-check
+        description: Check `andi` with incorrect accumulator type.
+        cases:
+          - values: [fldai.64 0.0]
+          - values: [fldai.64 -0.0]
+          - values: [fldai.64 1.0]
+          - values: [fldai.64 -1.0]
+          - values: [fldai.64 0x7FF8000000000000]
+          - values: [fldai.64 0xFFFFFFFFFFFFFFFF]
+          - values: [fldai.64 0x7FF0000000000000]
+          - values: [fldai.64 0xFFF0000000000000]
+          - values: [fldai.64 0xFFEFFFFFFFFFFFFF]
+          - values: [fldai.64 0x7FEFFFFFFFFFFFFF]
+          - values: [fldai.64 0x0000000000000001]
+          - values: [fldai.64 0x8000000000000001]
+          - values: [fldai.64 3.14159265358979323846]
+          - values: [lda.str ""]
+          - values: [lda.str "some string"]
+          - values: [lda.null]
+          - values: [ldai.64 0]
+          - values: [ldai.64 1]
+          - values: [ldai.64 -1]
+          - values: [ldai.64 0x0000000100000000]
+          - values: [ldai.64 -0x0000000100000000]
+          - values: [ldai.64 0x0000000080000000]
+          - values: [ldai.64 -0x0000000080000000]
+          - values: [ldai.64 0x1000000000000000]
+          - values: [ldai.64 0x8000000000000000]
+          - values: [ldai.64 0xF000000000000000]
+          - values: [ldai.64 0xFFFFFFFF00000000]
+          - values: [ldai.64 0xFFFFFFFFFFFFFFFF]
+          - values: [ldai.64 -0x1000000000000000]
+          - values: [ldai.64 -0x8000000000000000]
+          - values: [ldai.64 -0xF000000000000000]
+          - values: [ldai.64 -0xFFFFFFFF00000000]
+          - values: [ldai.64 -0xFFFFFFFFFFFFFFFF]
+      - file-name: type_obj
+        bugid: ["964", "966"]
+        tags: ["verifier"]
+        isa:
+          instructions:
+            - sig: andi imm:i32
+              acc: inout:i32
+              format: [op_imm_32]
+          verification:
+            - acc_type
+        runner-options: ['verifier-failure', 'verifier-debug-config']
+        description: Check `andi` with incorrect accumulator type.
+        code-template: |
+          #
+          .record Object {}
+          .function i32 main() {
+              %s
+              andi 1
+              ldai 0
+              return
+        check-type: none
+        header-template: []
+        cases:
+          - values: [lda.type Object]
+          - values:
+            - |
+              newobj v0, Object
+              lda.obj v0
+
+      - file-name: type
+        isa:
+          instructions:
+            - sig: andi imm:i32
+              acc: inout:i32
+              format: [op_imm_32]
+          verification:
+            - acc_type
+        tags: ['verifier']
+        runner-options: ['verifier-failure', 'verifier-debug-config']
+        header-template: []
+        code-template: |
+          #
+          .record B {}
+          .record panda.String <external>
+          .record panda.Object <external>
+          .function i32 main() {
+              %s
+              andi 0
+              ldai 0
+        check-type: no-check
+        description: Check addi with incorrect register type.
+        cases:
+          - values:
+              - fldai.64 0
+          - values:
+              - |
+                #
+                    lda.type B
+          - values:
+              - |
+                #
+                    lda.type B[]
+          - values:
+              - |
+                #
+                    lda.type panda.String
+          - values:
+              - |
+                #
+                    lda.type panda.Object
+          - values:
+              - |
+                #
+                    movi v0, 10
+                    newarr v0, v0, i32[]
+                    lda.obj v0
+          - values:
+              - lda.null
+          - values:
+              - ldai.64 0
+
+      - file-name: uninitialized_regs
+        bugid: ['2260']
+        isa:
+          instructions:
+            - sig: andi imm:i32
+              acc: inout:i32
+              format: [op_imm_32]
+        description: Check andi with uninitialized registers.
+        tags: ['verifier']
+        runner-options: ['verifier-failure', 'verifier-debug-config']
+        header-template: []
+        code-template: |
+            #
+            .function i32 main() {
+                andi 0
+                ldai 0
+        check-type: no-check

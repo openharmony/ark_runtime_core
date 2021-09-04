@@ -1,0 +1,5 @@
+# List of dependencies for building Panda on Ubuntu 20.04
+cmake=3.16.3-*
+g++=4:9.3.0-*
+make=4.2.1-*
+ruby=1:2.7*            # Needed for a framework for automatic code generation written in Ruby

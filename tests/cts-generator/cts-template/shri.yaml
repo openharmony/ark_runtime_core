@@ -1,0 +1,315 @@
+# Copyright (c) 2021 Huawei Device Co., Ltd.
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+---
+definitions: []
+tests:
+  - file-name: shri
+    isa:
+      title: Two address binary operation with immediate on accumulator
+      description: >
+        Perform specified binary operation on accumulator and immediate and store result into accumulator.
+        Immediate is sign extended to operand size.
+      exceptions:
+        - x_none
+    commands:
+      - file-name: op_imm_8_zero
+        isa:
+          instructions:
+            - sig: shri imm:i32
+              acc: inout:i32
+              format: [op_imm_8]
+        code-template: |
+          #
+              ldai 0
+              shri %s
+              movi v0, 0
+              jne v0, set_failure
+              ldai 0
+              jmp fall_through
+          set_failure:
+              ldai 1
+          fall_through:
+        description: Check `shri` with zero and various values.
+        cases:
+          - values: ["0"]
+          - values: ["1"]
+          - values: ["-1"]
+          - values: ["0xF"]
+          - values: ["-0xF"]
+          - values: ["0x7F"]
+          - values: ["-0x7F"]
+          - values: ["0x80"]
+          - values: ["-0x80"]
+          - values: ["0xFF"]
+          - values: ["-0xFF"]
+          - values: ["0x7FFFFFFF"]
+          - values: ["-0x7FFFFFFF"]
+          - values: ["0x80000000"]
+          - values: ["-0x80000000"]
+          - values: ["0xFFFFFFFF"]
+          - values: ["-0xFFFFFFFF"]
+      - file-name: op_imm_8_pone
+        isa:
+          instructions:
+            - sig: shri imm:i32
+              acc: inout:i32
+              format: [op_imm_8]
+        code-template: |
+          #
+              ldai 1
+              shri %s
+              movi v0, %s
+              jne v0, set_failure
+              ldai 0
+              jmp fall_through
+          set_failure:
+              ldai 1
+          fall_through:
+        description: Check `shri` with +1 and various values.
+        cases:
+          - values: ["0", "0x1"]
+          - values: ["1", "0x0"]
+          - values: ["-1", "0x0"]
+          - values: ["0xF", "0x0"]
+          - values: ["-0xF", "0x0"]
+          - values: ["0x7F", "0x0"]
+          - values: ["-0x7F", "0x0"]
+          - values: ["0x80", "0x1"]
+          - values: ["-0x80", "0x1"]
+          - values: ["0xFF", "0x0"]
+          - values: ["-0xFF", "0x0"]
+          - values: ["0x7FFFFFFF", "0x0"]
+          - values: ["-0x7FFFFFFF", "0x0"]
+          - values: ["0x80000000", "0x1"]
+          - values: ["-0x80000000", "0x1"]
+          - values: ["0xFFFFFFFF", "0x0"]
+          - values: ["-0xFFFFFFFF", "0x0"]
+      - file-name: op_imm_8_none
+        isa:
+          instructions:
+            - sig: shri imm:i32
+              acc: inout:i32
+              format: [op_imm_8]
+        code-template: |
+          #
+              ldai -1
+              shri %s
+              movi v0, %s
+              jne v0, set_failure
+              ldai 0
+              jmp fall_through
+          set_failure:
+              ldai 1
+          fall_through:
+        description: Check `shri` with -1 and various values.
+        cases:
+          - values: ["0", "0xFFFFFFFF"]
+          - values: ["1", "0x7FFFFFFF"]
+          - values: ["-1", "0x1"]
+          - values: ["0xF", "0x1FFFF"]
+          - values: ["-0xF", "0x7FFF"]
+          - values: ["0x7F", "0x1"]
+          - values: ["-0x7F", "0x7FFFFFFF"]
+          - values: ["0x80", "0xFFFFFFFF"]
+          - values: ["-0x80", "0xFFFFFFFF"]
+          - values: ["0xFF", "0x1"]
+          - values: ["-0xFF", "0x7FFFFFFF"]
+          - values: ["0x7FFFFFFF", "0x1"]
+          - values: ["-0x7FFFFFFF", "0x7FFFFFFF"]
+          - values: ["0x80000000", "0xFFFFFFFF"]
+          - values: ["-0x80000000", "0xFFFFFFFF"]
+          - values: ["0xFFFFFFFF", "0x1"]
+          - values: ["-0xFFFFFFFF", "0x7FFFFFFF"]
+      - file-name: op_imm_8_pmax
+        isa:
+          instructions:
+            - sig: shri imm:i32
+              acc: inout:i32
+              format: [op_imm_8]
+        code-template: |
+          #
+              ldai 0x7FFFFFFF
+              shri %s
+              movi v0, %s
+              jne v0, set_failure
+              ldai 0
+              jmp fall_through
+          set_failure:
+              ldai 1
+          fall_through:
+        description: Check `shri` with +max and various values.
+        cases:
+          - values: ["0", "0x7FFFFFFF"]
+          - values: ["1", "0x3FFFFFFF"]
+          - values: ["-1", "0x0"]
+          - values: ["0xF", "0xFFFF"]
+          - values: ["-0xF", "0x3FFF"]
+          - values: ["0x7F", "0x0"]
+          - values: ["-0x7F", "0x3FFFFFFF"]
+          - values: ["0x80", "0x7FFFFFFF"]
+          - values: ["-0x80", "0x7FFFFFFF"]
+          - values: ["0xFF", "0x0"]
+          - values: ["-0xFF", "0x3FFFFFFF"]
+          - values: ["0x7FFFFFFF", "0x0"]
+          - values: ["-0x7FFFFFFF", "0x3FFFFFFF"]
+          - values: ["0x80000000", "0x7FFFFFFF"]
+          - values: ["-0x80000000", "0x7FFFFFFF"]
+          - values: ["0xFFFFFFFF", "0x0"]
+          - values: ["-0xFFFFFFFF", "0x3FFFFFFF"]
+      - file-name: op_imm_8_nmax
+        isa:
+          instructions:
+            - sig: shri imm:i32
+              acc: inout:i32
+              format: [op_imm_8]
+        code-template: |
+          #
+              ldai -0x80000000
+              shri %s
+              movi v0, %s
+              jne v0, set_failure
+              ldai 0
+              jmp fall_through
+          set_failure:
+              ldai 1
+          fall_through:
+        description: Check `shri` with -max and various values.
+        cases:
+          - values: ["0", "0x80000000"]
+          - values: ["1", "0x40000000"]
+          - values: ["-1", "0x1"]
+          - values: ["0xF", "0x10000"]
+          - values: ["-0xF", "0x4000"]
+          - values: ["0x7F", "0x1"]
+          - values: ["-0x7F", "0x40000000"]
+          - values: ["0x80", "0x80000000"]
+          - values: ["-0x80", "0x80000000"]
+          - values: ["0xFF", "0x1"]
+          - values: ["-0xFF", "0x40000000"]
+          - values: ["0x7FFFFFFF", "0x1"]
+          - values: ["-0x7FFFFFFF", "0x40000000"]
+          - values: ["0x80000000", "0x80000000"]
+          - values: ["-0x80000000", "0x80000000"]
+          - values: ["0xFFFFFFFF", "0x1"]
+          - values: ["-0xFFFFFFFF", "0x40000000"]
+      - file-name: vals
+        isa:
+          instructions:
+            - sig: shri imm:i32
+              acc: inout:i32
+              format: [op_imm_8]
+        code-template: |
+          #
+              ldai %s
+              shri %s
+              movi v0, %s
+              jne v0, set_failure
+              ldai 0
+              jmp fall_through
+          set_failure:
+              ldai 1
+          fall_through:
+        description: Check `shri` with various values.
+        tags: ['tsan']
+        cases:
+          - values: ["0x63E63B2F", "0xDE8FBBE", "0x1"]
+          - values: ["0xF9F74D5A", "0x26BDAB58", "0xF9"]
+          - values: ["0x81AEE3B9", "0xD8726A65", "0x40D771D"]
+          - values: ["0x9B9557C3", "0x893DB885", "0x4DCAABE"]
+          - values: ["0xC5ED0766", "0xC0015E31", "0x62F6"]
+          - values: ["0xEF4830FD", "0x293BEF21", "0x77A4187E"]
+          - values: ["0x877BAE93", "0x8470A4C9", "0x43BDD7"]
+          - values: ["0x25269B98", "0xF2E48B84", "0x25269B9"]
+          - values: ["0xE970E92F", "0x223079B4", "0xE97"]
+          - values: ["0xC150CCA6", "0x3F4AB3EB", "0x182A19"]
+      - file-name: type
+        bugid: ["964", "966"]
+        tags: ["verifier"]
+        isa:
+          instructions:
+            - sig: shri imm:i32
+              acc: inout:i32
+              format: [op_imm_8]
+          verification:
+            - acc_type
+        runner-options: ['verifier-failure', 'verifier-debug-config']
+        code-template: |
+          #
+              %s
+              shri 1
+              ldai 0
+        check-type: no-check
+        description: Check `shri` with incorrect accumulator type.
+        cases:
+          - values: [fldai.64 0.0]
+          - values: [fldai.64 -0.0]
+          - values: [fldai.64 1.0]
+          - values: [fldai.64 -1.0]
+          - values: [fldai.64 0x7FF8000000000000]
+          - values: [fldai.64 0xFFFFFFFFFFFFFFFF]
+          - values: [fldai.64 0x7FF0000000000000]
+          - values: [fldai.64 0xFFF0000000000000]
+          - values: [fldai.64 0xFFEFFFFFFFFFFFFF]
+          - values: [fldai.64 0x7FEFFFFFFFFFFFFF]
+          - values: [fldai.64 0x0000000000000001]
+          - values: [fldai.64 0x8000000000000001]
+          - values: [fldai.64 3.14159265358979323846]
+          - values: [lda.str ""]
+          - values: [lda.str "some string"]
+          - values: [lda.null]
+          - values: [ldai.64 0]
+          - values: [ldai.64 1]
+          - values: [ldai.64 -1]
+          - values: [ldai.64 0x0000000100000000]
+          - values: [ldai.64 -0x0000000100000000]
+          - values: [ldai.64 0x0000000080000000]
+          - values: [ldai.64 -0x0000000080000000]
+          - values: [ldai.64 0x1000000000000000]
+          - values: [ldai.64 0x8000000000000000]
+          - values: [ldai.64 0xF000000000000000]
+          - values: [ldai.64 0xFFFFFFFF00000000]
+          - values: [ldai.64 0xFFFFFFFFFFFFFFFF]
+          - values: [ldai.64 -0x1000000000000000]
+          - values: [ldai.64 -0x8000000000000000]
+          - values: [ldai.64 -0xF000000000000000]
+          - values: [ldai.64 -0xFFFFFFFF00000000]
+          - values: [ldai.64 -0xFFFFFFFFFFFFFFFF]
+      - file-name: type_obj
+        bugid: ["964", "966"]
+        tags: ["verifier"]
+        isa:
+          instructions:
+            - sig: shri imm:i32
+              acc: inout:i32
+              format: [op_imm_8]
+          verification:
+            - acc_type
+        runner-options: ['verifier-failure', 'verifier-debug-config']
+        description: Check `shri` with incorrect accumulator type.
+        code-template: |
+          #
+          .record Object {}
+          .function i32 main() {
+              %s
+              shri 1
+              ldai 0
+              return
+        check-type: none
+        header-template: []
+        cases:
+          - values: [lda.type Object]
+          - values:
+            - |
+              newobj v0, Object
+              lda.obj v0

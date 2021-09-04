@@ -1,0 +1,583 @@
+# Copyright (c) 2021 Huawei Device Co., Ltd.
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+definitions:
+  - name: obj_param_ctor
+    template: |
+        .record Obj {
+          i32 fld1
+        }
+
+        .function void Obj.ctor(Obj a0, i32 a1) <ctor> {
+            lda a1
+            stobj a0, Obj.fld1
+            return.void
+        }
+  - name: obj_ctor
+    template: |
+        .record Obj {}
+
+        .function void Obj.ctor(Obj a0) <ctor> {
+            return.void
+        }
+  - name: java
+    template: >
+      .language Java
+tests:
+  - file-name: "return.obj"
+    isa:
+      title: Return value from method
+      description: >
+        Return from the current method, i.e. restore the frame of method invoker and return control to the
+        invoker. Return value should be in accumulator.
+      exceptions:
+        - x_none
+    commands:
+      - file-name: "op_none"
+        isa:
+          instructions:
+            - sig: return.obj
+              acc: in:ref
+              format: [op_none]
+        description: Check 'return.obj' returns control flow to caller.
+        tags: ['tsan']
+        header-template: [obj_param_ctor]
+        code-template: |
+          .function Obj func(%s) {
+              movi v0, 0x12345678
+              initobj.short Obj.ctor, v0
+              return.obj
+          }
+
+          .function i32 main() {
+              %s
+              call func%s
+              sta.obj v0
+              ldobj v0, Obj.fld1
+              movi v1, 0x12345678
+              jne v1, set_failure
+              ldai 0
+              jmp fall_through
+          set_failure:
+              ldai 1
+          fall_through:
+        cases:
+          - values:
+              - ''
+              - ''
+              - ''
+
+          - values:
+              - 'i32 a0'
+              - 'movi v0, 0x12345678'
+              - ', v0'
+
+          - values:
+              - 'i32 a0, f64 a1'
+              - |
+                #
+                    movi v0, 0
+                    fmovi.64 v1, 1.2
+              - ', v0, v1'
+          - values:
+              - 'i32 a0, f64 a1, i64 a2'
+              - |
+                #
+                    movi v0, 0
+                    fmovi.64 v1, 1.2
+                    movi.64 v2, 0xFF
+              - ', v0, v1, v2'
+
+          - values:
+              - 'i32 a0, f64 a1, i64 a2, Obj a3'
+              - |
+                #
+                    movi v0, 0
+                    fmovi.64 v1, 1.2
+                    movi.64 v2, 0xFF
+                    mov.null v3
+              - ', v0, v1, v2, v3'
+
+      - file-name: "op_none_null"
+        isa:
+          instructions:
+            - sig: return.obj
+              acc: in:ref
+              format: [op_none]
+        description: Check 'return.obj' returns control flow to caller.
+        header-template: [obj_param_ctor]
+        code-template: |
+          .function Obj func(%s) {
+              lda.null
+              return.obj
+          }
+
+          .function i32 main() {
+              %s
+              call func%s
+              mov.null v0
+              jne.obj v0, return_ne_num
+              ldai 0
+              return
+          return_ne_num:
+              ldai 1
+              return
+        cases:
+          - values:
+              - ''
+              - ''
+              - ''
+
+          - values:
+              - 'i32 a0'
+              - 'movi v0, 0x12345678'
+              - ', v0'
+
+          - values:
+              - 'i32 a0, f64 a1'
+              - |
+                #
+                    movi v0, 0
+                    fmovi.64 v1, 1.2
+              - ', v0, v1'
+          - values:
+              - 'i32 a0, f64 a1, i64 a2'
+              - |
+                #
+                    movi v0, 0
+                    fmovi.64 v1, 1.2
+                    movi.64 v2, 0xFF
+              - ', v0, v1, v2'
+
+          - values:
+              - 'i32 a0, f64 a1, i64 a2, Obj a3'
+              - |
+                #
+                    movi v0, 0
+                    fmovi.64 v1, 1.2
+                    movi.64 v2, 0xFF
+                    mov.null v3
+              - ', v0, v1, v2, v3'
+
+      - file-name: "type_null"
+        tags: [verifier]
+        bugid: ['1324']
+        runner-options: ['verifier-failure', 'verifier-debug-config']
+        isa:
+          instructions:
+            - sig: return.obj
+              acc: in:ref
+              format: [op_none]
+          verification:
+            - acc_return_type
+        header-template: []
+        code-template: |
+          .function %s func() {
+              lda.null
+              return.obj
+          }
+
+          .function i32 main() {
+              call.short func
+        check-type: exit-positive
+        description: Check 'return.obj' is used in function with not object return type and null value.
+        cases:
+          - values: [void]
+          - values: [i32]
+          - values: [i64]
+          - values: [f64]
+
+      - file-name: "type"
+        tags: [verifier]
+        bugid: ['1324']
+        runner-options: ['verifier-failure', 'verifier-debug-config']
+        isa:
+          instructions:
+            - sig: return.obj
+              acc: in:ref
+              format: [op_none]
+          verification:
+            - acc_return_type
+        header-template: [obj_ctor]
+        code-template: |
+          .function %s func() {
+              initobj Obj.ctor
+              return.obj
+          }
+
+          .function i32 main() {
+              call.short func
+        check-type: exit-positive
+        description: Check 'return.obj' is used in function with not object return type.
+        cases:
+          - values: [void]
+          - values: [i32]
+          - values: [i64]
+          - values: [f64]
+
+      - file-name: "wrong_return"
+        tags: [verifier]
+        runner-options: ['verifier-failure', 'verifier-debug-config']
+        isa:
+          instructions:
+            - sig: return.obj
+              acc: in:ref
+              format: [op_none]
+        header-template: [obj_ctor]
+        code-template: |
+          .function Obj func() {
+              initobj Obj.ctor
+              %s
+          }
+
+          .function i32 main() {
+              call.short func
+        check-type: exit-positive
+        description: Check the verifier behavior when expected 'return.obj' is not given.
+        cases:
+          - values: [""]
+          - values: ["return.void"]
+          - values: ["return"]
+          - values: ["return.64"]
+
+      - file-name: "regs_restore"
+        isa:
+          instructions:
+            - sig: return.obj
+              acc: in:ref
+              format: [op_none]
+        header-template: [obj_ctor]
+        code-template: |
+          .function Obj func(%s) {
+              %s
+              initobj.short Obj.ctor
+              return.obj
+          }
+
+          .function i32 main() {
+              %s
+              call func%s
+              %s
+        description: Check that after 'return.obj' register are restored in caller.
+        cases:
+          - values:
+              - ''
+              - ''
+              - 'movi v0, 0x12345678'
+              - ''
+              - |
+                #
+                    ldai 0x12345678
+                    jne v0, set_failure
+                    ldai 0
+                    jmp fall_through
+                set_failure:
+                    ldai 1
+                fall_through:
+            description: "Register is not used in function."
+          - values:
+              - 'i32 a0'
+              - 'movi v0, 0x87654321'
+              - 'movi v0, 0x12345678'
+              - ', v0'
+              - |
+                #
+                    ldai 0x12345678
+                    jne v0, set_failure
+                    ldai 0
+                    jmp fall_through
+                set_failure:
+                    ldai 1
+                fall_through:
+            description: "Register is used in function."
+          - values:
+              - 'i32 a0'
+              - ''
+              - 'movi v0, 0x12345678'
+              - ', v0'
+              - |
+                #
+                    ldai 0x12345678
+                    jne v0, set_failure
+                    ldai 0
+                    jmp fall_through
+                set_failure:
+                    ldai 1
+                fall_through:
+            description: "Register is not used in function."
+          - values:
+              - 'f64 a0, i64 a1'
+              - |
+                #
+                    fmovi.64 v0, 0
+                    movi.64 v1, 0
+              - |
+                #
+                    fmovi.64 v0, 3.1415926535
+                    movi.64 v1, 0x123456789ABCDEF0
+              - ', v0, v1'
+              - |
+                #
+                    fldai.64 3.1415926535
+                    fcmpg.64 v0
+                    jeqz check2
+                    ldai 1
+                    return
+                check2:
+                    ldai.64 0x123456789ABCDEF0
+                    cmp.64 v1
+            description: "Registers are used in function."
+          - values:
+              - 'f64 a0, i64 a1, i32 a2, f64 a3'
+              - |
+                #
+                    fmovi.64 v0, 0
+                    movi.64 v1, 0
+                    movi v2, 0
+                    fmovi.64 v3, 0
+              - |
+                #
+                    fmovi.64 v0, 3.1415926535
+                    movi.64 v1, 0x123456789ABCDEF0
+                    movi v2, 123456789
+                    fmovi.64 v3, 0x8000000000000001
+              - ', v0, v1, v2, v3'
+              - |
+                #
+                    fldai.64 3.1415926535
+                    fcmpg.64 v0
+                    jeqz check1
+                    ldai 1
+                    return
+                check1:
+                    ldai.64 0x123456789ABCDEF0
+                    cmp.64 v1
+                    jeqz check2
+                    ldai 1
+                    return
+                check2:
+                    ldai 123456789
+                    jeq v2, check3
+                    ldai 1
+                    return
+                check3:
+                    fldai.64 0x8000000000000001
+                    fcmpg.64 v3
+            description: "Registers are used in function."
+
+      - file-name: "static_return_type_arr"
+        isa:
+          instructions:
+            - sig: return.obj
+              acc: in:ref
+              format: [op_none]
+          verification:
+            - acc_return_type
+        header-template: []
+        code-template: |
+          # Records definition to all tests in group.
+          .record panda.Object <external>
+          .record panda.String <external>
+          .record panda.Class <external>
+          .record A {}
+          %s
+
+          .function %s %sfunc(%s a0) <static> {
+              %s
+              lda.obj a0
+              return.obj
+          }
+
+          .function i32 main() {
+              movi v0, 123
+              newarr v0, v0, *s
+              call.short %sfunc, v0
+              %s
+              jne.obj v0, return_ne_num
+              ldai 0
+              return
+          return_ne_num:
+              ldai 1
+              return
+        template-cases:
+          - values:
+              - '##-'
+              - 'panda.Object'
+              - ''
+              - 'panda.Object'
+              - "##- %s %s - this line will be removed"
+              - ''
+              - |
+                #
+                    sta.obj v2
+                    isinstance %s
+                    movi v1, 1
+                    jeq v1, check_val
+                    ldai 1
+                    return
+                check_val:
+                    lda.obj v2
+            bugid: ['1805']
+          - values:
+              - |
+                .record B {}
+              - 'panda.Object'
+              - 'B.'
+              - 'panda.Object'
+              - "##- %s %s - this line will be removed"
+              - 'B.'
+              - |
+                #
+                    sta.obj v2
+                    isinstance %s
+                    movi v1, 1
+                    jeq v1, check_val
+                    ldai 1
+                    return
+                check_val:
+                    lda.obj v2
+            bugid: ['1805']
+          - values:
+              - '##-'
+              - '%s'
+              - ''
+              - '%s'
+              - '##-'
+              - ''
+              - ''
+          - values:
+              - |
+                .record B {}
+              - '%s'
+              - 'B.'
+              - '%s'
+              - ''
+              - 'B.'
+              - ''
+        description: Check 'return.obj' return object with different types.
+        cases:
+          - values: ['u1[]', 'u1[]', 'u1[]', 'u1[]']
+          - values: ['u8[]', 'u8[]', 'u8[]', 'u8[]']
+          - values: ['i8[]', 'i8[]', 'i8[]', 'i8[]']
+          - values: ['u16[]', 'u16[]', 'u16[]', 'u16[]']
+          - values: ['i16[]', 'i16[]', 'i16[]', 'i16[]']
+          - values: ['i32[]', 'i32[]', 'i32[]', 'i32[]']
+          - values: ['i64[]', 'i64[]', 'i64[]', 'i64[]']
+          - values: ['f64[]', 'f64[]', 'f64[]', 'f64[]']
+          - values:
+              - 'panda.Object[]'
+              - 'panda.Object[]'
+              - 'panda.Object[]'
+              - 'panda.Object[]'
+          - values:
+              - 'panda.String[]'
+              - 'panda.String[]'
+              - 'panda.String[]'
+              - 'panda.String[]'
+          - values:
+              - 'panda.Class[]'
+              - 'panda.Class[]'
+              - 'panda.Class[]'
+              - 'panda.Class[]'
+          - values: ['A[]', 'A[]', 'A[]', 'A[]']
+
+      - file-name: "virt_return_type_arr"
+        isa:
+          instructions:
+            - sig: return.obj
+              acc: in:ref
+              format: [op_none]
+          verification:
+            - acc_return_type
+        header-template: []
+        code-template: |
+          # Records definition to all tests in group.
+          .record panda.Object <external>
+          .record panda.String <external>
+          .record panda.Class <external>
+          .record A {}
+          .record B {}
+
+          .function void B.ctor(B a0) <ctor> {
+              return.void
+          }
+
+          .function %s B.func(B a0, %s a1) {
+              %s
+              lda.obj a1
+              return.obj
+          }
+
+          .function i32 main() {
+              movi v0, 123
+              newarr v0, v0, *s
+              initobj B.ctor
+              sta.obj v3
+              call.virt.short B.func, v3, v0
+              %s
+              jne.obj v0, return_ne_num
+              ldai 0
+              return
+          return_ne_num:
+              ldai 1
+              return
+        template-cases:
+          - values:
+              - 'panda.Object'
+              - 'panda.Object'
+              - "##- %s %s - this line will be removed"
+              - |
+                #
+                    sta.obj v2
+                    isinstance %s
+                    movi v1, 1
+                    jeq v1, check_val
+                    ldai 1
+                    return
+                check_val:
+                    lda.obj v2
+            bugid: ['1805']
+
+          - values:
+              - '%s'
+              - '%s'
+              - '##-'
+              - ''
+
+        description: Check 'return.obj' return object from virtual method with different types.
+        cases:
+          - values: ['u1[]', 'u1[]', 'u1[]', 'u1[]']
+          - values: ['u8[]', 'u8[]', 'u8[]', 'u8[]']
+          - values: ['i8[]', 'i8[]', 'i8[]', 'i8[]']
+          - values: ['u16[]', 'u16[]', 'u16[]', 'u16[]']
+          - values: ['i16[]', 'i16[]', 'i16[]', 'i16[]']
+          - values: ['i32[]', 'i32[]', 'i32[]', 'i32[]']
+          - values: ['i64[]', 'i64[]', 'i64[]', 'i64[]']
+          - values: ['f64[]', 'f64[]', 'f64[]', 'f64[]']
+          - values:
+              - 'panda.Object[]'
+              - 'panda.Object[]'
+              - 'panda.Object[]'
+              - 'panda.Object[]'
+          - values:
+              - 'panda.String[]'
+              - 'panda.String[]'
+              - 'panda.String[]'
+              - 'panda.String[]'
+          - values:
+              - 'panda.Class[]'
+              - 'panda.Class[]'
+              - 'panda.Class[]'
+              - 'panda.Class[]'
+          - values: ['A[]', 'A[]', 'A[]', 'A[]']
+

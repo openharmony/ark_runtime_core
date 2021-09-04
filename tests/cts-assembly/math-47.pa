@@ -1,0 +1,46 @@
+# Copyright (c) 2021 Huawei Device Co., Ltd.
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+.record panda.String <external>
+.record panda.ArithmeticException <external>
+.record IO <external>
+
+.function panda.String panda.ArithmeticException.getMessage(panda.ArithmeticException a0) <external>
+.function void IO.printString(panda.String a0) <external>
+
+# check ArithmeticException in case of division by zero
+
+.function u1 main() {
+    movi v0, 1
+    movi v1, 0
+try_begin:
+    div v0, v1
+    ldai 2
+    return
+try_end:
+
+catch_block1_begin:
+    sta.obj v0
+    call.virt panda.ArithmeticException.getMessage, v0
+    sta.obj v0
+    call IO.printString, v0
+    ldai 0
+    return
+
+catch_block2_begin:
+    ldai 1
+    return
+
+.catch panda.ArithmeticException, try_begin, try_end, catch_block1_begin
+.catchall try_begin, try_end, catch_block2_begin
+}

@@ -1,0 +1,48 @@
+# Copyright (c) 2021 Huawei Device Co., Ltd.
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+# Assert that operations with i64 arrays work properly.
+#i64 i;
+#for(i=0; i<5; i++) array[i]=i;
+#for(i=4; i>=0; i--) assert_eq(i, array[i]);
+
+.function u1 main(){
+    movi v0, 5    #sizeof(array)
+    newarr v1, v0, i64[]
+    movi v2, 0
+    ldai 0
+loop:
+    jeq v0, loop_exit
+    i32toi64
+    starr.64 v1, v2
+    inci v2, 1
+    lda v2
+    jmp loop
+loop_exit:
+    subi 1
+    sta v2
+loop2:
+    jltz loop2_exit
+    ldarr.64 v1
+    i64toi32
+    jne v2, exit_failure
+    inci v2, -1
+    lda v2
+    jmp loop2
+loop2_exit:
+    ldai 0
+    return
+exit_failure:
+    ldai 1
+    return
+}

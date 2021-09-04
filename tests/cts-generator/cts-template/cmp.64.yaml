@@ -1,0 +1,328 @@
+# Copyright (c) 2021 Huawei Device Co., Ltd.
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+definitions: []
+tests:
+  - file-name: "cmp.64"
+    isa:
+      title: Integer comparison
+      description: Perform specified signed or unsigned integer comparison between register and accumulator.
+      exceptions:
+        - x_none
+    commands:
+      - file-name: "op_vs_8_eq"
+        isa:
+          instructions:
+            - sig: cmp.64 v:in:i64
+              acc: inout:i64->i32
+              format: [op_v_8]
+        check-type: check-positive
+        description: Check cmp.64 with equal values.
+        tags: ['tsan']
+        code-template: |
+            # test - compare equal values
+                ldai.64 %s
+                movi.64 v0, %s
+                cmp.64 v0
+        cases:
+          - values:
+              - "0"
+              - "0"
+          - values:
+              - "1"
+              - "1"
+          - values:
+              - "-1"
+              - "-1"
+          - values:
+              - "0x7fffffff"
+              - "0x7fffffff"
+          - values:
+              - "-0x7fffffff"
+              - "-0x7fffffff"
+          - values:
+              - "0x80000000"
+              - "0x80000000"
+          - values:
+              - "-0x80000000"
+              - "-0x80000000"
+          - values:
+              - "0xffffffff"
+              - "0xffffffff"
+          - values:
+              - "-0xffffffff"
+              - "-0xffffffff"
+          - values:
+              - "0x7fffffffffffffff"
+              - "0x7fffffffffffffff"
+          - values:  
+              - "-9223372036854775808"
+              - "0x8000000000000000"
+
+      - file-name: "op_vs_8_lt"
+        isa:
+          instructions:
+            - sig: cmp.64 v:in:i64
+              acc: inout:i64->i32
+              format: [op_v_8]
+        check-type: check-positive
+        description: Check cmp.64 with different values.
+        tags: ['tsan']
+        code-template: |
+          # test - check less than
+                ldai.64 %s
+                movi.64 v0, %s
+                cmp.64 v0
+                addi 1
+        cases:
+          - values:
+            - "0"
+            - "0x0000000000000001"
+          - values:
+            - "-1"
+            - "0"
+          - values:
+            - "9223372036854775707"
+            - "9223372036854775807"
+          - values:
+            - "0x8000000000000000"
+            - "0x7fffffffffffffff"
+          - values:
+            - "0x8000000000000000"
+            - "0x8000000000000001"  
+          - values:
+            - "-2"
+            - "0xffffffffffffffff"
+          - values:
+            - "0x7ffffffffffffffe"  
+            - "9223372036854775807"
+          - values:  
+            - "65535"
+            - "0x00010000"
+
+      - file-name: "op_vs_8_gt"
+        isa:
+          instructions:
+            - sig: cmp.64 v:in:i64
+              acc: inout:i64->i32
+              format: [op_v_8]
+        check-type: check-positive
+        description: Check cmp.64 with different values.
+        tags: ['tsan']
+        code-template: |
+          #   test - check greater than
+                ldai.64 %s
+                movi.64 v0, %s
+                cmp.64 v0
+                subi 1
+        cases:
+          - values:
+            - "0x0000000000000001"
+            - "0"
+          - values:
+            - "0"
+            - "-1"
+          - values:
+            - "9223372036854775807"
+            - "9223372036854775707"
+          - values:
+            - "0x7fffffffffffffff"
+            - "0x8000000000000000"
+          - values:
+            - "0x8000000000000001"  
+            - "0x8000000000000000"
+          - values:
+            - "0xffffffffffffffff"
+            - "-2"
+          - values:
+            - "9223372036854775807"
+            - "0x7ffffffffffffffe"  
+          - values:  
+            - "0x00010000"
+            - "65535"
+
+      - file-name: "op_vs_8_reg256"
+        isa:
+          instructions:
+            - sig: cmp.64 v:in:i64
+              acc: inout:i64->i32
+              format: [op_v_8]
+        check-type: none
+        runner-options: [compile-failure]
+        description: Check cmp.64 with incorrect register numbers.
+        code-template: |
+          #
+              cmp.64 v256
+
+      - file-name: "op_vs_8_reg255"
+        isa:
+          instructions:
+            - sig: cmp.64 v:in:i64
+              acc: inout:i64->i32
+              format: [op_v_8]
+        check-type: none
+        runner-options: [compile-only]
+        description: Check cmp.64 with correct register numbers.
+        code-template: |
+          #
+              cmp.64 v255
+
+      - file-name: type
+        isa:
+          instructions:
+            - sig: cmp.64 v:in:i64
+              acc: inout:i64->i32
+              format: [op_v_8]
+          verification:
+            - v1_type
+            - acc_type
+        tags: ['verifier']
+        runner-options: ['verifier-failure', 'verifier-debug-config']
+        header-template: []
+        code-template: |
+          #
+          .record A {}
+          .record B {}
+          .record panda.String <external>
+          .record panda.Object <external>
+          .function i32 main() {
+              %s
+              *s
+              cmp.64 v0
+        check-type: exit-positive
+        description: Check 'cmp.64' with incorrect register type.
+        template-cases:
+          - values:
+              - movi v0, 0
+          - values:
+              - movi.64 v0, 0
+            exclude: [val]
+          - values:
+              - fmovi.64 v0, 0
+          - values:
+              - |
+                #
+                    lda.type B
+                    sta.obj v0
+          - values:
+              - |
+                #
+                    lda.type B[]
+                    sta.obj v0
+          - values:
+              - |
+                #
+                    lda.type panda.String
+                    sta.obj v0
+          - values:
+              - |
+                #
+                    lda.str "string"
+                    sta.obj v0
+          - values:
+              - |
+                #
+                    movi v0, 10
+                    newarr v0, v0, i32[]
+          - values:
+              - mov.null v0
+
+        cases:
+          - values:
+              - ldai 0
+          - values:
+              - ldai.64 0
+            id: val
+          - values:
+              - fldai.64 0
+          - values:
+              - |
+                #
+                    lda.type A
+          - values:
+              - |
+                #
+                    lda.type A[]
+          - values:
+              - |
+                #
+                    lda.type panda.String
+          - values:
+              - |
+                #
+                    lda.str "string"
+          - values:
+              - |
+                #
+                    movi v1, 10
+                    newarr v1, v1, f64[]
+                    lda.obj v1
+
+          - values:
+              - lda.null
+
+      - file-name: uninitialized_regs
+        isa:
+          instructions:
+            - sig: cmp.64 v:in:i64
+              acc: inout:i64->i32
+              format: [op_v_8]
+        description: Check 'cmp.64' with uninitialized registers.
+        tags: ['verifier']
+        runner-options: ['verifier-failure', 'verifier-debug-config']
+        header-template: []
+        code-template: |
+            #
+            .function i32 main() {
+                %s
+                *s
+                cmp.64 %s
+        check-type: exit-positive
+        template-cases:
+          - values:
+              - ''
+              - v0
+          - values:
+              - movi.64 v0, 0
+              - v0
+            exclude: [init]
+          - values:
+              - ''
+              - v7
+          - values:
+              - ''
+              - v15
+          - values:
+              - 'movi.64 v15, 0'
+              - v15
+            exclude: [init]
+          - values:
+              - ''
+              - v128
+          - values:
+              - 'movi.64 v128, 0'
+              - v128
+            exclude: [init]
+          - values:
+              - ''
+              - v255
+          - values:
+              - 'movi.64 v255, 0'
+              - v255
+            exclude: [init]
+        cases:
+          - values:
+              - ''
+          - values:
+              - ldai.64 0
+            id: init

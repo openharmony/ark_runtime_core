@@ -1,0 +1,507 @@
+# Copyright (c) 2021 Huawei Device Co., Ltd.
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+.record Math <external>
+.record IO <external>
+.record Globals{
+    f64 SOLAR_MASS <static>
+    f64 DAYS_PER_YEAR <static>
+}
+
+.record Body{
+    f64 x
+    f64 y
+    f64 z
+    f64 vx
+    f64 vy
+    f64 vz
+    f64 mass
+}
+
+.function f64 Math.sqrt(f64 a0) <external>
+.function f64 Math.absF64(f64 a0) <external>
+.function u1 main(){
+    fldai.64 365.24
+    ststatic Globals.DAYS_PER_YEAR
+    fmovi.64 v3, 3.141592653589793
+    fldai.64 4.0
+    fmul2.64 v3
+    fmul2.64 v3
+    ststatic Globals.SOLAR_MASS
+    movi v0, 3
+    movi v1, 15000
+    fmovi.64 v2, -4.395717154909567
+    call test, v0, v1, v2
+    return
+}
+
+.function u1 test(i32 a0, i32 a1, f64 a2){
+    fmovi.64 v0, 0.0                       #ret
+    fmovi.64 v6, 0.01
+    movi v2, 5
+    mov v1, a0                            #loop_counter
+    lda v1
+loop:
+    jgt a1, loop_exit
+    newarr v4, v2, Body[]
+    movi v3, 0
+    call.short Sun
+    starr.obj v4, v3
+    inci v3, 1
+    call.short Jupiter
+    starr.obj v4, v3
+    inci v3, 1
+    call.short Saturn
+    starr.obj v4, v3
+    inci v3, 1
+    call.short Uranus
+    starr.obj v4, v3
+    inci v3, 1
+    call.short Neptune
+    starr.obj v4, v3
+    call.short NBodySystem, v4
+    lda v1
+    muli 100
+    sta v3                              #max
+    call.short energy, v4
+    fadd2.64 v0
+    sta.64 v0
+    movi v5, 0
+loop2:
+    lda v5
+    jeq v3, loop2_exit
+    call.short advance, v4, v6
+    inci v5, 1
+    jmp loop2
+loop2_exit:
+    call.short energy, v4
+    fadd2.64 v0
+    sta.64 v0
+    lda v1
+    muli 2
+    sta v1
+    jmp loop
+loop_exit:
+    lda.64 v0
+    fsub2.64 a2
+    sta.64 v0
+    call.short Math.absF64, v0
+    fldai.64 1e-13
+    fcmpl.64 v0
+    jltz exit_failure
+    ldai 0
+    return
+exit_failure:
+    ldai 1
+    return
+}
+
+.function void BodyInit(Body a0, f64 a1, f64 a2, f64 a3, f64 a4, f64 a5, f64 a6, f64 a7){
+    lda.64 a1
+    stobj a0, Body.x
+    lda.64 a2
+    stobj a0, Body.y
+    lda.64 a3
+    stobj a0, Body.z
+    lda.64 a4
+    stobj a0, Body.vx
+    lda.64 a5
+    stobj a0, Body.vy
+    lda.64 a6
+    stobj a0, Body.vz
+    lda.64 a7
+    stobj a0, Body.mass
+    return.void
+}
+
+.function Body Jupiter(){
+    ldstatic Globals.DAYS_PER_YEAR
+    sta.64 v8
+    ldstatic Globals.SOLAR_MASS
+    sta.64 v9
+    newobj v0, Body
+    fmovi.64 v1, 4.84143144246472090e+00
+    fmovi.64 v2, -1.16032004402742839e+00
+    fmovi.64 v3, -1.03622044471123109e-01
+    fldai.64 1.66007664274403694e-03
+    fmul2.64 v8
+    sta.64 v4
+    fldai.64 7.69901118419740425e-03
+    fmul2.64 v8
+    sta.64 v5
+    fldai.64 -6.90460016972063023e-05
+    fmul2.64 v8
+    sta.64 v6
+    fldai.64 9.54791938424326609e-04
+    fmul2.64 v9
+    sta.64 v7
+    call.range BodyInit, v0
+    lda.obj v0
+    return.obj
+}
+
+.function Body Saturn(){
+    ldstatic Globals.DAYS_PER_YEAR
+    sta.64 v8
+    ldstatic Globals.SOLAR_MASS
+    sta.64 v9
+    newobj v0, Body
+    fmovi.64 v1, 8.34336671824457987e+00
+    fmovi.64 v2, 4.12479856412430479e+00
+    fmovi.64 v3, -4.03523417114321381e-01
+    fldai.64 -2.76742510726862411e-03
+    fmul2.64 v8
+    sta.64 v4
+    fldai.64 4.99852801234917238e-03
+    fmul2.64 v8
+    sta.64 v5
+    fldai.64 2.30417297573763929e-05
+    fmul2.64 v8
+    sta.64 v6
+    fldai.64 2.85885980666130812e-04
+    fmul2.64 v9
+    sta.64 v7
+    call.range BodyInit, v0
+    lda.obj v0
+    return.obj
+}
+
+.function Body Uranus(){
+    ldstatic Globals.DAYS_PER_YEAR
+    sta.64 v8
+    ldstatic Globals.SOLAR_MASS
+    sta.64 v9
+    newobj v0, Body
+    fmovi.64 v1, 1.28943695621391310e+01
+    fmovi.64 v2, -1.51111514016986312e+01
+    fmovi.64 v3, -2.23307578892655734e-01
+    fldai.64 2.96460137564761618e-03
+    fmul2.64 v8
+    sta.64 v4
+    fldai.64 2.37847173959480950e-03
+    fmul2.64 v8
+    sta.64 v5
+    fldai.64 -2.96589568540237556e-05
+    fmul2.64 v8
+    sta.64 v6
+    fldai.64 4.36624404335156298e-05
+    fmul2.64 v9
+    sta.64 v7
+    call.range BodyInit, v0
+    lda.obj v0
+    return.obj
+}
+
+.function Body Neptune(){
+    ldstatic Globals.DAYS_PER_YEAR
+    sta.64 v8
+    ldstatic Globals.SOLAR_MASS
+    sta.64 v9
+    newobj v0, Body
+    fmovi.64 v1, 1.53796971148509165e+01
+    fmovi.64 v2, -2.59193146099879641e+01
+    fmovi.64 v3, 1.79258772950371181e-01
+    fldai.64 2.68067772490389322e-03
+    fmul2.64 v8
+    sta.64 v4
+    fldai.64 1.62824170038242295e-03
+    fmul2.64 v8
+    sta.64 v5
+    fldai.64 -9.51592254519715870e-05
+    fmul2.64 v8
+    sta.64 v6
+    fldai.64 5.15138902046611451e-05
+    fmul2.64 v9
+    sta.64 v7
+    call.range BodyInit, v0
+    lda.obj v0
+    return.obj
+}
+
+.function Body Sun(){
+    ldstatic Globals.SOLAR_MASS
+    sta.64 v7
+    newobj v0, Body
+    fmovi.64 v1, 0.0
+    fmovi.64 v2, 0.0
+    fmovi.64 v3, 0.0
+    fmovi.64 v4, 0.0
+    fmovi.64 v5, 0.0
+    fmovi.64 v6, 0.0
+    call.range BodyInit, v0
+    lda.obj v0
+    return.obj
+}
+
+.function Body offsetMomentum(Body a0, f64 a1, f64 a2, f64 a3){
+    ldstatic Globals.SOLAR_MASS
+    sta.64 v0
+    lda.64 a1
+    fneg.64
+    fdiv2.64 v0
+    stobj a0, Body.vx
+    lda.64 a2
+    fneg.64
+    fdiv2.64 v0
+    stobj a0, Body.vy
+    lda.64 a3
+    fneg.64
+    fdiv2.64 v0
+    stobj a0, Body.vz
+    lda.obj a0
+    return.obj
+}
+
+.function void NBodySystem(Body[] a0){
+    fmovi.64 v0, 0.0       #px
+    fmovi.64 v1, 0.0       #py
+    fmovi.64 v2, 0.0       #pz
+    lenarr a0
+    sta v3             #size
+    movi v4, 0         #loop_counter
+loop:
+    lda v4
+    jeq v3, loop_exit
+    ldarr.obj a0
+    sta.obj v5
+    ldobj v5, Body.mass
+    sta.64 v6            #m
+    ldobj v5, Body.vx
+    fmul2.64 v6
+    fadd2.64 v0
+    sta.64 v0
+    ldobj v5, Body.vy
+    fmul2.64 v6
+    fadd2.64 v1
+    sta.64 v1
+    ldobj v5, Body.vz
+    fmul2.64 v6
+    fadd2.64 v2
+    sta.64 v2
+    inci v4, 1
+    jmp loop
+loop_exit:
+    ldai 0
+    ldarr.obj a0
+    sta.obj v5
+    call offsetMomentum, v5, v0, v1, v2
+    return.void
+}
+
+.function void advance(Body[] a0, f64 a1){
+    lenarr a0
+    sta v0           #size
+    movi v1, 0        #loop counter
+loop:
+    lda v1
+    jeq v0, loop_exit
+    ldarr.obj a0
+    sta.obj v2             #bodyi
+    lda v1
+    addi 1
+    sta v3
+loop2:
+    lda v3
+    jeq v0, loop2_exit
+    ldarr.obj a0
+    sta.obj v4             #bodyj
+    ldobj v4, Body.x
+    sta.64 v5
+    ldobj v2, Body.x
+    fsub2.64 v5
+    sta.64 v6               #dx 
+    ldobj v4, Body.y
+    sta.64 v5
+    ldobj v2, Body.y
+    fsub2.64 v5
+    sta.64 v7               #dy
+    ldobj v4, Body.z
+    sta.64 v5
+    ldobj v2, Body.z
+    fsub2.64 v5
+    sta.64 v8               #dz
+    fmul2.64 v8
+    sta.64 v9
+    lda.64 v6
+    fmul2.64 v6
+    sta.64 v10
+    lda.64 v7
+    fmul2.64 v7
+    fadd2.64 v9
+    fadd2.64 v10
+    sta.64 v9
+    call.short Math.sqrt, v9
+    sta.64 v9               #distance
+    fmul2.64 v9
+    fmul2.64 v9
+    sta.64 v10
+    lda.64 a1
+    fdiv2.64 v10
+    sta.64 v10               #mag
+    ldobj v4, Body.mass
+    fmul2.64 v10
+    sta.64 v11
+    fmul2.64 v6
+    sta.64 v12
+    ldobj v2, Body.vx
+    fsub2.64 v12
+    stobj v2, Body.vx
+    lda.64 v11
+    fmul2.64 v7
+    sta.64 v12
+    ldobj v2, Body.vy
+    fsub2.64 v12
+    stobj v2, Body.vy
+    lda.64 v11
+    fmul2.64 v8
+    sta.64 v12
+    ldobj v2, Body.vz
+    fsub2.64 v12
+    stobj v2, Body.vz
+    ldobj v2, Body.mass
+    fmul2.64 v10
+    sta.64 v11
+    fmul2.64 v6
+    sta.64 v12
+    ldobj v4, Body.vx
+    fadd2.64 v12
+    stobj v4, Body.vx
+    lda.64 v11
+    fmul2.64 v7
+    sta.64 v12
+    ldobj v4, Body.vy
+    fadd2.64 v12
+    stobj v4, Body.vy
+    lda.64 v11
+    fmul2.64 v8
+    sta.64 v12
+    ldobj v4, Body.vz
+    fadd2.64 v12
+    stobj v4, Body.vz
+    inci v3, 1
+    jmp loop2
+loop2_exit:
+    inci v1, 1
+    jmp loop
+loop_exit:
+    movi v1, 0
+loop3:
+    lda v1
+    jeq v0, loop3_exit
+    ldarr.obj a0
+    sta.obj v2          #body
+    ldobj v2, Body.vx
+    fmul2.64 a1
+    sta.64 v12
+    ldobj v2, Body.x
+    fadd2.64 v12
+    stobj v2, Body.x
+    ldobj v2, Body.vy
+    fmul2.64 a1
+    sta.64 v12
+    ldobj v2, Body.y
+    fadd2.64 v12
+    stobj v2, Body.y
+    ldobj v2, Body.vz
+    fmul2.64 a1
+    sta.64 v12
+    ldobj v2, Body.z
+    fadd2.64 v12
+    stobj v2, Body.z
+    inci v1, 1
+    jmp loop3
+loop3_exit:
+    return.void
+}
+
+.function f64 energy(Body[] a0){
+    lenarr a0
+    sta v0                      #size
+    fmovi.64 v1, 0.0                #e
+    movi v2, 0
+loop:
+    lda v2
+    jeq v0, loop_exit
+    ldarr.obj a0
+    sta.obj v3                  #bodyi
+    ldobj v3, Body.vx
+    sta.64 v4
+    fmul2.64 v4
+    sta.64 v4
+    ldobj v3, Body.vy
+    sta.64 v5
+    fmul2.64 v5
+    sta.64 v5
+    ldobj v3, Body.vz
+    sta.64 v6
+    fmul2.64 v6
+    fadd2.64 v5
+    fadd2.64 v4
+    sta.64 v4
+    fmovi.64 v5, 0.5
+    ldobj v3, Body.mass
+    fmul2.64 v4
+    fmul2.64 v5
+    fadd2.64 v1
+    sta.64 v1
+    lda v2
+    addi 1
+    sta v7
+loop2:
+    lda v7
+    jeq v0, loop2_exit
+    ldarr.obj a0
+    sta.obj v8                      #bodyj
+    ldobj v8, Body.x
+    sta.64 v4
+    ldobj v3, Body.x
+    fsub2.64 v4
+    sta.64 v5                     #dx
+    fmul2.64 v5
+    sta.64 v5
+    ldobj v8, Body.y
+    sta.64 v4
+    ldobj v3, Body.y
+    fsub2.64 v4
+    sta.64 v6                     #dy
+    fmul2.64 v6
+    sta.64 v6
+    ldobj v8, Body.z
+    sta.64 v4
+    ldobj v3, Body.z
+    fsub2.64 v4
+    sta.64 v10                      #dz
+    fmul2.64 v10
+    fadd2.64 v6
+    fadd2.64 v5
+    sta.64 v5
+    call.short Math.sqrt, v5
+    sta.64 v5                       #distance
+    ldobj v3, Body.mass
+    sta.64 v6
+    ldobj v8, Body.mass
+    fmul2.64 v6
+    fdiv2.64 v5
+    sta.64 v6
+    lda.64 v1
+    fsub2.64 v6
+    sta.64 v1
+    inci v7, 1
+    jmp loop2
+loop2_exit:
+    inci v2, 1
+    jmp loop
+loop_exit:
+    lda.64 v1
+    return.64
+}

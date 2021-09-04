@@ -1,0 +1,633 @@
+# Copyright (c) 2021 Huawei Device Co., Ltd.
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+definitions: []
+
+tests:
+  - file-name: "cmp.obj"
+    isa:
+      title: Object equality comparison
+      description: Perform equality comparison between object references in register and accumulator.
+      exceptions:
+        - x_none
+    commands:
+      - file-name: "op_positive_p"
+        isa:
+          instructions:
+            - sig: cmp.obj v:in:ref
+              acc: inout:ref->i32
+              format: [op_v_8]
+        code-template: |
+          %s
+          # header
+          .function i32 main() {
+          # Check cmp.obj with same object
+              newobj Object
+              sta.obj v0
+              cmp.obj v0
+        header-template: []
+        description: Check cmp.obj with equal objects in PandaAssembly context.
+        tags: ['tsan']
+        cases:
+          - values:
+              - |
+                .record Object {
+                }
+          - values:
+              - |
+                .record Object {
+                    i32 fld2
+                }
+          - values:
+              - |
+                .record Object {
+                    i64 fld2
+                }
+          - values:
+              - |
+                .record Object {
+                    u64 fld2
+                }
+          - values:
+              - |
+                .record Object {
+                    i32 fld2 <static>
+                }
+          - values:
+              - |
+                .record Object {
+                    i32 fld1
+                    i32 fld2 <static>
+                }
+
+          - values:
+              - |
+                .record Object {
+                    i64 fld1
+                    i64 fld2 <static>
+                }
+          - values:
+              - |
+                .record Object {
+                    f64 fld1
+                    f64 fld2 <static>
+                }
+          - values:
+              - |
+                .record Object {
+                    f32 fld1
+                    f32 fld2 <static>
+                    f64 fld3
+                    f64 fld4 <static>
+                    i32 fld5
+                    i32 fld6 <static>
+                    i64 fld7
+                    i64 fld8 <static>
+                }
+          - case-template: |
+              #
+              .function i32 main() {
+              # Check cmp.obj for string
+                  lda.str ""
+                  sta.obj v0
+                  cmp.obj v0
+          - case-template: |
+              #
+              .record Object {}
+              .function i32 main() {
+              # Check cmp.obj for type
+                  lda.type Object
+                  sta.obj v0
+                  cmp.obj v0
+
+
+      - file-name: "op_negative_p"
+        isa:
+          instructions:
+            - sig: cmp.obj v:in:ref
+              acc: inout:ref->i32
+              format: [op_v_8]
+        code-template: |
+          %s
+          # header
+          .function i32 main() {
+          # Check cmp.obj for different objects.
+              newobj Object
+              sta.obj v0
+              newobj Object
+              cmp.obj v0
+        header-template: []
+        check-type: check-negative
+        description: Check cmp.obj with different objects in PandaAssembly context.
+        tags: ['tsan']
+        cases:
+          - values:
+              - |
+                .record Object {
+                }
+          - values:
+              - |
+                .record Object {
+                    i32 fld2
+                }
+          - values:
+              - |
+                .record Object {
+                    i64 fld2
+                }
+          - values:
+              - |
+                .record Object {
+                    u64 fld2
+                }
+          - values:
+              - |
+                .record Object {
+                    i32 fld2 <static>
+                }
+          - values:
+              - |
+                .record Object {
+                    i32 fld1
+                    i32 fld2 <static>
+                }
+
+          - values:
+              - |
+                .record Object {
+                    i64 fld1
+                    i64 fld2 <static>
+                }
+          - values:
+              - |
+                .record Object {
+                    f64 fld1
+                    f64 fld2 <static>
+                }
+          - values:
+              - |
+                .record Object {
+                    f32 fld1
+                    f32 fld2 <static>
+                    f64 fld3
+                    f64 fld4 <static>
+                    i32 fld5
+                    i32 fld6 <static>
+                    i64 fld7
+                    i64 fld8 <static>
+                }
+          - case-template: |
+              #
+              .function i32 main() {
+              # Check cmp.obj for string
+                  lda.str "One string"
+                  sta.obj v0
+                  lda.str "Other string"
+                  cmp.obj v0
+          - case-template: |
+              #
+              .record Object1 {}
+              .record Object2 {}
+              .function i32 main() {
+              # Check cmp.obj for type
+                  lda.type Object1
+                  sta.obj v0
+                  lda.type Object2
+                  cmp.obj v0
+
+      - file-name: "obj_null_p"
+        isa:
+          instructions:
+            - sig: cmp.obj v:in:ref
+              acc: inout:ref->i32
+              format: [op_v_8]
+        code-template: |
+          %s
+          # header
+          .function i32 main() {
+          # Check cmp.obj for null
+              mov.null v0
+              newobj Object
+              cmp.obj v0
+        header-template: []
+        check-type: check-negative
+        description: Check cmp.obj with null and objects in PandaAssembly context.
+        cases:
+          - values:
+              - |
+                .record Object {
+                }
+          - values:
+              - |
+                .record Object {
+                    i32 fld2
+                }
+          - values:
+              - |
+                .record Object {
+                    i64 fld2
+                }
+          - values:
+              - |
+                .record Object {
+                    u64 fld2
+                }
+          - values:
+              - |
+                .record Object {
+                    i32 fld2 <static>
+                }
+          - values:
+              - |
+                .record Object {
+                    i32 fld1
+                    i32 fld2 <static>
+                }
+
+          - values:
+              - |
+                .record Object {
+                    i64 fld1
+                    i64 fld2 <static>
+                }
+          - values:
+              - |
+                .record Object {
+                    f64 fld1
+                    f64 fld2 <static>
+                }
+          - values:
+              - |
+                .record Object {
+                    f32 fld1
+                    f32 fld2 <static>
+                    f64 fld3
+                    f64 fld4 <static>
+                    i32 fld5
+                    i32 fld6 <static>
+                    i64 fld7
+                    i64 fld8 <static>
+                }
+
+      - file-name: "null_obj_p"
+        isa:
+          instructions:
+            - sig: cmp.obj v:in:ref
+              acc: inout:ref->i32
+              format: [op_v_8]
+        code-template: |
+          %s
+          # header
+          .function i32 main() {
+          # Check cmp.obj for null
+              newobj Object
+              sta.obj v0
+              lda.null
+              cmp.obj v0
+        header-template: []
+        check-type: check-negative
+        description: Check cmp.obj with null and objects in PandaAssembly context.
+        tags: ['tsan']
+        cases:
+          - values:
+              - |
+                .record Object {
+                }
+          - values:
+              - |
+                .record Object {
+                    i32 fld2
+                }
+          - values:
+              - |
+                .record Object {
+                    i64 fld2
+                }
+          - values:
+              - |
+                .record Object {
+                    u64 fld2
+                }
+          - values:
+              - |
+                .record Object {
+                    i32 fld2 <static>
+                }
+          - values:
+              - |
+                .record Object {
+                    i32 fld1
+                    i32 fld2 <static>
+                }
+
+          - values:
+              - |
+                .record Object {
+                    i64 fld1
+                    i64 fld2 <static>
+                }
+          - values:
+              - |
+                .record Object {
+                    f64 fld1
+                    f64 fld2 <static>
+                }
+          - values:
+              - |
+                .record Object {
+                    f32 fld1
+                    f32 fld2 <static>
+                    f64 fld3
+                    f64 fld4 <static>
+                    i32 fld5
+                    i32 fld6 <static>
+                    i64 fld7
+                    i64 fld8 <static>
+                }
+
+      - file-name: "op_8"
+        isa:
+          instructions:
+            - sig: cmp.obj v:in:ref
+              acc: inout:ref->i32
+              format: [op_v_8]
+        code-template: |
+          .record Object {}
+          # header
+          .function i32 main() {
+          #
+              newobj Object
+              sta.obj v0
+              mov.obj %s, v0
+              cmp.obj %s
+        header-template: []
+        description: Check cmp.obj with different register numbers.
+        cases:
+          - values: [v0, v0]
+          - values: [v7, v7]
+          - values: [v8, v8]
+          - values: [v15, v15]
+          - values: [v16, v16]
+          - values: [v127, v127]
+          - values: [v128, v128]
+          - values: [v255, v255]
+          - values: [v256, v256]
+            runner-options: [compile-failure]
+
+      - file-name: "op_8_null"
+        isa:
+          instructions:
+            - sig: cmp.obj v:in:ref
+              acc: inout:ref->i32
+              format: [op_v_8]
+        code-template: |
+          .function i32 main() {
+          # Check cmp.obj with different registers number and null
+              mov.null v0
+              mov.obj %s, v0
+              lda.null
+              cmp.obj %s
+        header-template: []
+        description: Check cmp.obj with different register numbers.
+        cases:
+          - values: [v0, v0]
+          - values: [v7, v7]
+          - values: [v8, v8]
+          - values: [v15, v15]
+          - values: [v16, v16]
+          - values: [v127, v127]
+          - values: [v128, v128]
+          - values: [v255, v255]
+          - values: [v256, v256]
+            runner-options: [compile-failure]
+
+      - file-name: "op_8_null_obj"
+        isa:
+          instructions:
+            - sig: cmp.obj v:in:ref
+              acc: inout:ref->i32
+              format: [op_v_8]
+        code-template: |
+          .record Object {}
+          # header
+          .function i32 main() {
+          # Check cmp.obj - acc is object, vN is null
+              mov.null v0
+              mov.obj %s, v0
+              newobj Object
+              cmp.obj %s
+        check-type: check-negative
+        header-template: []
+        description: Check cmp.obj with different register numbers.
+        cases:
+          - values: [v0, v0]
+          - values: [v7, v7]
+          - values: [v8, v8]
+          - values: [v15, v15]
+          - values: [v16, v16]
+          - values: [v127, v127]
+          - values: [v128, v128]
+          - values: [v255, v255]
+          - values: [v256, v256]
+            runner-options: [compile-failure]
+
+      - file-name: "op_8_obj_null"
+        isa:
+          instructions:
+            - sig: cmp.obj v:in:ref
+              acc: inout:ref->i32
+              format: [op_v_8]
+        code-template: |
+          .record Object {}
+          # header
+          .function i32 main() {
+          # Check cmp.obj - acc is null, vN is object
+              newobj Object
+              sta.obj v0
+              mov.obj %s, v0
+              lda.null
+              cmp.obj %s
+        check-type: check-negative
+        header-template: []
+        description: Check cmp.obj with different register numbers.
+        cases:
+          - values: [v0, v0]
+          - values: [v7, v7]
+          - values: [v8, v8]
+          - values: [v15, v15]
+          - values: [v16, v16]
+          - values: [v127, v127]
+          - values: [v128, v128]
+          - values: [v255, v255]
+          - values: [v256, v256]
+            runner-options: [compile-failure]
+
+      - file-name: type_p
+        isa:
+          instructions:
+            - sig: cmp.obj v:in:ref
+              acc: inout:ref->i32
+              format: [op_v_8]
+          verification:
+            - acc_obj_or_null
+            - v1_obj_or_null
+        tags: ['verifier']
+        runner-options: ['verifier-failure', 'verifier-debug-config']
+        header-template: []
+        code-template: |
+          #
+          .record A {}
+          .record B {}
+          .record panda.String <external>
+          .record panda.Object <external>
+          .function i32 main() {
+              %s
+              *s
+              cmp.obj v0
+        check-type: exit-positive
+        description: Check 'cmp.obj' with incorrect register type in PandaAssembly context.
+        template-cases:
+          - values:
+              - movi v0, 0
+          - values:
+              - movi.64 v0, 0
+          - values:
+              - fmovi.64 v0, 0
+          - values:
+              - |
+                #
+                    lda.type B
+                    sta.obj v0
+            exclude: [obj]
+          - values:
+              - |
+                #
+                    lda.type B[]
+                    sta.obj v0
+            exclude: [obj]
+          - values:
+              - |
+                #
+                    lda.type panda.String
+                    sta.obj v0
+            exclude: [obj]
+          - values:
+              - |
+                #
+                    lda.str "string"
+                    sta.obj v0
+            exclude: [obj]
+          - values:
+              - |
+                #
+                    movi v0, 10
+                    newarr v0, i32[]
+                    sta.obj v0
+            exclude: [obj]
+          - values:
+              - mov.null v0
+            exclude: [obj]
+
+        cases:
+          - values:
+              - ldai 0
+          - values:
+              - ldai.64 0
+            id: val
+          - values:
+              - fldai.64 0
+          - values:
+              - |
+                #
+                    lda.type A
+            id: obj
+          - values:
+              - |
+                #
+                    lda.type A[]
+            id: obj
+          - values:
+              - |
+                #
+                    lda.type panda.String
+            id: obj
+          - values:
+              - |
+                #
+                    lda.str "string"
+            id: obj
+          - values:
+              - |
+                #
+                    movi v1, 10
+                    newarr v1, f64[]
+            id: obj
+          - values:
+              - lda.null
+            id: obj
+
+      - file-name: uninitialized_regs
+        isa:
+          instructions:
+            - sig: cmp.obj v:in:ref
+              acc: inout:ref->i32
+              format: [op_v_8]
+        description: Check 'cmp.obj' with uninitialized registers.
+        tags: ['verifier']
+        runner-options: ['verifier-failure', 'verifier-debug-config']
+        header-template: []
+        code-template: |
+            #
+            .function i32 main() {
+                %s
+                *s
+                cmp.obj %s
+        check-type: exit-positive
+        template-cases:
+          - values:
+              - ''
+              - v0
+          - values:
+              - mov.null v0
+              - v0
+            exclude: [init]
+          - values:
+              - ''
+              - v7
+          - values:
+              - ''
+              - v15
+          - values:
+              - mov.null v15
+              - v15
+            exclude: [init]
+          - values:
+              - ''
+              - v128
+          - values:
+              - mov.null v128
+              - v128
+            exclude: [init]
+          - values:
+              - ''
+              - v255
+          - values:
+              - mov.null v255
+              - v255
+            exclude: [init]
+        cases:
+          - values:
+              - ''
+          - values:
+              - lda.null
+            id: init

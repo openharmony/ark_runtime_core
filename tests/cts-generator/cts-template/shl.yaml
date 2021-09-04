@@ -1,0 +1,465 @@
+# Copyright (c) 2021 Huawei Device Co., Ltd.
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+definitions: []
+tests:
+  - file-name: "shl"
+    isa:
+      title: Three address binary operation
+      description: Perform specified binary operation on two registers and store result
+          into accumulator
+      exceptions:
+          - x_none
+    commands:
+      - file-name: "op_vs1_4_vs2_4_zero"
+        isa:
+          instructions:
+            - sig: shl v1:in:i32, v2:in:i32
+              acc: out:i32
+              prefix: bit
+              format: [pref_op_v1_4_v2_4]
+        code-template: |
+          #
+              movi v0, 0
+              movi v1, %s
+              mov v1, v0
+              shl v0, v1
+              movi v0, 0
+              jne v0, set_failure
+              ldai 0
+              jmp fall_through
+          set_failure:
+              ldai 1
+          fall_through:
+        description: Check shl with zero and various values.
+        cases:
+          - values:
+              - "0"
+          - values:
+              - "1"
+          - values:
+              - "-1"
+          - values:
+              - "0x7FFFFFFF"
+          - values:
+              - "0x80000000"
+          - values:
+              - "-0x7FFFFFFF"
+          - values:
+              - "-0x80000000"
+          - values:
+              - "0xFFFFFFFF"
+          - values:
+              - "-0xFFFFFFFF"
+
+      - file-name: "op_vs1_4_vs2_4_pone"
+        isa:
+          instructions:
+            - sig: shl v1:in:i32, v2:in:i32
+              acc: out:i32
+              prefix: bit
+              format: [pref_op_v1_4_v2_4]
+        code-template: |
+          #
+              movi v0, 1
+              movi v1, %s
+              shl v0, v1
+              movi v0, %s
+              jne v0, set_failure
+              ldai 0
+              jmp fall_through
+          set_failure:
+              ldai 1
+          fall_through:
+        description: Check shl with +1 and various values.
+        cases:
+          - values:
+              - "0"
+              - "1"
+          - values:
+              - "1"
+              - "2"
+          - values:
+              - "-1"
+              - "0x80000000"
+            bugid: ['1387']
+            tags: ["clang_release_sanitizer_jit"]
+          - values:
+              - "0x7FFFFFFF"
+              - "0x80000000"
+            bugid: ['1387']
+            tags: ["clang_release_sanitizer_jit"]
+          - values:
+              - "0x80000000"
+              - "1"
+            bugid: ['1387']
+            tags: ["clang_release_sanitizer_jit"]
+          - values:
+              - "-0x7FFFFFFF"
+              - "2"
+            bugid: ['1387']
+            tags: ["clang_release_sanitizer_jit"]
+          - values:
+              - "-0x80000000"
+              - "1"
+            bugid: ['1387']
+            tags: ["clang_release_sanitizer_jit"]
+          - values:
+              - "0xFFFFFFFF"
+              - "0x80000000"
+            bugid: ['1387']
+            tags: ["clang_release_sanitizer_jit"]
+          - values:
+              - "-0xFFFFFFFF"
+              - "2"
+      - file-name: "op_vs1_4_vs2_4_none"
+        isa:
+          instructions:
+            - sig: shl v1:in:i32, v2:in:i32
+              acc: out:i32
+              prefix: bit
+              format: [pref_op_v1_4_v2_4]
+        code-template: |
+          #
+              movi v0, -1
+              movi v1, %s
+              shl v0, v1
+              movi v0, %s
+              jne v0, set_failure
+              ldai 0
+              jmp fall_through
+          set_failure:
+              ldai 1
+          fall_through:
+        description: Check shl with -1 and various values.
+        cases:
+          - values:
+              - "0"
+              - "0xFFFFFFFF"
+          - values:
+              - "1"
+              - "0xFFFFFFFE"
+          - values:
+              - "-1"
+              - "0x80000000"
+            bugid: ['1387']
+            tags: ["clang_release_sanitizer_jit"]
+          - values:
+              - "0x7FFFFFFF"
+              - "0x80000000"
+            bugid: ['1387']
+            tags: ["clang_release_sanitizer_jit"]
+          - values:
+              - "0x80000000"
+              - "0xFFFFFFFF"
+            bugid: ['1387']
+            tags: ["clang_release_sanitizer_jit"]
+          - values:
+              - "-0x7FFFFFFF"
+              - "0xFFFFFFFE"
+            bugid: ['1387']
+            tags: ["clang_release_sanitizer_jit"]
+          - values:
+              - "-0x80000000"
+              - "0xFFFFFFFF"
+            bugid: ['1387']
+            tags: ["clang_release_sanitizer_jit"]
+          - values:
+              - "0xFFFFFFFF"
+              - "0x80000000"
+            bugid: ['1387']
+            tags: ["clang_release_sanitizer_jit"]
+          - values:
+              - "-0xFFFFFFFF"
+              - "0xFFFFFFFE"
+
+      - file-name: "op_vs1_4_vs2_4_pmax"
+        isa:
+          instructions:
+            - sig: shl v1:in:i32, v2:in:i32
+              acc: out:i32
+              prefix: bit
+              format: [pref_op_v1_4_v2_4]
+        code-template: |
+          #
+              movi v0, 0x7FFFFFFF
+              movi v1, %s
+              shl v0, v1
+              movi v0, %s
+              jne v0, set_failure
+              ldai 0
+              jmp fall_through
+          set_failure:
+              ldai 1
+          fall_through:
+        description: Check shl with +max and various values.
+        cases:
+          - values:
+              - "0"
+              - "0x7FFFFFFF"
+          - values:
+              - "1"
+              - "0xFFFFFFFE"
+          - values:
+              - "-1"
+              - "0x80000000"
+            bugid: ['1387']
+            tags: ["clang_release_sanitizer_jit"]
+          - values:
+              - "0x7FFFFFFF"
+              - "0x80000000"
+            bugid: ['1387']
+            tags: ["clang_release_sanitizer_jit"]
+          - values:
+              - "0x80000000"
+              - "0x7FFFFFFF"
+            bugid: ['1387']
+            tags: ["clang_release_sanitizer_jit"]
+          - values:
+              - "-0x7FFFFFFF"
+              - "0xFFFFFFFE"
+            bugid: ['1387']
+            tags: ["clang_release_sanitizer_jit"]
+          - values:
+              - "-0x80000000"
+              - "0x7FFFFFFF"
+            bugid: ['1387']
+            tags: ["clang_release_sanitizer_jit"]
+          - values:
+              - "0xFFFFFFFF"
+              - "0x80000000"
+            bugid: ['1387']
+            tags: ["clang_release_sanitizer_jit"]
+          - values:
+              - "-0xFFFFFFFF"
+              - "0xFFFFFFFE"
+
+      - file-name: "op_vs1_4_vs2_4_nmax"
+        isa:
+          instructions:
+            - sig: shl v1:in:i32, v2:in:i32
+              acc: out:i32
+              prefix: bit
+              format: [pref_op_v1_4_v2_4]
+        code-template: |
+          #
+              movi v0, -0x80000000
+              movi v1, %s
+              shl v0, v1
+              movi v0, %s
+              jne v0, set_failure
+              ldai 0
+              jmp fall_through
+          set_failure:
+              ldai 1
+          fall_through:
+        description: Check shl with -max and various values.
+        cases:
+          - values:
+              - "0"
+              - "0x80000000"
+          - values:
+              - "1"
+              - "0"
+          - values:
+              - "-1"
+              - "0"
+            bugid: ['1387']
+            tags: ["clang_release_sanitizer_jit"]
+          - values:
+              - "0x7FFFFFFF"
+              - "0x0"
+            bugid: ['1387']
+            tags: ["clang_release_sanitizer_jit"]
+          - values:
+              - "0x80000000"
+              - "0x80000000"
+            bugid: ['1387']
+            tags: ["clang_release_sanitizer_jit"]
+          - values:
+              - "-0x7FFFFFFF"
+              - "0"
+            bugid: ['1387']
+            tags: ["clang_release_sanitizer_jit"]
+          - values:
+              - "-0x80000000"
+              - "0x80000000"
+            bugid: ['1387']
+            tags: ["clang_release_sanitizer_jit"]
+          - values:
+              - "0xFFFFFFFF"
+              - "0"
+            bugid: ['1387']
+            tags: ["clang_release_sanitizer_jit"]
+          - values:
+              - "-0xFFFFFFFF"
+              - "0"
+
+      - file-name: "vals"
+        bugid: ['1387']
+        tags: ["clang_release_sanitizer_jit", "tsan"]
+        isa:
+          instructions:
+            - sig: shl v1:in:i32, v2:in:i32
+              acc: out:i32
+              prefix: bit
+              format: [pref_op_v1_4_v2_4]
+        code-template: |
+          #
+              movi v0, %s
+              movi v1, %s
+              shl v0, v1
+              movi v0, %s
+              jne v0, set_failure
+              ldai 0
+              jmp fall_through
+          set_failure:
+              ldai 1
+          fall_through:
+        description: Check shl with various values.
+        cases:
+          - values:
+              - "0x61696FFF"
+              - "0x56B814E8"
+              - "0x696FFF00"
+          - values:
+              - "0x76C5AE08"
+              - "0x8DFD0A2F"
+              - "0xD7040000"
+          - values:
+              - "0x15FFEF1D"
+              - "0x2C85774D"
+              - "0xFDE3A000"
+          - values:
+              - "0x3130A634"
+              - "0xD3CDE405"
+              - "0x2614C680"
+          - values:
+              - "0x8E8A9883"
+              - "0xDE3A4635"
+              - "0x10600000"
+          - values:
+              - "0x3BF5A79C"
+              - "0xE799C159"
+              - "0x38000000"
+          - values:
+              - "0xBF8EF337"
+              - "0x66068B26"
+              - "0xE3BCCDC0"
+          - values:
+              - "0xDC2D1B09"
+              - "0x3D252477"
+              - "0x84800000"
+          - values:
+              - "0x960BD85E"
+              - "0xB357B7D"
+              - "0xC0000000"
+          - values:
+              - "0x40BB756D"
+              - "0xDAAA49C4"
+              - "0xBB756D0"
+
+      - file-name: "vals_mod32_1"
+        bugid: ['1324', '2075']
+        tags: ['verifier']
+        runner-options: ['verifier-failure', 'verifier-debug-config']
+        isa:
+          instructions:
+            - sig: shl v1:in:i32, v2:in:i32
+              acc: out:i32
+              prefix: bit
+              format: [pref_op_v1_4_v2_4]
+        code-template: |
+          #
+              movi.64 v0, %s
+              movi.64 v1, %s
+              shl v0, v1
+              movi.64 v0, %s
+              cmp.64 v0
+        description: Check shl with incorrect register types.
+        cases:
+          - values:
+              - "0x17FFFFFFF"
+              - "0x1F"
+              - "0xFFFFFFFF80000000"
+          - values:
+              - "0x77777777FFFFFFFF"
+              - "0x1111111180000000"
+              - "0xFFFFFFFFFFFFFFFF"
+          - values:
+              - "0x180000000"
+              - "0x180000000"
+              - "0xFFFFFFFF80000000"
+
+      - file-name: "regs"
+        isa:
+          instructions:
+            - sig: shl v1:in:i32, v2:in:i32
+              acc: out:i32
+              prefix: bit
+              format: [pref_op_v1_4_v2_4]
+        runner-options: ['compile-only']
+        code-template: |
+          #
+              shl %s, %s
+        check-type: none
+        description: Check shl with various register numbers.
+        cases:
+          - values:
+              - v0
+              - v15
+          - values:
+              - v0
+              - v16
+            runner-options:
+              - compile-failure
+          - values:
+              - v15
+              - v0
+          - values:
+              - v16
+              - v0
+            runner-options:
+              - compile-failure
+
+      - file-name: "type"
+        bugid: ["964", "966", "2075"]
+        tags: ["verifier"]
+        isa:
+          instructions:
+            - sig: shl v1:in:i32, v2:in:i32
+              acc: out:i32
+              prefix: bit
+              format: [pref_op_v1_4_v2_4]
+          verification:
+            - v1_type
+            - v2_type
+        runner-options: ['verifier-failure', 'verifier-debug-config']
+        code-template: |
+          #
+              %s
+              %s
+              shl v0, v1
+              ldai 0
+        check-type: no-check
+        description: Check shl with incorrect register types.
+        cases:
+          - values:
+              - mov.null v0
+              - movi v1, 0
+          - values:
+              - movi v0, 0
+              - mov.null v1
+          - values:
+              - mov.null v0
+              - mov.null v1

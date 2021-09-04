@@ -1,0 +1,54 @@
+# Copyright (c) 2021 Huawei Device Co., Ltd.
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+import("//ark/runtime_core/ark_config.gni")
+import("//build/ohos.gni")
+
+config("asmdefines_public_config") {
+  include_dirs = [ "$target_gen_dir/generated/" ]
+}
+
+ohos_static_library("asm_defines") {
+  sources = [ "defines.cpp" ]
+  configs = [
+    "$ark_root:ark_config",
+    "$ark_root/runtime:arkruntime_public_config",
+    "$ark_root/libpandabase:arkbase_public_config",
+    sdk_libc_secshared_config,
+    "$ark_root/libpandafile:arkfile_public_config",
+  ]
+  cflags_cc = [
+    "-Wno-invalid-offsetof",
+    "-S",
+  ]
+  output_dir = "$target_gen_dir/generated"
+  output_extension = "S"
+  output_name = "libasm_defines"
+  deps = [
+    "$ark_root/libpandafile:libarkfile_type_gen_h",
+    "$ark_root/runtime:arkruntime_gen_intrinsics_intrinsics_gen_h",
+    "$ark_root/runtime:arkruntime_gen_intrinsics_intrinsics_h",
+    "$ark_root/runtime:arkruntime_gen_intrinsics_unimplemented_intrinsics-inl_cpp",
+    sdk_libc_secshared_dep,
+  ]
+}
+
+action("asm_defines_generator") {
+  script = "$ark_root/runtime/asm_defines/defines_generator.rb"
+  outputs = [ "$target_gen_dir/generated/asm_defines.h" ]
+  args = [
+    rebase_path("$target_gen_dir/generated/libasm_defines.S", root_build_dir),
+    rebase_path(outputs[0]),
+  ]
+  deps = [ ":asm_defines" ]
+}

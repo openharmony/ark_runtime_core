@@ -1,0 +1,480 @@
+# Copyright (c) 2021 Huawei Device Co., Ltd.
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+definitions:
+  - name: pandasm_header
+    template: |
+      .language PandaAssembly
+
+      .record panda.Object <external>
+
+      .record Q {}
+      .function void Q.ctor(Q a0) <ctor> {
+        return.void
+      }
+
+      .record R {
+        u1             fu1
+        u8             fu8
+        i8             fi8
+        u16            fu16
+        i16            fi16
+        u32            fu32
+        i32            fi32
+        u64            fu64
+        i64            fi64
+        f32            ff32
+        f64            ff64
+        # objects:
+        i32[]          fi32Array
+        Q              fQ
+        Q[]            fQArray
+        panda.Object   fObj
+        panda.Object[] fObjArray
+      }
+      .function void R.ctor(R a0) <ctor> {
+        return.void
+      }
+
+tests:
+  - file-name: "stobj"
+    isa:
+      title: Store accumulator content into object field
+      description: >
+        Store accumulator content into object field by field_id. For non-object variant the size of actually stored
+        value is determined by field_id, other accumulator bits are discarded.
+      instructions:
+        - sig: stobj v:in:ref, field_id
+          acc: in:i32
+          format: [op_v_8_id_16]
+    commands:
+
+      - file-name: "check_if_regs_initialized"
+        description: Check that verifier reports error if source registers are not initialized
+        isa:
+          description: Store accumulator content into object field by field_id.
+        header-template: ['pandasm_header']
+        check-type: exit-positive
+        tags: ['verifier']
+        bugid: ['1324']
+        runner-options: ['verifier-failure', 'verifier-debug-config']
+        code-template: |
+
+          %s
+
+          .function i32 main() {
+            initobj R.ctor
+            sta.obj v0
+            movi v1, 1
+            call.short check, %s
+        cases:
+          - values:
+            - |
+              # acc (value) not initialized in the frame
+              .function void check(R a0) {
+                stobj a0, R.fi32
+                return.void
+              }
+            - v0
+          - values:
+            - |
+              # v0 (object) not initialized in the frame
+              .function void check(i32 a0) {
+                lda a0
+                stobj v0, R.fi32
+                return.void
+              }
+            - v1
+            bugid: ['1324']
+
+      - file-name: "with_null_ref"
+        description: Check that NullPointerException is thrown if object ref is null
+        isa:
+          exceptions:
+            - x_null
+        header-template: ['pandasm_header']
+        check-type: empty
+        tags: ['arm64-jit']
+        bugid: ['3047']
+        code-template: |
+          .record panda.NullPointerException <external>
+
+          .function R get_null() {
+            lda.null
+            return.obj
+          }
+
+          .function i32 main() {
+            call.short get_null
+            sta.obj v0
+            ldai 1
+          try_begin:
+            stobj v0, %s
+            ldai 1
+            return
+          try_end:
+            ldai 0
+            return
+          .catch panda.NullPointerException, try_begin, try_end, try_end
+          }
+        cases:
+          - values:
+            - R.fu1
+          - values:
+            - R.fu8
+          - values:
+            - R.fi8
+          - values:
+            - R.fu16
+          - values:
+            - R.fi16
+          - values:
+            - R.fu32
+          - values:
+            - R.fi32
+
+      - file-name: "with_non_object_ref"
+        description: Check that verifier reports error when the 1st operand is not a ref to an object (other than array)
+        isa:
+          verification:
+            - v1_object
+        header-template: ['pandasm_header']
+        check-type: empty
+        tags: ['verifier']
+        bugid: ['1324', '1826', '1827']
+        runner-options: ['verifier-failure', 'verifier-debug-config']
+        code-template: |
+
+          .function i32 main() {
+            %s
+            ldai 1
+          try_begin:
+            stobj v0, R.fi32
+          try_end:
+            ldai 0
+            return
+          .catchall try_begin, try_end, try_end
+          }
+        cases:
+          - values:
+            - movi v0, 0
+          - values:
+            - movi v0, 1
+          - values:
+            - movi.64 v0, 0x00
+          - values:
+            - movi.64 v0, 0xCAFECAFECAFECAFE
+          - values:
+            - fmovi.64 v0, 0.0
+          - values:
+            - fmovi.64 v0, 6.62607015
+          - values:
+            - |
+                movi v1, 10
+                  newarr v0, v1, R[]
+
+
+      - file-name: "with_static_field_id"
+        description: Check that verifier reports error if the field doesn't resolve to a non-static valid object field
+        isa:
+          verification:
+            - field_id_non_static
+        header-template: []
+        check-type: exit-positive
+        bugid: ['1324', '1828', '1833']
+        runner-options: ['verifier-failure', 'verifier-debug-config']
+        tags: ['verifier']
+        code-template: |
+          .record W {
+            i32   static_field  <static>
+          }
+          .function void W.ctor(W a0) <ctor> {
+            return.void
+          }
+          .record random_record_name {
+            i32 random_field_name
+          }
+          .function void random_function_name() {
+            return.void
+          }
+
+          .function i32 main() {
+            initobj W.ctor
+            sta.obj v0
+            ldai 1
+            stobj v0, %s
+        cases:
+          - values:
+            - W.static_field
+          - values:
+            - random_record_name
+            runner-options: ['compile-failure']
+          - values:
+            - random_function_name
+            runner-options: ['compile-failure']
+          - values:
+            - W.field_not_exists
+            runner-options: ['compile-failure']
+          - values:
+            - random_record_name.random_field_name
+            bugid: ['3536']
+            ignore: true
+          - values:
+            - 0
+            runner-options: ['compile-failure']
+          - values:
+            - -1.1
+            runner-options: ['compile-failure']
+          - values:
+            - "null"
+            runner-options: ['compile-failure']
+          - values:
+            - "\"abc\""
+            runner-options: ['compile-failure']
+
+
+      - file-name: "with_wrong_field_size"
+        description: Check that verifier reports error when the field resolves to a field with size that is not corresponding to bytecode
+        isa:
+          verification:
+            - field_id_size
+        header-template: ['pandasm_header']
+        check-type: exit-positive
+        tags: ['verifier']
+        runner-options: ['verifier-failure', 'verifier-debug-config']
+        bugid: ['1834']
+        code-template: |
+          .function i32 main() {
+            initobj R.ctor
+            sta.obj v0
+            ldai 0
+            stobj v0, %s
+        cases:
+          - values:
+            - R.fi64
+          - values:
+            - R.fu64
+          - values:
+            - R.ff64
+          - values:
+            - R.ff32
+          - values:
+            - R.fObj
+          - values:
+            - R.fObjArray
+          - values:
+            - R.fi32Array
+
+      - file-name: "with_wrong_acc_type"
+        description: Check that verifier reports error when the accumulator contains a value of type not corresponding to the bytecode
+        isa:
+          verification:
+            - acc_type
+        header-template: ['pandasm_header']
+        check-type: exit-positive
+        tags: ['verifier']
+        runner-options: ['verifier-failure', 'verifier-debug-config']
+        code-template: |
+          .function i32 main() {
+            initobj R.ctor
+            sta.obj v0
+            %s
+            stobj v0, %s
+        cases:
+          - values:
+            - ldai.64 0xF000F000F000F000
+            - R.fu1
+            ignore: true
+            bugid: ['4166']
+          - values:
+            - ldai.64 0
+            - R.fi8
+            ignore: true
+            bugid: ['4166']
+          - values:
+            - ldai.64 0xCAFECAFECAFECAFE
+            - R.fu8
+            ignore: true
+            bugid: ['4166']
+          - values:
+            - ldai.64 0
+            - R.fi16
+            ignore: true
+            bugid: ['4166']
+          - values:
+            - ldai.64 0x5A5A5A5A5A5A5A5A
+            - R.fi32
+            ignore: true
+            bugid: ['1834']
+          - values:
+            - ldai.64 1234567890
+            - R.fu32
+            ignore: true
+            bugid: ['1834']
+          - values:
+            - fldai.64 0x7FFFFFFFFFFFFFFF
+            - R.fu1
+          - values:
+            - fldai.64 0.0
+            - R.fu8
+          - values:
+            - fldai.64 -0.0
+            - R.fi8
+          - values:
+            - fldai.64 1.0
+            - R.fu16
+          - values:
+            - fldai.64 3.0
+            - R.fi16
+          - values:
+            - fldai.64 0.123456
+            - R.fu32
+          - values:
+            - fldai.64 123456.0
+            - R.fi32
+          - values:
+            - lda.null
+            - R.fu32
+          - values:
+            - initobj Q.ctor
+            - R.fi32
+          - values:
+            - |
+              movi v1, 10
+                newarr v1, v1, i32[]
+                lda.obj v1
+            - R.fi32
+
+
+      - file-name: "op_v_8_id_16"
+        description: Check that compiler reports error when the register number is out of 8 bit size
+        isa:
+          instructions:
+            - sig: stobj v:in:ref, field_id
+              acc: in:i32
+              format: [op_v_8_id_16]
+        header-template: ['pandasm_header']
+        check-type: exit-positive
+        code-template: |
+
+          .function i32 main() {
+            stobj %s, R.fi32
+        cases:
+          - values: ['v255']
+            runner-options: ['compile-only']
+          - values: ['v256']
+            runner-options: ['compile-failure']
+          - values: ['v65535']
+            runner-options: ['compile-failure']
+
+
+      - file-name: "into_all_field_types"
+        description: Check that accumulator value is stored in field
+        isa:
+          description: If field type size is less than 32, accumulator content will be truncated to storage size before storing.
+        header-template: ['pandasm_header']
+        check-type: exit-positive
+        tags: ['tsan']
+        code-template: |
+
+          .function i32 main() {
+            initobj R.ctor
+            sta.obj v0
+            %s
+            stobj v0, R.%s
+            lda.null
+            ldobj v0, R.%s
+            movi v1, %s
+            %s v1
+            jeqz success
+            ldai 1
+            return
+          success:
+        cases:
+          # u1
+          - values: ['ldai 0x00000000', 'fu1', 'fu1', 0, 'ucmp']
+          - values: ['ldai 0xffffffff', 'fu1', 'fu1', 1, 'ucmp']
+            bugid: ['1848']
+            ignore: true
+          - values: ['ldai 0x00000001', 'fu1', 'fu1', 1, 'ucmp']
+          - values: ['ldai 0xfffffffe', 'fu1', 'fu1', 0, 'ucmp']
+            bugid: ['1848']
+            ignore: true
+          - values: ['ldai 0x11111111', 'fu1', 'fu1', 1, 'ucmp']
+            bugid: ['1848']
+            ignore: true
+          - values: ['ldai 0x88888888', 'fu1', 'fu1', 0, 'ucmp']
+            bugid: ['1848']
+            ignore: true
+          # u8
+          - values: ['ldai 0x00000000', 'fu8', 'fu8', 0, 'ucmp']
+          - values: ['ldai 0xffffffff', 'fu8', 'fu8', 255, 'ucmp']
+          - values: ['ldai 0x000000ff', 'fu8', 'fu8', 255, 'ucmp']
+          - values: ['ldai 0xffffff00', 'fu8', 'fu8', 0, 'ucmp']
+          - values: ['ldai 0x11111111', 'fu8', 'fu8', 17, 'ucmp']
+          - values: ['ldai 0x88888888', 'fu8', 'fu8', 136, 'ucmp']
+          # u16
+          - values: ['ldai 0x00000000', 'fu16', 'fu16', 0, 'ucmp']
+          - values: ['ldai 0xffffffff', 'fu16', 'fu16', 65535, 'ucmp']
+          - values: ['ldai 0x0000ffff', 'fu16', 'fu16', 65535, 'ucmp']
+          - values: ['ldai 0xffff0000', 'fu16', 'fu16', 0, 'ucmp']
+          - values: ['ldai 0x11111111', 'fu16', 'fu16', 4369, 'ucmp']
+          - values: ['ldai 0x88888888', 'fu16', 'fu16', 34952, 'ucmp']
+          # u32
+          - values: ['ldai 0x00000000', 'fu32', 'fu32', 0, 'ucmp']
+          - values: ['ldai 0xffffffff', 'fu32', 'fu32', 4294967295, 'ucmp']
+          - values: ['ldai 0x11111111', 'fu32', 'fu32', 286331153, 'ucmp']
+          - values: ['ldai 0x88888888', 'fu32', 'fu32', 2290649224, 'ucmp']
+
+      - file-name: "into_all_field_types_int"
+        description: Version for integer types
+        isa:
+          description: If field type size is less than 32, accumulator content will be truncated to storage size before storing.
+        header-template: ['pandasm_header']
+        check-type: exit-positive
+        tags: ['tsan']
+        code-template: |
+
+          .function i32 main() {
+            initobj R.ctor
+            sta.obj v0
+            %s
+            stobj v0, R.%s
+            lda.null
+            ldobj v0, R.%s
+            movi v1, %s
+            jeq v1, success
+            ldai 1
+            return
+          success:
+        cases:
+          # i8
+          - values: ['ldai 0x00000000', 'fi8', 'fi8', 0]
+          - values: ['ldai 0xffffffff', 'fi8', 'fi8', -1]
+          - values: ['ldai 0x000000ff', 'fi8', 'fi8', -1]
+          - values: ['ldai 0xffffff00', 'fi8', 'fi8', 0]
+          - values: ['ldai 0x11111111', 'fi8', 'fi8', 17]
+          - values: ['ldai 0x88888888', 'fi8', 'fi8', -120]
+          # i16
+          - values: ['ldai 0x00000000', 'fi16', 'fi16', 0]
+          - values: ['ldai 0xffffffff', 'fi16', 'fi16', -1]
+          - values: ['ldai 0x0000ffff', 'fi16', 'fi16', -1]
+          - values: ['ldai 0xffff0000', 'fi16', 'fi16', 0]
+          - values: ['ldai 0x11111111', 'fi16', 'fi16', 4369]
+          - values: ['ldai 0x88888888', 'fi16', 'fi16', -30584]
+          # i32
+          - values: ['ldai 0x00000000', 'fi32', 'fi32', 0]
+          - values: ['ldai 0xffffffff', 'fi32', 'fi32', -1]
+          - values: ['ldai 0x11111111', 'fi32', 'fi32', 286331153]
+          - values: ['ldai 0x88888888', 'fi32', 'fi32', -2004318072]
+

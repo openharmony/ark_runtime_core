@@ -1,0 +1,1218 @@
+# Copyright (c) 2021 Huawei Device Co., Ltd.
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+---
+definitions:
+  - name: java
+    template: >
+      .language Java
+
+tests:
+  - file-name: call.range
+    isa:
+      title: Static call
+      description: >
+        Call indicated static method, i.e. create new frame, pass values of arguments and
+        continue execution from the first instruction of a method.
+        Callee should treat accumulator value as undefined and cannot use it until accumulator
+        definition in the new frame.
+        Result (if any) is returned in accumulator (see 'Calling sequence' chapter for more details).
+        Method, its class and the number of argument is resolved by given method_id in
+        runtime constant-pool.
+        Arguments are passed in source registers in the same order as in method signature.
+        Non-range instructions can be used to pass up to 4 arguments (unused register slot values will
+        be discarded and corresponding registers will not be passed to the callee).
+        For methods with more arguments range kind of instruction is to be used, which takes the needed number
+        of arguments starting from 'vs' register.
+      exceptions:
+        - x_none
+      verification:
+        - method_id_static
+        - compatible_arguments
+
+    commands:
+      - file-name: op_v_8_id_32_args
+        isa:
+          instructions:
+            - sig: call.range method_id, v:in:top
+              acc: out:top
+              format: [op_v_8_id_16]
+        header-template: []
+        description: Check that 'call.range' invokes function with different amount of args.
+        tags: ['tsan']
+        code-template: |
+          .function void f1(%s) {
+              return.void
+          }
+          .function i32 main() {
+              %s
+              call.range f1, v0
+        check-type: exit-positive
+        cases:
+          - values: ['', '']
+          - values:
+            - 'i32 a0'
+            - 'movi v0, 0'
+          - values:
+            - 'i32 a0, i32 a1'
+            - |
+              #
+                  movi v0, 0
+                  movi v1, 0
+
+          - values:
+            - 'i32 a0, i32 a1, i32 a2, i32 a3'
+            - |
+              #
+                  movi v0, 0
+                  movi v1, 0
+                  movi v2, 0
+                  movi v3, 0
+          - values:
+              - 'i32 a0, i32 a1, i32 a2, i32 a3, i32 a4, i32 a5, i32 a6, i32 a7, i32 a8, i32 a9, i32 a10, i32 a11, i32 a12, i32 a13, i32 a14, i32 a15, i32 a16, i32 a17, i32 a18, i32 a19, i32 a20, i32 a21, i32 a22, i32 a23, i32 a24, i32 a25, i32 a26, i32 a27, i32 a28, i32 a29, i32 a30, i32 a31, i32 a32, i32 a33, i32 a34, i32 a35, i32 a36, i32 a37, i32 a38, i32 a39, i32 a40, i32 a41, i32 a42, i32 a43, i32 a44, i32 a45, i32 a46, i32 a47, i32 a48, i32 a49, i32 a50, i32 a51, i32 a52, i32 a53, i32 a54, i32 a55, i32 a56, i32 a57, i32 a58, i32 a59, i32 a60, i32 a61, i32 a62, i32 a63, i32 a64, i32 a65, i32 a66, i32 a67, i32 a68, i32 a69, i32 a70, i32 a71, i32 a72, i32 a73, i32 a74, i32 a75, i32 a76, i32 a77, i32 a78, i32 a79, i32 a80, i32 a81, i32 a82, i32 a83, i32 a84, i32 a85, i32 a86, i32 a87, i32 a88, i32 a89, i32 a90, i32 a91, i32 a92, i32 a93, i32 a94, i32 a95, i32 a96, i32 a97, i32 a98, i32 a99, i32 a100, i32 a101, i32 a102, i32 a103, i32 a104, i32 a105, i32 a106, i32 a107, i32 a108, i32 a109, i32 a110, i32 a111, i32 a112, i32 a113, i32 a114, i32 a115, i32 a116, i32 a117, i32 a118, i32 a119, i32 a120, i32 a121, i32 a122, i32 a123, i32 a124, i32 a125, i32 a126, i32 a127, i32 a128, i32 a129, i32 a130, i32 a131, i32 a132, i32 a133, i32 a134, i32 a135, i32 a136, i32 a137, i32 a138, i32 a139, i32 a140, i32 a141, i32 a142, i32 a143, i32 a144, i32 a145, i32 a146, i32 a147, i32 a148, i32 a149, i32 a150, i32 a151, i32 a152, i32 a153, i32 a154, i32 a155, i32 a156, i32 a157, i32 a158, i32 a159, i32 a160, i32 a161, i32 a162, i32 a163, i32 a164, i32 a165, i32 a166, i32 a167, i32 a168, i32 a169, i32 a170, i32 a171, i32 a172, i32 a173, i32 a174, i32 a175, i32 a176, i32 a177, i32 a178, i32 a179, i32 a180, i32 a181, i32 a182, i32 a183, i32 a184, i32 a185, i32 a186, i32 a187, i32 a188, i32 a189, i32 a190, i32 a191, i32 a192, i32 a193, i32 a194, i32 a195, i32 a196, i32 a197, i32 a198, i32 a199, i32 a200, i32 a201, i32 a202, i32 a203, i32 a204, i32 a205, i32 a206, i32 a207, i32 a208, i32 a209, i32 a210, i32 a211, i32 a212, i32 a213, i32 a214, i32 a215, i32 a216, i32 a217, i32 a218, i32 a219, i32 a220, i32 a221, i32 a222, i32 a223, i32 a224, i32 a225, i32 a226, i32 a227, i32 a228, i32 a229, i32 a230, i32 a231, i32 a232, i32 a233, i32 a234, i32 a235, i32 a236, i32 a237, i32 a238, i32 a239, i32 a240, i32 a241, i32 a242, i32 a243, i32 a244, i32 a245, i32 a246, i32 a247, i32 a248, i32 a249, i32 a250, i32 a251, i32 a252, i32 a253, i32 a254, i32 a255'
+              - ''
+            runner-options: [compile-only]
+          - values:
+              - 'i32 a0, i32 a1, i32 a2, i32 a3, i32 a4, i32 a5, i32 a6, i32 a7, i32 a8, i32 a9, i32 a10, i32 a11, i32 a12, i32 a13, i32 a14, i32 a15, i32 a16, i32 a17, i32 a18, i32 a19, i32 a20, i32 a21, i32 a22, i32 a23, i32 a24, i32 a25, i32 a26, i32 a27, i32 a28, i32 a29, i32 a30, i32 a31, i32 a32, i32 a33, i32 a34, i32 a35, i32 a36, i32 a37, i32 a38, i32 a39, i32 a40, i32 a41, i32 a42, i32 a43, i32 a44, i32 a45, i32 a46, i32 a47, i32 a48, i32 a49, i32 a50, i32 a51, i32 a52, i32 a53, i32 a54, i32 a55, i32 a56, i32 a57, i32 a58, i32 a59, i32 a60, i32 a61, i32 a62, i32 a63, i32 a64, i32 a65, i32 a66, i32 a67, i32 a68, i32 a69, i32 a70, i32 a71, i32 a72, i32 a73, i32 a74, i32 a75, i32 a76, i32 a77, i32 a78, i32 a79, i32 a80, i32 a81, i32 a82, i32 a83, i32 a84, i32 a85, i32 a86, i32 a87, i32 a88, i32 a89, i32 a90, i32 a91, i32 a92, i32 a93, i32 a94, i32 a95, i32 a96, i32 a97, i32 a98, i32 a99, i32 a100, i32 a101, i32 a102, i32 a103, i32 a104, i32 a105, i32 a106, i32 a107, i32 a108, i32 a109, i32 a110, i32 a111, i32 a112, i32 a113, i32 a114, i32 a115, i32 a116, i32 a117, i32 a118, i32 a119, i32 a120, i32 a121, i32 a122, i32 a123, i32 a124, i32 a125, i32 a126, i32 a127, i32 a128, i32 a129, i32 a130, i32 a131, i32 a132, i32 a133, i32 a134, i32 a135, i32 a136, i32 a137, i32 a138, i32 a139, i32 a140, i32 a141, i32 a142, i32 a143, i32 a144, i32 a145, i32 a146, i32 a147, i32 a148, i32 a149, i32 a150, i32 a151, i32 a152, i32 a153, i32 a154, i32 a155, i32 a156, i32 a157, i32 a158, i32 a159, i32 a160, i32 a161, i32 a162, i32 a163, i32 a164, i32 a165, i32 a166, i32 a167, i32 a168, i32 a169, i32 a170, i32 a171, i32 a172, i32 a173, i32 a174, i32 a175, i32 a176, i32 a177, i32 a178, i32 a179, i32 a180, i32 a181, i32 a182, i32 a183, i32 a184, i32 a185, i32 a186, i32 a187, i32 a188, i32 a189, i32 a190, i32 a191, i32 a192, i32 a193, i32 a194, i32 a195, i32 a196, i32 a197, i32 a198, i32 a199, i32 a200, i32 a201, i32 a202, i32 a203, i32 a204, i32 a205, i32 a206, i32 a207, i32 a208, i32 a209, i32 a210, i32 a211, i32 a212, i32 a213, i32 a214, i32 a215, i32 a216, i32 a217, i32 a218, i32 a219, i32 a220, i32 a221, i32 a222, i32 a223, i32 a224, i32 a225, i32 a226, i32 a227, i32 a228, i32 a229, i32 a230, i32 a231, i32 a232, i32 a233, i32 a234, i32 a235, i32 a236, i32 a237, i32 a238, i32 a239, i32 a240, i32 a241, i32 a242, i32 a243, i32 a244, i32 a245, i32 a246, i32 a247, i32 a248, i32 a249, i32 a250, i32 a251, i32 a252, i32 a253, i32 a254, i32 a255, i32 a256'
+              - ''
+            runner-options: [compile-only]
+
+      - file-name: str_args
+        isa:
+          instructions:
+            - sig: call.range method_id, v:in:top
+              acc: out:top
+              format: [op_v_8_id_16]
+        header-template: [panda_string]
+        description: Check that 'call.range' works with String object.
+        tags: ['tsan']
+        code-template: |
+          .function void f1(panda.String a0) {
+              return.void
+          }
+          .function i32 main() {
+          %s
+              call.range f1%s
+        check-type: exit-positive
+        cases:
+          - values:
+            - ''
+            - ''
+            runner-options: [compile-failure]
+          - values:
+            - |
+              #
+                  lda.str "some string"
+                  sta.obj v0
+            - ', v0'
+          - values:
+            - '    mov.null v0'
+            - ', v0'
+          - values:
+            - ''
+            - ', "some string"'
+            runner-options: [compile-failure]
+
+      - file-name: reg
+        isa:
+          instructions:
+            - sig: call.range method_id, v:in:top
+              acc: out:top
+              format: [op_v_8_id_16]
+        header-template: []
+        description: Check 'call.range' available register number width.
+        code-template: |
+          .function void f1() {
+              return.void
+          }
+          .function i32 main() {
+              call.range f1, %s
+        check-type: exit-positive
+        cases:
+          - values:
+            - 'v0'
+          - values:
+            - 'v1'
+          - values:
+            - 'v127'
+          - values:
+            - 'v255'
+          - values:
+            - 'v256'
+            runner-options: [compile-failure]
+          - values:
+            - '0'
+            runner-options: [compile-failure]
+          - values:
+            - '0x7fffffff'
+            runner-options: [compile-failure]
+          - values:
+            - '1.1'
+            runner-options: [compile-failure]
+          - values:
+            - '"some string"'
+            runner-options: [compile-failure]
+          - case-template: |
+              .function void f1(i32 a0, i32 a1, i32 a2, i32 a3, i32 a4, i32 a5, i32 a6, i32 a7, i32 a8, i32 a9, i32 a10, i32 a11, i32 a12, i32 a13, i32 a14, i32 a15, i32 a16, i32 a17, i32 a18, i32 a19, i32 a20, i32 a21, i32 a22, i32 a23, i32 a24, i32 a25, i32 a26, i32 a27, i32 a28, i32 a29, i32 a30, i32 a31, i32 a32, i32 a33, i32 a34, i32 a35, i32 a36, i32 a37, i32 a38, i32 a39, i32 a40, i32 a41, i32 a42, i32 a43, i32 a44, i32 a45, i32 a46, i32 a47, i32 a48, i32 a49, i32 a50, i32 a51, i32 a52, i32 a53, i32 a54, i32 a55, i32 a56, i32 a57, i32 a58, i32 a59, i32 a60, i32 a61, i32 a62, i32 a63, i32 a64, i32 a65, i32 a66, i32 a67, i32 a68, i32 a69, i32 a70, i32 a71, i32 a72, i32 a73, i32 a74, i32 a75, i32 a76, i32 a77, i32 a78, i32 a79, i32 a80, i32 a81, i32 a82, i32 a83, i32 a84, i32 a85, i32 a86, i32 a87, i32 a88, i32 a89, i32 a90, i32 a91, i32 a92, i32 a93, i32 a94, i32 a95, i32 a96, i32 a97, i32 a98, i32 a99, i32 a100, i32 a101, i32 a102, i32 a103, i32 a104, i32 a105, i32 a106, i32 a107, i32 a108, i32 a109, i32 a110, i32 a111, i32 a112, i32 a113, i32 a114, i32 a115, i32 a116, i32 a117, i32 a118, i32 a119, i32 a120, i32 a121, i32 a122, i32 a123, i32 a124, i32 a125, i32 a126, i32 a127, i32 a128, i32 a129, i32 a130, i32 a131, i32 a132, i32 a133, i32 a134, i32 a135, i32 a136, i32 a137, i32 a138, i32 a139, i32 a140, i32 a141, i32 a142, i32 a143, i32 a144, i32 a145, i32 a146, i32 a147, i32 a148, i32 a149, i32 a150, i32 a151, i32 a152, i32 a153, i32 a154, i32 a155, i32 a156, i32 a157, i32 a158, i32 a159, i32 a160, i32 a161, i32 a162, i32 a163, i32 a164, i32 a165, i32 a166, i32 a167, i32 a168, i32 a169, i32 a170, i32 a171, i32 a172, i32 a173, i32 a174, i32 a175, i32 a176, i32 a177, i32 a178, i32 a179, i32 a180, i32 a181, i32 a182, i32 a183, i32 a184, i32 a185, i32 a186, i32 a187, i32 a188, i32 a189, i32 a190, i32 a191, i32 a192, i32 a193, i32 a194, i32 a195, i32 a196, i32 a197, i32 a198, i32 a199, i32 a200, i32 a201, i32 a202, i32 a203, i32 a204, i32 a205, i32 a206, i32 a207, i32 a208, i32 a209, i32 a210, i32 a211, i32 a212, i32 a213, i32 a214, i32 a215, i32 a216, i32 a217, i32 a218, i32 a219, i32 a220, i32 a221, i32 a222, i32 a223, i32 a224, i32 a225, i32 a226, i32 a227, i32 a228, i32 a229, i32 a230, i32 a231, i32 a232, i32 a233, i32 a234, i32 a235, i32 a236, i32 a237, i32 a238, i32 a239, i32 a240, i32 a241, i32 a242, i32 a243, i32 a244, i32 a245, i32 a246, i32 a247, i32 a248, i32 a249, i32 a250, i32 a251, i32 a252, i32 a253, i32 a254, i32 a255, i32 a256) {
+                  return.void
+              }
+              .function i32 main() {
+                  call.range f1, v255
+            runner-options: [compile-only]
+
+      - file-name: uninitialized_values
+        bugid: ['1324']
+        tags: ['verifier']
+        runner-options: ['verifier-failure', 'verifier-debug-config']
+        isa:
+          instructions:
+            - sig: call.range method_id, v:in:top
+              acc: out:top
+              format: [op_v_8_id_16]
+        description: Verifier should check usage of uninitialized arguments passed to function.
+        header-template: []
+        code-template: |
+          .function void f1(%s) {
+              %s
+              return.void
+          }
+          .function i32 main() {
+              %s
+              call.range f1%s
+        check-type: exit-positive
+
+        # Template parameters:
+        #            1st argument is function arguments
+        #            2nd - usage of acc or reg
+        #            3rd - possible initialization of registers
+        #            4th - call parameters
+        cases:
+          - values: ['i32 a0',          '',          '',    ', v0']
+          - values: ['i32 a0, i32 a1, i32 a2, i32 a3',  '',          '',    ', v0']
+          - values: ['i32 a0, f64 a1, i64 a2, i32 a3',  '',          '',    ', v0']
+          - values: ['i32 a0, i32 a1',  '',          'movi v0, 0',    ', v0']
+            description: Check if several registers in 'call.range' is uninitialized.
+          - values: ['i32 a0, f64 a1, i64 a2, i32 a3',  '',          'movi v0, 0',    ', v0']
+            description: Check if several registers in 'call.range' is uninitialized.
+          - values:
+            - ''
+            - |
+              #
+                  lda a3
+                  lda a4
+            - ''
+            - ''
+            description: Check usage of undefined parameter.
+            runner-options: [compile-failure]
+
+      - file-name: uninitialized_reg_no_arg
+        bugid: ['1324']
+        tags: ['verifier']
+        runner-options: ['verifier-failure', 'verifier-debug-config']
+        isa:
+          instructions:
+            - sig: call.range method_id, v:in:top
+              acc: out:top
+              format: [op_v_8_id_16]
+        description: Verifier should check usage of uninitialized registers in function.
+        header-template: []
+        code-template: |
+          .function void f1() {
+              %s
+              return.void
+          }
+          .function i32 main() {
+              %s
+              movi v2, 0
+              call.range f1, v2
+        check-type: exit-positive
+        cases:
+          - values:
+            - lda v0
+            - movi v0, 123
+          - values:
+            - lda v1
+            - movi v1, 123
+          - values:
+            - lda.64 v0
+            - movi.64 v0, 0xFFFFFFFFFFFFFFFF
+          - values:
+            - lda.64 v1
+            - movi.64 v1, 0xFFFFFFFFFFFFFFFF
+          - values:
+            - lda.64 v0
+            - fmovi.64 v0, 3.1415926535
+          - values:
+            - lda.64 v1
+            - movi.64 v1, 0xFFFFFFFFFFFFFFFF
+          - values:
+            - lda.obj v0
+            - |
+              #
+                  lda.str "some string"
+                  sta.obj v0
+          - values:
+            - lda.obj v1
+            - |
+              #
+                  lda.str "some string"
+                  sta.obj v1
+
+      - file-name: args_type_mismatch
+        bugid: ['1324']
+        tags: ['verifier']
+        runner-options: ['verifier-failure', 'verifier-debug-config']
+        isa:
+          instructions:
+            - sig: call.range method_id, v:in:top
+              acc: out:top
+              format: [op_v_8_id_16]
+        description: Check 'call.range' when argument type of function and instuction mismatch.
+        header-template: []
+        code-template: |
+          %s
+          .function void f1(%s) {
+              return.void
+          }
+          .function i32 main() {
+              %s
+              call.range f1, v0
+        check-type: exit-positive
+
+        # Template parameters:
+        #            1 - type definitions
+        #            2 - function arguments
+        #            3 - possible initialization of registers
+        cases:
+            - values: ['',                'i32 a0',      'mov.null v0']
+            - values: ['',                'i64 a0',      'mov.null v0']
+            - values: ['',                'f64 a0',      'mov.null v0']
+            - values: ['',                'i32 a0',      'movi.64 v0, 0']
+            - values: ['',                'f64 a0',      'movi.64 v0, 0']
+            - values: ['.record Obj {}',  'Obj a0',      'movi.64 v0, 0']
+            - values: ['',                'i64 a0',      'movi v0, 0']
+            - values: ['',                'f64 a0',      'movi v0, 0']
+            - values: ['.record Obj {}',  'Obj a0',      'movi v0, 0']
+            - values:
+              - |
+                #
+                .record Obj {}
+
+                .function void Obj.ctor(Obj a0) <ctor> {
+                    return.void
+                }
+              - i32 a0
+              - |
+                #
+                    initobj.short Obj.ctor
+                    sta.obj v0
+
+            - values:
+                - |
+                  #
+                  .record Obj {}
+
+                  .function void Obj.ctor(Obj a0) <ctor> {
+                      return.void
+                  }
+                - i64 a0
+                - |
+                  #
+                      initobj.short Obj.ctor
+                      sta.obj v0
+
+      - file-name: reg_err
+        runner-options: [compile-failure]
+        isa:
+          instructions:
+            - sig: call.range method_id, v:in:top
+              acc: out:top
+              format: [op_v_8_id_16]
+        description: Check 'call.range' register number width.
+        header-template: []
+        code-template: |
+          .function void f1(i32 a0) {
+              return.void
+          }
+          .function i32 main() {
+              call.range f1, %s
+        check-type: exit-positive
+        cases:
+          - values: ['1']
+          - values: ['1.1']
+          - values: ['0xFFFFFFFFFFFFFFFF']
+          - values: ['"some string"']
+
+      - file-name: arg_1_i32_acc
+        isa:
+          instructions:
+            - sig: call.range method_id, v:in:top
+              acc: out:top
+              format: [op_v_8_id_16]
+        description: Check correctness of passed arguments. Load parameter to accumulator. Check i32 type of arguments.
+        header-template: []
+        code-template: |
+          .function i32 f1(i32 a0) {
+              lda a0
+              movi v1, %s
+              jne v1, exit_failure
+              ldai 0
+              return
+          exit_failure:
+              ldai 1
+              return
+          }
+          .function i32 main() {
+              movi v0, %s
+              call.range f1, v0
+
+        check-type: no-check
+        cases:
+          - values: ["0", "0"]
+          - values: ["1", "1"]
+          - values: ["1234567", "1234567"]
+          - values: ["0x7FFFFFFF", "0x7FFFFFFF"]
+          - values: ["0x80000000", "0x80000000"]
+          - values: ["0x9ABCDEF0", "0x9ABCDEF0"]
+          - values: ["0xFFFFFFFF", "0xFFFFFFFF"]
+
+      - file-name: arg_1_f64_acc
+        isa:
+          instructions:
+            - sig: call.range method_id, v:in:top
+              acc: out:top
+              format: [op_v_8_id_16]
+        description: Check correctness of passed arguments. Load parameter to accumulator. Check f64 type of arguments.
+        header-template: []
+        code-template: |
+          .function i32 f1(f64 a0) {
+              lda.64 a0
+              fmovi.64 v1, %s
+              fcmpg.64 v1
+              return
+          }
+          .function i32 main() {
+              fmovi.64 v0, %s
+              call.range f1, v0
+        check-type: no-check
+        cases:
+          - values: ["0", "0"]
+          - values: ["1.1", "1.1"]
+          - values: ["0x7ff0000000000000", "0x7ff0000000000000"]
+          - values: ["0xfff0000000000000", "0xfff0000000000000"]
+          - values: ["0x7fefffffffffffff", "0x7fefffffffffffff"]
+          - values: ["0xffefffffffffffff", "0xffefffffffffffff"]
+          - values: ["100e100", "100e100"]
+
+      - file-name: arg_1_i32_reg
+        isa:
+          instructions:
+            - sig: call.range method_id, v:in:top
+              acc: out:top
+              format: [op_v_8_id_16]
+        description: Check correctness of passed arguments. Load parameter to register. Check i32 type of arguments.
+        header-template: []
+        code-template: |
+          .function i32 f1(i32 a0) {
+              mov v1, a0
+              ldai %s
+              jne v1, exit_failure
+              ldai 0
+              return
+          exit_failure:
+              ldai 1
+              return
+          }
+          .function i32 main() {
+              movi v0, %s
+              call.range f1, v0
+        check-type: no-check
+        cases:
+          - values: ["0", "0"]
+          - values: ["1", "1"]
+          - values: ["1234567", "1234567"]
+          - values: ["0x7FFFFFFF", "0x7FFFFFFF"]
+          - values: ["0x80000000", "0x80000000"]
+          - values: ["0x9ABCDEF0", "0x9ABCDEF0"]
+          - values: ["0xFFFFFFFF", "0xFFFFFFFF"]
+
+      - file-name: arg_1_f64_reg
+        isa:
+          instructions:
+            - sig: call.range method_id, v:in:top
+              acc: out:top
+              format: [op_v_8_id_16]
+        description: Check correctness of passed arguments. Load parameter to register. Check f64 type of arguments.
+        header-template: []
+        code-template: |
+          .function i32 f1(f64 a0) {
+              mov.64 v1, a0
+              fldai.64 %s
+              fcmpg.64 v1
+              return
+          }
+          .function i32 main() {
+              fmovi.64 v0, %s
+              call.range f1, v0
+        check-type: no-check
+        cases:
+          - values: ["0", "0"]
+          - values: ["1.1", "1.1"]
+          - values: ["0x7ff0000000000000", "0x7ff0000000000000"]
+          - values: ["0xfff0000000000000", "0xfff0000000000000"]
+          - values: ["0x7fefffffffffffff", "0x7fefffffffffffff"]
+          - values: ["0xffefffffffffffff", "0xffefffffffffffff"]
+          - values: ["100e100", "100e100"]
+
+      - file-name: arg_2_i32_acc
+        isa:
+          instructions:
+            - sig: call.range method_id, v:in:top
+              acc: out:top
+              format: [op_v_8_id_16]
+        description: Check correctness of passed arguments. Load parameter to accumulator. Check i32 type of arguments.
+        header-template: []
+        code-template: |
+          .function i32 f1(i32 a0, i32 a1, i32 a2, i32 a3) {
+              lda a0
+              movi v1, %s
+              jeq v1, f1_check1
+          # 1st arg does not match, exit
+              ldai 1
+              return
+          f1_check1:
+              lda a1
+              movi v1, %s
+              jeq v1, f1_check2
+              ldai 1
+              return
+          f1_check2:
+              lda a2
+              movi v1, %s
+              jeq v1, f1_check3
+              ldai 1
+              return
+          f1_check3:
+              lda a3
+              movi v1, %s
+              jne v1, exit_failure
+              ldai 0
+              return
+          exit_failure:
+              ldai 1
+              return
+          }
+          .function i32 main() {
+              movi v0, %s
+              movi v1, %s
+              movi v2, %s
+              movi v3, %s
+              call.range f1, v0
+
+        check-type: no-check
+        cases:
+          - values: ["0", "0", "0", "0", "0", "0", "0", "0"]
+          - values: ["0", "1", "2", "3", "0", "1", "2", "3"]
+          - values: ["-3", "-2", "-1", "0", "-3", "-2", "-1", "0"]
+          - values: ["0", "1234567", "89101112", "13141516", "0", "1234567", "89101112", "13141516"]
+          - values: ["0x7FFFFFFF", "0x7FFFFFFF", "0x7FFFFFFF", "0x7FFFFFFF", "0x7FFFFFFF", "0x7FFFFFFF", "0x7FFFFFFF", "0x7FFFFFFF"]
+          - values: ["0", "0x80000000", "0", "0x80000000", "0", "0x80000000", "0", "0x80000000"]
+          - values: ["0x80000000", "0", "0x80000000", "0", "0x80000000", "0", "0x80000000", "0"]
+          - values: ["0x80000000", "0x80000000", "0x80000000", "0x80000000", "0x80000000", "0x80000000", "0x80000000", "0x80000000"]
+          - values: ["0x9ABCDEF0", "0xFEDCBA09", "0x87654321", "0x12345678", "0x9ABCDEF0", "0xFEDCBA09", "0x87654321", "0x12345678"]
+          - values: ["0", "0xFFFFFFFF", "0", "0xFFFFFFFF", "0", "0xFFFFFFFF", "0", "0xFFFFFFFF"]
+          - values: ["0xFFFFFFFF", "0", "0xFFFFFFFF", "0", "0xFFFFFFFF", "0", "0xFFFFFFFF", "0"]
+          - values: ["0xFFFFFFFF", "0xFFFFFFFF", "0xFFFFFFFF", "0xFFFFFFFF", "0xFFFFFFFF", "0xFFFFFFFF", "0xFFFFFFFF", "0xFFFFFFFF"]
+
+      - file-name: arg_2_i32_reg
+        isa:
+          instructions:
+            - sig: call.range method_id, v:in:top
+              acc: out:top
+              format: [op_v_8_id_16]
+        description: Check correctness of passed arguments. Load parameter to register. Check i32 type of arguments.
+        header-template: []
+        code-template: |
+          .function i32 f1(i32 a0, i32 a1, i32 a2, i32 a3) {
+              mov v1, a0
+              ldai %s
+              jeq v1, f1_check1
+          # 1st arg does not match, exit
+              ldai 1
+              return
+          f1_check1:
+              mov v1, a1
+              ldai %s
+              jeq v1, f1_check2
+          # 1st arg does not match, exit
+              ldai 1
+              return
+          f1_check2:
+              mov v1, a2
+              ldai %s
+              jeq v1, f1_check3
+          # 1st arg does not match, exit
+              ldai 1
+              return
+          f1_check3:
+              mov v1, a3
+              ldai %s
+              jne v1, exit_failure
+              ldai 0
+              return
+          exit_failure:
+              ldai 1
+              return
+          }
+          .function i32 main() {
+              movi v0, %s
+              movi v1, %s
+              movi v2, %s
+              movi v3, %s
+              call.range f1, v0
+        check-type: no-check
+        cases:
+          - values: ["0", "0", "0", "0", "0", "0", "0", "0"]
+          - values: ["0", "1", "2", "3", "0", "1", "2", "3"]
+          - values: ["-3", "-2", "-1", "0", "-3", "-2", "-1", "0"]
+          - values: ["0", "1234567", "89101112", "13141516", "0", "1234567", "89101112", "13141516"]
+          - values: ["0x7FFFFFFF", "0x7FFFFFFF", "0x7FFFFFFF", "0x7FFFFFFF", "0x7FFFFFFF", "0x7FFFFFFF", "0x7FFFFFFF", "0x7FFFFFFF"]
+          - values: ["0", "0x80000000", "0", "0x80000000", "0", "0x80000000", "0", "0x80000000"]
+          - values: ["0x80000000", "0", "0x80000000", "0", "0x80000000", "0", "0x80000000", "0"]
+          - values: ["0x80000000", "0x80000000", "0x80000000", "0x80000000", "0x80000000", "0x80000000", "0x80000000", "0x80000000"]
+          - values: ["0x9ABCDEF0", "0xFEDCBA09", "0x87654321", "0x12345678", "0x9ABCDEF0", "0xFEDCBA09", "0x87654321", "0x12345678"]
+          - values: ["0", "0xFFFFFFFF", "0", "0xFFFFFFFF", "0", "0xFFFFFFFF", "0", "0xFFFFFFFF"]
+          - values: ["0xFFFFFFFF", "0", "0xFFFFFFFF", "0", "0xFFFFFFFF", "0", "0xFFFFFFFF", "0"]
+          - values: ["0xFFFFFFFF", "0xFFFFFFFF", "0xFFFFFFFF", "0xFFFFFFFF", "0xFFFFFFFF", "0xFFFFFFFF", "0xFFFFFFFF", "0xFFFFFFFF"]
+
+      - file-name: arg_2_f64_acc
+        isa:
+          instructions:
+            - sig: call.range method_id, v:in:top
+              acc: out:top
+              format: [op_v_8_id_16]
+        description: Check correctness of passed arguments. Load parameter to accumulator. Check f64 type of arguments.
+        header-template: []
+        code-template: |
+          .function i32 f1(f64 a0, f64 a1, f64 a2, f64 a3) {
+              lda.64 a0
+              fmovi.64 v1, %s
+              fcmpg.64 v1
+              jeqz f1_check1
+          # 1st arg does not match, exit
+              ldai 1
+              return
+          f1_check1:
+              lda.64 a1
+              fmovi.64 v1, %s
+              fcmpg.64 v1
+              jeqz f1_check2
+              ldai 1
+              return
+          f1_check2:
+              lda.64 a2
+              fmovi.64 v1, %s
+              fcmpg.64 v1
+              jeqz f1_check3
+              ldai 1
+              return
+          f1_check3:
+              lda.64 a3
+              fmovi.64 v1, %s
+              fcmpg.64 v1
+              return
+          }
+          .function i32 main() {
+              fmovi.64 v0, %s
+              fmovi.64 v1, %s
+              fmovi.64 v2, %s
+              fmovi.64 v3, %s
+              call.range f1, v0
+        check-type: no-check
+        cases:
+          - values: ["0", "0", "0", "0", "0", "0", "0", "0"]
+          - values: ["1.2", "1.1", "1.3", "1.4", "1.2", "1.1", "1.3", "1.4"]
+          - values: ["0x7ff0000000000000", "0xfff0000000000000", "0x0000000000000001", "0x8000000000000001", "0x7ff0000000000000", "0xfff0000000000000", "0x0000000000000001", "0x8000000000000001"]
+          - values: ["0xffefffffffffffff", "0x7fefffffffffffff", "3.1415926535", "3.1415926535e89", "0xffefffffffffffff", "0x7fefffffffffffff", "3.1415926535", "3.1415926535e89"]
+          - values: ["100e100", "200e200", "-50e-50", "123e123", "100e100", "200e200", "-50e-50", "123e123"]
+
+      - file-name: arg_2_f64_reg
+        isa:
+          instructions:
+            - sig: call.range method_id, v:in:top
+              acc: out:top
+              format: [op_v_8_id_16]
+        description: Check correctness of passed arguments. Load parameter to register. Check f64 type of arguments.
+        tags: ['tsan']
+        header-template: []
+        code-template: |
+          .function i32 f1(f64 a0, f64 a1, f64 a2, f64 a3) {
+              mov.64 v1, a0
+              fldai.64 %s
+              fcmpg.64 v1
+              jeqz f1_check1
+          # 1st arg does not match, exit
+              ldai 1
+              return
+          f1_check1:
+              mov.64 v1, a1
+              fldai.64 %s
+              fcmpg.64 v1
+              jeqz f1_check2
+          # 1st arg does not match, exit
+              ldai 1
+              return
+          f1_check2:
+              mov.64 v1, a2
+              fldai.64 %s
+              fcmpg.64 v1
+              jeqz f1_check3
+          # 1st arg does not match, exit
+              ldai 1
+              return
+          f1_check3:
+              mov.64 v1, a3
+              fldai.64 %s
+              fcmpg.64 v1
+              return
+          }
+          .function i32 main() {
+              fmovi.64 v0, %s
+              fmovi.64 v1, %s
+              fmovi.64 v2, %s
+              fmovi.64 v3, %s
+              call.range f1, v0
+        check-type: no-check
+        cases:
+          - values: ["0", "0", "0", "0", "0", "0", "0", "0"]
+          - values: ["1.2", "1.1", "1.3", "1.4", "1.2", "1.1", "1.3", "1.4"]
+          - values: ["0x7ff0000000000000", "0xfff0000000000000", "0x0000000000000001", "0x8000000000000001", "0x7ff0000000000000", "0xfff0000000000000", "0x0000000000000001", "0x8000000000000001"]
+          - values: ["0xffefffffffffffff", "0x7fefffffffffffff", "3.1415926535", "3.1415926535e89", "0xffefffffffffffff", "0x7fefffffffffffff", "3.1415926535", "3.1415926535e89"]
+          - values: ["100e100", "200e200", "-50e-50", "123e123", "100e100", "200e200", "-50e-50", "123e123"]
+
+      - file-name: arg_1_i64_acc
+        isa:
+          instructions:
+            - sig: call.range method_id, v:in:top
+              acc: out:top
+              format: [op_v_8_id_16]
+        description: Check correctness of passed arguments. Load parameter to accumulator. Check i64 type of arguments.
+        header-template: []
+        code-template: |
+          .function i32 f1(i64 a0) {
+              lda.64 a0
+              movi.64 v1, %s
+              cmp.64 v1
+              return
+          }
+          .function i32 main() {
+              movi.64 v0, %s
+              call.range f1, v0
+
+        check-type: no-check
+        cases:
+          - values: ["0", "0"]
+          - values: ["1", "1"]
+          - values: ["0x1234567890ABCDEF", "0x1234567890ABCDEF"]
+          - values: ["0x7FFFFFFFFFFFFFFF", "0x7FFFFFFFFFFFFFFF"]
+          - values: ["0x8000000000000000", "0x8000000000000000"]
+          - values: ["0xFEDCBA0987654321", "0xFEDCBA0987654321"]
+          - values: ["0xFFFFFFFFFFFFFFFF", "0xFFFFFFFFFFFFFFFF"]
+
+      - file-name: arg_1_i64_reg
+        isa:
+          instructions:
+            - sig: call.range method_id, v:in:top
+              acc: out:top
+              format: [op_v_8_id_16]
+        description: Check correctness of passed arguments. Load parameter to accumulator. Check i64 type of arguments.
+        header-template: []
+        code-template: |
+          .function i32 f1(i64 a0) {
+              mov.64 v1, a0
+              ldai.64 %s
+              cmp.64 v1
+              return
+          }
+          .function i32 main() {
+              movi.64 v0, %s
+              call.range f1, v0
+
+        check-type: no-check
+        cases:
+          - values: ["0", "0"]
+          - values: ["1", "1"]
+          - values: ["0x1234567890ABCDEF", "0x1234567890ABCDEF"]
+          - values: ["0x7FFFFFFFFFFFFFFF", "0x7FFFFFFFFFFFFFFF"]
+          - values: ["0x8000000000000000", "0x8000000000000000"]
+          - values: ["0xFEDCBA0987654321", "0xFEDCBA0987654321"]
+          - values: ["0xFFFFFFFFFFFFFFFF", "0xFFFFFFFFFFFFFFFF"]
+
+      - file-name: arg_2_i64_acc
+        isa:
+          instructions:
+            - sig: call.range method_id, v:in:top
+              acc: out:top
+              format: [op_v_8_id_16]
+        description: Check correctness of passed arguments. Load parameter to accumulator.
+        header-template: []
+        code-template: |
+          .function i32 f1(i64 a0, i64 a1, i64 a2, i64 a3) {
+              lda.64 a0
+              movi.64 v1, %s
+              cmp.64 v1
+              jeqz f1_check1
+          # 1st arg does not match, exit
+              ldai 1
+              return
+          f1_check1:
+              lda.64 a1
+              movi.64 v1, %s
+              cmp.64 v1
+              jeqz f1_check2
+          # 1st arg does not match, exit
+              ldai 1
+              return
+          f1_check2:
+              lda.64 a2
+              movi.64 v1, %s
+              cmp.64 v1
+              jeqz f1_check3
+          # 1st arg does not match, exit
+              ldai 1
+              return
+          f1_check3:
+              lda.64 a3
+              movi.64 v1, %s
+              cmp.64 v1
+              return
+          }
+          .function i32 main() {
+              movi.64 v0, %s
+              movi.64 v1, %s
+              movi.64 v2, %s
+              movi.64 v3, %s
+              call.range f1, v0
+
+        check-type: no-check
+        cases:
+          - values: ["0", "0", "0", "0", "0", "0", "0", "0"]
+          - values: ["0", "1", "0", "1", "0", "1", "0", "1"]
+          - values: ["1", "0", "1", "0", "1", "0", "1", "0"]
+          - values: ["0x1234567890ABCDEF", "0x234567890ABCDEF1", "0x34567890ABCDEF12", "0x4567890ABCDEF123", "0x1234567890ABCDEF", "0x234567890ABCDEF1", "0x34567890ABCDEF12", "0x4567890ABCDEF123"]
+          - values: ["0x7FFFFFFFFFFFFFFF", "0", "0x7FFFFFFFFFFFFFFF", "0", "0x7FFFFFFFFFFFFFFF", "0", "0x7FFFFFFFFFFFFFFF", "0"]
+          - values: ["0x8000000000000000", "0x8000000000000000", "0x8000000000000000", "0x8000000000000000", "0x8000000000000000", "0x8000000000000000", "0x8000000000000000", "0x8000000000000000"]
+          - values: ["0xFEDCBA0987654321", "0xEDCBA0987654321F", "0xDCBA0987654321FE", "0xCBA0987654321FED", "0xFEDCBA0987654321", "0xEDCBA0987654321F", "0xDCBA0987654321FE", "0xCBA0987654321FED"]
+
+      - file-name: arg_2_i64_reg
+        isa:
+          instructions:
+            - sig: call.range method_id, v:in:top
+              acc: out:top
+              format: [op_v_8_id_16]
+        description: Check correctness of passed arguments. Load parameter to register. Check i64 type of arguments.
+        tags: ['tsan']
+        header-template: []
+        code-template: |
+          .function i32 f1(i64 a0, i64 a1, i64 a2, i64 a3) {
+              mov.64 v1, a0
+              ldai.64 %s
+              cmp.64 v1
+              jeqz f1_check1
+          # 1st arg does not match, exit
+              ldai 1
+              return
+          f1_check1:
+              mov.64 v1, a1
+              ldai.64 %s
+              cmp.64 v1
+              jeqz f1_check2
+          # 1st arg does not match, exit
+              ldai 1
+              return
+          f1_check2:
+              mov.64 v1, a2
+              ldai.64 %s
+              cmp.64 v1
+              jeqz f1_check3
+          # 1st arg does not match, exit
+              ldai 1
+              return
+          f1_check3:
+
+              mov.64 v1, a3
+              ldai.64 %s
+              cmp.64 v1
+              return
+          }
+          .function i32 main() {
+              movi.64 v0, %s
+              movi.64 v1, %s
+              movi.64 v2, %s
+              movi.64 v3, %s
+              call.range f1, v0
+
+        check-type: no-check
+        cases:
+          - values: ["0", "0", "0", "0", "0", "0", "0", "0"]
+          - values: ["0", "1", "0", "1", "0", "1", "0", "1"]
+          - values: ["1", "0", "1", "0", "1", "0", "1", "0"]
+          - values: ["0x1234567890ABCDEF", "0x234567890ABCDEF1", "0x34567890ABCDEF12", "0x4567890ABCDEF123", "0x1234567890ABCDEF", "0x234567890ABCDEF1", "0x34567890ABCDEF12", "0x4567890ABCDEF123"]
+          - values: ["0x7FFFFFFFFFFFFFFF", "0", "0x7FFFFFFFFFFFFFFF", "0", "0x7FFFFFFFFFFFFFFF", "0", "0x7FFFFFFFFFFFFFFF", "0"]
+          - values: ["0x8000000000000000", "0x8000000000000000", "0x8000000000000000", "0x8000000000000000", "0x8000000000000000", "0x8000000000000000", "0x8000000000000000", "0x8000000000000000"]
+          - values: ["0xFEDCBA0987654321", "0xEDCBA0987654321F", "0xDCBA0987654321FE", "0xCBA0987654321FED", "0xFEDCBA0987654321", "0xEDCBA0987654321F", "0xDCBA0987654321FE", "0xCBA0987654321FED"]
+
+      - file-name: arg_1_obj_acc
+        isa:
+          instructions:
+            - sig: call.range method_id, v:in:top
+              acc: out:top
+              format: [op_v_8_id_16]
+        description: Check correctness of passed arguments. Load parameter to accumulator. Check object type of arguments.
+        tags: ['tsan']
+        header-template: [obj_ctor]
+        code-template: |
+          .function Obj fnc(Obj a0) {
+              lda.obj a0
+              return.obj
+          }
+
+          .function i32 main() {
+              %s
+              sta.obj v0
+              ldai 0 # acc is i32
+              call.range fnc, v0 # acc contains returned Obj
+              jne.obj v0, return_ne_num
+              ldai 0
+              return
+          return_ne_num:
+              ldai 1
+              return
+
+        check-type: no-check
+        cases:
+          - values:
+            - "lda.null"
+          - values:
+            - "initobj Obj.ctor"
+
+      - file-name: arg_2_obj_acc
+        isa:
+          instructions:
+            - sig: call.range method_id, v:in:top
+              acc: out:top
+              format: [op_v_8_id_16]
+        description: Check correctness of passed arguments. Load parameter to accumulator. Check object type.
+        header-template: [obj_ctor]
+        code-template: |
+          .record ObjTuple {
+              Obj o0
+              Obj o1
+              Obj o2
+              Obj o3
+          }
+
+          .function void ObjTuple.ctor(ObjTuple a0, Obj a1, Obj a2, Obj a3, Obj a4) <ctor> {
+              lda.obj a1
+              stobj.obj a0, ObjTuple.o0
+              lda.obj a2
+              stobj.obj a0, ObjTuple.o1
+              lda.obj a3
+              stobj.obj a0, ObjTuple.o2
+              lda.obj a4
+              stobj.obj a0, ObjTuple.o3
+              return.void
+          }
+
+          .function ObjTuple getObjTuple(Obj a0, Obj a1, Obj a2, Obj a3) {
+              mov.obj v0, a0
+              mov.obj v1, a1
+              mov.obj v2, a2
+              mov.obj v3, a3
+              initobj ObjTuple.ctor, v0, v1, v2, v3
+              return.obj
+          }
+
+          .function i32 main() {
+              %s
+              call.range getObjTuple, v0
+              sta.obj v4
+
+              # check ObjTuple.o0 contains correct value (v0)
+              ldobj.obj v4, ObjTuple.o0
+              jeq.obj v0, tuple_2_check_1
+              ldai 1
+              return
+          tuple_2_check_1:
+              # check ObjTuple.o1 contains correct value (v1)
+              ldobj.obj v4, ObjTuple.o1
+              jeq.obj v1, tuple_2_check_2
+              ldai 1
+              return
+          tuple_2_check_2:
+              # check ObjTuple.o2 contains correct value (v2)
+              ldobj.obj v4, ObjTuple.o2
+              jeq.obj v2, tuple_2_check_3
+              ldai 1
+              return
+          tuple_2_check_3:
+              # check ObjTuple.o3 contains correct value (v3)
+              ldobj.obj v4, ObjTuple.o3
+              jne.obj v3, return_ne_num
+              ldai 0
+              return
+          return_ne_num:
+              ldai 1
+              return
+
+        check-type: no-check
+        cases:
+          - values:
+              - |
+                #
+                    mov.null v0
+                    mov.null v1
+                    mov.null v2
+                    mov.null v3
+          - values:
+              - |
+                #
+                    initobj.short Obj.ctor
+                    sta.obj v0
+                    initobj.short Obj.ctor
+                    sta.obj v1
+                    initobj.short Obj.ctor
+                    sta.obj v2
+                    initobj.short Obj.ctor
+                    sta.obj v3
+          - values:
+              - |
+                #
+                    mov.null v0
+                    initobj.short Obj.ctor
+                    sta.obj v1
+                    initobj.short Obj.ctor
+                    sta.obj v2
+                    initobj.short Obj.ctor
+                    sta.obj v3
+          - values:
+              - |
+                #
+                    initobj.short Obj.ctor
+                    sta.obj v0
+                    mov.null v1
+                    initobj.short Obj.ctor
+                    sta.obj v2
+                    initobj.short Obj.ctor
+                    sta.obj v3
+          - values:
+              - |
+                #
+                    initobj.short Obj.ctor
+                    sta.obj v0
+                    initobj.short Obj.ctor
+                    sta.obj v1
+                    mov.null v2
+                    initobj.short Obj.ctor
+                    sta.obj v3
+          - values:
+              - |
+                #
+                    initobj.short Obj.ctor
+                    sta.obj v0
+                    initobj.short Obj.ctor
+                    sta.obj v1
+                    initobj.short Obj.ctor
+                    sta.obj v2
+                    mov.null v3
+
+      - file-name: arg_2_str_acc
+        isa:
+          instructions:
+            - sig: call.range method_id, v:in:top
+              acc: out:top
+              format: [op_v_8_id_16]
+        description: Check correctness of passed arguments. Load parameter to accumulator. Check String type.
+        tags: ['tsan']
+        header-template: [panda_string]
+        code-template: |
+          .record ObjTuple {
+              panda.String o0
+              panda.String o1
+              panda.String o2
+              panda.String o3
+          }
+
+          .function void ObjTuple.ctor(ObjTuple a0, panda.String a1, panda.String a2, panda.String a3, panda.String a4) <ctor> {
+              lda.obj a1
+              stobj.obj a0, ObjTuple.o0
+              lda.obj a2
+              stobj.obj a0, ObjTuple.o1
+              lda.obj a3
+              stobj.obj a0, ObjTuple.o2
+              lda.obj a4
+              stobj.obj a0, ObjTuple.o3
+              return.void
+          }
+
+          .function ObjTuple getObjTuple(panda.String a0, panda.String a1, panda.String a2, panda.String a3) {
+              mov.obj v0, a0
+              mov.obj v1, a1
+              mov.obj v2, a2
+              mov.obj v3, a3
+              initobj ObjTuple.ctor, v0, v1, v2, v3
+              return.obj
+          }
+
+          .function i32 main() {
+              %s
+              call.range getObjTuple, v0
+              sta.obj v4
+
+              # check ObjTuple.o0 contains correct value (v0)
+              ldobj.obj v4, ObjTuple.o0
+              jeq.obj v0, tuple_2_check_1
+              ldai 1
+              return
+          tuple_2_check_1:
+              # check ObjTuple.o1 contains correct value (v1)
+              ldobj.obj v4, ObjTuple.o1
+              jeq.obj v1, tuple_2_check_2
+              ldai 1
+              return
+          tuple_2_check_2:
+              # check ObjTuple.o2 contains correct value (v2)
+              ldobj.obj v4, ObjTuple.o2
+              jeq.obj v2, tuple_2_check_3
+              ldai 1
+              return
+          tuple_2_check_3:
+              # check ObjTuple.o3 contains correct value (v3)
+              ldobj.obj v4, ObjTuple.o3
+              jne.obj v3, return_ne_num
+              ldai 0
+              return
+          return_ne_num:
+              ldai 1
+              return
+
+        check-type: no-check
+        cases:
+          - values:
+              - |
+                #
+                    mov.null v0
+                    mov.null v1
+                    mov.null v2
+                    mov.null v3
+          - values:
+              - |
+                #
+                    lda.str "some string 1"
+                    sta.obj v0
+                    lda.str "some string 2"
+                    sta.obj v1
+                    lda.str "some string 3"
+                    sta.obj v2
+                    lda.str "some string 4"
+                    sta.obj v3
+          - values:
+              - |
+                #
+                    mov.null v0
+                    lda.str "some string 2"
+                    sta.obj v1
+                    lda.str "some string 3"
+                    sta.obj v2
+                    lda.str "some string 4"
+                    sta.obj v3
+          - values:
+              - |
+                #
+                    lda.str "some string 1"
+                    sta.obj v0
+                    mov.null v1
+                    lda.str "some string 3"
+                    sta.obj v2
+                    lda.str "some string 4"
+                    sta.obj v3
+          - values:
+              - |
+                #
+                    lda.str "some string 1"
+                    sta.obj v0
+                    lda.str "some string 2"
+                    sta.obj v1
+                    mov.null v2
+                    lda.str "some string 4"
+                    sta.obj v3
+          - values:
+              - |
+                #
+                    lda.str "some string 1"
+                    sta.obj v0
+                    lda.str "some string 2"
+                    sta.obj v1
+                    lda.str "some string 3"
+                    sta.obj v2
+                    mov.null v3
+
+      - file-name: method_id_not_static_p
+        tags: ['verifier']
+        bugid: ['3247']
+        runner-options: ['verifier-failure', 'verifier-debug-config']
+        isa:
+            instructions:
+              - sig: call.range method_id, v:in:top
+                acc: out:top
+                format: [op_v_8_id_16]
+            verification:
+              - method_id_static
+              - method_id_non_abstract
+        description: Method_id must resolve to a static method in Panda Assembly context. Not static methods should be rejected by verifier.
+        header-template: []
+        code-template: |
+            .record A {}
+
+            .function void A.ctor(A a0) <ctor> {
+                return.void
+            }
+
+            .function i32 A.foo(A a0%s) *s
+
+            .function i32 main() {
+                initobj A.ctor
+                sta.obj v0
+                %s
+                call.range A.foo, v0
+        check-type: exit-positive
+        cases:
+            - values:
+              - |
+                {
+                    ldai 0
+                    return
+                }
+              ignore: true
+            - values: ['<noimpl>']
+              ignore: true
+            - values:
+              - |
+                <static> {
+                    ldai 0
+                    return
+                }
+              runner-options: ['verifier-only', 'verifier-debug-config']
+        template-cases:
+          - values: ['', '##-']
+          - values: [', A a1', 'mov.obj v1, v0']
+

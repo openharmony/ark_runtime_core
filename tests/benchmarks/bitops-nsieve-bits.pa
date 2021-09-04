@@ -1,0 +1,127 @@
+# Copyright (c) 2021 Huawei Device Co., Ltd.
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+.function u1 main(){
+    movi v0, 4
+    movi v1, 1000000
+    movi.64 v2, -92346246980479
+    call test, v0, v1, v2, v0
+    return
+}
+
+.function u1 test(i32 a0, i32 a1, i64 a2){
+    call.short sieve, a0, a1
+    sta.obj v3       #array
+    movi.64 v4, 0    #sum
+    movi v5, 0    #loop counter
+    lenarr v3
+    sta v6        #lenarr
+    ldai.64 0
+loop:
+    jeq v6, loop_exit
+    ldarr v3
+    i32toi64
+    add2.64 v4
+    sta.64 v4
+    inci v5, 1
+    lda v5
+    jmp loop
+loop_exit:
+    lda.64 v4
+    cmp.64 a2
+    jnez exit_err
+    ldai 0
+    return
+exit_err:
+    ldai 1
+    return
+}
+
+.function i32[] sieve(i32 a0, i32 a1){
+    shl a1, a0
+    addi 31
+    shri 5
+    sta v2
+    newarr v3, v2, i32[]
+    call primes, v3, a0, a1, v0
+    return.obj
+}
+
+.function i32[] primes(i32[] a0, i32 a1, i32 a2){
+    shl a2, a1
+    sta v3    #m
+    call.short init, a0, a0
+    sta.obj a0
+    movi v0, 2    #loop counter
+    ldai 2
+loop:
+    jeq v3, loop_exit
+    lda v0
+    andi 31
+    sta v5
+    ldai 1
+    shl2 v5
+    sta v5
+    lda v0
+    shri 5
+    ldarr a0
+    and2 v5
+    jnez if
+endif:
+    inci v0, 1
+    lda v0
+    jmp loop
+loop_exit:
+    lda.obj a0
+    return.obj
+if:
+    add v0, v0
+    sta v1     #loop2_counter
+loop2:
+    jge v3, loop2_exit
+    andi 31
+    sta v5
+    ldai 1
+    shl2 v5
+    not
+    sta v5
+    lda v1
+    shri 5
+    sta v6
+    ldarr a0
+    and2 v5
+    starr a0, v6
+    lda v1
+    add2 v0
+    sta v1
+    jmp loop2
+loop2_exit:
+    jmp endif
+}
+
+.function i32[] init(i32[] a0){
+    lenarr a0
+    sta v0     #sizeof(a0)
+    movi v1, 0  #loop counter
+    ldai 0
+loop:
+    jeq v0, loop_exit
+    ldai 0xffffffff
+    starr a0, v1
+    inci v1, 1
+    lda v1
+    jmp loop
+loop_exit:
+    lda.obj a0
+    return.obj
+}

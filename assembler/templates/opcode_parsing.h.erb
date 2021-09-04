@@ -1,0 +1,135 @@
+/*
+ * Copyright (c) 2021 Huawei Device Co., Ltd.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+#include "assembly-parser.h"
+#include "utils/number-utils.h"
+
+namespace panda::pandasm {
+
+bool Parser::ParseOperands()
+{
+    std::string_view p;
+    uint64_t number;
+    LOG(DEBUG, ASSEMBLER) << "operand search started (line " << line_stric_ << "): " << context_.tokens[0].whole_line;
+    switch(context_.WaitFor())
+    {
+% Panda::instructions.group_by(&:mnemonic).each do |mnemonic, group|
+%  insn = group.first
+%  formats = group.map(&:format)
+%  operands = insn.operands
+%  properties = insn.properties
+%  verification = insn.verification
+            case Token::Type::ID_OP_<%= insn.asm_token%>: {
+%  if insn.return? && !insn.properties.include?('dynamic')
+%    if insn.return_obj?
+                if (!curr_func_->return_type.IsObject()) {
+%    elsif insn.return32?
+                if (!curr_func_->return_type.IsPrim32()) {
+%    elsif insn.return64?
+                if (!curr_func_->return_type.IsPrim64()) {
+%    elsif insn.return_void?
+                if (!curr_func_->return_type.IsVoid()) {
+%    end
+                    GetWarning("Unexpected return type. Correct the return type in the function definition: " +
+                               curr_func_->return_type.GetName(),
+                               Error::ErrorType::WAR_UNEXPECTED_RETURN_TYPE);
+                }
+%  end
+%  required_args = operands.size
+%  required_args = 1 if insn.call?
+%  required_args = 2 if insn.calli?
+%  operands.each_with_index  do |op, j|
+%
+%  if (j != 0)
+%    if j >= required_args
+                if (!context_.Mask()) {
+                    ParseOperandComma();
+                }
+%    else
+                if (!context_.Mask()) {
+                    ParseOperandComma();
+                } else {
+                    context_.err = GetError("Expected comma.", Error::ErrorType::ERR_BAD_NUMBER_OPERANDS);
+                }
+%    end
+%  end
+%
+                if (!context_.Mask()) {
+%    if op.reg?
+
+                if (RegValidName()) {
+                    p = context_.GiveToken();
+                    p.remove_prefix(1);
+                    number = ToNumber(p);
+                    size_t reg_width = curr_func_->ins.back().MaxRegEncodingWidth();
+                    if ((1ull << reg_width) <= number) {
+                        context_.err = GetError("Register width mismatch.", Error::ErrorType::ERR_BAD_OPERAND);
+                    }
+                } else if (context_.err.err == Error::ErrorType::ERR_NONE) {
+                    context_.err = GetError("Invalid name of register.", Error::ErrorType::ERR_BAD_NAME_REG);
+                }
+
+                ParseOperandVreg();
+%    elsif op.imm?
+%      if (!insn.public? && j == 0)
+                    ParseOperandBuiltinMnemonic();
+%      elsif properties.include?("jump")
+                ParseOperandLabel();
+%      else
+%         if properties.include?("float")
+                ParseOperandFloat();
+%         else
+                ParseOperandInteger();
+%         end
+%      end
+%    elsif op.id?
+%      if properties.include?("type_id")
+%        if (verification.include?("type_id_array"))
+                ParseOperandType(Type::VerificationType::TYPE_ID_ARRAY);
+%        elsif (verification.include?("type_id_object"))
+                ParseOperandType(Type::VerificationType::TYPE_ID_OBJECT);
+%        elsif (verification.include?("type_id_any_object"))
+                ParseOperandType(Type::VerificationType::TYPE_ID_ANY_OBJECT);
+%        end
+%      elsif properties.include?("string_id")
+                ParseOperandString();
+%      elsif properties.include?("method_id")
+                ParseOperandCall();
+%      elsif properties.include?("field_id")
+                ParseOperandField();
+%      else
+                ParseOperandId();
+%      end
+%    end
+%
+%    if (j >= required_args) && (operands.size > 0)
+                }
+%    elsif operands.size > 0
+                } else {
+                    context_.err = GetError("Expected more arguments.", Error::ErrorType::ERR_BAD_NUMBER_OPERANDS);
+                }
+%    end
+%  end
+                ParseOperandNone();
+            } break;
+%end
+        default:
+            context_.err = GetError("No such operation.", Error::ErrorType::ERR_BAD_NONEXISTING_OPERATION);
+            return false;
+    }
+    return context_.Mask();
+}
+
+}  // namespace panda::pandasm

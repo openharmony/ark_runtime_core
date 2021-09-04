@@ -1,0 +1,1008 @@
+# Copyright (c) 2021 Huawei Device Co., Ltd.
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+definitions: []
+tests:
+  - file-name: "fadd2.64"
+    isa:
+      title: Two address floating-point binary operation on accumulator
+      description: >
+        Perform specified floating-point binary operation on accumulator and register and store result into accumulator.
+        The results of instructions correspond IEEE-754 arithmetic rules.
+      exceptions:
+          - x_none
+    commands:
+      - file-name: "op_vs_8_nan"
+        isa:
+          instructions:
+            - sig: fadd2.64 v:in:f64
+              acc: inout:f64
+              format: [op_v_8]
+          description: Any operation with NaN results to NaN value.
+        check-type: check-acc-nan
+        code-template: |
+          #
+              fldai.64 %s
+              fmovi.64 v0, *s
+          # Sum of any value and NaN is NaN
+              fadd2.64 v0
+        description: >
+          Check fadd2.64 results in NaN when acc or v0 is NaN
+        template-cases:
+          - values:
+              # NaN
+              - "0x7ff8000000000000"
+          - values:
+              # NaN representation
+              - "0xFFFFFFFFFFFFFFFF"
+          - values:
+              # Positive zero
+              # +0.0d
+              - "0"
+            exclude: [hasval]
+          - values:
+              # Negative zero
+              # -0.0d
+              - "0x8000000000000000"
+            exclude: [hasval]
+          - values:
+              # 1d
+              - "0x3ff0000000000000"
+            exclude: [hasval]
+          - values:
+              # -1d
+              - "0xbff0000000000000"
+            exclude: [hasval]
+          - values:
+              # +Inf
+              - "0x7ff0000000000000"
+            exclude: [hasval]
+          - values:
+              # -Inf
+              - "0xfff0000000000000"
+            exclude: [hasval]
+          - values:
+              # +max
+              - "0x7fefffffffffffff"
+            exclude: [hasval]
+          - values:
+              # -max
+              - "0xffefffffffffffff"
+            exclude: [hasval]
+          - values:
+              # +min
+              - "0x0000000000000001"
+            exclude: [hasval]
+          - values:
+              # -min
+              - "0x8000000000000001"
+            exclude: [hasval]
+          - values:
+              # Some FP value
+              - "9.9e-300"
+            exclude: [hasval]
+          - values:
+              # Some FP value
+              - "-0.00000000000000001"
+            exclude: [hasval]
+        cases:
+          - values:
+              # NaN
+              - "0x7ff8000000000000"
+          - values:
+              # NaN representation
+              - "0xFFFFFFFFFFFFFFFF"
+          - values:
+              # Positive zero
+              # +0.0d
+              - "0"
+            id: hasval
+          - values:
+              # Negative zero
+              # -0.0d
+              - "0x8000000000000000"
+            id: hasval
+          - values:
+              # 1d
+              - "0x3ff0000000000000"
+            id: hasval
+          - values:
+              # -1d
+              - "0xbff0000000000000"
+            id: hasval
+          - values:
+              # +Inf
+              - "0x7ff0000000000000"
+            id: hasval
+          - values:
+              # -Inf
+              - "0xfff0000000000000"
+            id: hasval
+          - values:
+              # +max
+              - "0x7fefffffffffffff"
+            id: hasval
+          - values:
+              # -max
+              - "0xffefffffffffffff"
+            id: hasval
+          - values:
+              # +min
+              - "0x0000000000000001"
+            id: hasval
+          - values:
+              # -min
+              - "0x8000000000000001"
+            id: hasval
+          - values:
+              # Some FP value
+              - "9.9e-300"
+            id: hasval
+          - values:
+              # Some FP value
+              - "-0.00000000000000001"
+            id: hasval
+
+      - file-name: "op_vs_8_pinf"
+        isa:
+          instructions:
+            - sig: fadd2.64 v:in:f64
+              acc: inout:f64
+              format: [op_v_8]
+          description: >
+            The sum of two infinities of the same sign or the difference of two infinities of opposite sign is infinity.
+            The sign of result matches the sign of accumulator value.
+            The sum or the difference of infinity and any finite value is infinity.
+            The sign of result matches the sign of infinity.
+        check-type: check-positive
+        code-template: |
+            #
+                fldai.64 0x7ff0000000000000 # +Inf
+                fmovi.64 v0, %s
+            # Sum of +Inf and value
+                fadd2.64 v0
+                fmovi.64 v1, %s
+                fcmpg.64 v1
+        description: Check fadd2.64 with positive Inf and various values (Inf, min, max, numbers).
+        cases:
+          - values:
+              # +0.0d
+              - "0"
+              - "0x7ff0000000000000"
+          - values:
+              # -0.0d
+              - "0x8000000000000000"
+              - "0x7ff0000000000000"
+          - values:
+              # 1d
+              - "0x3ff0000000000000"
+              - "0x7ff0000000000000"
+          - values:
+              # -1d
+              - "0xbff0000000000000"
+              - "0x7ff0000000000000"
+          - values:
+              # +Inf
+              - "0x7ff0000000000000"
+              - "0x7ff0000000000000"
+          - values:
+              # +max
+              - "0x7fefffffffffffff"
+              - "0x7ff0000000000000"
+          - values:
+              # -max
+              - "0xffefffffffffffff"
+              - "0x7ff0000000000000"
+          - values:
+              # +min
+              - "0x0000000000000001"
+              - "0x7ff0000000000000"
+          - values:
+              # -min
+              - "0x8000000000000001"
+              - "0x7ff0000000000000"
+          - values:
+              # Some FP value, 3.14159265358979323846
+              - "0x400921fb54442d18"
+              - "0x7ff0000000000000"
+          - values:
+              - "1234567890987654321"
+              - "0x7ff0000000000000"
+
+      - file-name: "op_vs_8_ninf"
+        isa:
+          instructions:
+            - sig: fadd2.64 v:in:f64
+              acc: inout:f64
+              format: [op_v_8]
+          description: >
+            The sum of two infinities of the same sign or the difference of two infinities of opposite sign is infinity.
+            The sign of result matches the sign of accumulator value.
+            The sum or the difference of infinity and any finite value is infinity.
+            The sign of result matches the sign of infinity.
+        check-type: check-positive
+        code-template: |
+            #
+                fldai.64 0xfff0000000000000 # -Inf
+                fmovi.64 v0, %s
+            # Sum of -Inf and value
+                fadd2.64 v0
+                fmovi.64 v1, %s
+                fcmpg.64 v1
+        description: Check fadd2.64 with negative Inf and various values (Inf, min, max, numbers).
+        cases:
+            - values:
+                # +0.0d
+                - "0"
+                # -Inf
+                - "0xfff0000000000000"
+            - values:
+                # -0.0d
+                - "0x8000000000000000"
+                # -Inf
+                - "0xfff0000000000000"
+            - values:
+                # 1d
+                - "0x3ff0000000000000"
+                # -Inf
+                - "0xfff0000000000000"
+            - values:
+                # -1d
+                - "0xbff0000000000000"
+                # -Inf
+                - "0xfff0000000000000"
+            - values:
+                # -Inf
+                - "0xfff0000000000000"
+                # -Inf
+                - "0xfff0000000000000"
+            - values:
+                # +max
+                - "0x7fefffffffffffff"
+                # -Inf
+                - "0xfff0000000000000"
+            - values:
+                # -max
+                - "0xffefffffffffffff"
+                # -Inf
+                - "0xfff0000000000000"
+            - values:
+                # +min
+                - "0x0000000000000001"
+                # -Inf
+                - "0xfff0000000000000"
+            - values:
+                # -min
+                - "0x8000000000000001"
+                # -Inf
+                - "0xfff0000000000000"
+            - values:
+                # Some FP value, 3.14159265358979323846
+                - "0x400921fb54442d18"
+                # -Inf
+                - "0xfff0000000000000"
+            - values:
+                - "1234567890987654321"
+                # -Inf
+                - "0xfff0000000000000"
+
+      - file-name: "op_vs_8_inf_nan"
+        isa:
+          instructions:
+            - sig: fadd2.64 v:in:f64
+              acc: inout:f64
+              format: [op_v_8]
+          description: >
+            The sum of opposite infinities or the difference of the same sign infinities is NaN.
+        check-type: check-acc-nan
+        code-template: |
+            #
+                fldai.64 %s
+                fmovi.64 v0, %s
+            # Sum of opposite Inf-s
+                fadd2.64 v0
+        description: Check fadd2.64 with +Inf and -Inf is NaN.
+        cases:
+          - values:
+              - "0x7ff0000000000000"
+              - "0xfff0000000000000"
+          - values:
+              - "0xfff0000000000000"
+              - "0x7ff0000000000000"
+
+      - file-name: "op_vs_8_pzero"
+        isa:
+          instructions:
+            - sig: fadd2.64 v:in:f64
+              acc: inout:f64
+              format: [op_v_8]
+          description: >
+              The sum or the difference of infinity and any finite value is infinity.
+              The sign of result matches the sign of infinity.
+              The sum or the difference of zeros is zero.
+              Exceptions are the sum of two negative zeros and the difference of negative and positive zero - the result is negative zero.
+        check-type: check-positive
+        description: Check fadd2.64 with positive zero and various values (Inf, min, max, numbers).
+        code-template: |
+            #
+                fldai.64 0.0 #
+                fmovi.64 v0, %s
+                mov.64 v1, v0
+            # Sum of +0.0 and value
+                fadd2.64 v0
+                fcmpg.64 v1
+        cases:
+            - values:
+                # +0.0d
+                - "0"
+            - values:
+                # -0.0d
+                - "0x8000000000000000"
+            - values:
+                # 1d
+                - "1"
+            - values:
+                # -1d
+                - "-1"
+            - values:
+                # +Inf
+                - "0x7ff0000000000000"
+            - values:
+                # -Inf
+                - "0xfff0000000000000"
+            - values:
+                # +max
+                - "0x7fefffffffffffff"
+            - values:
+                # -max
+                - "0xffefffffffffffff"
+            - values:
+                # +min
+                - "0x0000000000000001"
+
+            - values:
+                # -min
+                - "0x8000000000000001"
+            - values:
+                - "3.14159265358979323846"
+            - values:
+                - "1234567890987654321"
+
+      - file-name: "op_vs_8_nzero"
+        isa:
+          instructions:
+            - sig: fadd2.64 v:in:f64
+              acc: inout:f64
+              format: [op_v_8]
+          description: >
+              The sum or the difference of infinity and any finite value is infinity.
+              The sign of result matches the sign of infinity.
+              The sum or the difference of zeros is zero.
+              Exceptions are the sum of two negative zeros and the difference of negative and positive zero - the result is negative zero.
+        check-type: check-positive
+        description: Check fadd2.64 with negative zero and various values (Inf, min, max, numbers).
+        code-template: |
+            #
+                fldai.64 -0.0 #
+                fmovi.64 v0, %s
+                mov.64 v1, v0
+            # Sum of -0.0 and value
+                fadd2.64 v0
+                fcmpg.64 v1
+        cases:
+          # Comment this case, since it is incorrect.
+          # It seems the better way to compare -0.0 and -0.0 is to convert it to -Inf
+          # - case-template: |
+          #     #
+          #         fldai.64 -0.0 #
+          #         fmovi.64 v0, -0.0
+          #     # Sum of -0.0 and -0.0 should be -0.0
+          #         fadd2.64 v0
+          #         fmovi.64 v1, -0.0
+          #         cmp.64 v1 # compare as binary values, due to +0.0 == -0.0, but 0x8000000000000000 != 0x0000000000000000
+          - values:
+              # 1d
+              - "1"
+          - values:
+              - "-1"
+          - values:
+              # +Inf
+              - "0x7ff0000000000000"
+          - values:
+              # -Inf
+              - "0xfff0000000000000"
+          - values:
+              # +max
+              - "0x7fefffffffffffff"
+          - values:
+              # -max
+              - "0xffefffffffffffff"
+          - values:
+              # +min
+              - "0x0000000000000001"
+          - values:
+              # -min
+              - "0x8000000000000001"
+          - values:
+              - "3.14159265358979323846"
+          - values:
+              - "1234567890987654321"
+
+      - file-name: "op_vs_8_pone"
+        isa:
+          instructions:
+            - sig: fadd2.64 v:in:f64
+              acc: inout:f64
+              format: [op_v_8]
+          description: >
+            The sum or the difference of infinity and any finite value is infinity.
+            The sign of result matches the sign of infinity.
+        check-type: check-positive
+        description: Check fadd2.64 with +1 and various values (Inf, min, max, numbers).
+        code-template: |
+            #
+                fldai.64 1.0 #
+                fmovi.64 v0, %s
+            # Sum of 1.0 and value
+                fadd2.64 v0
+                fmovi.64 v1, %s
+                fcmpg.64 v1
+        cases:
+          - values:
+              # +0.0d
+              - "0"
+              - "1.0"
+          - values:
+              # -0.0d
+              - "0x8000000000000000"
+              - "1.0"
+          - values:
+              - "1.0"
+              - "2.0"
+          - values:
+              - "-1.0"
+              - "0"
+          - values:
+              # +Inf
+              - "0x7ff0000000000000"
+              - "0x7ff0000000000000"
+          - values:
+              # -Inf
+              - "0xfff0000000000000"
+              # -Inf
+              - "0xfff0000000000000"
+          - values:
+              # +max
+              - "0x7fefffffffffffff"
+              - "0x7fefffffffffffff"
+          - values:
+              # -max
+              - "0xffefffffffffffff"
+              # -max
+              - "0xffefffffffffffff"
+          - values:
+              # +min
+              - "0x0000000000000001"
+              - "1.0"
+          - values:
+              # -min
+              - "0x8000000000000001"
+              - "1.0"
+          - values:
+              # Some FP value, 3.14159265358979323846
+              - "3.14159265358979323846"
+              - "4.14159265358979323846"
+          - values:
+              # Some FP value
+              - "1234567890.987654321"
+              - "1234567891.987654321"
+
+      - file-name: "op_vs_8_none"
+        isa:
+          instructions:
+            - sig: fadd2.64 v:in:f64
+              acc: inout:f64
+              format: [op_v_8]
+          description: >
+            The sum or the difference of infinity and any finite value is infinity.
+            The sign of result matches the sign of infinity.
+        check-type: check-positive
+        description: Check fadd2.64 with -1 and various values (Inf, min, max, numbers).
+        code-template: |
+            #
+                fldai.64 -1.0 #
+                fmovi.64 v0, %s
+            # Sum of -1.0 and value
+                fadd2.64 v0
+                fmovi.64 v1, %s
+                fcmpg.64 v1
+        cases:
+          - values:
+              # +0.0d
+              - "0"
+              - "-1"
+          - values:
+              # -0.0d
+              - "0x8000000000000000"
+              - "-1"
+          - values:
+              # 1d
+              - "1"
+              - "0"
+          - values:
+              # -1d
+              - "-1"
+              - "-2"
+          - values:
+              # +Inf
+              - "0x7ff0000000000000"
+              - "0x7ff0000000000000"
+          - values:
+              # -Inf
+              - "0xfff0000000000000"
+              # -Inf
+              - "0xfff0000000000000"
+          - values:
+              # +max
+              - "0x7fefffffffffffff"
+              - "0x7fefffffffffffff"
+          - values:
+              # -max
+              - "0xffefffffffffffff"
+              # -max
+              - "0xffefffffffffffff"
+          - values:
+              # +min
+              - "0x0000000000000001"
+              # -1d
+              - "-1"
+          - values:
+              # -min
+              - "0x8000000000000001"
+              # -1d
+              - "-1"
+          - values:
+              # Some FP value, 3.14159265358979323846
+              - "3.14159265358979323846"
+              - "2.14159265358979323846"
+          - values:
+              # Some FP value
+              - "1234567890.987654321"
+              - "1234567889.987654321"
+
+      - file-name: "op_vs_8"
+        isa:
+          instructions:
+            - sig: fadd2.64 v:in:f64
+              acc: inout:f64
+              format: [op_v_8]
+          description: >
+              The sum or the difference of zeros is zero.
+              Exceptions are the sum of two negative zeros and the difference of negative and positive zero - the result is negative zero.
+        check-type: check-positive
+        description: Check fadd2.64 with various values.
+        code-template: |
+            #
+                fldai.64 %s #
+                fmovi.64 v0, %s
+            # Sum of -1.0 and value
+                fadd2.64 v0
+                fmovi.64 v1, %s
+                fcmpg.64 v1
+        cases:
+            - values:
+                - "0.0"
+                - "0.0"
+                - "0.0"
+            - values:
+                - "0.0"
+                - "-0.0"
+                - "0.0"
+            - values:
+                - "-0.0"
+                - "0.0"
+                - "0.0"
+            - values:
+                - "-0.0"
+                - "-0.0"
+                - "0.0"
+            - values:
+                - "1.0"
+                - "-1.0"
+                - "0.0"
+            - values:
+                - "-1.0"
+                - "1.0"
+                - "0.0"
+            - values:
+                - "1.0e100"
+                - "1.0e100"
+                - "2.0e100"
+            - values:
+                - "1.0e-100"
+                - "1.0e-100"
+                - "2.0e-100"
+            - values:
+                - "1.0e+100"
+                - "1.0e-100"
+                - "1.0e+100"
+            - values:
+                - "-1.0e100"
+                - "-1.0e100"
+                - "-2.0e100"
+            - values:
+                - "-1.0e-100"
+                - "-1.0e-100"
+                - "-2.0e-100"
+            - values:
+                - "-1.0e+100"
+                - "-1.0e-100"
+                - "-1.0e+100"
+            - values:
+                - "3.14159265358979323846"
+                - "3.14159265358979323846"
+                - "6.283185307179586"
+            - values:
+                - "3.14159265358979323846e200"
+                - "3.14159265358979323846e200"
+                - "6.283185307179587e200"
+
+      - file-name: "op_vs_8_max"
+        isa:
+          instructions:
+            - sig: fadd2.64 v:in:f64
+              acc: inout:f64
+              format: [op_v_8]
+        check-type: check-positive
+        code-template: |
+            #
+                fldai.64 %s
+                fmovi.64 v0, %s
+            # Sum of two values
+                fadd2.64 v0
+                fmovi.64 v1, %s
+                fcmpg.64 v1
+        description: Check fadd2.64 with various max values.
+        cases:
+          - values:
+              # +max
+              - "0x7fefffffffffffff"
+              # +max
+              - "0x7fefffffffffffff"
+              # +Inf
+              - "0x7ff0000000000000"
+          - values:
+              # -max
+              - "0xffefffffffffffff"
+              # -max
+              - "0xffefffffffffffff"
+              # -Inf
+              - "0xfff0000000000000"
+          - values:
+              # +max
+              - "0x7fefffffffffffff"
+              # -max
+              - "0xffefffffffffffff"
+              - "0"
+          - values:
+              # +max
+              - "0x7fefffffffffffff"
+              # 1d
+              - "0x3ff0000000000000"
+              # +max
+              - "0x7fefffffffffffff"
+          - values:
+              # +max
+              - "0x7fefffffffffffff"
+              - "-1.0"
+              # +max
+              - "0x7fefffffffffffff"
+          - values:
+              # -max
+              - "0xffefffffffffffff"
+              - "1"
+              # -max
+              - "0xffefffffffffffff"
+          - values:
+              # -max
+              - "0xffefffffffffffff"
+              - "-1.0"
+              # -max
+              - "0xffefffffffffffff"
+
+      - file-name: "incorrect_reg"
+        isa:
+          instructions:
+            - sig: fadd2.64 v:in:f64
+              acc: inout:f64
+              format: [op_v_8]
+        check-type: none
+        runner-options: [compile-failure]
+        description: Check fadd2.64 with incorrect register numbers.
+        code-template: |
+          #
+              fadd2.64 %s
+        cases:
+          - values: [v256]
+          - values: [v65535]
+          - values: [a0]
+          - values: [a255]
+          - values: [null]
+          - values: [0]
+          - values: [1.1]
+          - values: ['2.2']
+
+      - file-name: "reg_number"
+        isa:
+          instructions:
+            - sig: fadd2.64 v:in:f64
+              acc: inout:f64
+              format: [op_v_8]
+        check-type: none
+        runner-options: [compile-only]
+        description: Check fadd2.64 with correct register numbers.
+        code-template: |
+          #
+              fadd2.64 %s
+        cases:
+          - values: [v0]
+          - values: [v16]
+          - values: [v128]
+          - values: [v255]
+
+      - file-name: "calc"
+        isa:
+            instructions:
+              - sig: fadd2.64 v:in:f64
+                acc: inout:f64
+                format: [op_v_8]
+        check-type: check-positive
+        description: Check fadd2.64 with various values.
+        tags: ['tsan']
+        code-template: |
+            #
+                fldai.64 %s
+                fmovi.64 v0, %s
+                fadd2.64 v0
+                fmovi.64 v1, %s
+                fcmpg.64 v1
+        cases:
+            - values:
+                - "-0.15050802400115393"
+                - "0.18996780455830886"
+                - "0.03945978055715493"
+            - values:
+                - "0.09951566402242995"
+                - "0.03719425811598742"
+                - "0.13670992213841737"
+            - values:
+                - "0.038831767543099804"
+                - "-0.4662699308635513"
+                - "-0.4274381633204515"
+            - values:
+                - "-0.11785869458726261"
+                - "-0.4106442634971579"
+                - "-0.5285029580844205"
+            - values:
+                - "0.23325136409810066"
+                - "0.09303562554819389"
+                - "0.32628698964629455"
+            - values:
+                - "-0.36306915632091574"
+                - "-0.18813247402656463"
+                - "-0.5512016303474804"
+            - values:
+                - "0.10035211145856304"
+                - "0.23596899663966542"
+                - "0.33632110809822846"
+            - values:
+                - "-0.22312737471673505"
+                - "-0.2184161670683794"
+                - "-0.44154354178511446"
+            - values:
+                - "0.18529020487227765"
+                - "0.48416743127187434"
+                - "0.669457636144152"
+            - values:
+                - "-0.47541772073735256"
+                - "0.08233614669530886"
+                - "-0.3930815740420437"
+            - values:
+                - "2.7599109874619587e-36"
+                - "-1.9447187242297282e-36"
+                - "8.151922632322304e-37"
+            - values:
+                - "9.760636456557758e-74"
+                - "4.224280075394366e-73"
+                - "5.200343721050142e-73"
+            - values:
+                - "2.5148540784952656e14"
+                - "1.9183146899927395e15"
+                - "2.169800097842266e15"
+            - values:
+                - "-9.871449173048974e19"
+                - "4.913647830291874e20"
+                - "3.926502912986976e20"
+            - values:
+                - "3.9192234567792673e-47"
+                - "2.2575355997689083e-47"
+                - "6.176759056548176e-47"
+            - values:
+                - "1.8994371294860455e98"
+                - "1.127391615608706e98"
+                - "3.0268287450947515e98"
+            - values:
+                - "4.0229987819504645e-32"
+                - "-2.500939436262524e-32"
+                - "1.5220593456879406e-32"
+            - values:
+                - "-4.16291703977667e72"
+                - "-4.0235643039421143e73"
+                - "-4.4398560079197816e73"
+            - values:
+                - "4.6361619555237306e-8"
+                - "-6.780934771200086e-9"
+                - "3.958068478403722e-8"
+            - values:
+                - "-2.5549708954660045e19"
+                - "4.064694433264309e19"
+                - "1.5097235377983046e19"
+
+      - file-name: "type"
+        isa:
+            instructions:
+              - sig: fadd2.64 v:in:f64
+                acc: inout:f64
+                format: [op_v_8]
+            verification:
+              - acc_type
+              - v1_type
+        tags: ['verifier']
+        runner-options: ['verifier-failure', 'verifier-debug-config']
+        header-template: []
+        code-template: |
+          #
+          .record A {}
+          .record B {}
+          .record panda.String <external>
+          .record panda.Object <external>
+          .function i32 main() {
+              %s
+              *s
+              fadd2.64 v0
+        check-type: exit-positive
+        description: Check 'fadd2.64' with incorrect register and accumulator type.
+        template-cases:
+          - values:
+              - movi v0, 0
+          - values:
+              - movi.64 v0, 0
+          - values:
+              - fmovi.64 v0, 0
+            exclude: [val]
+          - values:
+              - |
+                #
+                    lda.type B
+                    sta.obj v0
+          - values:
+              - |
+                #
+                    lda.type B[]
+                    sta.obj v0
+          - values:
+              - |
+                #
+                    lda.type panda.String
+                    sta.obj v0
+          - values:
+              - |
+                #
+                    lda.str "string"
+                    sta.obj v0
+          - values:
+              - |
+                #
+                    movi v0, 10
+                    newarr v0, v0, i32[]
+          - values:
+              - mov.null v0
+
+        cases:
+          - values:
+              - ldai 0
+          - values:
+              - ldai.64 0
+          - values:
+              - fldai.64 0
+            id: val
+          - values:
+              - |
+                #
+                    lda.type A
+          - values:
+              - |
+                #
+                    lda.type A[]
+          - values:
+              - |
+                #
+                    lda.type panda.String
+          - values:
+              - |
+                #
+                    lda.str "string"
+          - values:
+              - |
+                #
+                    movi v1, 10
+                    newarr v1, v1, f64[]
+                    lda.obj v1
+          - values:
+              - lda.null
+
+      - file-name: uninitialized_regs
+        isa:
+          instructions:
+            - sig: fadd2.64 v:in:f64
+              acc: inout:f64
+              format: [op_v_8]
+        description: Check 'fadd2.64' with uninitialized register and accumulator.
+        tags: ['verifier']
+        runner-options: ['verifier-failure', 'verifier-debug-config']
+        header-template: []
+        code-template: |
+            #
+            .function i32 main() {
+                %s
+                *s
+                fadd2.64 %s
+        check-type: exit-positive
+        template-cases:
+          - values:
+              - ''
+              - v0
+          - values:
+              - fmovi.64 v0, 0
+              - v0
+            exclude: [init]
+          - values:
+              - ''
+              - v7
+          - values:
+              - ''
+              - v15
+          - values:
+              - fmovi.64 v15, 0
+              - v15
+            exclude: [init]
+          - values:
+              - ''
+              - v128
+          - values:
+              - fmovi.64 v128, 0
+              - v128
+            exclude: [init]
+          - values:
+              - ''
+              - v255
+          - values:
+              - fmovi.64 v255, 0
+              - v255
+            exclude: [init]
+        cases:
+          - values:
+              - ''
+          - values:
+              - fldai.64 0
+            id: init

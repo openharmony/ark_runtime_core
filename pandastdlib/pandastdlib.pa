@@ -1,0 +1,750 @@
+# Copyright (c) 2021 Huawei Device Co., Ltd.
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+.record panda.String <external>
+.record panda.Object <external>
+
+.record Math {}
+.record Double {}
+.record Float {}
+.record IO {}
+.record System {}
+.record Convert {}
+.record Object {}
+.record Ecmascript.Intrinsics {}
+
+# Exceptions
+
+.record panda.NullPointerException {
+    panda.String message
+    panda.Object cause
+}
+
+.record panda.ArrayIndexOutOfBoundsException {
+    panda.String message
+    panda.Object cause
+}
+
+.record panda.IndexOutOfBoundsException {
+    panda.String message
+    panda.Object cause
+}
+
+.record panda.IllegalStateException {
+    panda.String message
+    panda.Object cause
+}
+
+.record panda.UnsupportedOperationException {
+    panda.String message
+    panda.Object cause
+}
+
+.record panda.ArrayStoreException {
+    panda.String message
+    panda.Object cause
+}
+
+.record panda.StringIndexOutOfBoundsException {
+    panda.String message
+    panda.Object cause
+}
+
+.record panda.NegativeArraySizeException {
+    panda.String message
+    panda.Object cause
+}
+
+.record panda.ArithmeticException {
+    panda.String message
+    panda.Object cause
+}
+
+.record panda.ClassCastException {
+    panda.String message
+    panda.Object cause
+}
+
+.record panda.AbstractMethodError {
+    panda.String message
+    panda.Object cause
+}
+
+.record panda.NoClassDefFoundError {
+    panda.String message
+    panda.Object cause
+}
+
+.record panda.ClassNotFoundException {
+    panda.String message
+    panda.Object cause
+}
+
+.record panda.NoSuchFieldError {
+    panda.String message
+    panda.Object cause
+}
+
+.record panda.NoSuchMethodError {
+    panda.String message
+    panda.Object cause
+}
+
+.record panda.ExceptionInInitializerError {
+    panda.String message
+    panda.Object cause
+}
+
+.record panda.InstantiationError {
+    panda.String message
+    panda.Object cause
+}
+
+.record panda.IllegalMonitorStateException {
+    panda.String message
+    panda.Object cause
+}
+
+.record panda.OutOfMemoryError {
+    panda.String message
+    panda.Object cause
+}
+
+.record panda.RuntimeException {
+    panda.String message
+    panda.Object cause
+}
+
+.record panda.VerifyError {
+    panda.String message
+    panda.Object cause
+}
+
+.function void panda.NullPointerException.ctor(panda.NullPointerException a0, panda.String a1, panda.Object a2) <ctor> {
+    lda.obj a1
+    stobj.obj a0, panda.NullPointerException.message
+    lda.obj a2
+    stobj.obj a0, panda.NullPointerException.cause
+    return.void
+}
+
+.function panda.String panda.NullPointerException.getMessage(panda.NullPointerException a0) {
+    ldobj.obj a0, panda.NullPointerException.message
+    return.obj
+}
+
+.function panda.Object panda.NullPointerException.getCause(panda.NullPointerException a0) {
+    ldobj.obj a0, panda.NullPointerException.cause
+    return.obj
+}
+
+.function void panda.ArrayIndexOutOfBoundsException.ctor(panda.ArrayIndexOutOfBoundsException a0, panda.String a1, panda.Object a2) <ctor> {
+    lda.obj a1
+    stobj.obj a0, panda.ArrayIndexOutOfBoundsException.message
+    lda.obj a2
+    stobj.obj a0, panda.ArrayIndexOutOfBoundsException.cause
+    return.void
+}
+
+.function panda.String panda.ArrayIndexOutOfBoundsException.getMessage(panda.ArrayIndexOutOfBoundsException a0) {
+    ldobj.obj a0, panda.ArrayIndexOutOfBoundsException.message
+    return.obj
+}
+
+.function panda.Object panda.ArrayIndexOutOfBoundsException.getCause(panda.ArrayIndexOutOfBoundsException a0) {
+    ldobj.obj a0, panda.ArrayIndexOutOfBoundsException.cause
+    return.obj
+}
+
+.function void panda.IndexOutOfBoundsException.ctor(panda.IndexOutOfBoundsException a0, panda.String a1, panda.Object a2) <ctor> {
+    lda.obj a1
+    stobj.obj a0, panda.IndexOutOfBoundsException.message
+    lda.obj a2
+    stobj.obj a0, panda.IndexOutOfBoundsException.cause
+    return.void
+}
+
+.function panda.String panda.IndexOutOfBoundsException.getMessage(panda.IndexOutOfBoundsException a0) {
+    ldobj.obj a0, panda.IndexOutOfBoundsException.message
+    return.obj
+}
+
+.function panda.Object panda.IndexOutOfBoundsException.getCause(panda.IndexOutOfBoundsException a0) {
+    ldobj.obj a0, panda.IndexOutOfBoundsException.cause
+    return.obj
+}
+
+.function void panda.IllegalStateException.ctor(panda.IllegalStateException a0, panda.String a1, panda.Object a2) <ctor> {
+    lda.obj a1
+    stobj.obj a0, panda.IllegalStateException.message
+    lda.obj a2
+    stobj.obj a0, panda.IllegalStateException.cause
+    return.void
+}
+
+.function panda.String panda.IllegalStateException.getMessage(panda.IllegalStateException a0) {
+    ldobj.obj a0, panda.IllegalStateException.message
+    return.obj
+}
+
+.function panda.Object panda.IllegalStateException.getCause(panda.IllegalStateException a0) {
+    ldobj.obj a0, panda.IllegalStateException.cause
+    return.obj
+}
+
+.function void panda.UnsupportedOperationException.ctor(panda.UnsupportedOperationException a0, panda.String a1, panda.Object a2) <ctor> {
+    lda.obj a1
+    stobj.obj a0, panda.UnsupportedOperationException.message
+    lda.obj a2
+    stobj.obj a0, panda.UnsupportedOperationException.cause
+    return.void
+}
+
+.function panda.String panda.UnsupportedOperationException.getMessage(panda.UnsupportedOperationException a0) {
+    ldobj.obj a0, panda.UnsupportedOperationException.message
+    return.obj
+}
+
+.function panda.Object panda.UnsupportedOperationException.getCause(panda.UnsupportedOperationException a0) {
+    ldobj.obj a0, panda.UnsupportedOperationException.cause
+    return.obj
+}
+
+.function void panda.ArrayStoreException.ctor(panda.ArrayStoreException a0, panda.String a1, panda.Object a2) <ctor> {
+  lda.obj a1
+  stobj.obj a0, panda.ArrayStoreException.message
+  lda.obj a2
+  stobj.obj a0, panda.ArrayStoreException.cause
+  return.void
+}
+
+.function panda.String panda.ArrayStoreException.getMessage(panda.ArrayStoreException a0) {
+  ldobj.obj a0, panda.ArrayStoreException.message
+  return.obj
+}
+
+.function panda.Object panda.ArrayStoreException.getCause(panda.ArrayStoreException a0) {
+  ldobj.obj a0, panda.ArrayStoreException.cause
+  return.obj
+}
+
+.function void panda.StringIndexOutOfBoundsException.ctor(panda.StringIndexOutOfBoundsException a0, panda.String a1, panda.Object a2) <ctor> {
+    lda.obj a1
+    stobj.obj a0, panda.StringIndexOutOfBoundsException.message
+    lda.obj a2
+    stobj.obj a0, panda.StringIndexOutOfBoundsException.cause
+    return.void
+}
+
+.function panda.String panda.StringIndexOutOfBoundsException.getMessage(panda.StringIndexOutOfBoundsException a0) {
+    ldobj.obj a0, panda.StringIndexOutOfBoundsException.message
+    return.obj
+}
+
+.function panda.Object panda.StringIndexOutOfBoundsException.getCause(panda.StringIndexOutOfBoundsException a0) {
+    ldobj.obj a0, panda.StringIndexOutOfBoundsException.cause
+    return.obj
+}
+
+.function void panda.NegativeArraySizeException.ctor(panda.NegativeArraySizeException a0, panda.String a1, panda.Object a2) <ctor> {
+    lda.obj a1
+    stobj.obj a0, panda.NegativeArraySizeException.message
+    lda.obj a2
+    stobj.obj a0, panda.NegativeArraySizeException.cause
+    return.void
+}
+
+.function panda.String panda.NegativeArraySizeException.getMessage(panda.NegativeArraySizeException a0) {
+    ldobj.obj a0, panda.NegativeArraySizeException.message
+    return.obj
+}
+
+.function panda.Object panda.NegativeArraySizeException.getCause(panda.NegativeArraySizeException a0) {
+    ldobj.obj a0, panda.NegativeArraySizeException.cause
+    return.obj
+}
+
+.function void panda.ArithmeticException.ctor(panda.ArithmeticException a0, panda.String a1, panda.Object a2) <ctor> {
+    lda.obj a1
+    stobj.obj a0, panda.ArithmeticException.message
+    lda.obj a2
+    stobj.obj a0, panda.ArithmeticException.cause
+    return.void
+}
+
+.function panda.String panda.ArithmeticException.getMessage(panda.ArithmeticException a0) {
+    ldobj.obj a0, panda.ArithmeticException.message
+    return.obj
+}
+
+.function panda.Object panda.ArithmeticException.getCause(panda.ArithmeticException a0) {
+    ldobj.obj a0, panda.ArithmeticException.cause
+    return.obj
+}
+
+.function void panda.ClassCastException.ctor(panda.ClassCastException a0, panda.String a1, panda.Object a2) <ctor> {
+    lda.obj a1
+    stobj.obj a0, panda.ClassCastException.message
+    lda.obj a2
+    stobj.obj a0, panda.ClassCastException.cause
+    return.void
+}
+
+.function panda.String panda.ClassCastException.getMessage(panda.ClassCastException a0) {
+    ldobj.obj a0, panda.ClassCastException.message
+    return.obj
+}
+
+.function panda.Object panda.ClassCastException.getCause(panda.ClassCastException a0) {
+    ldobj.obj a0, panda.ClassCastException.cause
+    return.obj
+}
+
+.function void panda.AbstractMethodError.ctor(panda.AbstractMethodError a0, panda.String a1, panda.Object a2) <ctor> {
+    lda.obj a1
+    stobj.obj a0, panda.AbstractMethodError.message
+    lda.obj a2
+    stobj.obj a0, panda.AbstractMethodError.cause
+    return.void
+}
+
+.function panda.String panda.AbstractMethodError.getMessage(panda.AbstractMethodError a0) {
+    ldobj.obj a0, panda.AbstractMethodError.message
+    return.obj
+}
+
+.function panda.Object panda.AbstractMethodError.getCause(panda.AbstractMethodError a0) {
+    ldobj.obj a0, panda.AbstractMethodError.cause
+    return.obj
+}
+
+.function void panda.NoClassDefFoundError.ctor(panda.NoClassDefFoundError a0, panda.String a1, panda.Object a2) <ctor> {
+    lda.obj a1
+    stobj.obj a0, panda.NoClassDefFoundError.message
+    lda.obj a2
+    stobj.obj a0, panda.NoClassDefFoundError.cause
+    return.void
+}
+
+.function panda.String panda.NoClassDefFoundError.getMessage(panda.NoClassDefFoundError a0) {
+    ldobj.obj a0, panda.NoClassDefFoundError.message
+    return.obj
+}
+
+.function panda.Object panda.NoClassDefFoundError.getCause(panda.NoClassDefFoundError a0) {
+    ldobj.obj a0, panda.NoClassDefFoundError.cause
+    return.obj
+}
+
+.function void panda.ClassNotFoundException.ctor(panda.ClassNotFoundException a0, panda.String a1, panda.Object a2) <ctor> {
+    lda.obj a1
+    stobj.obj a0, panda.ClassNotFoundException.message
+    lda.obj a2
+    stobj.obj a0, panda.ClassNotFoundException.cause
+    return.void
+}
+
+.function panda.String panda.ClassNotFoundException.getMessage(panda.ClassNotFoundException a0) {
+    ldobj.obj a0, panda.ClassNotFoundException.message
+    return.obj
+}
+
+.function panda.Object panda.ClassNotFoundException.getCause(panda.ClassNotFoundException a0) {
+    ldobj.obj a0, panda.ClassNotFoundException.cause
+    return.obj
+}
+
+.function void panda.NoSuchFieldError.ctor(panda.NoSuchFieldError a0, panda.String a1, panda.Object a2) <ctor> {
+    lda.obj a1
+    stobj.obj a0, panda.NoSuchFieldError.message
+    lda.obj a2
+    stobj.obj a0, panda.NoSuchFieldError.cause
+    return.void
+}
+
+.function panda.String panda.NoSuchFieldError.getMessage(panda.NoSuchFieldError a0) {
+    ldobj.obj a0, panda.NoSuchFieldError.message
+    return.obj
+}
+
+.function panda.Object panda.NoSuchFieldError.getCause(panda.NoSuchFieldError a0) {
+    ldobj.obj a0, panda.NoSuchFieldError.cause
+    return.obj
+}
+
+.function void panda.NoSuchMethodError.ctor(panda.NoSuchMethodError a0, panda.String a1, panda.Object a2) <ctor> {
+    lda.obj a1
+    stobj.obj a0, panda.NoSuchMethodError.message
+    lda.obj a2
+    stobj.obj a0, panda.NoSuchMethodError.cause
+    return.void
+}
+
+.function panda.String panda.NoSuchMethodError.getMessage(panda.NoSuchMethodError a0) {
+    ldobj.obj a0, panda.NoSuchMethodError.message
+    return.obj
+}
+
+.function panda.Object panda.NoSuchMethodError.getCause(panda.NoSuchMethodError a0) {
+    ldobj.obj a0, panda.NoSuchMethodError.cause
+    return.obj
+}
+
+.function void panda.ExceptionInInitializerError.ctor(panda.ExceptionInInitializerError a0, panda.String a1, panda.Object a2) <ctor> {
+    lda.obj a1
+    stobj.obj a0, panda.ExceptionInInitializerError.message
+    lda.obj a2
+    stobj.obj a0, panda.ExceptionInInitializerError.cause
+    return.void
+}
+
+.function panda.String panda.ExceptionInInitializerError.getMessage(panda.ExceptionInInitializerError a0) {
+    ldobj.obj a0, panda.ExceptionInInitializerError.message
+    return.obj
+}
+
+.function panda.Object panda.ExceptionInInitializerError.getCause(panda.ExceptionInInitializerError a0) {
+    ldobj.obj a0, panda.ExceptionInInitializerError.cause
+    return.obj
+}
+
+.function void panda.InstantiationError.ctor(panda.InstantiationError a0, panda.String a1, panda.Object a2) <ctor> {
+    lda.obj a1
+    stobj.obj a0, panda.InstantiationError.message
+    lda.obj a2
+    stobj.obj a0, panda.InstantiationError.cause
+    return.void
+}
+
+.function panda.String panda.InstantiationError.getMessage(panda.InstantiationError a0) {
+    ldobj.obj a0, panda.InstantiationError.message
+    return.obj
+}
+
+.function panda.Object panda.InstantiationError.getCause(panda.InstantiationError a0) {
+    ldobj.obj a0, panda.InstantiationError.cause
+    return.obj
+}
+
+.function void panda.IllegalMonitorStateException.ctor(panda.IllegalMonitorStateException a0, panda.String a1, panda.Object a2) <ctor> {
+    lda.obj a1
+    stobj.obj a0, panda.IllegalMonitorStateException.message
+    lda.obj a2
+    stobj.obj a0, panda.IllegalMonitorStateException.cause
+    return.void
+}
+
+.function panda.String panda.IllegalMonitorStateException.getMessage(panda.IllegalMonitorStateException a0) {
+    ldobj.obj a0, panda.IllegalMonitorStateException.message
+    return.obj
+}
+
+.function panda.Object panda.IllegalMonitorStateException.getCause(panda.IllegalMonitorStateException a0) {
+    ldobj.obj a0, panda.IllegalMonitorStateException.cause
+    return.obj
+}
+
+.function void panda.OutOfMemoryError.ctor(panda.OutOfMemoryError a0, panda.String a1, panda.Object a2) <ctor> {
+    lda.obj a1
+    stobj.obj a0, panda.OutOfMemoryError.message
+    lda.obj a2
+    stobj.obj a0, panda.OutOfMemoryError.cause
+    return.void
+}
+
+.function panda.String panda.OutOfMemoryError.getMessage(panda.OutOfMemoryError a0) {
+    ldobj.obj a0, panda.OutOfMemoryError.message
+    return.obj
+}
+
+.function panda.Object panda.OutOfMemoryError.getCause(panda.OutOfMemoryError a0) {
+    ldobj.obj a0, panda.OutOfMemoryError.cause
+    return.obj
+}
+
+.function void panda.RuntimeException.ctor(panda.RuntimeException a0, panda.String a1, panda.Object a2) <ctor> {
+    lda.obj a1
+    stobj.obj a0, panda.RuntimeException.message
+    lda.obj a2
+    stobj.obj a0, panda.RuntimeException.cause
+    return.void
+}
+
+.function panda.String panda.RuntimeException.getMessage(panda.RuntimeException a0) {
+    ldobj.obj a0, panda.RuntimeException.message
+    return.obj
+}
+
+.function panda.Object panda.RuntimeException.getCause(panda.RuntimeException a0) {
+    ldobj.obj a0, panda.RuntimeException.cause
+    return.obj
+}
+
+.function void panda.VerifyError.ctor(panda.VerifyError a0, panda.String a1, panda.Object a2) <ctor> {
+    lda.obj a1
+    stobj.obj a0, panda.VerifyError.message
+    lda.obj a2
+    stobj.obj a0, panda.VerifyError.cause
+    return.void
+}
+
+.function panda.String panda.VerifyError.getMessage(panda.VerifyError a0) {
+    ldobj.obj a0, panda.VerifyError.message
+    return.obj
+}
+
+.function panda.Object panda.VerifyError.getCause(panda.VerifyError a0) {
+    ldobj.obj a0, panda.VerifyError.cause
+    return.obj
+}
+
+# Math methods
+
+.function i32 Math.absI32(i32 a0) <native>
+
+.function i64 Math.absI64(i64 a0) <native>
+
+.function f32 Math.absF32(f32 a0) <native>
+
+.function f64 Math.absF64(f64 a0) <native>
+
+.function f32 Math.fsin(f32 a0) <native>
+
+.function f64 Math.sin(f64 a0) <native>
+
+.function f32 Math.fcos(f32 a0) <native>
+
+.function f64 Math.cos(f64 a0) <native>
+
+.function f32 Math.fpow(f32 a0, f32 a1) <native>
+
+.function f64 Math.pow(f64 a0, f64 a1) <native>
+
+.function f32 Math.fsqrt(f32 a0) <native>
+
+.function f64 Math.sqrt(f64 a0) <native>
+
+.function i32 Math.minI32(i32 a0, i32 a1) <native>
+
+.function i64 Math.minI64(i64 a0, i64 a1) <native>
+
+.function f32 Math.minF32(f32 a0, f32 a1) <native>
+
+.function f64 Math.minF64(f64 a0, f64 a1) <native>
+
+.function i32 Math.maxI32(i32 a0, i32 a1) <native>
+
+.function i64 Math.maxI64(i64 a0, i64 a1) <native>
+
+.function f32 Math.maxF32(f32 a0, f32 a1) <native>
+
+.function f64 Math.maxF64(f64 a0, f64 a1) <native>
+
+.function u1 Double.isInfinite(f64 a0) <native>
+
+.function u1 Float.isInfinite(f32 a0) <native>
+
+# IO methods
+
+.function void IO.printI32(i32 a0) <native>
+
+.function void IO.printU32(u32 a0) <native>
+
+.function void IO.printI64(i64 a0) <native>
+
+.function void IO.printU64(u64 a0) <native>
+
+.function void IO.printF32(f32 a0) <native>
+
+.function void IO.printF64(f64 a0) <native>
+
+.function void IO.printString(panda.String a0) <native>
+
+# System methods
+
+.function void System.exit(i32 a0) <native>
+
+.function u8 System.compileMethod(panda.String a0) <native>
+
+.function i64 System.nanoTime() <native>
+
+.function void System.assert(u1 a0) <native>
+
+.function void System.assertPrint(u1 a0, panda.String a1) <native>
+
+# Object methods
+
+.function void Object.monitorEnter(panda.Object a0) <native>
+
+.function void Object.monitorExit(panda.Object a0) <native>
+
+.function void Object.Wait(panda.Object a0) <native>
+
+.function void Object.TimedWait(panda.Object a0, u64 a1) <native>
+
+.function void Object.TimedWaitNanos(panda.Object a0, u64 a1, u64 a2) <native>
+
+.function void Object.Notify(panda.Object a0) <native>
+
+.function void Object.NotifyAll(panda.Object a0) <native>
+
+# Convert methods
+
+.function i32 Convert.stringToI32(panda.String a0) <native>
+
+.function u32 Convert.stringToU32(panda.String a0) <native>
+
+.function i64 Convert.stringToI64(panda.String a0) <native>
+
+.function u64 Convert.stringToU64(panda.String a0) <native>
+
+.function f32 Convert.stringToF32(panda.String a0) <native>
+
+.function f64 Convert.stringToF64(panda.String a0) <native>
+
+# Ecmascript.Intrinsics methods
+.function any Ecmascript.Intrinsics.ldnan() <native>
+.function any Ecmascript.Intrinsics.ldinfinity() <native>
+.function any Ecmascript.Intrinsics.ldglobalthis() <native>
+.function any Ecmascript.Intrinsics.ldundefined() <native>
+.function any Ecmascript.Intrinsics.ldboolean(any a0) <native>
+.function any Ecmascript.Intrinsics.ldnumber(any a0) <native>
+.function any Ecmascript.Intrinsics.ldstring(any a0) <native>
+.function any Ecmascript.Intrinsics.ldbigint(any a0) <native>
+.function any Ecmascript.Intrinsics.ldnull() <native>
+.function any Ecmascript.Intrinsics.ldsymbol() <native>
+.function any Ecmascript.Intrinsics.ldobject(any a0, any a1) <native>
+.function any Ecmascript.Intrinsics.ldfunction(any a0, any a1) <native>
+.function any Ecmascript.Intrinsics.ldglobal() <native>
+.function any Ecmascript.Intrinsics.ldtrue() <native>
+.function any Ecmascript.Intrinsics.ldfalse() <native>
+.function any Ecmascript.Intrinsics.add2Dyn(any a0, any a1) <native>
+.function any Ecmascript.Intrinsics.sub2Dyn(any a0, any a1) <native>
+.function any Ecmascript.Intrinsics.mul2Dyn(any a0, any a1) <native>
+.function any Ecmascript.Intrinsics.div2Dyn(any a0, any a1) <native>
+.function any Ecmascript.Intrinsics.mod2Dyn(any a0, any a1) <native>
+.function any Ecmascript.Intrinsics.eqDyn(any a0, any a1) <native>
+.function any Ecmascript.Intrinsics.noteqDyn(any a0, any a1) <native>
+.function any Ecmascript.Intrinsics.lessDyn(any a0, any a1) <native>
+.function any Ecmascript.Intrinsics.lesseqDyn(any a0, any a1) <native>
+.function any Ecmascript.Intrinsics.greaterDyn(any a0, any a1) <native>
+.function any Ecmascript.Intrinsics.greatereqDyn(any a0, any a1) <native>
+.function any Ecmascript.Intrinsics.ldObjByValue(u16 a0, any a1, any a2) <native>
+.function any Ecmascript.Intrinsics.tryLdGlobalByValue(u16 a0, any a1) <native>
+.function void Ecmascript.Intrinsics.stObjByValue(u16 a0, any a1, any a2, any a3) <native>
+.function void Ecmascript.Intrinsics.tryStGlobalByValue(u16 a0, any a1, any a2) <native>
+.function any Ecmascript.Intrinsics.shl2Dyn(any a0, any a1) <native>
+.function any Ecmascript.Intrinsics.shr2Dyn(any a0, any a1) <native>
+.function any Ecmascript.Intrinsics.ashr2Dyn(any a0, any a1) <native>
+.function any Ecmascript.Intrinsics.and2Dyn(any a0, any a1) <native>
+.function any Ecmascript.Intrinsics.or2Dyn(any a0, any a1) <native>
+.function any Ecmascript.Intrinsics.xor2Dyn(any a0, any a1) <native>
+.function any Ecmascript.Intrinsics.tonumber(any a0) <native>
+.function any Ecmascript.Intrinsics.negDyn(any a0) <native>
+.function any Ecmascript.Intrinsics.notDyn(any a0) <native>
+.function any Ecmascript.Intrinsics.incDyn(any a0) <native>
+.function any Ecmascript.Intrinsics.decDyn(any a0) <native>
+.function void Ecmascript.Intrinsics.throwDyn(any a0) <native>
+.function any Ecmascript.Intrinsics.delobjprop(any a0, any a1) <native>
+.function any Ecmascript.Intrinsics.defineglobalvar(any a0, any a1) <native>
+.function any Ecmascript.Intrinsics.definelocalvar(any a0, any a1) <native>
+.function any Ecmascript.Intrinsics.definefuncexpr(any a0, any a1) <native>
+.function any Ecmascript.Intrinsics.definefuncDyn(u32 a0, any a1) <native>
+.function any Ecmascript.Intrinsics.defineNCFuncDyn(u32 a0, any a1, any a2) <native>
+.function any Ecmascript.Intrinsics.newobjDynrange(u16 a0, any a1) <native>
+.function any Ecmascript.Intrinsics.refeqDyn(any a0, any a1) <native>
+.function any Ecmascript.Intrinsics.expDyn(any a0, any a1) <native>
+.function any Ecmascript.Intrinsics.typeofDyn(any a0) <native>
+.function any Ecmascript.Intrinsics.callruntimerange(any a0, any a1) <native>
+.function any Ecmascript.Intrinsics.isinDyn(any a0, any a1) <native>
+.function any Ecmascript.Intrinsics.instanceofDyn(any a0, any a1) <native>
+.function any Ecmascript.Intrinsics.strictEqDyn(any a0, any a1) <native>
+.function any Ecmascript.Intrinsics.strictNotEqDyn(any a0, any a1) <native>
+.function any Ecmascript.Intrinsics.newobjspreadDyn(any a0, any a1, any a2) <native>
+.function any Ecmascript.Intrinsics.callspreadDyn(any a0, any a1, any a2) <native>
+.function any Ecmascript.Intrinsics.newlexenvDyn(u16 a0) <native>
+.function void Ecmascript.Intrinsics.StLexVarDyn(u16 a0, u16 a1, any a2) <native>
+.function any Ecmascript.Intrinsics.LdLexVarDyn(u16 a0, u16 a1) <native>
+.function any Ecmascript.Intrinsics.ldlexenvDyn() <native>
+.function any Ecmascript.Intrinsics.popLexenvDyn() <native>
+.function any Ecmascript.Intrinsics.getUnmappedArgs() <native>
+.function any Ecmascript.Intrinsics.toboolean(any a0) <native>
+.function any Ecmascript.Intrinsics.getPropIterator(any a0) <native>
+.function any Ecmascript.Intrinsics.defineGeneratorFunc(u32 a0, any a1) <native>
+.function any Ecmascript.Intrinsics.createIterResultObj(any a0, any a1) <native>
+.function any Ecmascript.Intrinsics.suspendGenerator(any a0, any a1) <native>
+.function any Ecmascript.Intrinsics.resumeGenerator(any a0) <native>
+.function any Ecmascript.Intrinsics.getResumeMode(any a0) <native>
+.function any Ecmascript.Intrinsics.createGeneratorObj(any a0) <native>
+.function any Ecmascript.Intrinsics.defineAsyncFunc(u32 a0, any a1) <native>
+.function any Ecmascript.Intrinsics.asyncFunctionEnter() <native>
+.function any Ecmascript.Intrinsics.asyncFunctionAwaitUncaught(any a0, any a1) <native>
+.function any Ecmascript.Intrinsics.asyncFunctionResolve(any a0, any a1, any a2) <native>
+.function any Ecmascript.Intrinsics.asyncFunctionReject(any a0, any a1, any a2) <native>
+.function void Ecmascript.Intrinsics.throwUndefined(any a0) <native>
+.function void Ecmascript.Intrinsics.throwConstAssignment(any a0) <native>
+.function void Ecmascript.Intrinsics.throwUndefinedIfHole(any a0, any a1) <native>
+.function any Ecmascript.Intrinsics.copyrestargs(u16 a0) <native>
+.function any Ecmascript.Intrinsics.ldHole() <native>
+.function any Ecmascript.Intrinsics.getTemplateObject(any a0) <native>
+.function any Ecmascript.Intrinsics.TryLdGlobalByName(u32 a0, u16 a1) <native>
+.function void Ecmascript.Intrinsics.TryStGlobalByName(u32 a0, u16 a1, any a2) <native>
+.function any Ecmascript.Intrinsics.LdGlobalVar(u32 a0, u16 a1) <native>
+.function void Ecmascript.Intrinsics.StGlobalVar(u32 a0, u16 a1, any a2) <native>
+.function any Ecmascript.Intrinsics.LdObjByName(u32 a0, u16 a1, any a2) <native>
+.function void Ecmascript.Intrinsics.StObjByName(u32 a0, u16 a1, any a2, any a3) <native>
+.function any Ecmascript.Intrinsics.LdObjByIndex(u16 a0, any a1, any a2) <native>
+.function void Ecmascript.Intrinsics.StObjByIndex(u16 a0, any a1, any a2, any a3) <native>
+.function any Ecmascript.Intrinsics.getnextpropname(any a0) <native>
+.function void Ecmascript.Intrinsics.ReturnUndefined() <native>
+.function any Ecmascript.Intrinsics.Call0Dyn(any a0) <native>
+.function any Ecmascript.Intrinsics.Call1Dyn(any a0, any a1) <native>
+.function any Ecmascript.Intrinsics.Call2Dyn(any a0, any a1, any a2) <native>
+.function any Ecmascript.Intrinsics.Call3Dyn(any a0, any a1, any a2, any a3) <native>
+.function any Ecmascript.Intrinsics.CalliRangeDyn(u16 a0, any a1) <native>
+.function any Ecmascript.Intrinsics.CalliThisRangeDyn(u16 a0, any a1) <native>
+.function any Ecmascript.Intrinsics.createemptyobject() <native>
+.function any Ecmascript.Intrinsics.createobjectwithbuffer(u16 a0) <native>
+.function void Ecmascript.Intrinsics.setobjectwithproto(any a0, any a1) <native>
+.function any Ecmascript.Intrinsics.copydataproperties(any a0, any a1) <native>
+.function any Ecmascript.Intrinsics.definegettersetterbyvalue(any a0, any a1, any a2, any a3, any a4) <native>
+.function any Ecmascript.Intrinsics.createemptyarray() <native>
+.function any Ecmascript.Intrinsics.createarraywithbuffer(u16 a0) <native>
+.function void Ecmascript.Intrinsics.StOwnByName(u32 a0, u16 a1, any a2, any a3) <native>
+.function void Ecmascript.Intrinsics.StOwnByIndex(u16 a0, any a1, any a2, any a3) <native>
+.function void Ecmascript.Intrinsics.StOwnByValue(u16 a0, any a1, any a2, any a3) <native>
+.function any Ecmascript.Intrinsics.starrayspread(any a0, any a1, any a2) <native>
+.function any Ecmascript.Intrinsics.GetIterator(any a0) <native>
+.function void Ecmascript.Intrinsics.ThrowIfNotObject(any a0) <native>
+.function void Ecmascript.Intrinsics.ThrowThrowNotExists() <native>
+.function any Ecmascript.Intrinsics.CreateObjectWithExcludedKeys(u16 a0, any a1, any a2) <native>
+.function void Ecmascript.Intrinsics.ThrowPatternNonCoercible() <native>
+.function any Ecmascript.Intrinsics.IterNext(any a0) <native>
+.function any Ecmascript.Intrinsics.GetIteratorNext(any a0, any a1) <native>
+.function any Ecmascript.Intrinsics.CloseIterator(any a0) <native>
+.function any Ecmascript.Intrinsics.ImportModule(u32 a0) <native>
+.function void Ecmascript.Intrinsics.StModuleVar(u32 a0, any a1) <native>
+.function void Ecmascript.Intrinsics.CopyModule(any a0) <native>
+.function any Ecmascript.Intrinsics.LdModvarByName(u32 a0, u16 a1, any a2) <native>
+.function any Ecmascript.Intrinsics.DefineClassWithBuffer(u32 a0, u16 a1, any a2, any a3) <native>
+.function any Ecmascript.Intrinsics.SuperCall(u16 a0, any a1, any a2) <native>
+.function any Ecmascript.Intrinsics.SuperCallSpread(any a0, any a1) <native>
+.function any Ecmascript.Intrinsics.defineMethod(u32 a0, any a1, any a2) <native>
+.function any Ecmascript.Intrinsics.LdSuperByName(u32 a0, u16 a1, any a2) <native>
+.function void Ecmascript.Intrinsics.StSuperByName(u32 a0, u16 a1, any a2, any a3) <native>
+.function void Ecmascript.Intrinsics.StSuperByValue(u16 a0, any a1, any a2, any a3) <native>
+.function any Ecmascript.Intrinsics.LdSuperByValue(u16 a0, any a1, any a2) <native>
+.function any Ecmascript.Intrinsics.createobjecthavingmethod(u16 a0, any a1) <native>
+.function void Ecmascript.Intrinsics.ThrowIfSuperNotCorrectCall(u16 a0, any a1) <native>
+.function any Ecmascript.Intrinsics.LdHomeObject() <native>
+.function void Ecmascript.Intrinsics.ThrowDeleteSuperProperty() <native>

@@ -1,0 +1,649 @@
+# Copyright (c) 2021 Huawei Device Co., Ltd.
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+definitions:
+  - name: java
+    template: |
+      .language Java
+  - name: aoobe_p
+    template: |
+      .record panda.ArrayIndexOutOfBoundsException<external>
+  - name: aoobe_j
+    template: |
+      .record java.lang.ArrayIndexOutOfBoundsException<external>
+  - name: npe_p
+    template: |
+      .record panda.NullPointerException <external>
+  - name: npe_j
+    template: |
+      .record java.lang.NullPointerException <external>
+tests:
+  - file-name: "ldarr.16"
+    isa:
+      title: Load from array
+      description: >
+        Load an element from array using accumulator as an index and puts it into accumulator.
+        If element size is smaller then 32 bits, it will be zero or sign extended (depending on bytecode) to i32.
+    commands:
+      - file-name: "read_arr_p"
+        isa:
+          instructions:
+            - sig: ldarr.16 v:in:i16[]
+              acc: inout:i32
+              format: [op_v_8]
+        description: Check ldarr.16 reads items from array of different size and type in Panda Assembly context.
+        code-template: |
+          #
+              movi v0, %s
+              newarr v0, v0, i16[]
+              ldai 0
+              ldarr.16 v0
+        check-type: exit-positive
+        cases:
+          - values: ['1']
+          - values: ['255']
+            tags: ['tsan']
+          - values: ['65536']
+
+      - file-name: "acceptable_primitive_types_p"
+        isa:
+          instructions:
+            - sig: ldarr.16 v:in:i16[]
+              acc: inout:i32
+              format: [op_v_8]
+        tags: ['tsan', 'verifier']
+        bugid: ['3052']
+        description: Check acceptable array of primitive types for ldarr.16 instruction in Panda Assembly context.
+        code-template: |
+          #
+              movi v0, 1
+              newarr v0, v0, i16[]
+              ldai 0
+              ldarr.16 v0
+        check-type: exit-positive
+        runner-options: ['verifier-only', 'verifier-debug-config']
+
+      - file-name: "rejectable_primitive_types_p"
+        isa:
+          instructions:
+            - sig: ldarr.16 v:in:i16[]
+              acc: inout:i32
+              format: [op_v_8]
+        description: Check rejectable array of primitive types for ldarr.16 instruction in Panda Assembly context.
+        code-template: |
+          #
+              movi v0, 1
+              newarr v0, v0, %s
+              ldai 0
+              ldarr.16 v0
+
+        check-type: exit-positive
+        tags: ['verifier']
+        runner-options: ['verifier-failure', 'verifier-debug-config']
+        cases:
+          - values: ['u1[]']
+          - values: ['i8[]']
+          - values: ['u8[]']
+          - values: ['u16[]']
+          - values: ['i32[]']
+          - values: ['u32[]']
+          - values: ['i64[]']
+          - values: ['u64[]']
+          - values: ['f32[]']
+          - values: ['f64[]']
+
+      - file-name: "read_values"
+        isa:
+          instructions:
+            - sig: ldarr.16 v:in:i16[]
+              acc: inout:i32
+              format: [op_v_8]
+        description: Check ldarr.16 reads correct items from array of primitives.
+        header-template: [xorshift32, main]
+        code-template: |
+          #
+              movi v3, 10000 # iterations
+              movi v2, %s    # index
+              movi v0, %s
+                             # array size
+              newarr v1, v0, i16[]     # v1 - testable array
+
+              movi v0, 1     # initial random number
+              movi v5, 0xFFFF
+          loop:
+              call.short nextRand, v0
+              sta v0         # v0 - next random number
+          #
+              starr.16 v1, v2 # save random number in v1[v2]
+              lda v2
+              ldarr.16 v1    # get v1[v2]
+              and2 v5        # Keep only low 16 bits
+              sta v4         # v4 = v1[v2]
+
+              lda v0
+              and2 v5        # acc = v0 & 0xFFFF (random number)
+              ucmp v4        # Compare random number and stored value from array
+              jeqz passed
+              ldai 1
+              return
+          passed:
+              inci v3, -1
+              lda v3
+              jnez loop
+        check-type: exit-positive
+        cases:
+          - values: ['0', '1']
+          - values: ['254', '255']
+          - values: ['65535', '65536']
+          - values: ['7', '16']
+          - values: ['123', '255']
+          - values: ['49151', '65536']
+
+      - file-name: "read_all_values"
+        isa:
+          instructions:
+            - sig: ldarr.16 v:in:i16[]
+              acc: inout:i32
+              format: [op_v_8]
+        description: Check ldarr.16 reads correct items from array of primitives. Inspect different indexes and values.
+        code-template: |
+          #
+              movi v1, 0     # v1 - index
+              movi v0, %s
+                             # v0 is array size
+              mov v2, v0     # v2 is size too
+              newarr v0, v0, i16[]     # v0 - testable array
+              movi v4, 0xFFFF
+          fill_array:
+              lda v1
+              starr.16 v0, v1 # v0[v1] = v1
+              inci v1, 1      # v1 = v1 + 1
+              lda v1
+              jne v2, fill_array
+
+              movi v1, 0     # index
+          check_array:
+              lda v1
+              ldarr.16 v0
+              and2 v4
+              sta v3
+              lda v1
+              and2 v4
+              ucmp v3
+              jeqz ok
+              ldai 1
+              return
+          ok:
+              inci v1, 1
+              lda v1
+              jne v2, check_array
+        check-type: exit-positive
+        cases:
+          - values: ['100']
+          - values: ['255']
+            tags: ['tsan']
+          - values: ['65535']
+            tags: ['tsan']
+
+      - file-name: "reg_number"
+        isa:
+          instructions:
+            - sig: ldarr.16 v:in:i16[]
+              acc: inout:i32
+              format: [op_v_8]
+        check-type: empty
+        runner-options: [compile-only]
+        description: Check 'ldarr.16' instruction with different registers numbers.
+        header-template: []
+        code-template: |
+          #
+          .function i32 main() {
+              ldarr.16 %s
+          }
+        cases:
+          - values: [v0]
+          - values: [v16]
+          - values: [v128]
+          - values: [v255]
+          - values: [v256]
+            runner-options: [compile-failure]
+          - values: [v65535]
+            runner-options: [compile-failure]
+          - case-template: |
+              #
+              .function void f1(i32 a0) {
+                  ldarr.16 a0 # valid name of register
+              }
+
+              .function i32 main() {
+                  movi v0, 0
+                  call.short f1, v0
+              }
+          - case-template: |
+              #
+              .function void f1(i32 a0) {
+                  ldarr.16 a1 # invalid name of register
+              }
+
+              .function i32 main() {
+                  movi v0, 0
+                  call.short f1, v0
+              }
+            runner-options: [compile-failure]
+          - values: [a0]
+            runner-options: [compile-failure]
+          - values: [a255]
+            runner-options: [compile-failure]
+          - values: [null]
+            runner-options: [compile-failure]
+          - values: [0]
+            runner-options: [compile-failure]
+          - values: [1.1]
+            runner-options: [compile-failure]
+          - values: ['2.2']
+            runner-options: [compile-failure]
+
+      - file-name: "arr_type"
+        isa:
+          instructions:
+            - sig: ldarr.16 v:in:i16[]
+              acc: inout:i32
+              format: [op_v_8]
+          verification:
+            - v1_array_type
+        tags: ['verifier']
+        bugid: ['2816']
+        runner-options: ['verifier-failure', 'verifier-debug-config']
+        header-template: []
+        code-template: |
+          #
+          .record A {}
+          .record panda.String <external>
+          .record panda.Object <external>
+          .function i32 main() {
+              %s
+              ldai 0
+              ldarr.16 v0
+        check-type: exit-positive
+        description: Check 'ldarr.16' with incorrect array type. See also "rejectable_primitive_types" tests.
+        cases:
+          - values:
+              - movi v0, 0
+          - values:
+              - movi.64 v0, 0
+          - values:
+              - fmovi.64 v0, 0
+          - values:
+              - |
+                #
+                    lda.type A
+                    sta.obj v0
+          - values:
+              - |
+                #
+                    lda.type A[]
+                    sta.obj v0
+          - values:
+              - |
+                #
+                    lda.type panda.String
+                    sta.obj v0
+          - values:
+              - |
+                #
+                    lda.type panda.String[]
+                    sta.obj v0
+          - values:
+              - |
+                #
+                    lda.type panda.Object
+                    sta.obj v0
+          - values:
+              - |
+                #
+                    lda.type panda.Object[]
+                    sta.obj v0
+          - values:
+              - |
+                #
+                    lda.str "string"
+                    sta.obj v0
+          - values:
+              - |
+                #
+                    movi v0, 1
+                    newarr v0, v0, panda.Object[]
+          - values:
+              - |
+                #
+                    movi v0, 1
+                    newarr v0, v0, panda.String[]
+
+      - file-name: "acc_type"
+        isa:
+          instructions:
+            - sig: ldarr.16 v:in:i16[]
+              acc: inout:i32
+              format: [op_v_8]
+          verification:
+            - acc_i32
+        tags: ['verifier']
+        bugid: ['2817']
+        runner-options: ['verifier-failure', 'verifier-debug-config']
+        header-template: []
+        code-template: |
+          #
+          .record A {}
+          .record panda.String <external>
+          .record panda.Object <external>
+          .function i32 main() {
+              movi v0, 1
+              newarr v0, v0, i16[]
+              %s
+              ldarr.16 v0
+        check-type: exit-positive
+        description: Check 'ldarr.16' with incorrect index type.
+        cases:
+          - values:
+              - ldai.64 0
+          - values:
+              - fldai.64 0
+          - values:
+              - |
+                #
+                    lda.type A
+          - values:
+              - |
+                #
+                    lda.type A[]
+          - values:
+              - |
+                #
+                    lda.type panda.String
+          - values:
+              - |
+                #
+                    lda.type panda.String[]
+          - values:
+              - |
+                #
+                    lda.type panda.Object
+          - values:
+              - |
+                #
+                    lda.type panda.Object[]
+          - values:
+              - |
+                #
+                    lda.str "string"
+          - values:
+              - |
+                #
+                    movi v1, 1
+                    newarr v1, v1, panda.Object[]
+                    lda.obj v1
+          - values:
+              - |
+                #
+                    movi v1, 1
+                    newarr v1, v1, panda.String[]
+                    lda.obj v1
+
+      - file-name: "arr_acc_type"
+        isa:
+          instructions:
+            - sig: ldarr.16 v:in:i16[]
+              acc: inout:i32
+              format: [op_v_8]
+          verification:
+            - v1_array_type
+        tags: ['verifier', 'arm64-verifier']
+        bugid: ['2816', '2817', '3293']
+        runner-options: ['verifier-failure', 'verifier-debug-config']
+        header-template: []
+        code-template: |
+          #
+          .record A {}
+          .record panda.String <external>
+          .record panda.Object <external>
+          .function i32 main() {
+              %s
+              *s
+              ldarr.16 v0
+        check-type: exit-positive
+        description: Check 'ldarr.16' with incorrect register and accumulator types.
+        template-cases:
+          - values:
+              - movi v0, 0
+          - values:
+              - movi.64 v0, 0
+          - values:
+              - fmovi.64 v0, 0
+          - values:
+              - |
+                #
+                    lda.type A
+                    sta.obj v0
+          - values:
+              - |
+                #
+                    lda.type A[]
+                    sta.obj v0
+          - values:
+              - |
+                #
+                    lda.type panda.String
+                    sta.obj v0
+          - values:
+              - |
+                #
+                    lda.type panda.String[]
+                    sta.obj v0
+          - values:
+              - |
+                #
+                    lda.type panda.Object
+                    sta.obj v0
+          - values:
+              - |
+                #
+                    lda.type panda.Object[]
+                    sta.obj v0
+          - values:
+              - |
+                #
+                    lda.str "string"
+                    sta.obj v0
+          - values:
+              - |
+                #
+                    movi v0, 1
+                    newarr v0, v0, panda.Object[]
+          - values:
+              - |
+                #
+                    movi v0, 1
+                    newarr v0, v0, panda.String[]
+        cases:
+          - values:
+              - ldai 0
+          - values:
+              - ldai.64 0
+          - values:
+              - fldai.64 0
+          - values:
+              - |
+                #
+                    lda.type A
+          - values:
+              - |
+                #
+                    lda.type A[]
+          - values:
+              - |
+                #
+                    lda.type panda.String
+          - values:
+              - |
+                #
+                    lda.type panda.String[]
+          - values:
+              - |
+                #
+                    lda.type panda.Object
+          - values:
+              - |
+                #
+                    lda.type panda.Object[]
+          - values:
+              - |
+                #
+                    lda.str "string"
+          - values:
+              - |
+                #
+                    movi v1, 1
+                    newarr v1, v1, panda.Object[]
+                    lda.obj v1
+          - values:
+              - |
+                #
+                    movi v1, 1
+                    newarr v1, v1, panda.String[]
+                    lda.obj v1
+
+      - file-name: uninitialized_acc_regs
+        isa:
+          instructions:
+            - sig: ldarr.16 v:in:i16[]
+              acc: inout:i32
+              format: [op_v_8]
+        description: Check 'ldarr.16' with uninitialized register and accumulator.
+        tags: ['verifier']
+        bugid: ['2818']
+        runner-options: ['verifier-failure', 'verifier-debug-config']
+        header-template: []
+        code-template: |
+            #
+            .function i32 main() {
+                %s
+                ldarr.16 v0
+        check-type: exit-positive
+        cases:
+          - values: ['ldai 0']
+          - values: ['']
+
+      - file-name: array_out_of_bound_exception_p
+        isa:
+          instructions:
+            - sig: ldarr.16 v:in:i16[]
+              acc: inout:i32
+              format: [op_v_8]
+          exceptions:
+            - x_bounds
+        description: Check 'ldarr.16' behavior when index is out of array bounds.
+        header-template: [aoobe_p, main]
+        code-template: |
+          #
+              movi v0, %s
+              newarr v0, v0, i16[]
+              ldai %s
+          begin:
+              ldarr.16 v0
+          end:
+              ldai 1 # Should not reach this line
+              return
+
+          catch_AOOBE:
+              ldai 0 # Expected panda.ArrayIndexOutOfBoundsException
+              return
+
+          catch_all:
+              ldai 2 # Unexpected exception, test failed
+              return
+
+          .catch panda.ArrayIndexOutOfBoundsException, begin, end, catch_AOOBE
+          .catchall begin, end, catch_all
+        check-type: none
+        cases:
+          - values: [0, 0]
+            tags: ['tsan']
+          - values: [0, 1]
+          - values: [10, 10]
+          - values: [10, 128]
+          - values: [255, 255]
+          - values: [254, 255]
+          - values: [65535, 65535]
+            tags: ['tsan']
+          - values: [65535, 65536]
+          - values: [10, 0xFFFFFFFF]
+          - values: [256, 0xFFFFFFFE]
+          - values: [65536, 0xFFFFFFFD]
+            tags: ['tsan']
+          - values: [0x100000, 0xFFFFFFFC]
+          - values: [10, 0x80000000]
+          - values: [256, 0x80000001]
+          - values: [65536, 0x80000002]
+            tags: ['tsan']
+          - values: [0x100000, 0x80000003]
+
+      - file-name: null_pointer_p
+        isa:
+          instructions:
+            - sig: ldarr.16 v:in:i16[]
+              acc: inout:i32
+              format: [op_v_8]
+          exceptions:
+            - x_null
+        description: Check 'ldarr.16' behavior when array is null reference.
+        header-template: [npe_p]
+        code-template: |
+          .function i16[] get_null() {
+              lda.null
+              return.obj
+          }
+
+          .function i32 main() {
+              call.short get_null
+              sta.obj v0
+              ldai %s
+          begin:
+              ldarr.16 v0
+          end:
+              ldai 1 # Should not reach this line
+              return
+
+          catch_NPE:
+              ldai 0 # Expected panda.NullPointerException
+              return
+
+          catch_all:
+              ldai 2 # Unexpected exception, test failed
+              return
+
+          .catch panda.NullPointerException, begin, end, catch_NPE
+          .catchall begin, end, catch_all
+        check-type: none
+        cases:
+          - values: [0]
+            tags: ['tsan']
+          - values: [1]
+          - values: [10]
+          - values: [128]
+          - values: [255]
+          - values: [65535]
+            tags: ['tsan']
+          - values: [0x7FFFFFFF]
+          - values: [0xFFFFFFFF]
+          - values: [0x80000000]
+

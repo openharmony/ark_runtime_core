@@ -1,0 +1,371 @@
+# Copyright (c) 2021 Huawei Device Co., Ltd.
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+definitions:
+  - name: pandasm_header
+    template: |
+      .language PandaAssembly
+
+      .record panda.Object <external>
+
+      .record Q {}
+      .function void Q.ctor(Q a0) <ctor> {
+        return.void
+      }
+
+      .record R {
+        u1             fu1        <static>
+        u8             fu8        <static>
+        i8             fi8        <static>
+        u16            fu16       <static>
+        i16            fi16       <static>
+        u32            fu32       <static>
+        i32            fi32       <static>
+        u64            fu64       <static>
+        i64            fi64       <static>
+        f32            ff32       <static>
+        f64            ff64       <static>
+        # objects:
+        i32[]          fi32Array  <static>
+        Q              fQ         <static>
+        Q[]            fQArray    <static>
+        R              fR         <static>
+        R[]            fRArray    <static>
+        panda.Object   fObj       <static>
+        panda.Object[] fObjArray  <static>
+      }
+      .function void R.ctor(R a0) <ctor> {
+        return.void
+      }
+
+  - name: java_header
+    template: |
+      .language Java
+
+      .record java.lang.Object <external>
+      .function void java.lang.Object.ctor(java.lang.Object a0) <external, ctor>
+
+      .record I <java.interface> {}
+
+      .record Q <java.implements=I> {}
+      .function void Q.ctor(Q a0) <ctor> {
+        return.void
+      }
+
+      .record R <java.extends=Q> {
+        u1                 fu1       <static>
+        i8                 fi8       <static>
+        u16                fu16      <static>
+        i16                fi16      <static>
+        i32                fi32      <static>
+        i64                fi64      <static>
+        f32                ff32      <static>
+        f64                ff64      <static>
+        # objects
+        i32[]              fi32Array <static>
+        Q                  fQ        <static>
+        Q[]                fQArray   <static>
+        R                  fR        <static>
+        R[]                fRArray   <static>
+        I                  fI        <static>
+        I[]                fIArray   <static>
+        java.lang.Object   fObj      <static>
+        java.lang.Object   fObj2     <static>
+        java.lang.Object[] fObjArray <static>
+      }
+      .function void R.ctor(R a0) <ctor> {
+        return.void
+      }
+
+tests:
+  - file-name: "ldstatic.obj"
+    isa:
+      title: Get static field
+      description: >
+        Get static field value by field_id and put it into accumulator.
+      instructions:
+        - sig: ldstatic.obj field_id
+          acc: out:ref
+          format: [op_id_16]
+    commands:
+
+      - file-name: "with_non_static_field_id"
+        description: Check that verifier reports error when the field doesn't resolve to a static valid field
+        isa:
+          verification:
+            - field_id_static
+        header-template: []
+        check-type: exit-positive
+        code-template: |
+          .record W {
+            u1    fu1
+            i8    fi8
+            u16   fu16
+            i16   fi16
+            i32   fi32
+            i64   fi64
+            f32   ff32
+            f64   ff64
+            W     fW
+            i32[] fi32Array
+            W[]   fWArray
+          }
+          .function void W.object_function(W a0) {
+            return.void
+          }
+          .function void static_function() {
+            return.void
+          }
+
+          .function i32 main() {
+            ldstatic.obj %s
+        cases:
+          - values:
+            - W.fu1
+            tags: [verifier]
+            runner-options: ['verifier-failure', 'verifier-debug-config']
+            bugid: ['1324', '1828']
+          - values:
+            - W.fi8
+            tags: [verifier]
+            runner-options: ['verifier-failure', 'verifier-debug-config']
+            bugid: ['1324', '1828']
+          - values:
+            - W.fu16
+            tags: [verifier]
+            runner-options: ['verifier-failure', 'verifier-debug-config']
+            bugid: ['1324', '1828']
+          - values:
+            - W.fi16
+            tags: [verifier]
+            runner-options: ['verifier-failure', 'verifier-debug-config']
+            bugid: ['1324', '1828']
+          - values:
+            - W.fi32
+            tags: [verifier]
+            runner-options: ['verifier-failure', 'verifier-debug-config']
+            bugid: ['1324', '1828']
+          - values:
+            - W.fi64
+            tags: [verifier]
+            runner-options: ['verifier-failure', 'verifier-debug-config']
+            bugid: ['1324', '1828']
+          - values:
+            - W.ff32
+            tags: [verifier]
+            runner-options: ['verifier-failure', 'verifier-debug-config']
+            bugid: ['1324', '1828']
+          - values:
+            - W.ff64
+            tags: [verifier]
+            runner-options: ['verifier-failure', 'verifier-debug-config']
+            bugid: ['1324', '1828']
+          - values:
+            - W.fW
+            tags: [verifier]
+            runner-options: ['verifier-failure', 'verifier-debug-config']
+            bugid: ['1324', '1828']
+          - values:
+            - W.fi32Array
+            tags: [verifier]
+            runner-options: ['verifier-failure', 'verifier-debug-config']
+            bugid: ['1324', '1828']
+          - values:
+            - W.fWArray
+            tags: [verifier]
+            runner-options: ['verifier-failure', 'verifier-debug-config']
+            bugid: ['1324', '1828']
+          - values:
+            - W
+            runner-options: [compile-failure]
+          - values:
+            - W.object_function
+            runner-options: [compile-failure]
+          - values:
+            - static_function
+            runner-options: [compile-failure]
+          - values:
+            - unknown_function
+            runner-options: [compile-failure]
+          - values:
+            - 0
+            runner-options: [compile-failure]
+          - values:
+            - -1.1
+            runner-options: [compile-failure]
+          - values:
+            - "null"
+            runner-options: [compile-failure]
+          - values:
+            - "\"abc\""
+            runner-options: [compile-failure]
+
+
+      - file-name: "with_wrong_field_size_or_type_p"
+        description: Check that verifier reports an error when the field resolves to a field with size or type that is not corresponding to bytecode in PandaAssembly context.
+        isa:
+          verification:
+            - field_id_size
+        header-template: [pandasm_header]
+        check-type: exit-positive
+        tags: [verifier]
+        runner-options: ['verifier-failure', 'verifier-debug-config']
+        bugid: ['1834', '2088']
+        code-template: |
+
+          .function i32 main() {
+            ldstatic.obj %s
+        cases:
+          - values:
+            - R.fu1
+          - values:
+            - R.fu8
+          - values:
+            - R.fi8
+          - values:
+            - R.fu16
+          - values:
+            - R.fi16
+          - values:
+            - R.fu32
+          - values:
+            - R.fi32
+          - values:
+            - R.fu64
+          - values:
+            - R.fi64
+          - values:
+            - R.ff32
+          - values:
+            - R.ff64
+
+
+      - file-name: "from_all_field_types_pa"
+        description: Check that accumulator value is loaded from field into accumulator in PandaAssembly context. More tests on ldstatic.obj can be found in ststatic.obj tests
+        isa:
+          description: Get static field value by field_id and put it into accumulator.
+        header-template: [pandasm_header]
+        check-type: exit-positive
+        tags: ['tsan']
+        code-template: |
+
+          .function i32 main() {
+            # store null into Q type field
+            lda.null
+            sta.obj v3
+            ststatic.obj R.fQ
+            # store null into Q[] type field
+            lda.null
+            sta.obj v4
+            ststatic.obj R.fQArray
+            # store R object into R type field
+            initobj R.ctor
+            sta.obj v5
+            ststatic.obj R.fR
+            # store R[] into R[] type field
+            movi v1, 10
+            newarr v6, v1, R[]
+            lda.obj v6
+            ststatic.obj R.fRArray
+          label0:
+            # load null from Q type field
+            ldstatic.obj R.fQ
+            jeq.obj v3, label1
+            ldai 1
+            return
+          label1:
+            # load null from Q[] type field
+            ldstatic.obj R.fQArray
+            jeq.obj v4, label2
+            ldai 2
+            return
+          label2:
+            # load R object from R type field
+            ldstatic.obj R.fR
+            jeq.obj v5, label3
+            ldai 3
+            return
+          label3:
+            # load R[] from R[] type field
+            ldstatic.obj R.fRArray
+            jeq.obj v6, success
+            ldai 4
+            return
+          success:
+
+      - file-name: "x_init_p"
+        description: Check that ExceptionInInitializerError is thrown if an unexpected exception occurs in static initializer.
+        isa:
+          exceptions:
+            - x_init
+        header-template: []
+        check-type: empty
+        tags: ['tsan']
+        bugid: ['5330']
+        ignore: true
+        code-template: |
+
+          .language PandaAssembly
+
+          .record panda.ExceptionInInitializerError <external>
+          .record panda.NullPointerException <external>
+          .record E1 {}
+          .record R {
+              E1     fObj    <static>
+          }
+
+          .function void R.func() <cctor> {
+              %s
+              return.void
+          }
+
+          .function i32 main() {
+          begin:
+              ldstatic R.fObj
+              ldai 2
+              return
+          end:
+          catch:
+              ldai 0
+              return
+          catch_all:
+              ldai 1
+              return
+          .catch panda.ExceptionInInitializerError, begin, end, catch
+          .catchall begin, end, catch_all
+          }
+        cases:
+          - values:
+            - |
+              #
+                  newobj v0, E1
+                  throw v0
+          - values:
+            - |
+              #
+                  newobj v0, panda.NullPointerException
+                  throw v0
+          - values:
+            - |
+              #
+                  movi v1, 0
+                  ldai 1
+                  div2 v1     # divide by zero
+          - values:
+            - |
+              #
+                  movi v1, 10
+                  newarr v1, v1, i32[]
+                  ldai 10
+                  ldarr v1    # get ArrayIndexOutOfBoundsException
+

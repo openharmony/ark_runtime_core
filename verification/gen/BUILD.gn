@@ -1,0 +1,67 @@
+# Copyright (c) 2021 Huawei Device Co., Ltd.
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+import("//ark/runtime_core/ark_config.gni")
+import("//build/ohos.gni")
+
+config("verification_public_config") {
+  include_dirs = [
+    "$ark_root/verification",
+    "$target_gen_dir",
+    "$target_gen_dir/include",
+  ]
+}
+
+ark_gen_file("verification_abs_int_builtin_handlers_h") {
+  template_file = "templates/abs_int_builtin_handlers.h.erb"
+  data_file = "$ark_root/isa/builtins.yaml"
+  requires = [ "$ark_root/isa/builtinsapi.rb" ]
+  output_file = "$target_gen_dir/include/abs_int_builtin_handlers.h"
+}
+
+ark_gen_file("verification_cflow_iterate_inl_gen_builtin_handlers_h") {
+  template_file = "templates/cflow_iterate_inl_gen_builtin_handlers.h.erb"
+  data_file = "$ark_root/isa/builtins.yaml"
+  requires = [ "$ark_root/isa/builtinsapi.rb" ]
+  output_file =
+      "$target_gen_dir/include/cflow_iterate_inl_gen_builtin_handlers.h"
+}
+
+ark_gen_file("verification_abs_int_inl_compat_checks_h") {
+  template_file = "templates/abs_int_inl_compat_checks.h.erb"
+  data_file = "$ark_root/verification/verification.yaml"
+  requires = [ "$ark_root/verification/verification.rb" ]
+  output_file = "$target_gen_dir/include/abs_int_inl_compat_checks.h"
+}
+
+ark_isa_gen("isa_gen_verification_gen") {
+  template_files = [
+    "cflow_iterate_inl_gen.h.erb",
+    "abs_int_inl_gen.h.erb",
+    "job_fill_gen.h.erb",
+  ]
+  sources = "templates"  ## ark_root/templates
+  destination = "$target_gen_dir/include"  ## target_gen_dir/include
+  extra_dependencies = [
+    ":verification_abs_int_builtin_handlers_h",
+    ":verification_abs_int_inl_compat_checks_h",
+    ":verification_cflow_iterate_inl_gen_builtin_handlers_h",
+  ]
+}
+
+ark_gen_file("verification_verifier_messages_h") {
+  template_file = "$ark_root/templates/messages/messages.h.erb"
+  data_file = "$ark_root/verification/messages.yaml"
+  requires = [ "$ark_root/templates/messages.rb" ]
+  output_file = "$target_gen_dir/include/verifier_messages.h"
+}

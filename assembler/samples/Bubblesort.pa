@@ -1,0 +1,83 @@
+# Copyright (c) 2021 Huawei Device Co., Ltd.
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+
+.function i64 main(){
+    ldai 30000
+    sta v1
+    newarr v1, i64[]
+    sta.obj v0
+    call.short init, v0, v1
+    call.short bubblesort, v0, v0
+    lda v1
+    subi 1
+    ldarr.64 v0
+    return.64
+}
+
+.function void init(i64[] a0, i32 a1){
+    movi v2, 0
+loop:
+    lda a1
+    jeqz init_exit
+    subi 1
+    sta a1
+    starr.64 a0, v2
+    inci v2, 1
+    lda v2
+    jmp loop
+init_exit:
+    return.void
+}
+
+.function void bubblesort(i64[] a0){
+    lenarr a0
+    sta v1
+outer:
+    ldai 1
+    sta v2
+    ldai 1
+inner:
+    jge v1, inner_exit
+    sta v3
+    ldarr.64 a0
+    sta v4
+    lda v3
+    subi 1
+    sta v5
+    ldarr.64 a0
+    jlt v4, next
+    call swap, a0, v5, v3, v0
+    movi v2, 0
+next:
+    lda v3
+    addi 1
+    jmp inner
+inner_exit:
+    inci v1, -1
+    lda v2
+    jeqz outer
+    return.void
+}
+
+.function void swap(i64[] a0, i32 a1, i32 a2){
+    lda a1
+    ldarr.64 a0
+    sta v3
+    lda a2
+    ldarr.64 a0
+    starr.64 a0, a1
+    lda v3
+    starr.64 a0, a2
+    return.void
+}

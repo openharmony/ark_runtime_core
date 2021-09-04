@@ -1,0 +1,136 @@
+# Copyright (c) 2021 Huawei Device Co., Ltd.
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+.function u1 main(){
+    movi v0, 3
+    movi v1, 9
+    movi v2, 504699
+    call test, v0, v1, v2, v0
+    return
+}
+
+.function i32 test(i32 a0, i32 a1, i32 a2){
+    movi v3, 0           #result
+    mov v4, a0           #loop_counter
+    lda a0
+loop:
+    jgt a1, loop_exit
+    movi v5, 3
+    call.short ack, v5, v4
+    add2 v3
+    sta v3
+    movi v5, 17
+    add v5, v4
+    sta v5
+    call.short fib, v5, v5
+    add2 v3
+    sta v3
+    lda v4
+    muli 3
+    addi 3
+    sta v5
+    lda v4
+    muli 2
+    addi 2
+    sta v6
+    lda v4
+    addi 1
+    sta v7
+    call tak, v5, v6, v7, v5
+    add2 v3
+    sta v3
+    inci v4, 1
+    lda v4
+    jmp loop
+loop_exit:
+    lda v3
+    jne a2, assert_err
+    ldai 0
+    return
+assert_err:
+    ldai 1
+    return
+}
+
+.function i32 ack(i32 a0, i32 a1){
+    lda a0
+    jeqz if1
+    lda a1
+    jeqz if2
+    lda a1
+    subi 1
+    sta v1
+    call.short ack, a0, v1
+    sta v2
+    lda a0
+    subi 1
+    sta v0
+    call.short ack, v0, v2
+    return
+if1:
+    lda a1
+    addi 1
+    return
+if2:
+    lda a0
+    subi 1
+    sta v0
+    movi v3, 1
+    call.short ack, v0, v3
+    return
+}
+
+.function i32 fib(i32 a0){
+    ldai 2
+    jgt a0, if
+    lda a0
+    subi 2
+    sta v0
+    call.short fib, v0, a0
+    sta v1
+    lda a0
+    subi 1
+    sta v0
+    call.short fib, v0, a0
+    sta v2
+    add v1, v2
+    return
+if:
+    ldai 1
+    return
+}
+
+.function i32 tak(i32 a0, i32 a1, i32 a2){
+    lda a1
+    jge a0, if
+    lda a0
+    subi 1
+    sta v0
+    call tak, v0, a1, a2, a0
+    sta v3
+    lda a1
+    subi 1
+    sta v1
+    call tak, v1, a2, a0, a0
+    sta v4
+    lda a2
+    subi 1
+    sta v2
+    call tak, v2, a0, a1, a0
+    sta v5
+    call tak, v3, v4, v5, a0
+    return
+if:
+    lda a2
+    return
+}

@@ -1,0 +1,45 @@
+# Copyright (c) 2021 Huawei Device Co., Ltd.
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+# Assert that initobj.short triggers cctor
+
+.record R {
+    i32 field0 <static>
+}
+
+.function void R.cctor() <cctor> {
+    ldai 10
+    ststatic R.field0
+    return.void
+}
+
+.function void R.ctor(R a0) <ctor> {
+    return.void
+}
+
+.function u1 main() {
+    movi v0, 10
+
+    initobj.short R.ctor
+    sta.obj v2
+
+    ldstatic R.field0
+    jne v0, error0
+
+    ldai 0
+    return
+
+error0:
+    ldai 1
+    return
+}

@@ -1,0 +1,70 @@
+<!-- Copyright (c) 2021 Huawei Device Co., Ltd.
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License. -->
+
+[[_TOC_]]
+
+<% full['chapters'].each do |c| %>
+<%= c['name'] %>
+======
+<%= c['text'] %>
+<% end %>
+
+Instruction Set
+======
+<% full['groups'].each do |g| %>
+<%= g['title'] %> [coverage: <%= g['coverage_metric']%>]
+------
+<%= g['description'] %>
+
+Description coverage:
+
+<% g['description_tests'].each do |d| -%>
+* <%= covered_description(d) %>
+<% end -%>
+
+Instructions coverage:
+
+<% g['instructions'].each do |i| -%>
+- <%= md(i['sig']) %> [<% if i['tests'].any? %><%= i['tests'].join(', ')%><% else %>`not covered`<% end %>]
+  - *format:* <%= format_array(i) %>
+<% if i['type'] %>  - *type:* <%= i['type'].gsub(/\_/, '\\_') + "\n" %><% end -%>
+<% if i['dtype'] %>  - *dtype:* <%= i['dtype'].gsub(/\_/, '\\_') + "\n" %><% end -%>
+<% if i['etype'] %>  - *etype:* <%= i['etype'].gsub(/\_/, '\\_') + "\n" %><% end -%>
+<% if i['properties'] %>  - *properties:* <%= props(i['properties']) + "\n" %><% end -%>
+<% if i['non_testable'] %>  - *Non-testable*<br><% end -%>
+
+<% end -%>
+
+```
+<%= g['pseudo'] %>
+```
+
+Properties:
+
+<% g['properties'].each do |p| -%>
+* <%= md(properties_hash[p]) %>
+<% end -%>
+
+Exceptions coverage:
+
+<% g['exceptions_tests'].each do |e| -%>
+* <%= exception_entry(e) %>
+<% end -%>
+
+Bytecode verification coverage:
+
+<% g['verification_tests'].each do |v| -%>
+* <%= verification_entry(v) %>
+<% end -%>
+
+<% end %>

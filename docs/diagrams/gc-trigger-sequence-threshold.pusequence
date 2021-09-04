@@ -1,0 +1,43 @@
+' Copyright (c) 2021 Huawei Device Co., Ltd.
+' Licensed under the Apache License, Version 2.0 (the "License");
+' you may not use this file except in compliance with the License.
+' You may obtain a copy of the License at
+'
+' http://www.apache.org/licenses/LICENSE-2.0
+'
+' Unless required by applicable law or agreed to in writing, software
+' distributed under the License is distributed on an "AS IS" BASIS,
+' WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+' See the License for the specific language governing permissions and
+' limitations under the License.
+
+@startuml
+
+skinparam monochrome true
+
+title GC triggered by threshold
+
+autonumber
+participant AppThread1
+participant AppThread2
+participant Allocator
+participant GCTaskQueue
+participant GCThread
+participant GC
+AppThread1 -> Allocator: Request for the allocation
+Allocator -> Allocator: threshold for heap occupancy reached
+Allocator -> GCTaskQueue: Add new GC task
+Allocator -> AppThread1 : Return allocated memory
+GCThread -> GCTaskQueue : Request for the task
+GCTaskQueue -> GCThread : GC task
+GCThread -> GC : GC task
+loop
+GC -> AppThread1: Suspend
+GC -> AppThread2: Suspend
+GC -> GC : GC running at STW
+GC -> AppThread1: Resume
+GC -> AppThread2: Resume
+GC -> GC : GC running concurrently
+end loop
+GC -> GC : GC finished
+@enduml

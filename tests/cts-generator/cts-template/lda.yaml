@@ -1,0 +1,336 @@
+# Copyright (c) 2021 Huawei Device Co., Ltd.
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+definitions: []
+tests:
+  - file-name: "lda"
+    isa:
+      title: Load accumulator from register
+      description: Moves register content into an accumulator.
+      exceptions:
+      - x_none
+    commands:
+      - file-name: "op_vd_8_pos"
+        isa:
+          instructions:
+            - sig: lda v:in:i32
+              acc: out:i32
+              format: [op_v_8]
+        code-template: |
+          #
+              movi v0, %s
+              lda v0
+              jne v0, set_failure
+              ldai 0
+              jmp fall_through
+          set_failure:
+              ldai 1
+          fall_through:
+        description: Check lda moves register content into an accumulator (positive values).
+        tags: ['tsan']
+        cases:
+          - values:
+              - 0
+          - values:
+              - 1
+          - values:
+              - 0xF
+          - values:
+              - 0xFF
+          - values:
+              - 0xFFF
+          - values:
+              - 0xFFFF
+          - values:
+              - 0xFFFFF
+          - values:
+              - 0xFFFFFF
+          - values:
+              - 0xFFFFFFF
+          - values:
+              - 0xFFFFFFFF
+          - values:
+              - 0x7F
+          - values:
+              - 0x7FF
+          - values:
+              - 0x7FFF
+          - values:
+              - 0x7FFFF
+          - values:
+              - 0x7FFFFF
+          - values:
+              - 0x7FFFFFF
+          - values:
+              - 0x7FFFFFFF
+
+      - file-name: "op_vd_8_neg"
+        isa:
+          instructions:
+            - sig: lda v:in:i32
+              acc: out:i32
+              format: [op_v_8]
+        code-template: |
+          #
+              movi v0, %s
+              lda v0
+              jne v0, set_failure
+              ldai 0
+              jmp fall_through
+          set_failure:
+              ldai 1
+          fall_through:
+        description: Check lda moves register content into an accumulator (negative values).
+        cases:
+          - values:
+              - "-1"
+          - values:
+              - "-0xF"
+          - values:
+              - "-0xFF"
+          - values:
+              - "-0xFFF"
+          - values:
+              - "-0xFFFF"
+          - values:
+              - "-0xFFFFF"
+          - values:
+              - "-0xFFFFFF"
+          - values:
+              - "-0xFFFFFFF"
+          - values:
+              - "-0xFFFFFFFF"
+          - values:
+              - "-0x7F"
+          - values:
+              - "-0x7FF"
+          - values:
+              - "-0x7FFF"
+          - values:
+              - "-0x7FFFF"
+          - values:
+              - "-0x7FFFFF"
+          - values:
+              - "-0x7FFFFFF"
+          - values:
+              - "-0x7FFFFFFF"
+
+      - file-name: "reg"
+        isa:
+          instructions:
+            - sig: lda v:in:i32
+              acc: out:i32
+              format: [op_v_8]
+        code-template: |
+          #
+              movi %s, 0xFEDCBA09
+              lda %s
+              jne %s, set_failure
+              ldai 0
+              jmp fall_through
+          set_failure:
+              ldai 1
+          fall_through:
+        description: Check lda with various register numbers.
+        cases:
+          - values: [v0, v0, v0]
+          - values: [v1, v1, v1]
+          - values: [v7, v7, v7]
+          - values: [v8, v8, v8]
+          - values: [v15, v15, v15]
+          - values: [v16, v16, v16]
+          - values: [v127, v127, v127]
+          - values: [v128, v128, v128]
+          - values: [v255, v255, v255]
+          - values: [v255, v256, v255]
+            runner-options: [compile-failure]
+            case-check-type: no-check
+            description: Check lda with incorrect register numbers.
+          - values: [v255, a0, v255]
+            runner-options: [compile-failure]
+            case-check-type: no-check
+            description: Check lda with incorrect register numbers.
+          - values: [v255, 0, v255]
+            runner-options: [compile-failure]
+            case-check-type: no-check
+            description: Check lda with incorrect register numbers.
+
+      - file-name: "type_1"
+        isa:
+          instructions:
+            - sig: lda v:in:i32
+              acc: out:i32
+              format: [op_v_8]
+          verification:
+            - v1_type
+        runner-options: ['verifier-failure', 'verifier-debug-config']
+        bugid: ["964","966"]
+        tags: ["verifier"]
+        description: Check lda with incorrect register type.
+        code-template: |
+          #
+              mov.null v0
+              lda v0
+        check-type: no-check
+
+      - file-name: "sign_ext"
+        tags: ['verifier']
+        runner-options: ['verifier-failure', 'verifier-debug-config']
+        isa:
+          instructions:
+            - sig: lda v:in:i32
+              acc: out:i32
+              format: [op_v_8]
+        code-template: |
+          #
+              movi.64 v0, %s
+              lda v0
+              movi.64 v0, %s
+              cmp.64 v0
+        cases:
+          - values:
+              - "0x00000000FFFFFFFF"
+              - "0xFFFFFFFFFFFFFFFF"
+          - values:
+              - "0x0000000080000000"
+              - "0xFFFFFFFF80000000"
+          - values:
+              - "0x1234567890000000"
+              - "0xFFFFFFFF90000000"
+          - values:
+              - "0xFFFFFFFF00000000"
+              - "0"
+
+      - file-name: "type"
+        isa:
+          instructions:
+            - sig: lda v:in:i32
+              acc: out:i32
+              format: [op_v_8]
+          verification:
+            - v1_type
+        description: Check lda with incorrect source register type. Accumulator type is not checked.
+        runner-options: ['verifier-failure', 'verifier-debug-config']
+        tags: ["verifier"]
+        header-template: []
+        code-template: |
+            #
+            .record A {}
+            .record B {}
+            .record panda.String <external>
+            .record panda.Object <external>
+            .function i32 main() {
+                %s
+                *s
+                lda v1
+                ldai 0
+        check-type: no-check
+        template-cases:
+          - values:
+              - |
+                #
+                    lda.type B
+          - values:
+              - |
+                #
+                    lda.type B[]
+          - values:
+              - |
+                #
+                    lda.type panda.String
+          - values:
+              - |
+                #
+                    lda.str "string"
+          - values:
+              - |
+                #
+                    lda.type panda.Object
+          - values:
+              - |
+                #
+                    movi v0, 10
+                    newarr v0, v0, i32[]
+                    lda.obj v0
+          - values:
+              - lda.null
+          - values:
+              - ldai 0
+          - values:
+              - ldai.64 0
+          - values:
+              - fldai.64 0
+        cases:
+          - values:
+              - |
+                #
+                    lda.type A
+                    sta.obj v1
+          - values:
+              - |
+                #
+                    lda.type A[]
+                    sta.obj v1
+          - values:
+              - |
+                #
+                    lda.type panda.String
+                    sta.obj v1
+          - values:
+              - |
+                #
+                    lda.str "string"
+                    sta.obj v1
+
+          - values:
+              - |
+                #
+                    lda.type panda.Object
+                    sta.obj v1
+          - values:
+              - |
+                #
+                    movi v1, 10
+                    newarr v1, v1, f64[]
+          - values:
+              - mov.null v1
+          - values:
+              - movi.64 v1, 0
+          - values:
+              - fmovi.64 v1, 0
+
+      - file-name: uninitialized_regs
+        isa:
+          instructions:
+            - sig: lda v:in:i32
+              acc: out:i32
+              format: [op_v_8]
+        description: Check lda with uninitialized registers.
+        tags: ['verifier']
+        runner-options: ['verifier-failure', 'verifier-debug-config']
+        header-template: []
+        code-template: |
+          #
+          .function i32 main() {
+              lda %s
+              ldai 0
+        check-type: no-check
+        cases:
+          - values:
+              - v0
+          - values:
+              - v8
+          - values:
+              - v15
+          - values:
+              - v255

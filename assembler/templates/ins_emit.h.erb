@@ -1,0 +1,192 @@
+/*
+ * Copyright (c) 2021 Huawei Device Co., Ltd.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+#include "assembly-ins.h"
+#include "mangling.h"
+
+namespace panda::pandasm {
+
+bool Ins::Emit(BytecodeEmitter& emitter, panda_file::MethodItem *method,
+    const std::unordered_map<std::string, panda_file::BaseMethodItem *> &methods,
+    const std::unordered_map<std::string, panda_file::BaseFieldItem *> &fields,
+    const std::unordered_map<std::string, panda_file::BaseClassItem *> &classes,
+    const std::unordered_map<std::string_view, panda_file::StringItem *> &strings,
+    const std::unordered_map<std::string, panda_file::LiteralArrayItem *> &literalarrays,
+    const std::unordered_map<std::string_view, panda::Label>& labels) const {
+    if (!IsValidToEmit()) {
+        std::cerr << "Invalid instruction: " << ToString() << std::endl;
+        LOG(FATAL, ASSEMBLER);
+    }
+    switch(opcode) {
+% inst_map = Panda::instructions.collect { |i| [i.mnemonic, i] }.to_h
+% call_map = {
+%   "call.short" => ["call.short"],
+%   "call" => ["call.short", "call"],
+%   "calli.dyn.short" => ["calli.dyn.short"],
+%   "calli.dyn" => ["calli.dyn.short", "calli.dyn"],
+%   "call.acc.short" => ["call.acc.short"],
+%   "call.acc" => ["call.acc.short", "call.acc"],
+%   "call.virt.short" => ["call.virt.short"],
+%   "call.virt" => ["call.virt.short", "call.virt"],
+%   "call.virt.acc.short" => ["call.virt.acc.short"],
+%   "call.virt.acc" => ["call.virt.acc.short", "call.virt.acc"],
+%   "call.dyn.short" => ["call.dyn.short"],
+%   "call.dyn" => ["call.dyn.short", "call.dyn"],
+%   "initobj.short" => ["initobj.short"],
+%   "initobj" => ["initobj"],
+%   "builtin.idr4" => ["builtin.idr4"],
+%   "builtin.idr6" => ["builtin.idr6"]
+%}
+% Panda::instructions.group_by(&:mnemonic).each_pair do |mn, group|
+% insn = group[index_of_max(group.map(&:format).map(&:size))]
+%
+% def type(insn)
+%   src_acc_ops = insn.acc_and_operands.select(&:src?)
+%   src_acc_ops.size != 0 ? src_acc_ops.first.type : 'none'
+% end
+%
+% def op_size(insn)
+%   type(insn)[1..-1].to_i
+% end
+%
+% def operands(insn, regs = "regs")
+%   ops = []
+%   nr = 0
+%   ni = 0
+%   insn.operands.each do |op|
+%     if op.reg?
+%       ops << "#{regs}[#{nr}]"
+%       nr += 1
+%     elsif op.imm?
+%       if insn.jump?
+%         ops << 'labels.find(ids[0])->second'
+%       else
+%         from_type, to_type = op_size(insn) == 64 ? ['double', 'int64_t'] : ['float', 'int32_t']
+%         if insn.float?
+%           ops << bit_cast("imms[#{ni}]", to_type, from_type)
+%         elsif type(insn).start_with? 'u' # can hold both float and integer literals
+%           ops << "std::holds_alternative<double>(imms[#{ni}]) ? #{bit_cast("imms[#{ni}]", to_type, from_type)} : std::get<int64_t>(imms[#{ni}])"
+%         else
+%           ops << "std::get<int64_t>(imms[#{ni}])"
+%         end
+%       end
+%       ni += 1
+%     elsif op.id?
+%       if insn.properties.include?('method_id')
+%         ops << 'methods.find(ids[0])->second->GetIndex(method)'
+%       elsif insn.properties.include?('field_id')
+%         ops << 'fields.find(ids[0])->second->GetIndex(method)'
+%       elsif insn.properties.include?('type_id')
+%         ops << 'classes.find(ids[0])->second->GetIndex(method)'
+%       elsif insn.properties.include?('string_id')
+%         ops << 'strings.find(ids[0])->second->GetOffset()'
+%       elsif insn.properties.include?('literalarray_id')
+%         ops << 'static_cast<uint32_t>(literalarrays.find(ids[0])->second->GetOffset())'
+%       else
+%         raise "Unexpected ID type"
+%       end
+%     else
+%       raise "Unexpected operand type"
+%     end
+%   end
+%   if insn.call?
+%     ops << ops.shift
+%   end
+%   ops
+% end
+    case Opcode::<%= insn.asm_token %>: {
+% if insn.properties.include?('method_id')
+        if ((ids.size() == 0) || (methods.find(ids[0]) == methods.cend())) {
+            return false;
+        }
+% elsif insn.properties.include?('field_id')
+        if ((ids.size() == 0) || (fields.find(ids[0]) == fields.cend())) {
+            return false;
+        }
+% elsif insn.properties.include?('type_id')
+        if ((ids.size() == 0) || (classes.find(ids[0]) == classes.cend())) {
+            return false;
+        }
+% elsif insn.properties.include?('string_id')
+        if ((ids.size() == 0) || (strings.find(ids[0]) == strings.cend())) {
+            return false;
+        }
+% elsif insn.jump?
+        if ((ids.size() == 0) || (labels.find(ids[0]) == labels.cend())) {
+            return false;
+        }
+% end
+% regs_num = 0
+% imms_num = 0
+% insn.operands.each do |op|
+%   if op.reg?
+%     regs_num += 1
+%   elsif op.imm?
+%     imms_num += 1
+%   end
+% end
+% if (insn.call? && !insn.call_range?) || (insn.calli? && !insn.calli_range?) || insn.builtin_idr4? || insn.builtin_idr6?
+%   if imms_num > 0
+        if (imms.size() < <%= imms_num %>) {
+            return false;
+        }
+%   end
+% elsif insn.jump?
+%   if regs_num > 0
+        if (regs.size() < <%= regs_num %>) {
+            return false;
+        }
+%   end
+% else
+%   if regs_num > 0 and imms_num > 0
+        if (regs.size() < <%= regs_num %> || imms.size() < <%= imms_num %>) {
+            return false;
+        }
+%   elsif regs_num > 0
+        if (regs.size() < <%= regs_num %>) {
+            return false;
+        }
+%   elsif imms_num > 0
+        if (imms.size() < <%= imms_num %>) {
+            return false;
+        }
+%   end
+% end
+% if (insn.call? && !insn.call_range?) || (insn.calli? && !insn.calli_range?) || insn.builtin_idr4? || insn.builtin_idr6?
+        auto registers = regs;
+%   call_map[insn.mnemonic].map { |m| inst_map[m] }.each do |i|
+%     registers = i.operands.select(&:reg?)
+        if (registers.size() < <%= registers.size + 1 %>) {
+            while (registers.size() < <%= registers.size %>) {
+                registers.push_back(0);
+            }
+            emitter.<%= i.emitter_name %>(<%= operands(i, "registers").join(", ") %>);
+            break;
+        }
+%   end
+% else
+        emitter.<%= insn.emitter_name %>(<%= operands(insn).join(", ") %>);
+% end
+        break;
+    }
+% end
+    default:
+        assert(0);
+    }
+
+    return true;
+}
+
+}  // namespace panda::pandasm

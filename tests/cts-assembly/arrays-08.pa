@@ -1,0 +1,71 @@
+# Copyright (c) 2021 Huawei Device Co., Ltd.
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+# 
+# The following comment until the empty line must be a valid YAML document 
+# containing exact copies of ISA specification assertions relevant to this test.
+#--- 
+#   - title: Load from array
+#     description: >
+#       Load an element from array using accumulator as an index and puts it into accumulator.
+#       If element size is smaller then 32 bits, it will be zero or sign extended (depending on bytecode)
+#       to i32.
+#     properties:
+#       - acc_read
+#       - acc_write
+#     pseudo: |
+#       if vs == null then
+#         throw NullPointerException
+#       end
+#       if acc < 0 || acc >= len(vs) then
+#         throw ArrayIndexOutOfBoundsException
+#       end
+#       if op == fldarr.32 then
+#         acc = f32tof64(vs[acc])
+#       else if op == ldarr.8 then
+#         acc = i8toi32(vs[acc])
+#       else if op == ldarru.8 then
+#         acc = u8toi32(vs[acc])
+#       else if op == ldarr.16 then
+#         acc = i16toi32(vs[acc])
+#       else if op == ldarru.16 then
+#         acc = u16toi32(vs[acc])
+#       else
+#         acc = vs[acc]
+#       end
+#     instructions:
+#       - sig: ldarru.16 vs
+#         format: [op_vs_8]
+#         type: obj
+#         dtype: i32
+#         etype: u16
+
+# assert that operation ldarru.16 works fine
+.function u1 main() {
+    movi v0, 10
+    newarr v1, v0, u16[]
+    movi v2, 0
+    ldai 65000
+    starr.16 v1, v2
+    ldai 0
+    ldarru.16 v1
+    u32toi64
+    sta.64 v0
+    ldai.64 65000
+    cmp.64 v0
+    jnez exit_failure
+    ldai 0
+    return
+exit_failure:
+    ldai 1
+    return
+}

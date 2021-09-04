@@ -1,0 +1,418 @@
+# Copyright (c) 2021 Huawei Device Co., Ltd.
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+definitions:
+  - name: pandasm_header
+    template: |
+      .language PandaAssembly
+
+      .record panda.Object <external>
+
+      .record Q {}
+      .function void Q.ctor(Q a0) <ctor> {
+        return.void
+      }
+
+      .record R {
+        u1             fu1
+        u8             fu8
+        i8             fi8
+        u16            fu16
+        i16            fi16
+        u32            fu32
+        i32            fi32
+        u64            fu64
+        i64            fi64
+        f32            ff32
+        f64            ff64
+        # objects
+        i32[]          fi32Array
+        Q              fQ
+        Q[]            fQArray
+        R              fR
+        R[]            fRArray
+        panda.Object   fObj
+        panda.Object[] fObjArray
+      }
+      .function void R.ctor(R a0) <ctor> {
+        return.void
+      }
+
+  - name: java_header
+    template: |
+      .language Java
+
+      .record java.lang.Object <external>
+      .function void java.lang.Object.ctor(java.lang.Object a0) <external, ctor>
+
+      .record I <java.interface> {}
+
+      .record Q <java.implements=I> {}
+      .function void Q.ctor(Q a0) <ctor> {
+        return.void
+      }
+
+      .record R <java.extends=Q> {
+        u1                 fu1
+        u8                 fu8
+        i8                 fi8
+        u16                fu16
+        i16                fi16
+        u32                fu32
+        i32                fi32
+        u64                fu64
+        i64                fi64
+        f32                ff32
+        f64                ff64
+        # objects
+        i32[]              fi32Array
+        Q                  fQ
+        Q[]                fQArray
+        R                  fR
+        R[]                fRArray
+        I                  fI
+        I[]                fIArray
+        java.lang.Object   fObj
+        java.lang.Object   fObj2
+        java.lang.Object[] fObjArray
+      }
+      .function void R.ctor(R a0) <ctor> {
+        return.void
+      }
+
+
+tests:
+  - file-name: "ldobj.obj"
+    isa:
+      title: Get field from object to accumulator
+      description: >
+        Get field value from an object by field id and put it into accumulator.
+      instructions:
+        - sig: ldobj.obj v:in:ref, field_id
+          acc: out:ref
+          format: [op_v_8_id_16]
+    commands:
+
+      - file-name: "check_if_regs_initialized"
+        description: Check that verifier reports error if source registers are not initialized
+        isa:
+          instructions:
+            - sig: ldobj.obj v:in:ref, field_id
+              acc: out:ref
+              format: [op_v_8_id_16]
+        header-template: [pandasm_header]
+        check-type: exit-positive
+        tags: [verifier]
+        bugid: ['1324', '2084', '3257']
+        runner-options: ['verifier-failure', 'verifier-debug-config']
+        code-template: |
+          .function i32 main() {
+            %s  # verifier error expected, because the register is not initialized
+        cases:
+          - values:
+            - 'ldobj.obj v0, R.fQ'
+          - values:
+            - 'ldobj.obj v1, R.fR'
+          - values:
+            - 'ldobj.obj v15, R.fQArray'
+          - values:
+            - 'ldobj.obj v240, R.fi32Array'
+          - values:
+            - 'ldobj.obj v255, R.fObj'
+
+      - file-name: "with_null_ref_pa"
+        description: Check that NullPointerException is thrown if source ref is null
+        isa:
+          exceptions:
+            - x_null
+        header-template: [pandasm_header]
+        check-type: empty
+        tags: ['tsan']
+        code-template: |
+          .record panda.NullPointerException <external>
+
+          .function R get_null() {
+            lda.null
+            return.obj
+          }
+
+          .function i32 main() {
+            call.short get_null
+            sta.obj v0
+          try_begin:
+            ldobj.obj v0, %s
+            ldai 1
+            return
+          try_end:
+            ldai 0
+            return
+          .catch panda.NullPointerException, try_begin, try_end, try_end
+          }
+        cases:
+          - values:
+            - R.fQ
+          - values:
+            - R.fObj
+          - values:
+            - R.fi32Array
+
+
+      - file-name: "with_non_object_ref"
+        description: Check that verifier reports error when the 1st operand is not a ref to an object (other than array)
+        isa:
+          verification:
+            - v1_object
+        header-template: [pandasm_header]
+        check-type: empty
+        tags: [verifier]
+        runner-options: ['verifier-failure', 'verifier-debug-config']
+        bugid: ['2085']
+        code-template: |
+
+          .function i32 main() {
+            %s
+          try_begin:
+            ldobj.obj v0, R.fQ
+          try_end:
+            ldai 0
+            return
+          .catchall try_begin, try_end, try_end
+          }
+        cases:
+          - values:
+            - movi v0, 0
+            bugid: ['1826']
+          - values:
+            - movi v0, 1
+          - values:
+            - movi.64 v0, 0x00
+            bugid: ['1826']
+          - values:
+            - movi.64 v0, 0xCAFECAFECAFECAFE
+          - values:
+            - fmovi.64 v0, 0.0
+            bugid: ['1826']
+          - values:
+            - fmovi.64 v0, 6.62607015
+          - values:
+            - |
+                movi v1, 10
+                  newarr v0, v1, R[]
+            bugid: ['1827']
+
+
+      - file-name: "with_static_field_id"
+        description: Check that verifier reports error when the field doesn't resolve to a non-static object field
+        isa:
+          verification:
+            - field_id_non_static
+        header-template: []
+        check-type: exit-positive
+        code-template: |
+          .record W {
+            W   static_field  <static>
+            W[] static_array  <static>
+          }
+          .function void W.ctor(W a0) <ctor> {
+            return.void
+          }
+          .function void W.object_function(W a0) {
+            return.void
+          }
+          .record random_record_name {
+            W random_field_name
+          }
+          .function void static_function() {
+            return.void
+          }
+
+          .function i32 main() {
+            initobj W.ctor
+            sta.obj v0
+            ldobj.obj v0, %s
+        cases:
+          # resolves to a static object field
+          - values:
+            - W.static_field
+            tags: [verifier]
+            runner-options: ['verifier-failure', 'verifier-debug-config']
+            bugid: ['1324', '1828']
+          # resolves to a static object array
+          - values:
+            - W.static_array
+            tags: [verifier]
+            runner-options: ['verifier-failure', 'verifier-debug-config']
+            bugid: ['1324', '1828']
+          # resolves to a non-existing object field
+          - values:
+            - W.field_not_exists
+            runner-options: [compile-failure]
+          # resolves to object's constructor
+          - values:
+            - W.ctor
+            runner-options: [compile-failure]
+          # resolves to objects's method
+          - values:
+            - W.object_function
+            runner-options: [compile-failure]
+          # resolves to some other object
+          - values:
+            - random_record_name
+            runner-options: [compile-failure]
+          # resolves to some static function
+          - values:
+            - static_function
+            runner-options: [compile-failure]
+          # resolves to a field name in a wrong object
+          - values:
+            - random_record_name.random_field_name
+            tags: [verifier]
+            runner-options: ['verifier-failure', 'verifier-debug-config']
+            bugid: ['1833', '3536']
+            ignore: true
+          # cannot resolve, because it's a i32 number
+          - values:
+            - 0
+            runner-options: [compile-failure]
+          # cannot resolve, because it's a f64 number
+          - values:
+            - -1.1
+            runner-options: [compile-failure]
+          # cannot resolve, because it's a "null" string
+          - values:
+            - "null"
+            runner-options: [compile-failure]
+
+
+      - file-name: "with_wrong_field_size_or_type"
+        description: Check that verifier reports an error when the field resolves to a field with size or type that is not corresponding to bytecode
+        isa:
+          verification:
+            - field_id_size
+        header-template: [pandasm_header]
+        check-type: exit-positive
+        tags: [verifier]
+        runner-options: ['verifier-failure', 'verifier-debug-config']
+        bugid: ['1834', '2088']
+        code-template: |
+
+          .function i32 main() {
+            initobj R.ctor
+            sta.obj v0
+            ldobj.obj v0, %s
+        cases:
+          - values:
+            - R.fu1
+          - values:
+            - R.fu8
+          - values:
+            - R.fi8
+          - values:
+            - R.fu16
+          - values:
+            - R.fi16
+          - values:
+            - R.fu32
+          - values:
+            - R.fi32
+          - values:
+            - R.fu64
+          - values:
+            - R.fi64
+          - values:
+            - R.ff32
+          - values:
+            - R.ff64
+
+
+      - file-name: "op_v_8_id_16"
+        description: Check that compiler reports error when the register number is out of 8 bit size
+        isa:
+          instructions:
+            - sig: ldobj.obj v:in:ref, field_id
+              acc: out:ref
+              format: [op_v_8_id_16]
+        header-template: [pandasm_header]
+        check-type: exit-positive
+        runner-options: [compile-failure]
+        code-template: |
+
+          .function i32 main() {
+            ldobj.obj %s, R.fQ
+        cases:
+          - values: ['v255']
+            runner-options: ['compile-only']
+          - values: ['v256']
+          - values: ['v65535']
+          - values: ['a0']
+          - values: ['a1']
+          - values: ['null']
+          - values: ['1']
+          - values: ['"0"']
+
+
+      - file-name: "from_all_field_types_pa"
+        description: Check that accumulator value is loaded from field into accumulator. More tests on ldobj.obj can be found in stobj.obj tests
+        isa:
+          description: Get field value from an object by field id and put it into accumulator.
+        header-template: [pandasm_header]
+        check-type: exit-positive
+        tags: ['tsan']
+        code-template: |
+
+          .function i32 main() {
+            initobj R.ctor
+            sta.obj v0
+            # store null into Q type field
+            lda.null
+            sta.obj v3
+            stobj.obj v0, R.fQ
+            # store null into Q[] type field
+            lda.null
+            sta.obj v4
+            stobj.obj v0, R.fQArray
+            # store R object into R type field
+            initobj R.ctor
+            sta.obj v5
+            stobj.obj v0, R.fR
+            # store R[] into R[] type field
+            movi v1, 10
+            newarr v6, v1, R[]
+            lda.obj v6
+            stobj.obj v0, R.fRArray
+          label0:
+            # load null from Q type field
+            ldobj.obj v0, R.fQ
+            jeq.obj v3, label1
+            ldai 1
+            return
+          label1:
+            # load null from Q[] type field
+            ldobj.obj v0, R.fQArray
+            jeq.obj v4, label2
+            ldai 2
+            return
+          label2:
+            # load R object from R type field
+            ldobj.obj v0, R.fR
+            jeq.obj v5, label3
+            ldai 3
+            return
+          label3:
+            # load R[] from R[] type field
+            ldobj.obj v0, R.fRArray
+            jeq.obj v6, success
+            ldai 4
+            return
+          success:
+

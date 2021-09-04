@@ -1,0 +1,57 @@
+/*
+ * Copyright (c) 2021 Huawei Device Co., Ltd.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+#ifndef PANDA_RUNTIME_INCLUDE_BUILTIN_HANDLERS_H_
+#define PANDA_RUNTIME_INCLUDE_BUILTIN_HANDLERS_H_
+
+% PandaBuiltins::builtins.each do |builtin|
+HANDLE_BUILTIN_<%= builtin.opcode.tr('.','_').upcase %>: {
+% if builtin.language_context == 'ecmascript'
+    ecmascript::InstructionHandler<RuntimeIfaceT, enable_instrumentation> handler(&state);
+% elsif builtin.language_context == 'java'
+    java::InstructionHandler<RuntimeIfaceT, enable_instrumentation> handler(&state);
+% else
+    InstructionHandler<RuntimeIfaceT, enable_instrumentation> handler(&state);
+% end
+%   mnemonic = builtin.mnemonic.split('.').map { |p| p == '64' ? 'Wide' : p.capitalize }.join
+    handler.DumpVRegs();
+    handler.InstrumentInstruction();
+
+    ASSERT(PandaVM::GetCurrent()->GetLanguageContext().GetLanguage() == panda_file::SourceLang::ECMASCRIPT ||
+           !PandaVM::GetCurrent()->GetGC()->IsGCRunning() || Locks::mutator_lock->HasLock());
+
+    handler.template HandleBuiltin<%= mnemonic %><BytecodeInstruction::Format::<%= builtin.format.upcase %>>();
+
+    ASSERT(PandaVM::GetCurrent()->GetLanguageContext().GetLanguage() == panda_file::SourceLang::ECMASCRIPT ||
+           !PandaVM::GetCurrent()->GetGC()->IsGCRunning() || Locks::mutator_lock->HasLock());
+
+    if (enable_instrumentation) {
+        frame->GetAcc() = handler.GetAcc();
+    }
+% if builtin['sig'].include?('Return') || builtin['sig'].include?('suspendGenerator')
+    return;
+% else
+%   if builtin.throwing?
+    ASSERT(handler.GetExceptionOpcode() < dispatch_table.size());
+    DISPATCH(GetDispatchTable(dispatch_table), handler.GetExceptionOpcode(), label);
+%   else
+    ASSERT(handler.GetPrimaryOpcode() < dispatch_table.size());
+    DISPATCH(GetDispatchTable(dispatch_table), handler.GetPrimaryOpcode(), label);
+%   end
+% end
+}
+% end
+
+#endif  // PANDA_RUNTIME_INCLUDE_BUILTIN_HANDLERS_H_

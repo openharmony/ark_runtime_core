@@ -1,0 +1,45 @@
+# Copyright (c) 2021 Huawei Device Co., Ltd.
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+import("//ark/runtime/ark_config.gni")
+import("//build/ohos.gni")
+
+ohos_executable("verifier_bin") {
+  sources = [ "verifier.cpp" ]
+
+  configs = [
+    "$ark_root:ark_config",
+    "$ark_root/runtime:arkruntime_public_config",
+    "$ark_root/libpandabase:arkbase_public_config",
+    "$ark_root/libpandafile:arkfile_public_config",
+    "$ark_root/verification/gen:verification_public_config",
+    sdk_libc_secshared_config,
+  ]
+
+  deps = [
+    "$ark_root/libpandabase:libarkbase",
+    "$ark_root/libpandafile:libarkfile",
+    "$ark_root/runtime:libarkruntime",
+  ]
+
+  output_name = "verifier"
+  install_enable = true
+  subsystem_name = "ark"
+}
+
+ohos_prebuilt_etc("verifier.config") {
+  source = "verifier.config"
+
+  install_enable = true
+  subsystem_name = "ark"
+}

@@ -1,0 +1,119 @@
+# Copyright (c) 2021 Huawei Device Co., Ltd.
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+# a & ~b
+.function i32 and_not_i32(i32 a0, i32 a1) {
+    lda a1
+    not
+    and2 a0
+    return
+}
+
+# a & ~b
+.function i64 and_not_i64(i64 a0, i64 a1) {
+    lda.64 a1
+    not.64
+    and2.64 a0
+    return.64
+}
+
+# a | ~b
+.function i32 or_not_i32(i32 a0, i32 a1) {
+    lda a1
+    not
+    or2 a0
+    return
+}
+
+# a | ~b
+.function i64 or_not_i64(i64 a0, i64 a1) {
+    lda.64 a1
+    not.64
+    or2.64 a0
+    return.64
+}
+
+# a ^ ~b
+.function i32 xor_not_i32(i32 a0, i32 a1) {
+    lda a1
+    not
+    xor2 a0
+    return
+}
+
+# a ^ ~b
+.function i64 xor_not_i64(i64 a0, i64 a1) {
+    lda.64 a1
+    not.64
+    xor2.64 a0
+    return.64
+}
+
+.record IO <external>
+.function void IO.printI64(i64 a0) <external>
+
+.function u1 main() {
+    movi v0, 0x0000ffff
+    movi v1, 0x0
+    call.short or_not_i32, v0, v1
+    movi v0, 0xffffffff
+    jne v0, exit_error_0
+    movi.64 v0, 0x0000ffff0000ffff
+    movi.64 v1, 0x00ffffffff000000
+    call.short or_not_i64, v0, v1
+    movi.64 v0, 0xff00ffff00ffffff
+    cmp.64 v0
+    jnez exit_error_1
+    movi v0, 0x0f0f0f0f
+    movi v1, 0
+    call.short and_not_i32, v0, v1
+    movi v0, 0x0f0f0f0f
+    jne v0, exit_error_2
+    movi.64 v0, 0x00ff00ff00ff00ff
+    movi.64 v1, 0xff0ffff0ff0ffff0
+    call.short and_not_i64, v0, v1
+    movi.64 v0, 0x00f0000f00f0000f
+    cmp.64 v0
+    jnez exit_error_3
+    movi v0, 0x01234567
+    movi v1, 0x76543210
+    call.short xor_not_i32, v0, v1
+    movi v0, 0x88888888
+    jne v0, exit_error_4
+    movi.64 v0, 0x0123456789abcdef
+    movi.64 v1, 0xfedcba9876543210
+    call.short xor_not_i64, v0, v1
+    movi.64 v0, 0
+    cmp.64 v0
+    jnez exit_error_5
+    ldai 0
+    return
+exit_error_0:
+    ldai 1
+    return
+exit_error_1:
+    ldai 2
+    return
+exit_error_2:
+    ldai 3
+    return
+exit_error_3:
+    ldai 4
+    return
+exit_error_4:
+    ldai 5
+    return
+exit_error_5:
+    ldai 6
+    return
+}

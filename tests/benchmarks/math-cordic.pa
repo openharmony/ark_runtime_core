@@ -1,0 +1,190 @@
+# Copyright (c) 2021 Huawei Device Co., Ltd.
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+.function u1 main(){
+    movi v0, 2500000
+    fmovi.64 v1, 1036257.0468539958
+    call.short test, v0, v1
+    return
+}
+
+.function u1 test(i32 a0, f64 a1){
+    movi v3, 12
+    newarr v0, v3, f64[]                            #Angles
+    call.short init, v0, v0
+    call.short cordic, a0, v0
+    sta.64 v2                  #total
+    fsub2.64 a1
+    sta.64 v1
+    fldai.64 1e-13
+    fcmpl.64 v1
+    jltz exit_failure
+    ldai 0
+    return
+exit_failure:
+    ldai 1
+    return
+}
+
+.function f64 cordic(i32 a0, f64[] a1){
+    fmovi.64 v1, 0.0         #total
+    movi v2, 0           #loop_counter
+    fmovi.64 v3, 28.027      #TARGET_ANGLE
+loop:
+    lda v2
+    jeq a0, loop_exit
+    call.short cordicsincos, v3, a1
+    fadd2.64 v1
+    sta.64 v1
+    inci v2, 1
+    jmp loop
+loop_exit:
+    lda.64 v1
+    return.64
+}
+
+.function f64 cordicsincos(f64 a0, f64[] a1){
+    fmovi.64 v1, 0.0           #x
+    fmovi.64 v2, 0.0           #y
+    fmovi.64 v3, 0.0           #targetAngle
+    fmovi.64 v4, 0.0           #currAngle
+    movi.64 v5, 0              #step
+    fmovi.64 v6, 0.6072529350      #AG_CONST
+    movi v12, 12
+    call.short FIXED, v6, v1   #x
+    sta.64 v1
+    call.short FIXED, a0, a0
+    sta.64 v3
+    movi v8, 0                 #step
+loop:
+    lda v8
+    jeq v12, loop_exit
+    lda.64 v3
+    fcmpl.64 v4
+    jgtz if
+    lda.64 v2
+    f64toi32
+    shr2 v8
+    i32tof64
+    fadd2.64 v1
+    sta.64 v10                 #newX
+    lda.64 v1
+    f64toi32
+    shr2 v8
+    i32tof64
+    fneg.64
+    fadd2.64 v2
+    sta.64 v2
+    mov.64 v1, v10
+    lda.64 v8
+    fldarr.64 a1
+    fneg.64
+    fadd2.64 v4
+    sta.64 v4
+    inci v8, 1
+    jmp loop
+loop_exit:
+    call.short FLOAT, v1, v1
+    sta.64 v12
+    call.short FLOAT, v2, v1
+    sta.64 v13
+    fmul2.64 v12
+    return.64
+if:
+    lda.64 v2
+    f64toi32
+    shr2 v8
+    i32tof64
+    fneg.64
+    fadd2.64 v1
+    sta.64 v10              #newX
+    lda.64 v1
+    f64toi32
+    shr2 v8
+    i32tof64
+    fadd2.64 v2
+    sta.64 v2
+    mov.64 v1, v10
+    lda v8
+    fldarr.64 a1
+    fadd2.64 v4
+    sta.64 v4
+    inci v8, 1
+    lda v8
+    jmp loop
+}
+
+.function f64 FLOAT(f64 a0){
+    fmovi.64 v1, 65536.0
+    lda.64 a0
+    fdiv2.64 v1
+    return.64
+}
+
+.function f64 FIXED(f64 a0){
+    fldai.64 65536.0
+    fmul2.64 a0
+    return.64
+}
+
+.function void init(f64[] a0){
+    movi.64 v2, 0
+    fmovi.64 v1, 45.0
+    call.short FIXED, v1, v1
+    fstarr.64 a0, v2
+    inci v2, 1
+    fmovi.64 v1, 26.565
+    call.short FIXED, v1, v1
+    fstarr.64 a0, v2
+    inci v2, 1
+    fmovi.64 v1, 14.0362
+    call.short FIXED, v1, v1
+    fstarr.64 a0, v2
+    inci v2, 1
+    fmovi.64 v1, 7.12502
+    call.short FIXED, v1, v1
+    fstarr.64 a0, v2
+    inci v2, 1
+    fmovi.64 v1, 3.57633
+    call.short FIXED, v1, v1
+    fstarr.64 a0, v2
+    inci v2, 1
+    fmovi.64 v1, 1.78991
+    call.short FIXED, v1, v1
+    fstarr.64 a0, v2
+    inci v2, 1
+    fmovi.64 v1, 0.895174
+    call.short FIXED, v1, v1
+    fstarr.64 a0, v2
+    inci v2, 1
+    fmovi.64 v1, 0.447614
+    call.short FIXED, v1, v1
+    fstarr.64 a0, v2
+    inci v2, 1
+    fmovi.64 v1, 0.223811
+    call.short FIXED, v1, v1
+    fstarr.64 a0, v2
+    inci v2, 1
+    fmovi.64 v1, 0.111906
+    call.short FIXED, v1, v1
+    fstarr.64 a0, v2
+    inci v2, 1
+    fmovi.64 v1, 0.055953
+    call.short FIXED, v1, v1
+    fstarr.64 a0, v2
+    inci v2, 1
+    fmovi.64 v1, 0.027977
+    call.short FIXED, v1, v1
+    fstarr.64 a0, v2
+    return.void
+}

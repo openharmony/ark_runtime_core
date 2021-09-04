@@ -1,0 +1,2 @@
+# Panda dependencies list for cross-compiling from Ubuntu 18.04 to Windows (all hardware targets)
+g++-mingw-w64-x86-64=7.3.0-*

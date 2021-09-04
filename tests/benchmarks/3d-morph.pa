@@ -1,0 +1,153 @@
+# Copyright (c) 2021 Huawei Device Co., Ltd.
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+.record Math <external>
+.function f64 Math.sin(f64 a0) <external>
+.function f64 Math.absF64(f64 a0) <external>
+
+.function u1 main(){
+    movi.64 v0, 1500
+    movi v1, 120
+    movi v2, 120
+    call test, v0, v1, v2, v0
+    return
+}
+
+.function u1 test(i32 a0, i32 a1, i32 a2){
+    mul a1, a2
+    muli 3
+    sta v3                #lenarr
+    newarr v4, v3, f64[]              #a
+    call.short init, v4, v4
+    movi v5, 0    #loop counter
+loop:
+    lda v5
+    jeq a0, loop_exit
+    lda a0
+    i32tof64
+    sta.64 v10
+    lda v5
+    i32tof64
+    fdiv2.64 v10
+    sta.64 v6
+    call morph, v4, v6, a1, a2
+    inci v5, 1
+    jmp loop
+loop_exit:
+    fmovi.64 v7, 0.0       #testOutput
+    movi v5, 0
+    lda a1
+    sta v11
+loop2:
+    lda v5
+    jeq v11, loop2_exit
+    mul2 v11
+    add2 v5
+    muli 3
+    addi 1
+    fldarr.64 v4
+    fadd2.64 v7
+    sta.64 v7
+    inci v5, 1
+    jmp loop2
+loop2_exit:
+    fmovi.64 v9, 1e-13               #epsilon
+    call.short Math.absF64, v7, v7
+    fcmpl.64 v9
+    jgez if
+    ldai 0
+    return
+if:
+    ldai 1
+    return
+}
+
+.function u1 morph(f64[] a0, f64 a1, i32 a2, i32 a3){
+    fmovi.64 v4, 3.141592653589793
+    fmovi.64 v0, 8.0
+    movi v21, 8
+    movi v22, 3
+    movi v23, 1
+    lda a2
+    i32tof64
+    sta.64 v2
+    lda a3
+    sta v3
+    lda.64 v4
+    fmul2.64 v0
+    fdiv2.64 v2
+    sta.64 v5                          #PI2nx
+    lda a2
+    sta v2
+    fmovi.64 v0, 2.0
+    lda.64 v4
+    fmul2.64 v0
+    fmul2.64 a1
+    sta.64 v0
+    call.short Math.sin, v0, v0
+    fmovi.64 v0, 50.0
+    fmul2.64 v0
+    fneg.64
+    sta.64 v6                          #f30
+    movi v7, 0                      #loop counter
+loop:
+    lda v7
+    jeq v3, loop_exit
+    movi v8, 0                      #loop2 counter
+loop2:
+    lda v8
+    jeq v2, loop2_exit
+    lda v7
+    mul2 v2
+    add2 v8
+    mul2 v22
+    add2 v23
+    sta v9                          #3*(i*nx+j)+1
+    lda v8
+    subi 1
+    i32tof64
+    fmul2.64 v5
+    sta.64 v0
+    call.short Math.sin, v0, v0
+    sta.64 v10                         #sin((j-1)*PI2nx)
+    lda.64 v6
+    fneg.64
+    fmul2.64 v10
+    mov.obj v0, a0
+    fstarr.64 v0, v9
+    inci v8, 1
+    jmp loop2
+loop2_exit:
+    inci v7, 1
+    jmp loop
+loop_exit:
+    ldai 0
+    return
+}
+
+.function f64[] init(f64[] a0){
+    movi v2, 0
+    fmovi.64 v4, 0.0
+    lenarr a0
+    sta v1
+loop:
+    lda v2
+    jeq v1, loop_exit
+    lda.64 v4
+    fstarr.64 a0, v2
+    inci v2, 1
+    jmp loop
+loop_exit:
+    lda.obj a0
+    return.obj
+}

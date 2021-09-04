@@ -1,0 +1,186 @@
+# Copyright (c) 2021 Huawei Device Co., Ltd.
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+.record Math <external>
+.record Globals{
+    i32 flag <static>
+}
+
+.function f64 Math.pow(f64 a0, f64 a1) <external>
+.function f64 Math.cos(f64 a0) <external>
+.function f64 Math.sin(f64 a0) <external>
+.function f64 Math.absF64(f64 a0) <external>
+
+.function u1 main(){
+    movi v0, 1024
+    movi v1, 163840
+    fmovi.64 v2, 104.46302508421098
+    call test, v0, v1, v2, v0
+    return
+}
+
+.function u1 test(i32 a0, i32 a1, f64 a2){
+    ldai 0
+    ststatic Globals.flag
+    fmovi.64 v3, 0.0               #total
+    mov v5, a0                 #loop counter
+loop:
+    jgt a1, loop_exit
+    call.short partial, v5, v0
+    fadd2.64 v3
+    sta.64 v3
+    lda v5
+    muli 2
+    sta v5
+    jmp loop
+loop_exit:
+    lda.64 v3
+    fsub2.64 a2
+    sta.64 v6
+    call.short Math.absF64, v6, v6
+    sta.64 v6
+    fldai.64 1e-13
+    fcmpl.64 v6
+    jlez exit_failure
+    ldstatic Globals.flag
+    jeqz exit_failure
+    ldai 0
+    return
+exit_failure:
+    ldai 1
+    return
+}
+
+.function f64 partial(i32 a0){
+    fmovi.64 v10, -0.5
+    fmovi.64 v11, 0.0                #a1
+    fmovi.64 v12, 0.0                #a2
+    fmovi.64 v13, 0.0                #a3
+    fmovi.64 v14, 0.0                #a4
+    fmovi.64 v15, 0.0                #a5
+    fmovi.64 v16, 0.0                #a6
+    fmovi.64 v17, 0.0                #a7
+    fmovi.64 v18, 0.0                #a8
+    fmovi.64 v19, 0.0                #a9
+    fmovi.64 v20, 3.0
+    fldai.64 2.0
+    fdiv2.64 v20
+    sta.64 v20                     #twothirds
+    fmovi.64 v21, -1.0              #alt
+    fmovi.64 v22, 0.0               #k2
+    fmovi.64 v23, 0.0               #k3
+    fmovi.64 v24, 0.0               #sk
+    fmovi.64 v25, 0.0               #ck
+    movi.64 v27, 0                 #flag
+    movi v28, 1                 #loop counter
+    mov v26, a0
+    ldai 1
+loop:
+    jgt v26, loop_exit
+    i32tof64
+    sta.64 v29
+    fmul2.64 v29
+    sta.64 v30                     #k2
+    fmul2.64 v29
+    sta.64 v31                     #k3
+    mov.64 v0, v29
+    call.short Math.sin, v0, v0
+    sta.64 v32                     #sk
+    call.short Math.cos, v0, v0
+    sta.64 v33                     #ck
+    lda.64 v21
+    fneg.64
+    sta.64 v21
+    mov.64 v0, v20
+    fldai.64 -1.0
+    fadd2.64 v29
+    sta.64 v1
+    call.short Math.pow, v0, v1
+    fadd2.64 v11
+    sta.64 v11
+    mov.64 v0, v29
+    call.short Math.pow, v0, v10
+    fadd2.64 v12
+    sta.64 v12
+    fldai.64 1.0
+    fadd2.64 v29
+    fmul2.64 v29
+    sta.64 v34
+    fldai.64 1.0
+    fdiv2.64 v34
+    fadd2.64 v13
+    sta.64 v13
+    lda.64 v31
+    fmul2.64 v32
+    fmul2.64 v32
+    sta.64 v34
+    fldai.64 1.0
+    fdiv2.64 v34
+    fadd2.64 v14
+    sta.64 v14
+    lda.64 v31
+    fmul2.64 v33
+    fmul2.64 v33
+    sta.64 v34
+    fldai.64 1.0
+    fdiv2.64 v34
+    fadd2.64 v15
+    sta.64 v15
+    fldai.64 1.0
+    fdiv2.64 v29
+    fadd2.64 v16
+    sta.64 v16
+    fldai.64 1.0
+    fdiv2.64 v30
+    fadd2.64 v17
+    sta.64 v17
+    lda.64 v21
+    fdiv2.64 v29
+    fadd2.64 v18
+    sta.64 v18
+    fldai.64 2.0
+    fmul2.64 v29
+    sta.64 v34
+    fldai.64 -1.0
+    fadd2.64 v34
+    sta.64 v34
+    lda.64 v21
+    fdiv2.64 v34
+    fadd2.64 v19
+    sta.64 v19
+    lda v28
+    addi 1
+    sta v28
+    jmp loop
+loop_exit:
+    lda.64 v11
+    fadd2.64 v12
+    fadd2.64 v13
+    fadd2.64 v14
+    fadd2.64 v15
+    fmovi.64 v5, 0.0
+    fcmpl.64 v5
+    jgtz if
+    ldai 2
+    ststatic Globals.flag
+endif:
+    lda.64 v16
+    fadd2.64 v17
+    fadd2.64 v18
+    fadd2.64 v19
+    return.64
+if:
+    ldai 1
+    ststatic Globals.flag
+    jmp endif
+}

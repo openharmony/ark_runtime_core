@@ -1,0 +1,13 @@
+# Panda cross-compilation dependencies list for AArch32 and AArch64 for building on Ubuntu 18.04 and 20.04
+g++-8-aarch64-linux-gnu
+g++-8-arm-linux-gnueabi
+g++-8-arm-linux-gnueabihf
+
+g++-aarch64-linux-gnu
+g++-arm-linux-gnueabi
+g++-arm-linux-gnueabihf
+
+qemu                         # QEMU: Main QEMU
+qemu-efi-aarch64             # QEMU: EFI support, Aarch64
+qemu-efi-arm                 # QEMU: EFI support, AArch32
+gdb-multiarch                # GDB with support for multiple architectures

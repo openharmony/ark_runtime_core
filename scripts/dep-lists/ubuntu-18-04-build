@@ -1,0 +1,5 @@
+# Dependency list for building Panda on Ubuntu 18.04
+cmake=3.10.2-*
+g++=4:7.4.0-*
+make=4.1-*
+ruby=1:2.5.1                     # For working with Bytecode ISA API

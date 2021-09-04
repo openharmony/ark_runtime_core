@@ -1,0 +1,75 @@
+# Copyright (c) 2021 Huawei Device Co., Ltd.
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+import("//ark/runtime_core/ark_config.gni")
+
+type_sources = [
+  "$ark_root/verification/type/type_param.cpp",
+  "$ark_root/verification/type/type_parametric.cpp",
+  "$ark_root/verification/type/type_params.cpp",
+  "$ark_root/verification/type/type_set.cpp",
+  "$ark_root/verification/type/type_systems.cpp",
+  "$ark_root/verification/type/type_type.cpp",
+]
+
+value_sources = []
+
+cflow_sources = [
+  "$ark_root/verification/cflow/cflow_check.cpp",
+  "$ark_root/verification/cflow/cflow_common.cpp",
+  "$ark_root/verification/cflow/cflow_info.cpp",
+]
+
+util_sources = []
+
+absint_sources = [
+  "$ark_root/verification/absint/abs_int_inl.cpp",
+  "$ark_root/verification/absint/absint.cpp",
+  "$ark_root/verification/absint/panda_types.cpp",
+]
+
+debug_sources = [
+  "$ark_root/verification/debug/breakpoint/breakpoint.cpp",
+  "$ark_root/verification/debug/config/config_parse.cpp",
+  "$ark_root/verification/debug/config/config_process.cpp",
+  "$ark_root/verification/debug/config_load.cpp",
+  "$ark_root/verification/debug/context/context.cpp",
+  "$ark_root/verification/debug/handlers/config_handler_breakpoints.cpp",
+  "$ark_root/verification/debug/handlers/config_handler_options.cpp",
+  "$ark_root/verification/debug/handlers/config_handler_allowlist.cpp",
+  "$ark_root/verification/debug/allowlist/allowlist.cpp",
+  "$ark_root/verification/debug/handlers/config_handler_method_options.cpp",
+  "$ark_root/verification/debug/handlers/config_handler_method_groups.cpp",
+  "$ark_root/verification/debug/default_config.cpp",
+]
+
+job_queue_sources = [
+  "$ark_root/verification/job_queue/cache.cpp",
+  "$ark_root/verification/job_queue/job_fill.cpp",
+  "$ark_root/verification/job_queue/job_queue.cpp",
+]
+
+verifier_thread_sources =
+    [ "$ark_root/verification/thread/verifier_thread.cpp" ]
+
+verifier_cache_sources =
+   [ "$ark_root/verification/cache/results_cache.cpp" ]
+
+verifier_sources = [ "$ark_root/verification/verification_options.cpp" ]
+verifier_sources += type_sources
+verifier_sources += cflow_sources
+verifier_sources += absint_sources
+verifier_sources += debug_sources
+verifier_sources += job_queue_sources
+verifier_sources += verifier_thread_sources
+verifier_sources += verifier_cache_sources

@@ -1,0 +1,1106 @@
+# Copyright (c) 2021 Huawei Device Co., Ltd.
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+---
+definitions:
+  - name: java
+    template: >
+      .language Java
+  - name: r_A
+    template: |
+      .record A {}
+
+      .function void A.constructor(A a0) <ctor> {
+          return.void
+      }
+  - name: r_B
+    template: |
+      .record B {}
+
+      .function void B.constructor(B a0) <ctor> {
+          return.void
+      }
+
+tests:
+  - file-name: call.virt.negative
+    isa:
+      instructions:
+        - sig: call.virt method_id, v1:in:top, v2:in:top, v3:in:top, v4:in:top
+          acc: out:top
+          format: [op_v1_4_v2_4_v3_4_v4_4_id_16]
+      title: Object calls
+      description: >
+        Call indicated object method, i.e. create new frame, pass values of arguments and
+        continue execution from the first instruction of a method.
+        Callee should treat accumulator value as undefined and cannot use it until accumulator
+        definition in the new frame.
+        Result (if any) is returned in accumulator (see 'Calling sequence' chapter for more details).
+        Method, its class and the number of argument is resolved by given method_id in runtime
+        constant-pool based on object reference using language-specific semantics (currently only Java
+        virtual methods are supported, further extensions are TBD).
+        Object reference is passed in the first source register, arguments are passed starting from
+        the second source register in the same order as in method signature.
+        Non-range instructions can be used to pass up to 4 arguments (including object reference).
+        Unused register slot values will be discarded and corresponding registers will not be
+        passed to the callee).
+        For methods with more arguments range kinds of instruction are to be used, which takes
+        the needed number of arguments starting from 'vs' register (including object reference).
+      verification:
+        - method_id_non_static
+        - compatible_arguments
+        - method_id_accessible
+      exceptions:
+        - x_null
+        - x_abstract
+    commands:
+
+      - file-name: wrong_object_1
+        bugid: ['2287', '5271']
+        isa:
+          instructions:
+            - sig: call.virt method_id, v1:in:top, v2:in:top, v3:in:top, v4:in:top
+              acc: out:top
+              format: [op_v1_4_v2_4_v3_4_v4_4_id_16]
+          verification:
+            - compatible_arguments
+        header-template: [r_A, r_B]
+        description: Check incorrect usage of `call.virt` instruction. First argument is of incorrect type instead of object reference.
+        runner-options: ['verifier-failure', 'verifier-debug-config']
+        tags: ['verifier']
+        code-template: |
+          .function i32 A.foo(A a0%s) {
+              ldai 1
+              return
+          }
+
+          .function i32 main() {
+              %s
+              call.virt A.foo%s
+              # check object is equal to original
+
+        check-type: exit-positive
+        cases:
+          - values:
+            - ''
+            - ''
+            - ','
+            runner-options: [compile-failure]
+            bugid: ['1855']
+          - values:
+            - ''
+            - 'movi v0, 0'
+            - ', v0'
+          - values:
+            - ''
+            - |
+              #
+                  lda.type A
+                  sta.obj v0
+            - ', v0'
+            bugid: ['2256']
+          - values:
+            - ''
+            - |
+              #
+                  lda.type B
+                  sta.obj v0
+            - ', v0'
+          - values:
+            - ''
+            - 'movi.64 v0, 0'
+            - ', v0'
+          - values:
+            - ''
+            - 'fmovi.64 v0, 0'
+            - ', v0'
+          - values:
+            - ''
+            - |
+              #
+                  lda.str "some string"
+                  sta.obj v0
+            - ', v0'
+          - values:
+            - ''
+            - |
+              #
+                  lda.str "some string"
+                  sta.obj v0
+                  movi v1, 1
+            - ', v0, v1'
+          - values:
+            - ''
+            - |
+              #
+                  lda.str "some string"
+                  sta.obj v0
+                  movi.64 v1, 1
+            - ', v0, v1'
+          - values:
+            - ''
+            - |
+              #
+                  lda.str "some string"
+                  sta.obj v0
+                  fmovi.64 v1, 1
+            - ', v0, v1'
+          - values:
+            - ', i32 a1'
+            - |
+              #
+                  movi v0, 0
+                  movi v1, 1
+            - ', v0, v1'
+          - values:
+            - ', i64 a1'
+            - |
+              #
+                  movi v0, 0
+                  movi.64 v1, 1
+            - ', v0, v1'
+          - values:
+            - ', f64 a1'
+            - |
+              #
+                  movi v0, 0
+                  fmovi.64 v1, 1.1
+            - ', v0, v1'
+
+          - values:
+            - ', i32 a1'
+            - |
+              #
+                  movi.64 v0, 0
+                  movi v1, 1
+            - ', v0, v1'
+          - values:
+            - ', i64 a1'
+            - |
+              #
+                  movi.64 v0, 0
+                  movi.64 v1, 1
+            - ', v0, v1'
+          - values:
+            - ', f64 a1'
+            - |
+              #
+                  movi.64 v0, 0
+                  fmovi.64 v1, 1.1
+            - ', v0, v1'
+
+          - values:
+            - ', i32 a1'
+            - |
+              #
+                  fmovi.64 v0, 0.0
+                  movi v1, 1
+            - ', v0, v1'
+          - values:
+            - ', i64 a1'
+            - |
+              #
+                  fmovi.64 v0, 0
+                  movi.64 v1, 1
+            - ', v0, v1'
+          - values:
+            - ', f64 a1'
+            - |
+              #
+                  fmovi.64 v0, 0
+                  fmovi.64 v1, 1.1
+            - ', v0, v1'
+
+          - values:
+            - ', i32 a1, f64 a2, i64 a3'
+            - |
+              #
+                  fmovi.64 v0, 0.0
+                  movi v1, 1
+                  fmovi.64 v2, 123.456
+                  movi.64 v3, 0x100000000
+            - ', v0, v1, v2, v3'
+          - values:
+            - ', i64 a1, i64[] a2, i64[] a3'
+            - |
+              #
+                  fmovi.64 v0, 0
+                  movi.64 v1, 1
+                  mov.null v2
+                  mov.null v3
+            - ', v0, v1, v2, v3'
+          - values:
+            - ', f64[] a1, i64[] a2, i32[] a3'
+            - |
+              #
+                  fmovi.64 v0, 0
+                  mov.null v1
+                  mov.null v2
+                  mov.null v3
+            - ', v0, v1, v2, v3'
+
+      - file-name: p_wrong_object_2
+        isa:
+          instructions:
+            - sig: call.virt method_id, v1:in:top, v2:in:top, v3:in:top, v4:in:top
+              acc: out:top
+              format: [op_v1_4_v2_4_v3_4_v4_4_id_16]
+          verification:
+            - compatible_arguments
+        header-template: [r_A, r_B]
+        description: >
+          Check incorrect usage of `call.virt` instruction. First argument is a reference to object of incompatible type.
+          Use PandaAssembly language context.
+        runner-options: ['verifier-failure', 'verifier-debug-config']
+        tags: [verifier]
+        bugid: ['1324']
+        template-cases:
+          - values:
+            - |
+              %s
+              .function i32 A.foo(A a0%s) {
+                  ldai 1
+                  return
+              }
+          - values:
+            - |
+              %s
+              ##- %s
+              .function i32 A.foo(A a0) {
+                  ldai 1
+                  return
+              }
+        code-template: |
+          %s
+
+          .function i32 main() {
+              initobj.short B.constructor
+              sta.obj v0
+              *s
+              call.virt A.foo, v0*s
+
+        check-type: exit-positive
+        cases:
+          - values:
+            - ''
+            - ''
+            - ''
+            - ''
+          - values:
+            - ''
+            - ',i32 a1'
+            - 'movi v1, 0'
+            - ', v1'
+          - values:
+            - ''
+            - ',i32 a1'
+            - 'movi v1, 1'
+            - ', v1'
+          - values:
+            - ''
+            - ', i64 a1'
+            - 'movi.64 v1, 0'
+            - ', v1'
+          - values:
+            - ''
+            - ', i64 a1'
+            - 'movi.64 v1, 0x100000000'
+            - ', v1'
+          - values:
+            - ''
+            - ', f64 a1'
+            - 'fmovi.64 v1, 0'
+            - ', v1'
+          - values:
+            - ''
+            - ', f64 a1'
+            - 'fmovi.64 v1, 1.1'
+            - ', v1'
+          - values:
+            - '.record panda.String <external>'
+            - ', panda.String a1'
+            - |
+              #
+                  lda.str "some string"
+                  sta.obj v1
+            - ', v1'
+          - values:
+            - ''
+            - ', i32 a1, f64 a2, i64 a3'
+            - |
+              #
+                  movi v1, 1
+                  fmovi.64 v2, 123.456
+                  movi.64 v3, 0x100000000
+            - ', v1, v2, v3'
+          - values:
+            - ''
+            - ', i64 a1, i64[] a2, i64[] a3'
+            - |
+              #
+                  movi.64 v1, 1
+                  mov.null v2
+                  mov.null v3
+            - ', v1, v2, v3'
+          - values:
+            - ''
+            - ', f64[] a1, i64[] a2, i32[] a3'
+            - |
+              #
+                  mov.null v1
+                  mov.null v2
+                  mov.null v3
+            - ', v1, v2, v3'
+
+
+
+      - file-name: arg_types_1
+        isa:
+          instructions:
+            - sig: call.virt method_id, v1:in:top, v2:in:top, v3:in:top, v4:in:top
+              acc: out:top
+              format: [op_v1_4_v2_4_v3_4_v4_4_id_16]
+          verification:
+            - compatible_arguments
+        header-template: [r_A]
+        description: >
+          Verifier should report when register type does not match function argument type.
+        code-template: |
+            .record panda.String <external>
+            .record panda.Object <external>
+            .function void A.func(A a0, %s) {
+                return.void
+            }
+
+            .function i32 main() {
+                initobj A.constructor
+                sta.obj v0
+                *s
+                call.virt A.func, v0, v1
+        template-cases:
+            - values:
+              - 'i32 a1'
+              exclude: [i32]
+            - values:
+              - 'i64 a1'
+              exclude: [i64]
+            - values:
+              - 'f64 a1'
+              exclude: [f64]
+            - values:
+                - 'i32[] a1'
+              exclude: [i32arr]
+            - values:
+                - 'i64[] a1'
+              exclude: [i64arr]
+            - values:
+                - 'f64[] a1'
+              exclude: [f64arr]
+            - values:
+                - 'panda.String a1'
+              exclude: [str]
+            - values:
+                - 'panda.String[] a1'
+              exclude: [strarr]
+            - values:
+                - 'panda.Object a1'
+              exclude: [obj, objarr, i32arr, i64arr, f64arr, str, strarr]
+            - values:
+                - 'panda.Object[] a1'
+              exclude: [objarr, strarr]
+
+        check-type: exit-positive
+        bugid: ['1324']
+        tags: [verifier]
+        runner-options: ['verifier-failure', 'verifier-debug-config']
+        cases:
+          - values:
+            - |
+              #
+                  movi v1, 0
+            id: i32
+          - values:
+            - |
+              #
+                  movi v1, 1
+            id: i32
+          - values:
+            - |
+              #
+                  movi.64 v1, 0
+            id: i64
+          - values:
+            - |
+              #
+                  movi.64 v1, 1
+            id: i64
+          - values:
+            - |
+              #
+                  fmovi.64 v1, 0
+            id: f64
+          - values:
+            - |
+              #
+                  fmovi.64 v1, 3.1415926535
+            id: f64
+          - values:
+            - |
+              #
+                  movi v1, 123
+                  newarr v1, v1, i32[]
+            id: i32arr
+          - values:
+            - |
+              #
+                  movi v1, 123
+                  newarr v1, v1, i64[]
+            id: i64arr
+          - values:
+            - |
+              #
+                  movi v1, 123
+                  newarr v1, v1, f64[]
+            id: f64arr
+          - values:
+            - |
+              #
+                  lda.str "some string"
+                  sta.obj v1
+            id: str
+          - values:
+            - |
+              #
+                  movi v1, 123
+                  newarr v1, v1, panda.String[]
+            id: strarr
+          - values:
+            - |
+              #
+                  newobj v1, panda.Object
+            id: obj
+          - values:
+            - |
+              #
+                  movi v1, 123
+                  newarr v1, v1, panda.Object[]
+            id: objarr
+
+      - file-name: arg_types_2
+        isa:
+          instructions:
+            - sig: call.virt method_id, v1:in:top, v2:in:top, v3:in:top, v4:in:top
+              acc: out:top
+              format: [op_v1_4_v2_4_v3_4_v4_4_id_16]
+          verification:
+            - compatible_arguments
+        header-template: [r_A]
+        description: >
+          Verifier should report when register type does not match function argument type.
+        code-template: |
+            # Defenitions for all set of tests
+            .record panda.String <external>
+            .record panda.Object <external>
+
+            .function void A.func(A a0, %s) {
+                return.void
+            }
+
+            .function i32 main() {
+                initobj A.constructor
+                sta.obj v0
+                *s
+                call.virt A.func, v0, v1, v2
+        template-cases:
+            - values:
+              - 'i32 a1, i32 a2'
+            - values:
+              - 'f64 a1, f64 a2'
+            - values:
+              - 'i64 a1, i64 a2'
+            - values:
+              - 'i32[] a1, i32[] a2'
+            - values:
+              - 'i64[] a1, i64[] a2'
+            - values:
+              - 'f64[] a1, f64[] a2'
+            - values:
+              - 'panda.String a1, panda.String a2'
+            - values:
+              - 'panda.String[] a1, panda.String[] a2'
+              exclude: [6]
+            - values:
+              - 'panda.Object a1, panda.Object a2'
+              exclude: [2, 3, 4, 5, 6, 7, 9]
+            - values:
+              - 'panda.Object[] a1, panda.Object[] a2'
+              exclude: [6, 7, 9]
+        check-type: exit-positive
+        bugid: ['1324']
+        tags: [verifier]
+        runner-options: ['verifier-failure', 'verifier-debug-config']
+        cases:
+          - values:
+            - |
+              #
+                  movi v1, 1
+                  fmovi.64 v2, 3.1415926535
+          - values:
+            - |
+              #
+                  movi.64 v1, 0
+                  movi v2, 123
+                  newarr v2, v2, i32[]
+          - values:
+            - |
+              #
+                  movi v1, 123
+                  newarr v1, v1, i32[]
+                  movi v2, 321
+                  newarr v2, v2, i64[]
+            id: 2
+          - values:
+            - |
+              #
+                  movi v1, 123
+                  newarr v1, v1, i64[]
+                  lda.str "some string"
+                  sta.obj v2
+            id: 3
+          - values:
+            - |
+              #
+                  movi v1, 123
+                  newarr v1, v1, f64[]
+                  lda.str "some string"
+                  sta.obj v2
+            id: 4
+          - values:
+            - |
+              #
+                  lda.str "some string"
+                  sta.obj v1
+                  movi v2, 123
+                  newarr v2, v2, panda.String[]
+            id: 5
+          - values:
+            - |
+              #
+                  movi v1, 123
+                  newarr v1, v1, panda.String[]
+                  mov.null v2
+            id: 6
+          - values:
+            - |
+              #
+                  mov.null v1
+                  movi v2,123
+                  newarr v2, v2, panda.Object[]
+            id: 7
+          - values:
+            - |
+              #
+                  movi v1, 123
+                  newarr v1, v1, panda.String[]
+                  fmovi.64 v2, 3.1415926535
+          - values:
+            - |
+              #
+                  movi v1, 123
+                  newarr v1, v1, panda.Object[]
+                  movi v2, 321
+                  newarr v2, v2, panda.Object[]
+            id: 9
+
+      - file-name: arg_types_3
+        isa:
+          instructions:
+            - sig: call.virt method_id, v1:in:top, v2:in:top, v3:in:top, v4:in:top
+              acc: out:top
+              format: [op_v1_4_v2_4_v3_4_v4_4_id_16]
+          verification:
+            - compatible_arguments
+        header-template: [r_A]
+        tags: [arm64-fail, verifier]
+        bugid: ['1324']
+        runner-options: ['verifier-failure', 'verifier-debug-config']
+        description: >
+          Verifier should report when register type does not match function argument type.
+        code-template: |
+            # Defenitions for all set of tests
+            .record panda.String <external>
+            .record panda.Object <external>
+
+            .function void A.func(A a0, %s) {
+                return.void
+            }
+
+            .function i32 main() {
+                initobj A.constructor
+                sta.obj v0
+                *s
+                call.virt A.func, v0, v1, v2, v3
+        template-cases:
+            - values:
+              - 'i32 a1, i32 a2, i32 a3'
+            - values:
+              - 'f64 a1, f64 a2, f64 a3'
+            - values:
+              - 'i64 a1, i64 a2, i64 a3'
+            - values:
+              - 'i32[] a1, i32[] a2, i32[] a3'
+            - values:
+              - 'i64[] a1, i64[] a2, i64[] a3'
+            - values:
+              - 'f64[] a1, f64[] a2, f64[] a3'
+            - values:
+              - 'panda.String a1, panda.String a2, panda.String a3'
+            - values:
+              - 'panda.String[] a1, panda.String[] a2, panda.String[] a3'
+            - values:
+              - 'panda.Object a1, panda.Object a2, panda.Object a3'
+              exclude: [2, 3, 4, 5]
+            - values:
+              - 'panda.Object[] a1, panda.Object[] a2, panda.Object[] a3'
+        check-type: exit-positive
+        cases:
+          - values:
+            - |
+              #
+                  movi v1, 1
+                  fmovi.64 v2, 3.1415926535
+                  movi v3, 1
+          - values:
+            - |
+              #
+                  movi.64 v1, 0
+                  movi v2, 123
+                  newarr v2, v2, i32[]
+                  movi v3, 123
+                  newarr v3, v3, i32[]
+          - values:
+            - |
+              #
+                  movi v1, 123
+                  newarr v1, v1, i32[]
+                  movi v2, 321
+                  newarr v2, v2, i64[]
+                  movi v3, 123
+                  newarr v3, v3, i32[]
+            id: 2
+          - values:
+            - |
+              #
+                  movi v1, 123
+                  newarr v1, v1, i64[]
+                  lda.str "some string"
+                  sta.obj v2
+                  lda.str "some string"
+                  sta.obj v3
+            id: 3
+          - values:
+            - |
+              #
+                  movi v1, 123
+                  newarr v1, v1, f64[]
+                  lda.str "some string"
+                  sta.obj v2
+                  movi v3, 123
+                  newarr v3, v3, f64[]
+            id: 4
+          - values:
+            - |
+              #
+                  lda.str "some string"
+                  sta.obj v1
+                  movi v2, 123
+                  newarr v2, v2, panda.String[]
+                  movi v3, 123
+                  newarr v3, v3, panda.String[]
+            id: 5
+          - values:
+            - |
+              #
+                  movi v1, 123
+                  newarr v1, v1, panda.String[]
+                  mov.null v2
+                  fmovi.64 v3, 3.1415926535
+          - values:
+            - |
+              #
+                  mov.null v1
+                  movi v2,123
+                  newarr v2, v2, panda.Object[]
+                  fmovi.64 v3, 3.1415926535
+            id: f64arr
+          - values:
+            - |
+              #
+                  movi v1, 123
+                  newarr v1, v1, panda.String[]
+                  fmovi.64 v2, 3.1415926535
+                  movi v3, 123
+                  newarr v3, v3, f64[]
+          - values:
+            - |
+              #
+                  movi v1, 123
+                  newarr v1, v1, panda.Object[]
+                  movi v3, 123
+                  newarr v3, v3, f64[]
+          - values:
+            - |
+              #
+                  movi v1, 123
+                  newarr v1, v1, panda.Object[][]
+                  movi v3, 123
+                  newarr v3, v3, f64[][]
+          - values:
+            - |
+              #
+                  movi v1, 123
+                  newarr v1, v1, panda.Object[][][]
+                  movi v3, 123
+                  newarr v3, v3, f64[][][]
+
+      - file-name: acc_uninitialized
+        isa:
+          instructions:
+            - sig: call.virt method_id, v1:in:top, v2:in:top, v3:in:top, v4:in:top
+              acc: out:top
+              format: [op_v1_4_v2_4_v3_4_v4_4_id_16]
+        header-template: [r_A]
+        description: >
+          Verifier should report that uninitialized accumulator is used in function.
+        check-type: exit-positive
+        bugid: ['1324']
+        tags: [verifier]
+        runner-options: ['verifier-failure', 'verifier-debug-config']
+        code-template: |
+            .function void A.func(A a0) {
+                %s
+                return.void
+            }
+
+            .function i32 main() {
+                initobj A.constructor
+                sta.obj v0
+                call.virt A.func, v0
+        cases:
+          - values:
+              - sta v0
+          - values:
+              - sta.64 v0
+          - values:
+              - sta.obj v0
+
+      - file-name: reg_uninitialized
+        isa:
+          instructions:
+            - sig: call.virt method_id, v1:in:top, v2:in:top, v3:in:top, v4:in:top
+              acc: out:top
+              format: [op_v1_4_v2_4_v3_4_v4_4_id_16]
+        header-template: [r_A]
+        description: >
+          Verifier should report that uninitialized register is used in function.
+        check-type: exit-positive
+        bugid: ['1324']
+        tags: [verifier]
+        runner-options: ['verifier-failure', 'verifier-debug-config']
+        code-template: |
+            .function void A.func(A a0) {
+                %s
+                return.void
+            }
+
+            .function i32 main() {
+                initobj A.constructor
+                sta.obj v0
+                call.virt A.func, v0
+        template-cases:
+          - values:
+              - lda %s
+            exclude: [r16]
+          - values:
+              - lda.64 %s
+            exclude: [r16]
+          - values:
+              - lda.obj %s
+            exclude: [r16]
+          - values:
+              - mov v0, %s
+        cases:
+          - values: [v0]
+          - values: [v1]
+          - values: [v128]
+          - values: [v255]
+          - values: [v256]
+            id: r16
+          - values: [v32768]
+            id: r16
+          - values: [v65535]
+            id: r16
+
+      - file-name: p_method_id_accessible
+        isa:
+          instructions:
+            - sig: call.virt method_id, v1:in:top, v2:in:top, v3:in:top, v4:in:top
+              acc: out:top
+              format: [op_v1_4_v2_4_v3_4_v4_4_id_16]
+          verification:
+            - method_id_accessible
+        header-template: [r_A]
+        description: >
+          Verifier should report that method is not accessible if method_id is not resolved to existing method. Use PandaAssembly language context.
+        check-type: exit-positive
+        tags: [verifier]
+        runner-options: ['verifier-failure', 'verifier-debug-config']
+        code-template: |
+            .function %s A.func(A a0, *s a1) <external>
+
+            .function i32 main() {
+                initobj A.constructor
+                sta.obj v0
+                *s
+                call.virt A.func, v0, v1
+        template-cases:
+          - values:
+              - 'void'
+          - values:
+              - 'i32'
+            exclude: [void]
+          - values:
+              - 'i64'
+            exclude: [void]
+          - values:
+              - 'f64'
+            exclude: [void]
+          - values:
+              - 'i32[]'
+            exclude: [void]
+          - values:
+              - 'i64[]'
+            exclude: [void]
+          - values:
+              - 'f64[]'
+            exclude: [void]
+          - values:
+              - 'A'
+            exclude: [void]
+          - values:
+              - 'A[]'
+            exclude: [void]
+        cases:
+          - case-template: |
+              .function void A.func(A a0) <external>
+
+              .function i32 main() {
+                  initobj A.constructor
+                  sta.obj v0
+                  call.virt A.func, v0
+            id: void
+          - values: ['i32', 'movi v1, 12345678']
+          - values: ['i64', 'movi.64 v1, 0x123456789ABCDEF']
+          - values: ['f64', 'fmovi.64 v1, 3.1415926535']
+          - values:
+            - 'i32[]'
+            - |
+              #
+                  movi v1, 123
+                  newarr v1, v1, i32[]
+          - values:
+            - 'i64[]'
+            - |
+              #
+                  movi v1, 123
+                  newarr v1, v1, i64[]
+          - values:
+            - 'f64[]'
+            - |
+              #
+                  movi v1, 123
+                  newarr v1, v1, f64[]
+          - values:
+            - 'A'
+            - |
+              #
+                  initobj A.constructor
+                  sta.obj v1
+          - values:
+            - 'A[]'
+            - |
+              #
+                  movi v1, 123
+                  newarr v1, v1, A[]
+
+      - file-name: p_method_id_non_static
+        bugid: ["1324"]
+        isa:
+          instructions:
+            - sig: call.virt method_id, v1:in:top, v2:in:top, v3:in:top, v4:in:top
+              acc: out:top
+              format: [op_v1_4_v2_4_v3_4_v4_4_id_16]
+          verification:
+            - method_id_non_static
+        header-template: [r_A]
+        description: >
+          Verifier should report that method is not accessible if method_id is not resolved to existing method. Use PandaAssembly language context.
+        check-type: exit-positive
+        tags: [verifier]
+        runner-options: ['verifier-failure', 'verifier-debug-config']
+        code-template: |
+            .function %s A.func(A a0, *s a1) <static> {
+                %s
+            }
+
+            .function i32 main() {
+                initobj A.constructor
+                sta.obj v0
+                *s
+                call.virt A.func, v0, v1
+        template-cases:
+          - values:
+              - 'void'
+              - 'return.void'
+          - values:
+              - 'i32'
+              - |
+                #
+                    ldai 1
+                    return
+            exclude: [void]
+          - values:
+              - 'i64'
+              - |
+                #
+                    ldai.64 1
+                    return.64
+            exclude: [void]
+          - values:
+              - 'f64'
+              - |
+                #
+                    fldai.64 3.1415926535
+                    return.64
+            exclude: [void]
+          - values:
+             - 'i32[]'
+             - |
+               #
+                   movi v1, 123
+                   newarr v1, v1, i32[]
+                   lda.obj v1
+                   return.obj
+            exclude: [void]
+          - values:
+              - 'i64[]'
+              - |
+               #
+                   movi v1, 123
+                   newarr v1, v1, i64[]
+                   lda.obj v1
+                   return.obj
+            exclude: [void]
+          - values:
+              - 'f64[]'
+              - |
+                #
+                    movi v1, 123
+                    newarr v1, v1, f64[]
+                    lda.obj v1
+                    return.obj
+            exclude: [void]
+          - values:
+              - 'A'
+              - |
+                #
+                    initobj A.constructor
+                    sta.obj v1
+                    return.obj
+          - values:
+              - 'A[]'
+              - |
+                #
+                    movi v1, 123
+                    newarr v1, v1, A[]
+                    lda.obj v1
+                    return.obj
+        cases:
+          - case-template: |
+              .function void A.func(A a0) <static> {
+                  return.void
+              }
+
+              .function i32 main() {
+                  initobj A.constructor
+                  sta.obj v0
+                  call.virt A.func, v0
+            id: void
+          - values: ['i32', 'movi v1, 12345678']
+          - values: ['i64', 'movi.64 v1, 0x123456789ABCDEF']
+          - values: ['f64', 'fmovi.64 v1, 3.1415926535']
+          - values:
+            - 'i32[]'
+            - |
+              #
+                  movi v1, 123
+                  newarr v1, v1, i32[]
+          - values:
+            - 'i64[]'
+            - |
+              #
+                  movi v1, 123
+                  newarr v1, v1, i64[]
+          - values:
+            - 'f64[]'
+            - |
+              #
+                  movi v1, 123
+                  newarr v1, v1, f64[]
+          - values:
+            - 'A'
+            - |
+              #
+                  initobj A.constructor
+                  sta.obj v1
+          - values:
+            - 'A[]'
+            - |
+              #
+                  movi v1, 123
+                  newarr v1, v1, A[]
+
+      - file-name: match_parameters_amount
+        isa:
+          instructions:
+            - sig: call.virt method_id, v1:in:top, v2:in:top, v3:in:top, v4:in:top
+              acc: out:top
+              format: [op_v1_4_v2_4_v3_4_v4_4_id_16]
+        header-template: [r_A]
+        description: >
+          Compiler should check amount of function parameters with corresponding call.virt
+        check-type: none
+        runner-options: [compile-failure]
+        code-template: |
+
+            .function void A.func(A a0, i32 a1%s) <external>
+
+            .function i32 main() {
+                call.virt A.func, v0,%s
+        cases:
+          - values: ['', '']
+          - values: [', i32 a2', ', v1']
+          - values: [', i32 a2, i32 a3', ', v1']
+          - values: [', i32 a2, i32 a3', ', v1, v1']
+          - values: [', i32 a2, i32 a3, i32 a4', ', v1']
+          - values: [', i32 a2, i32 a3, i32 a4', ', v1, v1']
+          - values: [', i32 a2, i32 a3, i32 a4', ', v1, v1, v1']
+          - values: [', i32 a2, i32 a3, i32 a4', ', v1, v1, v1, v1']

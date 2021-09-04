@@ -1,0 +1,39 @@
+# Copyright (c) 2021 Huawei Device Co., Ltd.
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+.record R {}
+.record E {}
+
+.function void R.ctor(R a0) <ctor> {
+    newobj v0, E
+    throw v0
+}
+
+# check exception from ctor
+
+.function u1 main() {
+try_begin:
+    initobj.short R.ctor
+    jmp label
+try_end:
+
+catch_block_begin:
+    ldai 0
+    return
+
+label:
+    ldai 1
+    return
+
+.catch E, try_begin, try_end, catch_block_begin
+}

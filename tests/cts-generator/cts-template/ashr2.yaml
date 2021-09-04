@@ -1,0 +1,457 @@
+# Copyright (c) 2021 Huawei Device Co., Ltd.
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+definitions: []
+tests:
+  - file-name: "ashr2"
+    isa:
+      title: Two address binary operation on accumulator
+      description: >
+        Perform specified binary operation on accumulator and register and store result into accumulator
+      exceptions:
+        - x_none
+    commands:
+      - file-name: "op_vs_8_zero"
+        isa:
+          instructions:
+            - sig: ashr2 v:in:i32
+              acc: inout:i32
+              prefix: bit
+              format: [pref_op_v_8]
+        code-template: |
+          #
+              ldai 0
+              movi v0, %s
+              mov v1, v0
+              ashr2 v0
+              movi v0, 0
+              jne v0, set_failure
+              ldai 0
+              jmp fall_through
+          set_failure:
+              ldai 1
+          fall_through:
+        description: Check ashr2 with 0 and various values.
+        cases:
+          - values:
+              - "0"
+          - values:
+              - "1"
+          - values:
+              - "-1"
+            bugid: ['1387']
+            tags: ["clang_release_sanitizer_jit"]
+          - values:
+              - "0x7FFFFFFF"
+            bugid: ['1387']
+            tags: ["clang_release_sanitizer_jit"]
+          - values:
+              - "0x80000000"
+            bugid: ['1387']
+            tags: ["clang_release_sanitizer_jit"]
+          - values:
+              - "-0x7FFFFFFF"
+            bugid: ['1387']
+            tags: ["clang_release_sanitizer_jit"]
+          - values:
+              - "-0x80000000"
+            bugid: ['1387']
+            tags: ["clang_release_sanitizer_jit"]
+          - values:
+              - "0xFFFFFFFF"
+            bugid: ['1387']
+            tags: ["clang_release_sanitizer_jit"]
+          - values:
+              - "-0xFFFFFFFF"
+
+      - file-name: "op_vs_8_pone"
+        isa:
+          instructions:
+            - sig: ashr2 v:in:i32
+              acc: inout:i32
+              prefix: bit
+              format: [pref_op_v_8]
+        code-template: |
+          #
+              ldai 1
+              movi v0, %s
+              ashr2 v0
+              movi v0, %s
+              jne v0, set_failure
+              ldai 0
+              jmp fall_through
+          set_failure:
+              ldai 1
+          fall_through:
+        description: Check ashr2 with +1 and various values.
+        cases:
+          - values:
+              - "0"
+              - "1"
+          - values:
+              - "1"
+              - "0"
+          - values:
+              - "-1"
+              - "0"
+            bugid: ['1387']
+            tags: ["clang_release_sanitizer_jit"]
+          - values:
+              - "0x7FFFFFFF"
+              - "0"
+            bugid: ['1387']
+            tags: ["clang_release_sanitizer_jit"]
+          - values:
+              - "0x80000000"
+              - "1"
+            bugid: ['1387']
+            tags: ["clang_release_sanitizer_jit"]
+          - values:
+              - "-0x7FFFFFFF"
+              - "0"
+            bugid: ['1387']
+            tags: ["clang_release_sanitizer_jit"]
+          - values:
+              - "-0x80000000"
+              - "1"
+            bugid: ['1387']
+            tags: ["clang_release_sanitizer_jit"]
+          - values:
+              - "0xFFFFFFFF"
+              - "0"
+            bugid: ['1387']
+            tags: ["clang_release_sanitizer_jit"]
+          - values:
+              - "-0xFFFFFFFF"
+              - "0"
+      - file-name: "op_vs_8_none"
+        isa:
+          instructions:
+            - sig: ashr2 v:in:i32
+              acc: inout:i32
+              prefix: bit
+              format: [pref_op_v_8]
+        code-template: |
+          #
+              ldai -1
+              movi v0, %s
+              ashr2 v0
+              movi v0, 0xFFFFFFFF
+              jne v0, set_failure
+              ldai 0
+              jmp fall_through
+          set_failure:
+              ldai 1
+          fall_through:
+        description: Check ashr2 with -1 and various values.
+        cases:
+          - values:
+              - "0"
+          - values:
+              - "1"
+          - values:
+              - "-1"
+            bugid: ['1387']
+            tags: ["clang_release_sanitizer_jit"]
+          - values:
+              - "0x7FFFFFFF"
+            bugid: ['1387']
+            tags: ["clang_release_sanitizer_jit"]
+          - values:
+              - "0x80000000"
+            bugid: ['1387']
+            tags: ["clang_release_sanitizer_jit"]
+          - values:
+              - "-0x7FFFFFFF"
+            bugid: ['1387']
+            tags: ["clang_release_sanitizer_jit"]
+          - values:
+              - "-0x80000000"
+            bugid: ['1387']
+            tags: ["clang_release_sanitizer_jit"]
+          - values:
+              - "0xFFFFFFFF"
+            bugid: ['1387']
+            tags: ["clang_release_sanitizer_jit"]
+          - values:
+              - "-0xFFFFFFFF"
+
+      - file-name: "op_vs_8_pmax"
+        isa:
+          instructions:
+            - sig: ashr2 v:in:i32
+              acc: inout:i32
+              prefix: bit
+              format: [pref_op_v_8]
+        code-template: |
+          #
+              ldai 0x7FFFFFFF
+              movi v0, %s
+              ashr2 v0
+              movi v0, %s
+              jne v0, set_failure
+              ldai 0
+              jmp fall_through
+          set_failure:
+              ldai 1
+          fall_through:
+        description: Check ashr2 with +max and various values.
+        cases:
+          - values:
+              - "0"
+              - "0x7FFFFFFF"
+          - values:
+              - "1"
+              - "0x3FFFFFFF"
+          - values:
+              - "-1"
+              - "0x0"
+            bugid: ['1387']
+            tags: ["clang_release_sanitizer_jit"]
+          - values:
+              - "0x7FFFFFFF"
+              - "0x0"
+            bugid: ['1387']
+            tags: ["clang_release_sanitizer_jit"]
+          - values:
+              - "0x80000000"
+              - "0x7FFFFFFF"
+            bugid: ['1387']
+            tags: ["clang_release_sanitizer_jit"]
+          - values:
+              - "-0x7FFFFFFF"
+              - "0x3FFFFFFF"
+            bugid: ['1387']
+            tags: ["clang_release_sanitizer_jit"]
+          - values:
+              - "-0x80000000"
+              - "0x7FFFFFFF"
+            bugid: ['1387']
+            tags: ["clang_release_sanitizer_jit"]
+          - values:
+              - "0xFFFFFFFF"
+              - "0x0"
+            bugid: ['1387']
+            tags: ["clang_release_sanitizer_jit"]
+          - values:
+              - "-0xFFFFFFFF"
+              - "0x3FFFFFFF"
+
+      - file-name: "op_vs_8_nmax"
+        isa:
+          instructions:
+            - sig: ashr2 v:in:i32
+              acc: inout:i32
+              prefix: bit
+              format: [pref_op_v_8]
+        code-template: |
+          #
+              ldai -0x80000000
+              movi v0, %s
+              ashr2 v0
+              movi v0, %s
+              jne v0, set_failure
+              ldai 0
+              jmp fall_through
+          set_failure:
+              ldai 1
+          fall_through:
+        description: Check ashr2 with -max and various values.
+        cases:
+          - values:
+              - "0"
+              - "0x80000000"
+          - values:
+              - "1"
+              - "0xC0000000"
+          - values:
+              - "-1"
+              - "0xFFFFFFFF"
+            bugid: ['1387']
+            tags: ["clang_release_sanitizer_jit"]
+          - values:
+              - "0x7FFFFFFF"
+              - "0xFFFFFFFF"
+            bugid: ['1387']
+            tags: ["clang_release_sanitizer_jit"]
+          - values:
+              - "0x80000000"
+              - "0x80000000"
+            bugid: ['1387']
+            tags: ["clang_release_sanitizer_jit"]
+          - values:
+              - "-0x7FFFFFFF"
+              - "0xC0000000"
+            bugid: ['1387']
+            tags: ["clang_release_sanitizer_jit"]
+          - values:
+              - "-0x80000000"
+              - "0x80000000"
+            bugid: ['1387']
+            tags: ["clang_release_sanitizer_jit"]
+          - values:
+              - "0xFFFFFFFF"
+              - "0xFFFFFFFF"
+            bugid: ['1387']
+            tags: ["clang_release_sanitizer_jit"]
+          - values:
+              - "-0xFFFFFFFF"
+              - "0xC0000000"
+
+      - file-name: "vals"
+        bugid: ['1387']
+        tags: ["clang_release_sanitizer_jit", tsan]
+        isa:
+          instructions:
+            - sig: ashr2 v:in:i32
+              acc: inout:i32
+              prefix: bit
+              format: [pref_op_v_8]
+        code-template: |
+          #
+              ldai %s
+              movi v0, %s
+              ashr2 v0
+              movi v0, %s
+              jne v0, set_failure
+              ldai 0
+              jmp fall_through
+          set_failure:
+              ldai 1
+          fall_through:
+        description: Check ashr2 with various values.
+        cases:
+          - values:
+              - "0xF7C3C59C"
+              - "0xBA9A9721"
+              - "0xFBE1E2CE"
+          - values:
+              - "0xC85A6FD0"
+              - "0xD6D79891"
+              - "0xFFFFE42D"
+          - values:
+              - "0x64A99B3C"
+              - "0x97FC66F9"
+              - "0x32"
+          - values:
+              - "0x7A92E59B"
+              - "0xD35D56A5"
+              - "0x3D4972C"
+          - values:
+              - "0x2B3E86A6"
+              - "0x634FFBF2"
+              - "0xACF"
+          - values:
+              - "0x6FA6AD46"
+              - "0x5F6A3A54"
+              - "0x6FA"
+          - values:
+              - "0xD3AC1EFA"
+              - "0x9551EEBF"
+              - "0xFFFFFFFF"
+          - values:
+              - "0x4DC08172"
+              - "0xA29C9583"
+              - "0x9B8102E"
+          - values:
+              - "0x9A768F76"
+              - "0x5AF13C53"
+              - "0xFFFFF34E"
+          - values:
+              - "0x71C01EC4"
+              - "0xC8FF2ECF"
+              - "0xE380"
+
+      - file-name: "vals_mod32_1"
+        isa:
+          instructions:
+            - sig: ashr2 v:in:i32
+              acc: inout:i32
+              prefix: bit
+              format: [pref_op_v_8]
+        bugid: ['1324']
+        tags: ['verifier']
+        runner-options: ['verifier-failure', 'verifier-debug-config']
+        code-template: |
+          #
+              ldai.64 %s
+              movi.64 v0, %s
+              ashr2 v0
+              movi.64 v0, %s
+              cmp.64 v0
+        description: Check ashr2 with incorrect accumulator and register types.
+        cases:
+          - values:
+              - "0x17FFFFFFF"
+              - "0x1"
+              - "0x000000003FFFFFFF"
+          - values:
+              - "0x77777777FFFFFFFF"
+              - "0x1111111180000000"
+              - "0xFFFFFFFFFFFFFFFF"
+          - values:
+              - "0x180000000"
+              - "0x180000000"
+              - "0xFFFFFFFF80000000"
+
+      - file-name: "regs"
+        isa:
+          instructions:
+            - sig: ashr2 v:in:i32
+              acc: inout:i32
+              prefix: bit
+              format: [pref_op_v_8]
+        runner-options: ['compile-only']
+        code-template: |
+          #
+              ashr2 %s
+        check-type: none
+        description: Check ashr2 with various register numbers.
+        cases:
+          - values:
+              - "v255"
+          - values:
+              - "v256"
+            runner-options: ['compile-failure']
+
+      - file-name: "type"
+        bugid: ["964", "966"]
+        tags: ["verifier"]
+        isa:
+          instructions:
+            - sig: ashr2 v:in:i32
+              acc: inout:i32
+              prefix: bit
+              format: [pref_op_v_8]
+          verification:
+            - acc_type
+            - v1_type
+        runner-options: ['verifier-failure', 'verifier-debug-config']
+        code-template: |
+          #
+              %s
+              %s
+              ashr2 v0
+              ldai 0
+        check-type: no-check
+        description: Check ashr2 with incorrect accumulator and register types.
+        cases:
+          - values:
+              - "lda.null"
+              - "movi v0, 0"
+          - values:
+              - "ldai 0 "
+              - "mov.null v0"
+          - values:
+              - "lda.null"
+              - "mov.null v0"

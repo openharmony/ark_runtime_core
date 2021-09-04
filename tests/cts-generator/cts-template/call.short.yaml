@@ -1,0 +1,1160 @@
+# Copyright (c) 2021 Huawei Device Co., Ltd.
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+---
+definitions:
+  - name: java
+    template: >
+      .language Java
+
+tests:
+  - file-name: call.short
+    isa:
+      title: Static call
+      description: >
+        Call indicated static method, i.e. create new frame, pass values of arguments and
+        continue execution from the first instruction of a method.
+        Callee should treat accumulator value as undefined and cannot use it until accumulator
+        definition in the new frame.
+        Result (if any) is returned in accumulator (see 'Calling sequence' chapter for more details).
+        Method, its class and the number of argument is resolved by given method_id in
+        runtime constant-pool.
+        Arguments are passed in source registers in the same order as in method signature.
+        Non-range instructions can be used to pass up to 4 arguments (unused register slot values will
+        be discarded and corresponding registers will not be passed to the callee).
+        For methods with more arguments range kind of instruction is to be used, which takes the needed number
+        of arguments starting from 'vs' register.
+      exceptions:
+        - x_none
+      verification:
+        - method_id_static
+        - compatible_arguments
+    commands:
+      - file-name: op_v1_4_v2_4_id_16
+        isa:
+          instructions:
+            - sig: call.short method_id, v1:in:top, v2:in:top
+              acc: out:top
+              format: [op_v1_4_v2_4_id_16]
+        header-template: []
+        description: Check that 'call.short' supports up to 2 arguments.
+        tags: ['tsan']
+        code-template: |
+          .function void f1(%s) {
+              return.void
+          }
+          .function i32 main() {
+          %s
+              call.short f1%s
+        check-type: exit-positive
+        cases:
+          - values:
+            - ''
+            - ''
+            - ''
+          - values:
+            - 'i32 a0'
+            - 'movi v0, 0'
+            - ', v0'
+          - values:
+            - 'i32 a0, i32 a1'
+            - 'movi v0, 0'
+            - ', v0, v0'
+          - values:
+            - 'i32 a0, i32 a1'
+            - |
+              #
+                  movi v0, 0
+                  movi v1, 0
+            - ', v0, v1'
+          - values:
+            - 'i32 a0, i32 a1'
+            - |
+              #
+                  movi v0, 0
+                  movi v1, 0
+            - ', v1, v0'
+          - values:
+            - 'i64 a0, f64 a1'
+            - |
+              #
+                  movi.64 v0, 0
+                  fmovi.64 v1, 0
+            - ', v0, v1'
+          - values:
+              - 'i32 a0, i32 a1, i32 a2'
+              - 'movi v0, 0'
+              - ', v0, v0, v0'
+            runner-options: [compile-failure]
+          - values:
+              - 'i32 a0, i32 a1, i32 a2'
+              - |
+                #
+                    movi v0, 0
+                    movi v1, 0
+                    movi v2, 0
+              - ', v0, v1, v2'
+            runner-options: [compile-failure]
+
+      - file-name: str_srg
+        isa:
+          instructions:
+            - sig: call.short method_id, v1:in:top, v2:in:top
+              acc: out:top
+              format: [op_v1_4_v2_4_id_16]
+        header-template: [panda_string]
+        description: Check that 'call.short' works with String object.
+        tags: ['tsan']
+        code-template: |
+          .function void f1(panda.String a0) {
+              return.void
+          }
+          .function i32 main() {
+          %s
+              call.short f1%s
+        check-type: exit-positive
+        cases:
+          - values:
+            - ''
+            - ''
+            runner-options: [compile-failure]
+          - values:
+            - |
+              #
+                  lda.str "some string"
+                  sta.obj v0
+            - ', v0'
+          - values:
+            - '    mov.null v0'
+            - ', v0'
+          - values:
+            - ''
+            - ', "some string"'
+            runner-options: [compile-failure]
+
+      - file-name: uninitialized_values
+        bugid: ['1324']
+        tags: ['verifier']
+        runner-options: ['verifier-failure', 'verifier-debug-config']
+        isa:
+          instructions:
+            - sig: call.short method_id, v1:in:top, v2:in:top
+              acc: out:top
+              format: [op_v1_4_v2_4_id_16]
+        description: Verifier should check usage of uninitialized arguments passed to function.
+        header-template: []
+        code-template: |
+          .function void f1(%s) {
+              %s
+              return.void
+          }
+          .function i32 main() {
+              %s
+              call.short f1%s
+        check-type: exit-positive
+
+        # Template parameters:
+        #            1st argument is function arguments
+        #            2nd - usage of acc or reg
+        #            3rd - possible initialization of registers
+        #            4th - call.short parameters
+        cases:
+          - values:
+              - 'i32 a0' # parameter
+              - '' # no instructions
+              - |
+                #
+                    mov.null v0
+                    movi v2, 0
+              - ', v2' # use in call.short
+            bugid: ['1940']
+            runner-options: ['verifier-only', 'verifier-debug-config']
+          - values: ['',                'lda v0',    '',    '']
+            description: Check usage of uninitialized register in function frame.
+            bugid: ['1702']
+          - values: ['',                'lda v0',    'movi v0, 0',    ', v0']
+            description: Check usage of uninitialized register in function frame.
+            bugid: ['1702']
+          - values: ['',                'sta v0',    '',    '']
+            description: Check usage of uninitialized accumulator in function frame.
+            bugid: ['1702']
+          - values: ['i32 a0',          '',          '',    ', v0']
+          - values: ['i32 a0, i32 a1',  '',          '',    ', v0, v0']
+          - values: ['i32 a0, i32 a1',  '',          '',    ', v0, v1']
+          - values: ['i32 a0, i32 a1',  '',          'movi v0, 0',    ', v0, v1']
+            description: Check if one of registers in 'call.short' is uninitialized.
+          - values: ['i32 a0, i32 a1',  '',          'movi v1, 0',    ', v0, v1']
+            description: Check if one of registers in 'call.short' is uninitialized.
+
+          - values: ['',                'lda a0',    '',    '']
+            description: Check usage of undefined parameter.
+            runner-options: [compile-failure]
+          - values: ['',                'lda a1',    '',    '']
+            description: Check usage of undefined parameter.
+            runner-options: [compile-failure]
+
+      - file-name: uninitialized_reg_no_arg
+        bugid: ['1324']
+        tags: ['verifier']
+        runner-options: ['verifier-failure', 'verifier-debug-config']
+        isa:
+          instructions:
+            - sig: call.short method_id, v1:in:top, v2:in:top
+              acc: out:top
+              format: [op_v1_4_v2_4_id_16]
+        description: Verifier should check usage of uninitialized registers in function.
+        header-template: []
+        code-template: |
+          .function void f1() {
+              %s
+              return.void
+          }
+          .function i32 main() {
+              %s
+              call.short f1
+        check-type: exit-positive
+        cases:
+          - values:
+            - lda v0
+            - movi v0, 123
+          - values:
+            - lda v1
+            - movi v1, 123
+          - values:
+            - lda.64 v0
+            - movi.64 v0, 0xFFFFFFFFFFFFFFFF
+          - values:
+            - lda.64 v1
+            - movi.64 v1, 0xFFFFFFFFFFFFFFFF
+          - values:
+            - lda.64 v0
+            - fmovi.64 v0, 3.1415926535
+          - values:
+            - lda.64 v1
+            - movi.64 v1, 0xFFFFFFFFFFFFFFFF
+          - values:
+            - lda.obj v0
+            - |
+              #
+                  lda.str "some string"
+                  sta.obj v0
+          - values:
+            - lda.obj v1
+            - |
+              #
+                  lda.str "some string"
+                  sta.obj v1
+
+      - file-name: args_count_mismatch
+        runner-options: [compile-only]
+        isa:
+          instructions:
+            - sig: call.short method_id, v1:in:top, v2:in:top
+              acc: out:top
+              format: [op_v1_4_v2_4_id_16]
+        description: Check 'call.short' when arguments of function and instuction parameters mismatch.
+        header-template: []
+        code-template: |
+          .function void f1(%s) {
+              return.void
+          }
+          .function i32 main() {
+              %s
+              call.short f1%s
+        check-type: exit-positive
+
+        # Template parameters:
+        #            1st - function arguments
+        #            2nd - possible initialization of registers
+        #            3rd - call.short parameters
+        cases:
+          - values: ['',                '',            ', v0']
+            description: Check uninitialized register is ignored when its value is not used.
+          - values: ['',                '',            ', v0, v0']
+            description: Check uninitialized register is ignored when its value is not used.
+          - values: ['i32 a0',          '',            '']
+            runner-options: [compile-failure]
+            description: Mismatch function parameters.
+          - values: ['i32 a0, i32 a1',  'movi v0, 0',  ', v0']
+            runner-options: [compile-failure]
+            description: Mismatch function parameters.
+          - values: ['',                'movi v0, 0',  ', v0']
+            description: Check initialized register is ignored when its value is not used.
+          - values: ['i32 a0',          'movi v0, 0',  ', v0, v0']
+            description: Check initialized register is ignored when its value is not used.
+
+      - file-name: args_type_mismatch
+        bugid: ['1324']
+        tags: ['verifier']
+        runner-options: ['verifier-failure', 'verifier-debug-config']
+        isa:
+          instructions:
+            - sig: call.short method_id, v1:in:top, v2:in:top
+              acc: out:top
+              format: [op_v1_4_v2_4_id_16]
+        description: Check 'call.short' when argument type of function and instuction mismatch.
+        header-template: []
+        code-template: |
+          %s
+          .function void f1(%s) {
+              return.void
+          }
+          .function i32 main() {
+              %s
+              call.short f1, v0
+        check-type: exit-positive
+
+        # Template parameters:
+        #            1 - type definitions
+        #            2 - function arguments
+        #            3 - possible initialization of registers
+        #            4 - call.short parameters
+        cases:
+            - values: ['',                'i32 a0',      'mov.null v0']
+            - values: ['',                'i64 a0',      'mov.null v0']
+            - values: ['',                'f64 a0',      'mov.null v0']
+            - values: ['',                'i32 a0',      'movi.64 v0, 0']
+            - values: ['',                'f64 a0',      'movi.64 v0, 0']
+            - values: ['.record Obj {}',  'Obj a0',      'movi.64 v0, 0']
+            - values: ['',                'i64 a0',      'movi v0, 0']
+            - values: ['',                'f64 a0',      'movi v0, 0']
+            - values: ['.record Obj {}',  'Obj a0',      'movi v0, 0']
+            - values: ['.record panda.String <external>', 'panda.String a0', 'movi v0, 0']
+            - values:
+              - '.record panda.String <external>'
+              - 'i32 a0'
+              - |
+                lda.str "some string"
+                    sta.obj v0
+
+            - values:
+              - |
+                #
+                .record Obj {}
+
+                .function void Obj.ctor(Obj a0) <ctor> {
+                    return.void
+                }
+              - i32 a0
+              - |
+                #
+                    initobj.short Obj.ctor
+                    sta.obj v0
+
+            - values:
+                - |
+                  #
+                  .record Obj {}
+
+                  .function void Obj.ctor(Obj a0) <ctor> {
+                      return.void
+                  }
+                - i64 a0
+                - |
+                  #
+                      initobj.short Obj.ctor
+                      sta.obj v0
+
+      - file-name: reg
+        runner-options: [compile-only]
+        isa:
+          instructions:
+            - sig: call.short method_id, v1:in:top, v2:in:top
+              acc: out:top
+              format: [op_v1_4_v2_4_id_16]
+        description: Check 'call.short' register number width.
+        header-template: []
+        code-template: |
+          .function void f1(i32 a0) {
+              return.void
+          }
+          .function i32 main() {
+              movi %s, 0
+              call.short f1, %s
+        check-type: exit-positive
+        cases:
+          - values: ['v0', 'v0']
+          - values: ['v7', 'v7']
+          - values: ['v8', 'v8']
+          - values: ['v15', 'v15']
+          - values: ['v16', 'v16']
+            runner-options: [compile-failure]
+          - values: ['v127', 'v127']
+            runner-options: [compile-failure]
+          - values: ['v0', '1']
+            runner-options: [compile-failure]
+          - values: ['v0', '1.1']
+            runner-options: [compile-failure]
+          - values: ['v0', '0xFFFFFFFFFFFFFFFF']
+            runner-options: [compile-failure]
+          - values: ['v0', '"some string"']
+            runner-options: [compile-failure]
+
+      - file-name: reg2
+        runner-options: [compile-only]
+        isa:
+          instructions:
+            - sig: call.short method_id, v1:in:top, v2:in:top
+              acc: out:top
+              format: [op_v1_4_v2_4_id_16]
+        description: Check 'call.short' register number width.
+        header-template: []
+        code-template: |
+          .function void f1(i32 a0, i32 a1) {
+              return.void
+          }
+          .function i32 main() {
+              movi %s, 0
+              movi %s, 1
+              call.short f1, %s, %s
+        check-type: exit-positive
+        cases:
+          - values: ['v0', 'v1', 'v0', 'v1']
+          - values: ['v7', 'v7', 'v7', 'v7']
+          - values: ['v7', 'v8', 'v7', 'v8']
+          - values: ['v15', 'v15', 'v15', 'v15']
+          - values: ['v15', 'v16', 'v15', 'v16']
+            runner-options: [compile-failure]
+          - values: ['v16', 'v15', 'v16', 'v15']
+            runner-options: [compile-failure]
+          - values: ['v16', 'v16', 'v16', 'v16']
+            runner-options: [compile-failure]
+          - values: ['v127', 'v127', 'v127', 'v127']
+            runner-options: [compile-failure]
+
+      - file-name: arg_1_i32_acc
+        isa:
+          instructions:
+            - sig: call.short method_id, v1:in:top, v2:in:top
+              acc: out:top
+              format: [op_v1_4_v2_4_id_16]
+        description: Check correctness of passed arguments. Load parameter to accumulator. Check i32 type of arguments.
+        header-template: []
+        code-template: |
+          .function i32 f1(i32 a0) {
+              lda a0
+              movi v1, %s
+              jne v1, exit_failure
+              ldai 0
+              return
+          exit_failure:
+              ldai 1
+              return
+          }
+          .function i32 main() {
+              movi v0, %s
+              call.short f1, v0
+
+        check-type: no-check
+        cases:
+          - values: ["0", "0"]
+          - values: ["1", "1"]
+          - values: ["1234567", "1234567"]
+          - values: ["0x7FFFFFFF", "0x7FFFFFFF"]
+          - values: ["0x80000000", "0x80000000"]
+          - values: ["0x9ABCDEF0", "0x9ABCDEF0"]
+          - values: ["0xFFFFFFFF", "0xFFFFFFFF"]
+
+      - file-name: arg_1_f64_acc
+        isa:
+          instructions:
+            - sig: call.short method_id, v1:in:top, v2:in:top
+              acc: out:top
+              format: [op_v1_4_v2_4_id_16]
+        description: Check correctness of passed arguments. Load parameter to accumulator. Check f64 type of arguments.
+        header-template: []
+        code-template: |
+          .function i32 f1(f64 a0) {
+              lda.64 a0
+              fmovi.64 v1, %s
+              fcmpg.64 v1
+              return
+          }
+          .function i32 main() {
+              fmovi.64 v0, %s
+              call.short f1, v0
+        check-type: no-check
+        cases:
+          - values: ["0", "0"]
+          - values: ["1.1", "1.1"]
+          - values: ["0x7ff0000000000000", "0x7ff0000000000000"]
+          - values: ["0xfff0000000000000", "0xfff0000000000000"]
+          - values: ["0x7fefffffffffffff", "0x7fefffffffffffff"]
+          - values: ["0xffefffffffffffff", "0xffefffffffffffff"]
+          - values: ["100e100", "100e100"]
+
+      - file-name: arg_1_i32_reg
+        isa:
+          instructions:
+            - sig: call.short method_id, v1:in:top, v2:in:top
+              acc: out:top
+              format: [op_v1_4_v2_4_id_16]
+        description: Check correctness of passed arguments. Load parameter to register. Check i32 type of arguments.
+        header-template: []
+        code-template: |
+          .function i32 f1(i32 a0) {
+              mov v1, a0
+              ldai %s
+              jne v1, exit_failure
+              ldai 0
+              return
+          exit_failure:
+              ldai 1
+              return
+          }
+          .function i32 main() {
+              movi v0, %s
+              call.short f1, v0
+        check-type: no-check
+        cases:
+          - values: ["0", "0"]
+          - values: ["1", "1"]
+          - values: ["1234567", "1234567"]
+          - values: ["0x7FFFFFFF", "0x7FFFFFFF"]
+          - values: ["0x80000000", "0x80000000"]
+          - values: ["0x9ABCDEF0", "0x9ABCDEF0"]
+          - values: ["0xFFFFFFFF", "0xFFFFFFFF"]
+
+      - file-name: arg_1_f64_reg
+        isa:
+          instructions:
+            - sig: call.short method_id, v1:in:top, v2:in:top
+              acc: out:top
+              format: [op_v1_4_v2_4_id_16]
+        description: Check correctness of passed arguments. Load parameter to register. Check f64 type of arguments.
+        header-template: []
+        code-template: |
+          .function i32 f1(f64 a0) {
+              mov.64 v1, a0
+              fldai.64 %s
+              fcmpg.64 v1
+              return
+          }
+          .function i32 main() {
+              fmovi.64 v0, %s
+              call.short f1, v0
+        check-type: no-check
+        cases:
+          - values: ["0", "0"]
+          - values: ["1.1", "1.1"]
+          - values: ["0x7ff0000000000000", "0x7ff0000000000000"]
+          - values: ["0xfff0000000000000", "0xfff0000000000000"]
+          - values: ["0x7fefffffffffffff", "0x7fefffffffffffff"]
+          - values: ["0xffefffffffffffff", "0xffefffffffffffff"]
+          - values: ["100e100", "100e100"]
+
+      - file-name: arg_2_i32_acc
+        isa:
+          instructions:
+            - sig: call.short method_id, v1:in:top, v2:in:top
+              acc: out:top
+              format: [op_v1_4_v2_4_id_16]
+        description: Check correctness of passed arguments. Load parameter to accumulator. Check i32 type of arguments.
+        header-template: []
+        code-template: |
+          .function i32 f1(i32 a0, i32 a1) {
+              lda a0
+              movi v1, %s
+              jeq v1, f1_l1
+          # 1st arg does not match, exit
+              ldai 1
+              return
+          f1_l1:
+              lda a1
+              movi v1, %s
+              jne v1, exit_failure
+              ldai 0
+              return
+          exit_failure:
+              ldai 1
+              return
+          }
+          .function i32 main() {
+              movi v0, %s
+              movi v1, %s
+              call.short f1, v0, v1
+
+        check-type: no-check
+        cases:
+          - values: ["0", "0", "0", "0"]
+          - values: ["0", "1", "0", "1"]
+          - values: ["1", "0", "1", "0"]
+          - values: ["0", "1234567", "0", "1234567"]
+          - values: ["1234567", "0", "1234567", "0"]
+          - values: ["0x7FFFFFFF", "0", "0x7FFFFFFF", "0"]
+          - values: ["0", "0x7FFFFFFF", "0", "0x7FFFFFFF"]
+          - values: ["0x7FFFFFFF", "0x7FFFFFFF", "0x7FFFFFFF", "0x7FFFFFFF"]
+          - values: ["0x12345678", "0x9ABCDEF0", "0x12345678", "0x9ABCDEF0"]
+          - values: ["0", "0x80000000", "0", "0x80000000"]
+          - values: ["0x80000000", "0", "0x80000000", "0"]
+          - values: ["0x80000000", "0x80000000", "0x80000000", "0x80000000"]
+          - values: ["0x9ABCDEF0", "0xFEDCBA09", "0x9ABCDEF0", "0xFEDCBA09"]
+          - values: ["0", "0xFFFFFFFF", "0", "0xFFFFFFFF"]
+          - values: ["0xFFFFFFFF", "0", "0xFFFFFFFF", "0"]
+          - values: ["0xFFFFFFFF", "0xFFFFFFFF", "0xFFFFFFFF", "0xFFFFFFFF"]
+
+      - file-name: arg_2_i32_reg
+        isa:
+          instructions:
+            - sig: call.short method_id, v1:in:top, v2:in:top
+              acc: out:top
+              format: [op_v1_4_v2_4_id_16]
+        description: Check correctness of passed arguments. Load parameter to register. Check i32 type of arguments.
+        header-template: []
+        code-template: |
+          .function i32 f1(i32 a0, i32 a1) {
+              mov v1, a0
+              ldai %s
+              jeq v1, f1_l1
+          # 1st arg does not match, exit
+              ldai 1
+              return
+          f1_l1:
+              mov v1, a1
+              ldai %s
+              jne v1, exit_failure
+              ldai 0
+              return
+          exit_failure:
+              ldai 1
+              return
+          }
+          .function i32 main() {
+              movi v0, %s
+              movi v1, %s
+              call.short f1, v0, v1
+        check-type: no-check
+        cases:
+          - values: ["0", "0", "0", "0"]
+          - values: ["0", "1", "0", "1"]
+          - values: ["1", "0", "1", "0"]
+          - values: ["0", "1234567", "0", "1234567"]
+          - values: ["1234567", "0", "1234567", "0"]
+          - values: ["0x7FFFFFFF", "0", "0x7FFFFFFF", "0"]
+          - values: ["0", "0x7FFFFFFF", "0", "0x7FFFFFFF"]
+          - values: ["0x7FFFFFFF", "0x7FFFFFFF", "0x7FFFFFFF", "0x7FFFFFFF"]
+          - values: ["0x12345678", "0x9ABCDEF0", "0x12345678", "0x9ABCDEF0"]
+          - values: ["0", "0x80000000", "0", "0x80000000"]
+          - values: ["0x80000000", "0", "0x80000000", "0"]
+          - values: ["0x80000000", "0x80000000", "0x80000000", "0x80000000"]
+          - values: ["0x9ABCDEF0", "0xFEDCBA09", "0x9ABCDEF0", "0xFEDCBA09"]
+          - values: ["0", "0xFFFFFFFF", "0", "0xFFFFFFFF"]
+          - values: ["0xFFFFFFFF", "0", "0xFFFFFFFF", "0"]
+          - values: ["0xFFFFFFFF", "0xFFFFFFFF", "0xFFFFFFFF", "0xFFFFFFFF"]
+
+      - file-name: arg_2_f64_acc
+        isa:
+          instructions:
+            - sig: call.short method_id, v1:in:top, v2:in:top
+              acc: out:top
+              format: [op_v1_4_v2_4_id_16]
+        description: Check correctness of passed arguments. Load parameter to accumulator. Check f64 type of arguments.
+        tags: ['tsan']
+        header-template: []
+        code-template: |
+          .function i32 f1(f64 a0, f64 a1) {
+              lda.64 a0
+              fmovi.64 v1, %s
+              fcmpg.64 v1
+              jeqz f1_l1
+          # 1st arg does not match, exit
+              ldai 1
+              return
+          f1_l1:
+              lda.64 a1
+              fmovi.64 v1, %s
+              fcmpg.64 v1
+              return
+          }
+          .function i32 main() {
+              fmovi.64 v0, %s
+              fmovi.64 v1, %s
+              call.short f1, v0, v1
+
+        check-type: no-check
+        cases:
+          - values: ["0", "0", "0", "0"]
+          - values: ["1.2", "1.1", "1.2", "1.1"]
+          - values: ["0x7ff0000000000000", "0xfff0000000000000", "0x7ff0000000000000", "0xfff0000000000000"]
+          - values: ["0xffefffffffffffff", "0x7fefffffffffffff", "0xffefffffffffffff", "0x7fefffffffffffff"]
+          - values: ["100e100", "200e200", "100e100", "200e200"]
+
+      - file-name: arg_2_f64_reg
+        isa:
+          instructions:
+            - sig: call.short method_id, v1:in:top, v2:in:top
+              acc: out:top
+              format: [op_v1_4_v2_4_id_16]
+        description: Check correctness of passed arguments. Load parameter to register. Check f64 type of arguments.
+        header-template: []
+        code-template: |
+          .function i32 f1(f64 a0, f64 a1) {
+              mov.64 v1, a0
+              fldai.64 %s
+              fcmpg.64 v1
+              jeqz f1_l1
+          # 1st arg does not match, exit
+              ldai 1
+              return
+          f1_l1:
+              mov.64 v1, a1
+              fldai.64 %s
+              fcmpg.64 v1
+              return
+          }
+          .function i32 main() {
+              fmovi.64 v0, %s
+              fmovi.64 v1, %s
+              call.short f1, v0, v1
+        check-type: no-check
+        cases:
+          - values: ["0", "0", "0", "0"]
+          - values: ["1.2", "1.1", "1.2", "1.1"]
+          - values: ["0x7ff0000000000000", "0xfff0000000000000", "0x7ff0000000000000", "0xfff0000000000000"]
+          - values: ["0xffefffffffffffff", "0x7fefffffffffffff", "0xffefffffffffffff", "0x7fefffffffffffff"]
+          - values: ["100e100", "200e200", "100e100", "200e200"]
+
+      - file-name: arg_1_i64_acc
+        isa:
+          instructions:
+            - sig: call.short method_id, v1:in:top, v2:in:top
+              acc: out:top
+              format: [op_v1_4_v2_4_id_16]
+        description: Check correctness of passed arguments. Load parameter to accumulator. Check i64 type of arguments.
+        header-template: []
+        code-template: |
+          .function i32 f1(i64 a0) {
+              lda.64 a0
+              movi.64 v1, %s
+              cmp.64 v1
+              return
+          }
+          .function i32 main() {
+              movi.64 v0, %s
+              call.short f1, v0
+
+        check-type: no-check
+        cases:
+          - values: ["0", "0"]
+          - values: ["1", "1"]
+          - values: ["0x1234567890ABCDEF", "0x1234567890ABCDEF"]
+          - values: ["0x7FFFFFFFFFFFFFFF", "0x7FFFFFFFFFFFFFFF"]
+          - values: ["0x8000000000000000", "0x8000000000000000"]
+          - values: ["0xFEDCBA0987654321", "0xFEDCBA0987654321"]
+          - values: ["0xFFFFFFFFFFFFFFFF", "0xFFFFFFFFFFFFFFFF"]
+
+      - file-name: arg_1_i64_reg
+        isa:
+          instructions:
+            - sig: call.short method_id, v1:in:top, v2:in:top
+              acc: out:top
+              format: [op_v1_4_v2_4_id_16]
+        description: Check correctness of passed arguments. Load parameter to accumulator. Check i64 type of arguments.
+        header-template: []
+        code-template: |
+          .function i32 f1(i64 a0) {
+              mov.64 v1, a0
+              ldai.64 %s
+              cmp.64 v1
+              return
+          }
+          .function i32 main() {
+              movi.64 v0, %s
+              call.short f1, v0
+
+        check-type: no-check
+        cases:
+          - values: ["0", "0"]
+          - values: ["1", "1"]
+          - values: ["0x1234567890ABCDEF", "0x1234567890ABCDEF"]
+          - values: ["0x7FFFFFFFFFFFFFFF", "0x7FFFFFFFFFFFFFFF"]
+          - values: ["0x8000000000000000", "0x8000000000000000"]
+          - values: ["0xFEDCBA0987654321", "0xFEDCBA0987654321"]
+          - values: ["0xFFFFFFFFFFFFFFFF", "0xFFFFFFFFFFFFFFFF"]
+
+      - file-name: arg_2_i64_acc
+        isa:
+          instructions:
+            - sig: call.short method_id, v1:in:top, v2:in:top
+              acc: out:top
+              format: [op_v1_4_v2_4_id_16]
+        description: Check correctness of passed arguments. Load parameter to accumulator.
+        tags: ['tsan']
+        header-template: []
+        code-template: |
+          .function i32 f1(i64 a0, i64 a1) {
+              lda.64 a0
+              movi.64 v1, %s
+              cmp.64 v1
+              jeqz f1_l1
+          # 1st arg does not match, exit
+              ldai 1
+              return
+          f1_l1:
+              lda.64 a1
+              movi.64 v1, %s
+              cmp.64 v1
+              return
+          }
+          .function i32 main() {
+              movi.64 v0, %s
+              movi.64 v1, %s
+              call.short f1, v0, v1
+
+        check-type: no-check
+        cases:
+          - values: ["0", "0", "0", "0"]
+          - values: ["0", "1", "0", "1"]
+          - values: ["1", "0", "1", "0"]
+          - values: ["0x1234567890ABCDEF", "0x234567890ABCDEF1", "0x1234567890ABCDEF", "0x234567890ABCDEF1"]
+          - values: ["0x7FFFFFFFFFFFFFFF", "0", "0x7FFFFFFFFFFFFFFF", "0"]
+          - values: ["0", "0x7FFFFFFFFFFFFFFF", "0", "0x7FFFFFFFFFFFFFFF"]
+          - values: ["0x7FFFFFFFFFFFFFFF", "0x7FFFFFFFFFFFFFFF", "0x7FFFFFFFFFFFFFFF", "0x7FFFFFFFFFFFFFFF"]
+          - values: ["0", "0x8000000000000000", "0", "0x8000000000000000"]
+          - values: ["0x8000000000000000", "0", "0x8000000000000000", "0"]
+          - values: ["0x8000000000000000", "0x8000000000000000", "0x8000000000000000", "0x8000000000000000"]
+          - values: ["0xFEDCBA0987654321", "0xEDCBA0987654321F", "0xFEDCBA0987654321", "0xEDCBA0987654321F"]
+          - values: ["0", "0xFFFFFFFFFFFFFFFF", "0", "0xFFFFFFFFFFFFFFFF"]
+          - values: ["0xFFFFFFFFFFFFFFFF", "0", "0xFFFFFFFFFFFFFFFF", "0"]
+          - values: ["0xFFFFFFFFFFFFFFFF", "0xFFFFFFFFFFFFFFFF", "0xFFFFFFFFFFFFFFFF", "0xFFFFFFFFFFFFFFFF"]
+
+      - file-name: arg_2_i64_reg
+        isa:
+          instructions:
+            - sig: call.short method_id, v1:in:top, v2:in:top
+              acc: out:top
+              format: [op_v1_4_v2_4_id_16]
+        description: Check correctness of passed arguments. Load parameter to register. Check i64 type of arguments.
+        header-template: []
+        code-template: |
+          .function i32 f1(i64 a0, i64 a1) {
+              mov.64 v1, a0
+              ldai.64 %s
+              cmp.64 v1
+              jeqz f1_l1
+          # 1st arg does not match, exit
+              ldai 1
+              return
+          f1_l1:
+              mov.64 v1, a1
+              ldai.64 %s
+              cmp.64 v1
+              return
+          }
+          .function i32 main() {
+              movi.64 v0, %s
+              movi.64 v1, %s
+              call.short f1, v0, v1
+
+        check-type: no-check
+        cases:
+          - values: ["0", "0", "0", "0"]
+          - values: ["0", "1", "0", "1"]
+          - values: ["1", "0", "1", "0"]
+          - values: ["0x1234567890ABCDEF", "0x234567890ABCDEF1", "0x1234567890ABCDEF", "0x234567890ABCDEF1"]
+          - values: ["0x7FFFFFFFFFFFFFFF", "0", "0x7FFFFFFFFFFFFFFF", "0"]
+          - values: ["0", "0x7FFFFFFFFFFFFFFF", "0", "0x7FFFFFFFFFFFFFFF"]
+          - values: ["0x7FFFFFFFFFFFFFFF", "0x7FFFFFFFFFFFFFFF", "0x7FFFFFFFFFFFFFFF", "0x7FFFFFFFFFFFFFFF"]
+          - values: ["0", "0x8000000000000000", "0", "0x8000000000000000"]
+          - values: ["0x8000000000000000", "0", "0x8000000000000000", "0"]
+          - values: ["0x8000000000000000", "0x8000000000000000", "0x8000000000000000", "0x8000000000000000"]
+          - values: ["0xFEDCBA0987654321", "0xEDCBA0987654321F", "0xFEDCBA0987654321", "0xEDCBA0987654321F"]
+          - values: ["0", "0xFFFFFFFFFFFFFFFF", "0", "0xFFFFFFFFFFFFFFFF"]
+          - values: ["0xFFFFFFFFFFFFFFFF", "0", "0xFFFFFFFFFFFFFFFF", "0"]
+          - values: ["0xFFFFFFFFFFFFFFFF", "0xFFFFFFFFFFFFFFFF", "0xFFFFFFFFFFFFFFFF", "0xFFFFFFFFFFFFFFFF"]
+
+      - file-name: arg_1_obj_acc
+        isa:
+          instructions:
+              - sig: call.short method_id, v1:in:top, v2:in:top
+                acc: out:top
+                format: [op_v1_4_v2_4_id_16]
+        description: Check correctness of passed arguments. Load parameter to accumulator. Check object type of arguments.
+        header-template: [obj_ctor]
+        code-template: |
+          .function Obj fnc(Obj a0) {
+              lda.obj a0
+              return.obj
+          }
+
+          .function i32 main() {
+              %s
+              sta.obj v0
+              ldai 0 # acc is i32
+              call.short fnc, v0 # acc contains returned Obj
+              jne.obj v0, return_ne_num
+              ldai 0
+              return
+          return_ne_num:
+              ldai 1
+              return
+
+        check-type: no-check
+        cases:
+          - values:
+            - "lda.null"
+          - values:
+            - "initobj Obj.ctor"
+
+      - file-name: arg_2_obj_acc
+        isa:
+          instructions:
+              - sig: call.short method_id, v1:in:top, v2:in:top
+                acc: out:top
+                format: [op_v1_4_v2_4_id_16]
+        description: Check correctness of passed arguments. Load parameter to accumulator. Check object type.
+        tags: ['tsan']
+        header-template: [obj_ctor]
+        code-template: |
+          .record ObjTuple {
+              Obj o1
+              Obj o2
+          }
+
+          .function void ObjTuple.ctor(ObjTuple a0, Obj a1, Obj a2) <ctor> {
+              lda.obj a1
+              stobj.obj a0, ObjTuple.o1
+              lda.obj a2
+              stobj.obj a0, ObjTuple.o2
+              return.void
+          }
+
+          .function ObjTuple getObjTuple(Obj a0, Obj a1) {
+              mov.obj v0, a0
+              mov.obj v1, a1
+              initobj.short ObjTuple.ctor, v0, v1
+              return.obj
+          }
+
+          .function i32 main() {
+              %s
+              call.short getObjTuple, v0, v1
+              sta.obj v2
+
+              # check ObjTuple.o1 contains correct value (v0)
+              ldobj.obj v2, ObjTuple.o1
+              jeq.obj v0, tuple_2_check
+              ldai 1
+              return
+          tuple_2_check:
+              # check ObjTuple.o2 contains correct value (v1)
+              ldobj.obj v2, ObjTuple.o2
+              jeq.obj v1, tuple_2_check_passed
+              ldai 1
+              return
+          tuple_2_check_passed:
+              ldai 0
+
+        check-type: no-check
+        cases:
+          - values:
+              - |
+                #
+                    mov.null v0
+                    mov.null v1
+          - values:
+              - |
+                #
+                    initobj.short Obj.ctor
+                    sta.obj v0
+                    initobj.short Obj.ctor
+                    sta.obj v1
+          - values:
+              - |
+                #
+                    mov.null v0
+                    initobj Obj.ctor
+                    sta.obj v1
+          - values:
+              - |
+                #
+                    initobj Obj.ctor
+                    sta.obj v0
+                    mov.null v1
+
+      - file-name: arg_2_str_acc
+        isa:
+          instructions:
+              - sig: call.short method_id, v1:in:top, v2:in:top
+                acc: out:top
+                format: [op_v1_4_v2_4_id_16]
+        description: Check correctness of passed arguments. Load parameter to accumulator. Check String type.
+        header-template: [panda_string]
+        code-template: |
+          .record ObjTuple {
+              panda.String o1
+              panda.String o2
+          }
+
+          .function void ObjTuple.ctor(ObjTuple a0, panda.String a1, panda.String a2) <ctor> {
+              lda.obj a1
+              stobj.obj a0, ObjTuple.o1
+              lda.obj a2
+              stobj.obj a0, ObjTuple.o2
+              return.void
+          }
+
+          .function ObjTuple getObjTuple(panda.String a0, panda.String a1) {
+              mov.obj v0, a0
+              mov.obj v1, a1
+              initobj.short ObjTuple.ctor, v0, v1
+              return.obj
+          }
+
+          .function i32 main() {
+              %s
+              call.short getObjTuple, v0, v1
+              sta.obj v2
+
+              # check ObjTuple.o1 contains correct value (v0)
+              ldobj.obj v2, ObjTuple.o1
+              jeq.obj v0, tuple_2_check
+              ldai 1
+              return
+          tuple_2_check:
+              # check ObjTuple.o2 contains correct value (v1)
+              ldobj.obj v2, ObjTuple.o2
+              jeq.obj v1, tuple_2_check_passed
+              ldai 1
+              return
+          tuple_2_check_passed:
+              ldai 0
+
+        check-type: no-check
+        cases:
+          - values:
+              - |
+                #
+                    mov.null v0
+                    mov.null v1
+          - values:
+              - |
+                #
+                    lda.str "some string 1"
+                    sta.obj v0
+                    lda.str "some string 2"
+                    sta.obj v1
+          - values:
+              - |
+                #
+                    mov.null v0
+                    lda.str "some string 2"
+                    sta.obj v1
+          - values:
+              - |
+                #
+                    lda.str "some string 1"
+                    sta.obj v0
+                    mov.null v1
+
+      - file-name: method_id_not_static_p
+        tags: ['verifier']
+        bugid: ['3247']
+        runner-options: ['verifier-failure', 'verifier-debug-config']
+        isa:
+          instructions:
+            - sig: call.short method_id, v1:in:top, v2:in:top
+              acc: out:top
+              format: [op_v1_4_v2_4_id_16]
+          verification:
+            - method_id_static
+            - method_id_non_abstract
+        description: Method_id must resolve to a static method in Panda Assembly context. Not static methods should be rejected by verifier.
+        header-template: []
+        code-template: |
+            .record A {}
+
+            .function void A.ctor(A a0) <ctor> {
+                return.void
+            }
+
+            .function i32 A.foo(A a0%s) *s
+
+            .function i32 main() {
+                initobj A.ctor
+                sta.obj v0
+                %s
+                call.short A.foo, v0%s
+        check-type: exit-positive
+        cases:
+            - values:
+              - |
+                {
+                    ldai 0
+                    return
+                }
+              ignore: true
+            - values: ['<noimpl>']
+              ignore: true
+            - values:
+              - |
+                <static> {
+                    ldai 0
+                    return
+                }
+              runner-options: ['verifier-only', 'verifier-debug-config']
+        template-cases:
+          - values: ['', '##-', '']
+          - values: [', A a1', 'mov.obj v1, v0', ', v1']
+
+      - file-name: amount_of_args
+        isa:
+          instructions:
+              - sig: call.short method_id, v1:in:top, v2:in:top
+                acc: out:top
+                format: [op_v1_4_v2_4_id_16]
+        header-template: []
+        description: Compiler should check amount of `call.short` argument and function parameters.
+        code-template: |
+            .function void f1(i32 a0%s) {
+                return.void
+            }
+            .function i32 main() {
+                call.short f1%s
+        check-type: none
+        runner-options: [compile-failure]
+        cases:
+            - values: ['', '']
+            - values: [', i32 a1', '']
+            - values: [', i32 a1', ', v0']
+            - values: [', i32 a1, i32 a2', '']
+            - values: [', i32 a1, i32 a2', ', v0']
+            - values: [', i32 a1, i32 a2', ', v0, v0']
+            - values: [', i32 a1, i32 a2', ', v0, v0, v0']
+
+      - file-name: unused_regs
+        isa:
+          description: >
+            Non-range instructions can be used to pass up to 4 arguments (unused register slot values will
+            be discarded and corresponding registers will not be passed to the callee).
+        header-template: []
+        description: Verifier should ignore unused register slots.
+        code-template: |
+            .function i32 foo(%s) {
+                ldai 0
+                return
+            }
+            .function i32 main() {
+                %s
+                call.short foo%s
+        check-type: no-check
+        cases:
+          - values:
+            - ""
+            - ""
+            - ", v5"
+          - values:
+            - "i64 a0"
+            - |
+              #
+                  movi.64 v5, 123456789
+            - ", v5, v9"

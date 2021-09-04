@@ -1,0 +1,438 @@
+# Copyright (c) 2021 Huawei Device Co., Ltd.
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+definitions:
+  - name: pandasm_header
+    template: |
+      .language PandaAssembly
+
+      .record panda.Object <external>
+
+      .record Q {}
+      .function void Q.ctor(Q a0) <ctor> {
+        return.void
+      }
+
+      .record R {
+        u1             fu1        <static>
+        u8             fu8        <static>
+        i8             fi8        <static>
+        u16            fu16       <static>
+        i16            fi16       <static>
+        u32            fu32       <static>
+        i32            fi32       <static>
+        u64            fu64       <static>
+        i64            fi64       <static>
+        f32            ff32       <static>
+        f64            ff64       <static>
+        # objects:
+        i32[]          fi32Array  <static>
+        Q              fQ         <static>
+        Q[]            fQArray    <static>
+        R              fR         <static>
+        R[]            fRArray    <static>
+        panda.Object   fObj       <static>
+        panda.Object[] fObjArray  <static>
+      }
+      .function void R.ctor(R a0) <ctor> {
+        return.void
+      }
+
+  - name: java_header
+    template: |
+      .language Java
+
+      .record java.lang.Object <external>
+      .function void java.lang.Object.ctor(java.lang.Object a0) <external, ctor>
+
+      .record I <java.interface> {}
+
+      .record Q <java.implements=I> {}
+      .function void Q.ctor(Q a0) <ctor> {
+        return.void
+      }
+
+      .record R <java.extends=Q> {
+        u1                 fu1       <static>
+        u8                 fu8       <static>
+        i8                 fi8       <static>
+        u16                fu16      <static>
+        i16                fi16      <static>
+        u32                fu32      <static>
+        i32                fi32      <static>
+        u64                fu64      <static>
+        i64                fi64      <static>
+        f32                ff32      <static>
+        f64                ff64      <static>
+        # objects
+        i32[]              fi32Array <static>
+        Q                  fQ        <static>
+        Q[]                fQArray   <static>
+        R                  fR        <static>
+        R[]                fRArray   <static>
+        I                  fI        <static>
+        I[]                fIArray   <static>
+        java.lang.Object   fObj      <static>
+        java.lang.Object[] fObjArray <static>
+      }
+      .function void R.ctor(R a0) <ctor> {
+        return.void
+      }
+
+tests:
+  - file-name: "ststatic.obj"
+    isa:
+      title: Store to static field
+      description: >
+        Store accumulator content into static field by field_id.
+      instructions:
+        - sig: ststatic.obj field_id
+          acc: in:ref
+          format: [op_id_16]
+    commands:
+
+      - file-name: "check_if_acc_initialized"
+        description: Check that verifier reports an error if accumulator is not initialized
+        isa:
+          description: Store accumulator content into static field by field_id.
+        header-template: ['pandasm_header']
+        check-type: exit-positive
+        tags: ['verifier']
+        bugid: ['1324']
+        runner-options: ['verifier-failure', 'verifier-debug-config']
+        code-template: |
+
+          .function i32 main() {
+            # acc (value) not initialized, verifier error expected
+            ststatic.obj R.fR
+
+
+      - file-name: "with_non_static_field_id"
+        bugid: ['1324']
+        description: Check that verifier reports error when the field_id doesn't resolve to a static valid field
+        isa:
+          verification:
+            - field_id_static
+        header-template: ['pandasm_header']
+        check-type: exit-positive
+        code-template: |
+          .record W {
+            u1    fu1
+            i8    fi8
+            u16   fu16
+            i16   fi16
+            i32   fi32
+            i64   fi64
+            f32   ff32
+            f64   ff64
+            W     fW
+            i32[] fi32Array
+            W[]   fWArray
+          }
+          .function void W.object_function(W a0) {
+            return.void
+          }
+          .function void static_function() {
+            return.void
+          }
+
+          .function i32 main() {
+            lda.null
+            ststatic.obj %s
+        cases:
+          - values:
+            - W.fu1
+            tags: [verifier]
+            runner-options: ['verifier-failure', 'verifier-debug-config']
+            bugid: ['1324', '1828']
+          - values:
+            - W.fi8
+            tags: [verifier]
+            runner-options: ['verifier-failure', 'verifier-debug-config']
+            bugid: ['1324', '1828']
+          - values:
+            - W.fu16
+            tags: [verifier]
+            runner-options: ['verifier-failure', 'verifier-debug-config']
+            bugid: ['1324', '1828']
+          - values:
+            - W.fi16
+            tags: [verifier]
+            runner-options: ['verifier-failure', 'verifier-debug-config']
+            bugid: ['1324', '1828']
+          - values:
+            - W.fi32
+            tags: [verifier]
+            runner-options: ['verifier-failure', 'verifier-debug-config']
+            bugid: ['1324', '1828']
+          - values:
+            - W.fi64
+            tags: [verifier]
+            runner-options: ['verifier-failure', 'verifier-debug-config']
+            bugid: ['1324', '1828']
+          - values:
+            - W.ff32
+            tags: [verifier]
+            runner-options: ['verifier-failure', 'verifier-debug-config']
+            bugid: ['1324', '1828']
+          - values:
+            - W.ff64
+            tags: [verifier]
+            runner-options: ['verifier-failure', 'verifier-debug-config']
+            bugid: ['1324', '1828']
+          - values:
+            - W.fW
+            tags: [verifier]
+            runner-options: ['verifier-failure', 'verifier-debug-config']
+            bugid: ['1324', '1828']
+          - values:
+            - W.fi32Array
+            tags: [verifier]
+            runner-options: ['verifier-failure', 'verifier-debug-config']
+            bugid: ['1324', '1828']
+          - values:
+            - W.fWArray
+            tags: [verifier]
+            runner-options: ['verifier-failure', 'verifier-debug-config']
+            bugid: ['1324', '1828']
+          - values:
+            - W
+            runner-options: ['compile-failure']
+          - values:
+            - W.object_function
+            runner-options: ['compile-failure']
+          - values:
+            - static_function
+            runner-options: ['compile-failure']
+          - values:
+            - unknown_function
+            runner-options: ['compile-failure']
+          - values:
+            - 0
+            runner-options: ['compile-failure']
+          - values:
+            - -1.1
+            runner-options: ['compile-failure']
+          - values:
+            - "null"
+            runner-options: ['compile-failure']
+          - values:
+            - "\"abc\""
+            runner-options: ['compile-failure']
+
+
+      - file-name: "with_wrong_acc_type_pa"
+        description: Check that verifier reports an error when the accumulator contains a value of type not corresponding to the bytecode
+        isa:
+          verification:
+            - acc_type
+        header-template: ['pandasm_header']
+        check-type: exit-positive
+        tags: ['verifier']
+        runner-options: ['verifier-failure', 'verifier-debug-config']
+        code-template: |
+
+          .function i32 main() {
+            %s
+            ststatic.obj %s
+        cases:
+          # store into object type field
+          - values:
+            - ldai 0
+            - R.fQ
+            bugid: ['1324', '1834']
+          - values:
+            - ldai.64 1
+            - R.fQ
+            bugid: ['1324', '1834']
+          - values:
+            - fldai.64 0x7FFFFFFFFFFFFFFF
+            - R.fQ
+            bugid: ['1324', '1834']
+          - values:
+            - lda.type R
+            - R.fQ
+            bugid: ['1834']
+          - values:
+            - |
+                movi v1, 10
+                  newarr v1, v1, Q[]
+                  lda.obj v1
+            - R.fQ
+            bugid: ['1834']
+          # store into object array type field
+          - values:
+            - ldai 0
+            - R.fQArray
+            bugid: ['1324', '1834']
+          - values:
+            - ldai.64 1
+            - R.fQArray
+            bugid: ['1324', '1834']
+          - values:
+            - fldai.64 0x7FFFFFFFFFFFFFFF
+            - R.fQArray
+            bugid: ['1324', '1834']
+          - values:
+            - initobj Q.ctor
+            - R.fQArray
+            bugid: ['1834']
+          - values:
+            - |
+              movi v1, 10
+                newarr v1, v1, R[]
+                lda.obj v1
+            - R.fQArray
+            bugid: ['1834']
+          # store into i32[] array field
+          - values:
+            - ldai 0
+            - R.fi32Array
+            bugid: ['1324', '1834']
+          - values:
+            - ldai.64 1
+            - R.fi32Array
+            bugid: ['1324', '1834']
+          - values:
+            - fldai.64 0x7FFFFFFFFFFFFFFF
+            - R.fi32Array
+            bugid: ['1324', '1834']
+          - values:
+            - lda.type R
+            - R.fi32Array
+            bugid: ['1834']
+          - values:
+            - |
+              movi v1, 10
+                newarr v1, v1, Q[]
+                lda.obj v1
+            - R.fi32Array
+            bugid: ['1834']
+
+
+      - file-name: "into_all_field_types_pa"
+        description: Check that accumulator value is stored in field
+        isa:
+          description: Store accumulator content into static field by field_id.
+        header-template: ['pandasm_header']
+        check-type: exit-positive
+        tags: ['tsan']
+        code-template: |
+
+          .function i32 main() {
+            %s
+            sta.obj v7
+            ststatic.obj R.%s
+            lda.null
+            ldstatic.obj R.%s
+            jeq.obj v7, success
+            ldai 1
+            return
+          success:
+        cases:
+          - values:
+            - |
+                # store null into Q type field
+                  lda.null
+            - fQ
+            - fQ
+          - values:
+            - |
+                # store null into Q[] type field
+                  lda.null
+            - fQArray
+            - fQArray
+          - values:
+            - |
+                # store Q into Q type field
+                  initobj Q.ctor
+            - fQ
+            - fQ
+          - values:
+            - |
+                # store Q[] into Q[] type field
+                  movi v1, 10
+                  newarr v1, v1, Q[]
+                  lda.obj v1
+            - fQArray
+            - fQArray
+
+
+      - file-name: "x_init_p"
+        description: Check that ExceptionInInitializerError is thrown if an unexpected exception occurs in static initializer.
+        isa:
+          exceptions:
+            - x_init
+        header-template: []
+        check-type: empty
+        tags: ['tsan']
+        bugid: ['5330']
+        ignore: true
+        code-template: |
+
+          .language PandaAssembly
+
+          .record panda.ExceptionInInitializerError <external>
+          .record panda.NullPointerException <external>
+          .record E1 {}
+          .record R {
+              E1     fObj    <static>
+          }
+
+          .function void R.func() <cctor> {
+              %s
+              return.void
+          }
+
+          .function i32 main() {
+          begin:
+              newobj v0, E1
+              lda.obj v0
+              ststatic R.fObj
+              ldai 2
+              return
+          end:
+          catch:
+              ldai 0
+              return
+          catch_all:
+              ldai 1
+              return
+          .catch panda.ExceptionInInitializerError, begin, end, catch
+          .catchall begin, end, catch_all
+          }
+        cases:
+          - values:
+            - |
+              #
+                  newobj v0, E1
+                  throw v0
+          - values:
+            - |
+              #
+                  newobj v0, panda.NullPointerException
+                  throw v0
+          - values:
+            - |
+              #
+                  movi v1, 0
+                  ldai 1
+                  div2 v1     # divide by zero
+          - values:
+            - |
+              #
+                  movi v1, 10
+                  newarr v1, v1, i32[]
+                  ldai 10
+                  ldarr v1    # get ArrayIndexOutOfBoundsException
+

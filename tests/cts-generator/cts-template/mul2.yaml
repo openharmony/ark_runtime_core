@@ -1,0 +1,440 @@
+# Copyright (c) 2021 Huawei Device Co., Ltd.
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+definitions: []
+tests:
+  - file-name: "mul2"
+    isa:
+      title: Two address binary operation on accumulator
+      description: >
+        Perform specified binary operation on accumulator and register and store result into accumulator
+      exceptions:
+        - x_none
+    commands:
+      - file-name: "op_vs_8_zero"
+        isa:
+          instructions:
+            - sig: mul2 v:in:i32
+              acc: inout:i32
+              format: [op_v_8]
+        code-template: |
+          #
+              ldai 0
+              movi v0, %s
+              mul2 v0
+              movi v0, 0
+              jne v0, set_failure
+              ldai 0
+              jmp fall_through
+          set_failure:
+              ldai 1
+          fall_through:
+        description: Check mul2 with zero and various values.
+        cases:
+          - values:
+              - "0"
+          - values:
+              - "1"
+          - values:
+              - "-1"
+          - values:
+              - "0x7FFFFFFF"
+          - values:
+              - "0x80000000"
+          - values:
+              - "-0x7FFFFFFF"
+          - values:
+              - "-0x80000000"
+          - values:
+              - "0xFFFFFFFF"
+          - values:
+              - "-0xFFFFFFFF"
+
+      - file-name: "op_vs_8_pone"
+        isa:
+          instructions:
+            - sig: mul2 v:in:i32
+              acc: inout:i32
+              format: [op_v_8]
+        code-template: |
+          #
+              ldai 1
+              movi v0, %s
+              mul2 v0
+              movi v0, %s
+              jne v0, set_failure
+              ldai 0
+              jmp fall_through
+          set_failure:
+              ldai 1
+          fall_through:
+        description: Check mul2 with +1 and various values.
+        cases:
+          - values:
+              - "0"
+              - "0"
+          - values:
+              - "1"
+              - "1"
+          - values:
+              - "-1"
+              - "-1"
+          - values:
+              - "0x7FFFFFFF"
+              - "0x7FFFFFFF"
+          - values:
+              - "0x80000000"
+              - "0x80000000"
+          - values:
+              - "-0x7FFFFFFF"
+              - "-0x7FFFFFFF"
+          - values:
+              - "-0x80000000"
+              - "-0x80000000"
+          - values:
+              - "0xFFFFFFFF"
+              - "0xFFFFFFFF"
+          - values:
+              - "-0xFFFFFFFF"
+              - "-0xFFFFFFFF"
+      - file-name: "op_vs_8_none"
+        isa:
+          instructions:
+            - sig: mul2 v:in:i32
+              acc: inout:i32
+              format: [op_v_8]
+        code-template: |
+          #
+              ldai -1
+              movi v0, %s
+              mul2 v0
+              movi v0, %s
+              jne v0, set_failure
+              ldai 0
+              jmp fall_through
+          set_failure:
+              ldai 1
+          fall_through:
+        description: Check mul2 with -1 and various values.
+        cases:
+          - values:
+              - "0"
+              - "0"
+          - values:
+              - "1"
+              - "-1"
+          - values:
+              - "-1"
+              - "1"
+          - values:
+              - "0x7FFFFFFF"
+              - "-0x7FFFFFFF"
+          - values:
+              - "0x80000000"
+              - "0x80000000"
+            tags: ["clang_release_sanitizer"]
+            bugid: ['966']
+          - values:
+              - "-0x7FFFFFFF"
+              - "0x7FFFFFFF"
+          - values:
+              - "-0x80000000"
+              - "0x80000000"
+            tags: ["clang_release_sanitizer"]
+            bugid: ['966']
+          - values:
+              - "0xFFFFFFFF"
+              - "1"
+          - values:
+              - "-0xFFFFFFFF"
+              - "-1"
+      - file-name: "op_vs_8_pmax"
+        isa:
+          instructions:
+            - sig: mul2 v:in:i32
+              acc: inout:i32
+              format: [op_v_8]
+        code-template: |
+          #
+              ldai 0x7FFFFFFF
+              movi v0, %s
+              mul2 v0
+              movi v0, %s
+              jne v0, set_failure
+              ldai 0
+              jmp fall_through
+          set_failure:
+              ldai 1
+          fall_through:
+        description: Check mul2 with +max and various values.
+        cases:
+          - values:
+              - "0"
+              - "0"
+          - values:
+              - "1"
+              - "0x7FFFFFFF"
+          - values:
+              - "-1"
+              - "0x80000001"
+          - values:
+              - "0x7FFFFFFF"
+              - "1"
+            tags: ["clang_release_sanitizer"]
+            bugid: ['966']
+          - values:
+              - "-0x7FFFFFFF"
+              - "-1"
+            tags: ["clang_release_sanitizer"]
+            bugid: ['966']
+          - values:
+              - "0x80000000"
+              - "0x80000000"
+            tags: ["clang_release_sanitizer"]
+            bugid: ['966']
+          - values:
+              - "-0x80000000"
+              - "0x80000000"
+            tags: ["clang_release_sanitizer"]
+            bugid: ['966']
+          - values:
+              - "0xFFFFFFFF"
+              - "0x80000001"
+          - values:
+              - "-0xFFFFFFFF"
+              - "0x7FFFFFFF"
+
+      - file-name: "op_vs_8_nmax"
+        tags: ["clang_release_sanitizer"]
+        bugid: ['966']
+        isa:
+          instructions:
+            - sig: mul2 v:in:i32
+              acc: inout:i32
+              format: [op_v_8]
+        code-template: |
+          #
+              ldai -0x80000000
+              movi v0, %s
+              mul2 v0
+              movi v0, %s
+              jne v0, set_failure
+              ldai 0
+              jmp fall_through
+          set_failure:
+              ldai 1
+          fall_through:
+        description: Check mul2 with -max and various values.
+        cases:
+          - values:
+              - "0"
+              - "0"
+          - values:
+              - "1"
+              - "0x80000000"
+          - values:
+              - "-1"
+              - "0x80000000"
+          - values:
+              - "0x7FFFFFFF"
+              - "0x80000000"
+          - values:
+              - "-0x7FFFFFFF"
+              - "0x80000000"
+          - values:
+              - "0x80000000"
+              - "0x0"
+          - values:
+              - "-0x80000000"
+              - "0x0"
+          - values:
+              - "0xFFFFFFFF"
+              - "0x80000000"
+          - values:
+              - "-0xFFFFFFFF"
+              - "0x80000000"
+
+      - file-name: "vals"
+        isa:
+          instructions:
+            - sig: mul2 v:in:i32
+              acc: inout:i32
+              format: [op_v_8]
+        code-template: |
+          #
+              ldai %s
+              movi v0, %s
+              mul2 v0
+              movi v0, %s
+              jne v0, set_failure
+              ldai 0
+              jmp fall_through
+          set_failure:
+              ldai 1
+          fall_through:
+        tags: ['clang_release_sanitizer', 'tsan']
+        bugid: ['966']
+        description: Check mul2 with various values.
+        cases:
+          - values:
+              - "0x7A2CE254"
+              - "0xFB676533"
+              - "0x78083ABC"
+          - values:
+              - "0x6F7788C3"
+              - "0x65EB9775"
+              - "0xED4D861F"
+          - values:
+              - "0x801EF150"
+              - "0x29F1C73"
+              - "0x70FB26F0"
+          - values:
+              - "0xA6AB8140"
+              - "0x1D900575"
+              - "0x79E85240"
+          - values:
+              - "0x46689505"
+              - "0xADE64802"
+              - "0x3A38920A"
+          - values:
+              - "0x62C511AC"
+              - "0xD933351D"
+              - "0x4E3F9C7C"
+          - values:
+              - "0x59BB5F3E"
+              - "0x8E8C2463"
+              - "0x86C28CFA"
+          - values:
+              - "0x55255365"
+              - "0x98E808C3"
+              - "0x9191ADEF"
+          - values:
+              - "0x9664221"
+              - "0xF7F5AC4D"
+              - "0xA8C50FED"
+          - values:
+              - "0xC37EF875"
+              - "0xB09DAC86"
+              - "0x7325A93E"
+
+      - file-name: "vals_mod32_1"
+        isa:
+          instructions:
+            - sig: mul2 v:in:i32
+              acc: inout:i32
+              format: [op_v_8]
+        code-template: |
+          #
+              ldai %s
+              movi v0, %s
+              mul2 v0
+              movi.64 v0, %s
+              cmp.64 v0
+        tags: ["verifier"]
+        bugid: ['966', '1324', '2072']
+        runner-options: ['verifier-failure', 'verifier-debug-config']
+        description: Check mul2 with incorrect accumulator ang register type.
+        cases:
+          - values:
+              - "0x7FFFFFFF"
+              - "2"
+              - "0xFFFFFFFFFFFFFFFE"
+          - values:
+              - "0x7FFFFFFF"
+              - "-2"
+              - "2"
+          - values:
+              - "0x80000000"
+              - "2"
+              - "0"
+
+      - file-name: "vals_mod32_2"
+        tags: ["verifier"]
+        bugid: ['1324', '966']
+        runner-options: ['verifier-failure', 'verifier-debug-config']
+        isa:
+          instructions:
+            - sig: mul2 v:in:i32
+              acc: inout:i32
+              format: [op_v_8]
+        code-template: |
+            #
+                ldai.64 %s
+                movi.64 v0, %s
+                mul2 v0
+                movi.64 v0, %s
+                cmp.64 v0
+        description: Check mul2 with incorrect accumulator ang register type.
+        cases:
+            - values:
+                - "0x17FFFFFFF"
+                - "0x100000002"
+                - "0xFFFFFFFFFFFFFFFE"
+            - values:
+                - "0x777777777FFFFFFF"
+                - "-2"
+                - "2"
+            - values:
+                - "0x7654321080000000"
+                - "2"
+                - "0"
+
+      - file-name: "regs"
+        isa:
+          instructions:
+            - sig: mul2 v:in:i32
+              acc: inout:i32
+              format: [op_v_8]
+        runner-options: ['compile-only']
+        code-template: |
+          #
+              mul2 %s
+        check-type: none
+        description: Check mul2 with various register numbers.
+        cases:
+          - values:
+              - "v255"
+          - values:
+              - "v256"
+            runner-options: ['compile-failure']
+
+      - file-name: "type"
+        tags: ["verifier"]
+        bugid: ['966', '964']
+        isa:
+          instructions:
+            - sig: mul2 v:in:i32
+              acc: inout:i32
+              format: [op_v_8]
+          verification:
+            - acc_type
+            - v1_type
+        runner-options: ['verifier-failure', 'verifier-debug-config']
+        code-template: |
+          #
+              %s
+              %s
+              mul2 v0
+              ldai 0
+        check-type: no-check
+        description: Check mul2 with incorrect accumulator ang register type.
+        cases:
+          - values:
+              - "lda.null"
+              - "movi v0, 0"
+          - values:
+              - "ldai 0 "
+              - "mov.null v0"
+          - values:
+              - "lda.null"
+              - "mov.null v0"

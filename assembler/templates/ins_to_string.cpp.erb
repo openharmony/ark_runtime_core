@@ -1,0 +1,60 @@
+/*
+ * Copyright (c) 2021 Huawei Device Co., Ltd.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+#include <iostream>
+#include "assembly-ins.h"
+
+namespace panda::pandasm {
+
+std::string panda::pandasm::Ins::ToString(std::string endline, bool print_args /* = false */,
+                                          size_t first_arg_idx /* = 0*/) const {
+    std::string full_operation = "";
+    std::string reg_case = "";
+    if (this->set_label) {
+        full_operation += this->label +": ";
+    }
+    switch(this->opcode) {
+% Panda::instructions.group_by(&:mnemonic).each do |mnemonic, group|
+%  insn = group.first
+%  formats = group.map(&:format)
+%  operands = insn.operands
+%  properties = insn.properties
+        case panda::pandasm::Opcode::<%= insn.asm_token%>: {
+            full_operation += "<%= insn.mnemonic%>";
+%  print_kind = case
+%  when insn.call? || !insn.public?
+%    'PrintKind::CALL'
+%  when insn.calli?
+%    'PrintKind::CALLI'
+%  else
+%    'PrintKind::DEFAULT'
+%  end
+            full_operation += this->OperandsToString(<%= print_kind %>, print_args, first_arg_idx);
+        } break;
+% end
+% Panda::pseudo_instructions.each do |insn|
+        case panda::pandasm::Opcode::<%= insn.opcode %>: {
+            full_operation += "<%= insn.opcode %>";
+            full_operation += this->OperandsToString(PrintKind::DEFAULT, print_args, first_arg_idx);
+        } break;
+% end
+        case panda::pandasm::Opcode::INVALID: {
+            full_operation += "";
+        } break;
+    }
+    return full_operation + endline;
+}
+
+} // namespace panda::pandasm

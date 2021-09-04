@@ -1,0 +1,534 @@
+# Copyright (c) 2021 Huawei Device Co., Ltd.
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+definitions: []
+tests:
+  - file-name: "and"
+    isa:
+      title: Three address binary operation
+      description: Perform specified binary operation on two registers and store result
+        into accumulator
+      exceptions:
+        - x_none
+    commands:
+      - file-name: "op_vs1_4_vs2_4_zero"
+        isa:
+          instructions:
+            - sig: and v1:in:i32, v2:in:i32
+              acc: out:i32
+              prefix: bit
+              format: [pref_op_v1_4_v2_4]
+        code-template: |
+          #
+              movi v0, 0
+              movi v1, %s
+              and v0, v1
+              movi v0, 0
+              jne v0, set_failure
+              ldai 0
+              jmp fall_through
+          set_failure:
+              ldai 1
+          fall_through:
+        description: Check 'and' with zero and various values.
+        tags: ['tsan']
+        cases:
+          - values:
+              - "0"
+          - values:
+              - "1"
+          - values:
+              - "-1"
+          - values:
+              - "0x7FFFFFFF"
+          - values:
+              - "0x80000000"
+          - values:
+              - "-0x7FFFFFFF"
+          - values:
+              - "-0x80000000"
+          - values:
+              - "0xFFFFFFFF"
+          - values:
+              - "-0xFFFFFFFF"
+
+      - file-name: "op_vs1_4_vs2_4_pone"
+        isa:
+          instructions:
+            - sig: and v1:in:i32, v2:in:i32
+              acc: out:i32
+              prefix: bit
+              format: [pref_op_v1_4_v2_4]
+        code-template: |
+          #
+              movi v0, 1
+              movi v1, %s
+              and v0, v1
+              movi v0, %s
+              jne v0, set_failure
+              ldai 0
+              jmp fall_through
+          set_failure:
+              ldai 1
+          fall_through:
+        description: Check 'and' with +1 and various values.
+        cases:
+          - values:
+              - "0"
+              - "0"
+          - values:
+              - "1"
+              - "1"
+          - values:
+              - "-1"
+              - "1"
+          - values:
+              - "0x7FFFFFFF"
+              - "1"
+          - values:
+              - "0x80000000"
+              - "0"
+          - values:
+              - "-0x7FFFFFFF"
+              - "1"
+          - values:
+              - "-0x80000000"
+              - "0"
+          - values:
+              - "0xFFFFFFFF"
+              - "1"
+          - values:
+              - "-0xFFFFFFFF"
+              - "1"
+      - file-name: "op_vs1_4_vs2_4_none"
+        isa:
+          instructions:
+            - sig: and v1:in:i32, v2:in:i32
+              acc: out:i32
+              prefix: bit
+              format: [pref_op_v1_4_v2_4]
+        code-template: |
+          #
+              movi v0, -1
+              movi v1, %s
+              and v0, v1
+              movi v0, %s
+              jne v0, set_failure
+              ldai 0
+              jmp fall_through
+          set_failure:
+              ldai 1
+          fall_through:
+        description: Check 'and' with -1 and various values.
+        cases:
+          - values:
+              - "0"
+              - "0"
+          - values:
+              - "1"
+              - "1"
+          - values:
+              - "-1"
+              - "-1"
+          - values:
+              - "0x7FFFFFFF"
+              - "0x7FFFFFFF"
+          - values:
+              - "0x80000000"
+              - "0x80000000"
+          - values:
+              - "-0x7FFFFFFF"
+              - "-0x7FFFFFFF"
+          - values:
+              - "-0x80000000"
+              - "-0x80000000"
+          - values:
+              - "0xFFFFFFFF"
+              - "0xFFFFFFFF"
+          - values:
+              - "-0xFFFFFFFF"
+              - "-0xFFFFFFFF"
+      - file-name: "op_vs1_4_vs2_4_pmax"
+        isa:
+          instructions:
+            - sig: and v1:in:i32, v2:in:i32
+              acc: out:i32
+              prefix: bit
+              format: [pref_op_v1_4_v2_4]
+        code-template: |
+          #
+              movi v0, 0x7FFFFFFF
+              movi v1, %s
+              and v0, v1
+              movi v0, %s
+              jne v0, set_failure
+              ldai 0
+              jmp fall_through
+          set_failure:
+              ldai 1
+          fall_through:
+        description: Check 'and' with +max and various values.
+        cases:
+          - values:
+              - "0"
+              - "0"
+          - values:
+              - "1"
+              - "1"
+          - values:
+              - "-1"
+              - "0x7FFFFFFF"
+          - values:
+              - "0x7FFFFFFF"
+              - "0x7FFFFFFF"
+          - values:
+              - "0x80000000"
+              - "0"
+          - values:
+              - "-0x7FFFFFFF"
+              - "1"
+          - values:
+              - "-0x80000000"
+              - "0"
+          - values:
+              - "0xFFFFFFFF"
+              - "0x7FFFFFFF"
+          - values:
+              - "-0xFFFFFFFF"
+              - "1"
+
+      - file-name: "op_vs1_4_vs2_4_nmax"
+        isa:
+          instructions:
+            - sig: and v1:in:i32, v2:in:i32
+              acc: out:i32
+              prefix: bit
+              format: [pref_op_v1_4_v2_4]
+        code-template: |
+          #
+              movi v0, -0x80000000
+              movi v1, %s
+              and v0, v1
+              movi v0, %s
+              jne v0, set_failure
+              ldai 0
+              jmp fall_through
+          set_failure:
+              ldai 1
+          fall_through:
+        description: Check 'and' with -max and various values.
+        cases:
+          - values:
+              - "0"
+              - "0"
+          - values:
+              - "1"
+              - "0"
+          - values:
+              - "-1"
+              - "0x80000000"
+          - values:
+              - "0x7FFFFFFF"
+              - "0"
+          - values:
+              - "0x80000000"
+              - "0x80000000"
+          - values:
+              - "-0x7FFFFFFF"
+              - "0x80000000"
+          - values:
+              - "-0x80000000"
+              - "0x80000000"
+          - values:
+              - "0xFFFFFFFF"
+              - "0x80000000"
+          - values:
+              - "-0xFFFFFFFF"
+              - "0"
+
+      - file-name: "vals"
+        isa:
+          instructions:
+            - sig: and v1:in:i32, v2:in:i32
+              acc: out:i32
+              prefix: bit
+              format: [pref_op_v1_4_v2_4]
+        code-template: |
+          #
+              movi v0, %s
+              movi v1, %s
+              and v0, v1
+              movi v0, %s
+              jne v0, set_failure
+              ldai 0
+              jmp fall_through
+          set_failure:
+              ldai 1
+          fall_through:
+        description: Check 'and' with various values.
+        cases:
+          - values:
+              - "0xA51B315E"
+              - "0x87C8F582"
+              - "0x85083102"
+          - values:
+              - "0x38A75ED8"
+              - "0x7D32F542"
+              - "0x38225440"
+          - values:
+              - "0xBE9510AB"
+              - "0x43500AD6"
+              - "0x2100082"
+          - values:
+              - "0x6B3EBCF0"
+              - "0xDE8EC51C"
+              - "0x4A0E8410"
+          - values:
+              - "0xD0A1860"
+              - "0x5EB6DAA"
+              - "0x50A0820"
+          - values:
+              - "0xD9B646CB"
+              - "0xF6F2454C"
+              - "0xD0B24448"
+          - values:
+              - "0xB3BC65C4"
+              - "0xE8F33B3E"
+              - "0xA0B02104"
+          - values:
+              - "0xD9962D72"
+              - "0xC661F3D4"
+              - "0xC0002150"
+          - values:
+              - "0xC39C6250"
+              - "0x97BB08D2"
+              - "0x83980050"
+          - values:
+              - "0xECFD3116"
+              - "0x59D1C953"
+              - "0x48D10112"
+
+      - file-name: "vals_mod32_1"
+        bugid: ['1324', '2075']
+        tags: [verifier]
+        runner-options: ['verifier-failure', 'verifier-debug-config']
+        description: Check 'and' with incorrect type of registers.
+        isa:
+          instructions:
+            - sig: and v1:in:i32, v2:in:i32
+              acc: out:i32
+              prefix: bit
+              format: [pref_op_v1_4_v2_4]
+        code-template: |
+          #
+              movi.64 v0, %s
+              movi.64 v1, %s
+              and v0, v1
+              movi.64 v0, %s
+              cmp.64 v0
+        cases:
+          - values:
+              - "0x17FFFFFFF"
+              - "0x17FFFFFFF"
+              - "0x7FFFFFFF"
+          - values:
+              - "0x77777777FFFFFFFF"
+              - "0x1111111180000000"
+              - "0xFFFFFFFF80000000"
+          - values:
+              - "0x180000000"
+              - "0x180000000"
+              - "0xFFFFFFFF80000000"
+
+      - file-name: "regs"
+        isa:
+          instructions:
+            - sig: and v1:in:i32, v2:in:i32
+              acc: out:i32
+              prefix: bit
+              format: [pref_op_v1_4_v2_4]
+        runner-options: ['compile-only']
+        code-template: |
+          #
+              and %s, %s
+        check-type: none
+        description: Check 'and' with various register numbers.
+        cases:
+          - values:
+              - v0
+              - v15
+          - values:
+              - v0
+              - v16
+            runner-options:
+              - compile-failure
+          - values:
+              - v15
+              - v0
+          - values:
+              - v16
+              - v0
+            runner-options:
+              - compile-failure
+
+      - file-name: "type"
+        bugid: ["964", "966", "2075", "2260"]
+        isa:
+          instructions:
+            - sig: and v1:in:i32, v2:in:i32
+              acc: out:i32
+              prefix: bit
+              format: [pref_op_v1_4_v2_4]
+          verification:
+            - v1_type
+            - v2_type
+        tags: ['verifier']
+        runner-options: ['verifier-failure', 'verifier-debug-config']
+        header-template: []
+        code-template: |
+          #
+          .record A {}
+          .record B {}
+          .record panda.String <external>
+          .record panda.Object <external>
+          .function i32 main() {
+              %s
+              *s
+              and v0, v1
+              ldai 0
+        check-type: no-check
+        description: Check `and` with incorrect register type.
+        template-cases:
+          - values:
+              - movi.64 v0, 0
+          - values:
+              - fmovi.64 v0, 0
+          - values:
+              - |
+                #
+                    lda.type B
+                    sta.obj v0
+          - values:
+              - |
+                #
+                    lda.type B[]
+                    sta.obj v0
+          - values:
+              - |
+                #
+                    lda.type panda.String
+                    sta.obj v0
+          - values:
+              - |
+                #
+                    lda.type panda.Object
+                    sta.obj v0
+          - values:
+              - |
+                #
+                    movi v0, 10
+                    newarr v0, v0, i32[]
+          - values:
+              - mov.null v0
+          - values:
+              - movi v0, 0
+            exclude: [val]
+        cases:
+          - values:
+              - movi.64 v1, 0
+          - values:
+              - fmovi.64 v1, 0
+          - values:
+              - |
+                #
+                    lda.type A
+                    sta.obj v1
+          - values:
+              - |
+                #
+                    lda.type A[]
+                    sta.obj v1
+
+          - values:
+              - |
+                #
+                    lda.type panda.String
+                    sta.obj v1
+          - values:
+              - |
+                #
+                    lda.type panda.Object
+                    sta.obj v1
+          - values:
+              - |
+                #
+                    movi v1, 10
+                    newarr v1, v1, f64[]
+          - values:
+              - mov.null v1
+          - values:
+              - movi v1, 0
+            id: val
+
+      - file-name: uninitialized_regs
+        bugid: ['2260']
+        isa:
+          instructions:
+            - sig: and v1:in:i32, v2:in:i32
+              acc: out:i32
+              prefix: bit
+              format: [pref_op_v1_4_v2_4]
+        description: Check `and` with uninitialized registers.
+        tags: ['verifier']
+        runner-options: ['verifier-failure', 'verifier-debug-config']
+        header-template: []
+        code-template: |
+            #
+            .function i32 main() {
+                %s
+                *s
+                and %s, *s
+                ldai 0
+        check-type: no-check
+        template-cases:
+          - values:
+              - ''
+              - v0
+          - values:
+              - movi v0, 0
+              - v0
+            exclude: [init]
+          - values:
+              - ''
+              - v7
+          - values:
+              - ''
+              - v15
+          - values:
+              - 'movi v15, 0'
+              - v15
+            exclude: [init]
+        cases:
+          - values:
+              - ''
+              - v1
+          - values:
+              - movi v1, 0
+              - v1
+            id: init
+          - values:
+              - ''
+              - v8
+          - values:
+              - ''
+              - v14

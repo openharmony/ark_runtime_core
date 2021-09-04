@@ -1,0 +1,122 @@
+# Copyright (c) 2021 Huawei Device Co., Ltd.
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+# List of types supported by the Panda file format
+types:
+  - name: invalid
+    code: 0x0
+    properties:
+      - none
+
+  - name: void
+    code: 0x01
+    properties:
+      - none
+
+  - name: u1
+    code: 0x02
+    width: 1
+    properties:
+      - integral
+      - unsigned
+
+  - name: i8
+    code: 0x03
+    width: 8
+    properties:
+      - numeric
+      - integral
+      - signed
+
+  - name: u8
+    code: 0x04
+    width: 8
+    properties:
+      - numeric
+      - integral
+      - unsigned
+
+  - name: i16
+    code: 0x05
+    width: 16
+    properties:
+      - numeric
+      - integral
+      - signed
+
+  - name: u16
+    code: 0x06
+    width: 16
+    properties:
+      - numeric
+      - integral
+      - unsigned
+
+  - name: i32
+    code: 0x07
+    width: 32
+    properties:
+      - numeric
+      - integral
+      - signed
+
+  - name: u32
+    code: 0x08
+    width: 32
+    properties:
+      - numeric
+      - integral
+      - unsigned
+
+  - name: f32
+    code: 0x09
+    width: 32
+    properties:
+      - numeric
+      - float
+      - signed
+
+  - name: f64
+    code: 0x0a
+    width: 64
+    properties:
+      - numeric
+      - float
+      - signed
+
+  - name: i64
+    code: 0x0b
+    width: 64
+    properties:
+      - numeric
+      - integral
+      - signed
+
+  - name: u64
+    code: 0x0c
+    width: 64
+    properties:
+      - numeric
+      - integral
+      - unsigned
+
+  - name: reference
+    code: 0xd
+    properties:
+      - none
+
+  - name: tagged
+    asm_name: any
+    code: 0xe
+    properties:
+      - none

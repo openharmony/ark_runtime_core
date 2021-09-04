@@ -1,0 +1,461 @@
+# Copyright (c) 2021 Huawei Device Co., Ltd.
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+definitions: []
+tests:
+  - file-name: "divu2"
+    isa:
+      title: Two address integer division and modulo on accumulator
+      description: >
+        Perform integer division or modulo on accumulator and register and store result into accumulator
+      exceptions:
+        - x_arith
+    commands:
+      - file-name: "op_vs_8_zero"
+        isa:
+          instructions:
+            - sig: divu2 v:in:u32
+              acc: inout:u32
+              prefix: unsigned
+              format: [pref_op_v_8]
+        code-template: |
+          #
+              ldai 0
+              movi v0, %s
+              divu2 v0
+              movi v0, 0
+              ucmp v0
+        description: Check divu2 with zero and various values.
+        cases:
+          - values:
+              - "0"
+            runner-options: ['run-failure']
+            description: Division by zero causes to exception.
+          - values:
+              - "1"
+          - values:
+              - "-1"
+          - values:
+              - "0x7FFFFFFF"
+          - values:
+              - "0x80000000"
+          - values:
+              - "-0x7FFFFFFF"
+          - values:
+              - "-0x80000000"
+          - values:
+              - "0xFFFFFFFF"
+          - values:
+              - "-0xFFFFFFFF"
+
+      - file-name: "op_vs_8_pone"
+        isa:
+          instructions:
+            - sig: divu2 v:in:u32
+              acc: inout:u32
+              prefix: unsigned
+              format: [pref_op_v_8]
+        code-template: |
+          #
+              ldai 1
+              movi v0, %s
+              divu2 v0
+              movi v0, %s
+              ucmp v0
+        description: Check divu2 with +1 and various values.
+        cases:
+          - values:
+              - "0"
+              - "0x0"
+            runner-options: ['run-failure']
+            description: Division by zero causes to exception.
+          - values:
+              - "1"
+              - "0x1"
+          - values:
+              - "-1"
+              - "0"
+          - values:
+              - "0x7FFFFFFF"
+              - "0x0"
+          - values:
+              - "0x80000000"
+              - "0x0"
+          - values:
+              - "-0x7FFFFFFF"
+              - "0x0"
+          - values:
+              - "-0x80000000"
+              - "0x0"
+          - values:
+              - "0xFFFFFFFF"
+              - "0"
+          - values:
+              - "-0xFFFFFFFF"
+              - "0x1"
+
+      - file-name: "op_vs_8_none"
+        isa:
+          instructions:
+            - sig: divu2 v:in:u32
+              acc: inout:u32
+              prefix: unsigned
+              format: [pref_op_v_8]
+        code-template: |
+          #
+              ldai -1
+              movi v0, %s
+              divu2 v0
+              movi v0, %s
+              ucmp v0
+        description: Check divu2 with -1 and various values.
+        cases:
+          - values:
+              - "0"
+              - "0x0"
+            runner-options: ['run-failure']
+            description: Division by zero causes to exception.
+          - values:
+              - "1"
+              - "0xFFFFFFFF"
+          - values:
+              - "-1"
+              - "0x1"
+          - values:
+              - "0x7FFFFFFF"
+              - "2"
+          - values:
+              - "0x80000000"
+              - "1"
+          - values:
+              - "-0x7FFFFFFF"
+              - "1"
+          - values:
+              - "-0x80000000"
+              - "1"
+          - values:
+              - "0xFFFFFFFF"
+              - "0x1"
+          - values:
+              - "-0xFFFFFFFF"
+              - "0xFFFFFFFF"
+
+      - file-name: "op_vs_8_pmax"
+        isa:
+          instructions:
+            - sig: divu2 v:in:u32
+              acc: inout:u32
+              prefix: unsigned
+              format: [pref_op_v_8]
+        code-template: |
+          #
+              ldai 0x7FFFFFFF
+              movi v0, %s
+              divu2 v0
+              movi v0, %s
+              ucmp v0
+        description: Check divu2 with +max and various values.
+        cases:
+          - values:
+              - "0"
+              - "0x0"
+            runner-options: ['run-failure']
+            description: Division by zero causes to exception.
+          - values:
+              - "1"
+              - "0x7FFFFFFF"
+          - values:
+              - "-1"
+              - "0"
+          - values:
+              - "0x7FFFFFFF"
+              - "0x1"
+          - values:
+              - "0x80000000"
+              - "0x0"
+          - values:
+              - "-0x7FFFFFFF"
+              - "0"
+          - values:
+              - "-0x80000000"
+              - "0x0"
+          - values:
+              - "0xFFFFFFFF"
+              - "0"
+          - values:
+              - "-0xFFFFFFFF"
+              - "0x7FFFFFFF"
+
+      - file-name: "op_vs_8_nmax"
+        isa:
+          instructions:
+            - sig: divu2 v:in:u32
+              acc: inout:u32
+              prefix: unsigned
+              format: [pref_op_v_8]
+        code-template: |
+          #
+              ldai -0x80000000
+              movi v0, %s
+              divu2 v0
+              movi v0, %s
+              ucmp v0
+        description: Check divu2 with -max and various values.
+        cases:
+          - values:
+              - "0"
+              - "0x0"
+            runner-options: ['run-failure']
+            description: Division by zero causes to exception.
+          - values:
+              - "1"
+              - "0x80000000"
+          - values:
+              - "-1"
+              - "0"
+          - values:
+              - "0x7FFFFFFF"
+              - "1"
+          - values:
+              - "0x80000000"
+              - "0x1"
+          - values:
+              - "-0x7FFFFFFF"
+              - "0"
+          - values:
+              - "-0x80000000"
+              - "0x1"
+          - values:
+              - "0xFFFFFFFF"
+              - "0"
+          - values:
+              - "-0xFFFFFFFF"
+              - "0x80000000"
+
+      - file-name: "vals"
+        isa:
+          instructions:
+            - sig: divu2 v:in:u32
+              acc: inout:u32
+              prefix: unsigned
+              format: [pref_op_v_8]
+        code-template: |
+          #
+              ldai %s
+              movi v0, %s
+              divu2 v0
+              movi v0, %s
+              ucmp v0
+        description: Check divu2 with various values.
+        tags: ['tsan']
+        cases:
+          - values:
+              - "0x76F44C0A"
+              - "0xF4AF6"
+              - "0x7C7"
+          - values:
+              - "0xA04652F6"
+              - "0x5FA70"
+              - "0x1ACF"
+          - values:
+              - "0x193F1629"
+              - "0x6E0BE"
+              - "0x3AB"
+          - values:
+              - "0xD4BB67C8"
+              - "0xA0605"
+              - "0x1539"
+          - values:
+              - "0x5F94031E"
+              - "0xF87F2"
+              - "0x627"
+          - values:
+              - "0xA88CC3FB"
+              - "0x1C945"
+              - "0x5E5C"
+          - values:
+              - "0x23D8F853"
+              - "0x4CC72"
+              - "0x778"
+          - values:
+              - "0xA8EB925D"
+              - "0x45C5"
+              - "0x26BCE"
+          - values:
+              - "0xA164F5"
+              - "0x4445"
+              - "0x25D"
+          - values:
+              - "0xF119BBC6"
+              - "0xF1C08"
+              - "0xFF4"
+
+      - file-name: "op_v_8_exception"
+        isa:
+          instructions:
+            - sig: divu2 v:in:u32
+              acc: inout:u32
+              prefix: unsigned
+              format: [pref_op_v_8]
+        header-template: [ArithmeticException, main]
+        code-template: |
+            #
+                ldai %s
+                movi v0, 0
+            begin:
+                divu2 v0
+            end:
+                ldai 1 # Should not reach this line
+                return
+
+            catch_AE:
+                ldai 0 # Expected panda.ArithmeticException
+                return
+
+            catch_all:
+                ldai 1 # Unexpected exception, test failed
+                return
+
+            .catch panda.ArithmeticException, begin, end, catch_AE
+            .catchall begin, end, catch_all
+        check-type: none
+        description: Check `divu2` throws ArithmeticException when divides by zero.
+        cases:
+          - values: ["0"]
+          - values: ["1"]
+          - values: ["0x7FFF"]
+          - values: ["0xFFFF"]
+          - values: ["0x7FFFFFFF"]
+          - values: ["0x80000000"]
+          - values: ["0xFFFFFFFF"]
+          - values: ["-1"]
+          - values: ["-0x7FFF"]
+          - values: ["-0xFFFF"]
+          - values: ["-0x7FFFFFFF"]
+          - values: ["-0x80000000"]
+          - values: ["-0xFFFFFFFF"]
+
+      - file-name: "vals_mod32_1"
+        bugid: ['1324']
+        tags: ['verifier']
+        runner-options: ['verifier-failure', 'verifier-debug-config']
+        isa:
+          instructions:
+            - sig: divu2 v:in:u32
+              acc: inout:u32
+              prefix: unsigned
+              format: [pref_op_v_8]
+        code-template: |
+          #
+              ldai %s
+              movi v0, %s
+              divu2 v0
+              movi.64 v0, %s
+              ucmp.64 v0
+        description: Check divu2 with incorrect type of accumulator and register.
+        cases:
+          - values:
+              - "0xFFFFFFFF"
+              - "1"
+              - "0xFFFFFFFF"
+          - values:
+              - "0x7FFFFFFF"
+              - "-1"
+              - "0"
+          - values:
+              - "0x80000000"
+              - "-1"
+              - "0x0000000000000000"
+
+      - file-name: "vals_mod32_2"
+        bugid: ['1324']
+        tags: ['verifier']
+        runner-options: ['verifier-failure', 'verifier-debug-config']
+        isa:
+          instructions:
+            - sig: divu2 v:in:u32
+              acc: inout:u32
+              prefix: unsigned
+              format: [pref_op_v_8]
+        code-template: |
+          #
+              ldai.64 %s
+              movi.64 v0, %s
+              divu2 v0
+              movi.64 v0, %s
+              ucmp.64 v0
+        description: Check divu2 with incorrect type of accumulator and register.
+        cases:
+          - values:
+              - "0x1FFFFFFFF"
+              - "0xFFFFFFFF"
+              - "1"
+          - values:
+              - "0x777777777FFFFFFF"
+              - "0x11111111FFFFFFFF"
+              - "0"
+          - values:
+              - "0x180000000"
+              - "0x100000001"
+              - "0x0000000080000000"
+
+      - file-name: "regs"
+        isa:
+          instructions:
+            - sig: divu2 v:in:u32
+              acc: inout:u32
+              prefix: unsigned
+              format: [pref_op_v_8]
+        runner-options: ['compile-only']
+        code-template: |
+          #
+              divu2 %s
+        check-type: none
+        description: Check divu2 with various register numbers.
+        cases:
+          - values:
+              - "v255"
+          - values:
+              - "v256"
+            runner-options: ['compile-failure']
+
+      - file-name: "type"
+        isa:
+          instructions:
+            - sig: divu2 v:in:u32
+              acc: inout:u32
+              prefix: unsigned
+              format: [pref_op_v_8]
+          verification:
+            - acc_type
+            - v1_type
+        tags: ['verifier']
+        runner-options: ['verifier-failure', 'verifier-debug-config']
+        code-template: |
+          #
+              %s
+              %s
+              divu2 v0
+              ldai 0
+        check-type: no-check
+        description: Check divu2 with incorrect type of accumulator and register.
+        cases:
+          - values:
+              - "lda.null"
+              - "movi v0, 0"
+          - values:
+              - "ldai 0 "
+              - "mov.null v0"
+          - values:
+              - "lda.null"
+              - "mov.null v0"

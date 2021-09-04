@@ -1,0 +1,363 @@
+# Copyright (c) 2021 Huawei Device Co., Ltd.
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+definitions: []
+tests:
+  - file-name: "sta.64"
+    isa:
+        title: Store accumulator
+        description: Moves accumulator content into a register.
+        exceptions:
+          - x_none
+    commands:
+      - file-name: "op_vd_8_pos"
+        isa:
+          instructions:
+            - sig: sta.64 v:out:b64
+              acc: in:b64
+              format: [op_v_8]
+        code-template: |
+          #
+              ldai.64 %s
+              sta.64 v0
+              cmp.64 v0
+        description: Check sta.64 moves accumulator content into a register (positive values).
+        tags: ['tsan']
+        cases:
+          - values:
+              - 0
+          - values:
+              - 1
+          - values:
+              - "0xF"
+          - values:
+              - "0xFF"
+          - values:
+              - "0xFFF"
+          - values:
+              - "0xFFFF"
+          - values:
+              - "0xFFFFF"
+          - values:
+              - "0xFFFFFF"
+          - values:
+              - "0xFFFFFFF"
+          - values:
+              - "0xFFFFFFFF"
+          - values:
+              - "0xFFFFFFFFF"
+          - values:
+              - "0xFFFFFFFFFF"
+          - values:
+              - "0xFFFFFFFFFFF"
+          - values:
+              - "0xFFFFFFFFFFFF"
+          - values:
+              - "0xFFFFFFFFFFFFF"
+          - values:
+              - "0xFFFFFFFFFFFFFF"
+          - values:
+              - "0xFFFFFFFFFFFFFFF"
+          - values:
+              - "0xFFFFFFFFFFFFFFFF"
+          - values:
+              - "0x7F"
+          - values:
+              - "0x7FF"
+          - values:
+              - "0x7FFF"
+          - values:
+              - "0x7FFFF"
+          - values:
+              - "0x7FFFFF"
+          - values:
+              - "0x7FFFFFF"
+          - values:
+              - "0x7FFFFFFF"
+          - values:
+              - "0x7FFFFFFFF"
+          - values:
+              - "0x7FFFFFFFFF"
+          - values:
+              - "0x7FFFFFFFFFFF"
+          - values:
+              - "0x7FFFFFFFFFFFF"
+          - values:
+              - "0x7FFFFFFFFFFFFF"
+          - values:
+              - "0x7FFFFFFFFFFFFFF"
+          - values:
+              - "0x7FFFFFFFFFFFFFFF"
+
+      - file-name: "op_vd_8_neg"
+        isa:
+          instructions:
+            - sig: sta.64 v:out:b64
+              acc: in:b64
+              format: [op_v_8]
+        code-template: |
+          #
+              ldai.64 %s
+              sta.64 v0
+              cmp.64 v0
+        description: Check sta.64 moves accumulator content into a register (negative values).
+        cases:
+          - values:
+              - "-1"
+          - values:
+              - "-0xF"
+          - values:
+              - "-0xFF"
+          - values:
+              - "-0xFFF"
+          - values:
+              - "-0xFFFF"
+          - values:
+              - "-0xFFFFF"
+          - values:
+              - "-0xFFFFFF"
+          - values:
+              - "-0xFFFFFFF"
+          - values:
+              - "-0xFFFFFFFF"
+          - values:
+              - "-0xFFFFFFFFF"
+          - values:
+              - "-0xFFFFFFFFFF"
+          - values:
+              - "-0xFFFFFFFFFFF"
+          - values:
+              - "-0xFFFFFFFFFFFF"
+          - values:
+              - "-0xFFFFFFFFFFFFF"
+          - values:
+              - "-0xFFFFFFFFFFFFFF"
+          - values:
+              - "-0xFFFFFFFFFFFFFFF"
+          - values:
+              - "-0xFFFFFFFFFFFFFFFF"
+          - values:
+              - "-0x7F"
+          - values:
+              - "-0x7FF"
+          - values:
+              - "-0x7FFF"
+          - values:
+              - "-0x7FFFF"
+          - values:
+              - "-0x7FFFFF"
+          - values:
+              - "-0x7FFFFFF"
+          - values:
+              - "-0x7FFFFFFF"
+          - values:
+              - "-0x7FFFFFFFFF"
+          - values:
+              - "-0x7FFFFFFFFFF"
+          - values:
+              - "-0x7FFFFFFFFFFF"
+          - values:
+              - "-0x7FFFFFFFFFFFF"
+          - values:
+              - "-0x7FFFFFFFFFFFFF"
+          - values:
+              - "-0x7FFFFFFFFFFFFFF"
+          - values:
+              - "-0x7FFFFFFFFFFFFFFF"
+
+      - file-name: "reg"
+        isa:
+          instructions:
+            - sig: sta.64 v:out:b64
+              acc: in:b64
+              format: [op_v_8]
+        code-template: |
+          #
+              ldai.64 0xDEADBEEFBADC0FFE
+              sta.64 %s
+              cmp.64 %s
+        description: Check sta.64 with various register numbers.
+        cases:
+          - values: [v0, v0]
+          - values: [v1, v1]
+          - values: [v7, v7]
+          - values: [v8, v8]
+          - values: [v15, v15]
+          - values: [v16, v16]
+          - values: [v127, v127]
+          - values: [v128, v128]
+          - values: [v255, v255]
+          - values: [v256, v255]
+            runner-options: [compile-failure]
+            case-check-type: no-check
+            description: Check sta.64 with incorrect register numbers.
+          - values: [a0, v255]
+            runner-options: [compile-failure]
+            case-check-type: no-check
+            description: Check sta.64 with incorrect register numbers.
+          - values: [0, v255]
+            runner-options: [compile-failure]
+            case-check-type: no-check
+            description: Check sta.64 with incorrect register numbers.
+
+      - file-name: 'type'
+        isa:
+          instructions:
+            - sig: sta.64 v:out:b64
+              acc: in:b64
+              format: [op_v_8]
+          verification:
+            - acc_type
+        tags: ['verifier']
+        runner-options: ['verifier-failure', 'verifier-debug-config']
+        header-template: []
+        code-template: |
+          #
+          .record A {}
+          .record B {}
+          .record panda.String <external>
+          .record panda.Object <external>
+          .function i32 main() {
+              ##- v1 initialization with different types
+              *s
+              ##- Accumulator initialization with incorrect types
+              %s
+              sta.64 v1
+        check-type: exit-positive
+        description: Check 'sta.64' with incorrect accumulator type. Register type is not checked.
+        template-cases:
+          - values:
+              - ldai 0
+          - values:
+              - |
+                #
+                    lda.type B
+          - values:
+              - |
+                #
+                    lda.type B[]
+          - values:
+              - |
+                #
+                    lda.type panda.String
+          - values:
+              - |
+                #
+                    lda.str "string"
+          - values:
+              - |
+                #
+                    movi v0, 10
+                    newarr v0, v0, i32[]
+                    lda.obj v0
+          - values:
+              - lda.null
+        cases:
+          - values:
+              - movi v1, 0
+          - values:
+              - movi.64 v1, 0
+          - values:
+              - fmovi.64 v1, 0
+          - values:
+              - |
+                #
+                    lda.type A
+                    sta.obj v1
+          - values:
+              - |
+                #
+                    lda.type A[]
+                    sta.obj v1
+
+          - values:
+              - |
+                #
+                    lda.type panda.String
+                    sta.obj v1
+          - values:
+              - |
+                #
+                    lda.str "string"
+                    sta.obj v1
+          - values:
+              - |
+                #
+                    movi v1, 10
+                    newarr v1, v1, f64[]
+          - values:
+              - mov.null v1
+
+      - file-name: uninitialized_regs
+        isa:
+          instructions:
+            - sig: sta.64 v:out:b64
+              acc: in:b64
+              format: [op_v_8]
+        description: Check 'sta.64' with uninitialized accumulator. Destination register is not checked.
+        tags: ['verifier']
+        runner-options: ['verifier-failure', 'verifier-debug-config']
+        header-template: []
+        code-template: |
+            #
+            .function i32 main() {
+                %s
+                sta.64 %s
+        check-type: exit-positive
+        cases:
+          - values:
+              - ''
+              - v0
+          - values:
+              - movi v0, 0
+              - v0
+          - values:
+              - ''
+              - v15
+          - values:
+              - 'movi.64 v15, 0'
+              - v15
+          - values:
+              - ''
+              - v128
+          - values:
+              - 'fmovi.64 v128, 0'
+              - v128
+          - values:
+              - ''
+              - v255
+          - values:
+              - 'mov.null v255'
+              - v255
+
+      - file-name: "err"
+        isa:
+            instructions:
+              - sig: sta.64 v:out:b64
+                acc: in:b64
+                format: [op_v_8]
+        code-template: |
+            # Check sta.64 with wrong arguments
+                %s
+        check-type: none
+        runner-options: [compile-failure]
+        description: Check sta.64 with incorrect value.
+        cases:
+            - values:
+                - sta.64 1
+            - values:
+                - sta.64 1.1
+            - values:
+                - sta.64 a0
+            - values:
+                - sta.64 ""

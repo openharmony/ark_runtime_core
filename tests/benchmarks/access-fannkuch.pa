@@ -1,0 +1,173 @@
+# Copyright (c) 2021 Huawei Device Co., Ltd.
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+.function u1 main(){
+    movi v0, 10
+    movi v1, 38
+    call.short test, v0, v1
+    return
+}
+
+.function u1 test(i32 a0, i32 a1){
+    call.short fannkuch, a0, a0
+    jne a1, if
+    ldai 0
+    return
+if:
+    ldai 1
+    return
+}
+
+.function i32 fannkuch(i32 a0){
+    mov v0, a0
+    newarr v1, v0, i32[]    #perm
+    newarr v2, v0, i32[]    #perm1
+    newarr v3, v0, i32[]    #count
+    newarr v4, v0, i32[]    #maxPerm
+    movi v5, 0        #maxFlipsCount
+    movi v15, 1
+    lda a0
+    sub2 v15
+    sta v6            #m
+    call.short init, v2, v2
+    mov v7, a0        #r
+loop:
+loop2:
+    ldai 1
+    jeq v7, loop2_exit
+    lda v7
+    sub2 v15
+    sta v8
+    lda v7
+    starr v3, v8
+    inci v7, -1
+    lda v7
+    jmp loop2
+loop2_exit:
+    ldai 0
+    ldarr v2
+    jnez label
+endif:
+loop5:
+    lda v7
+    jeq a0, if3
+    ldai 0
+    ldarr v2
+    sta v14             #perm0
+    movi v13, 0         #i=0
+    ldai 0
+loop6:
+    jeq v7, loop6_exit
+    lda v13
+    addi 1
+    ldarr v2
+    starr v2, v13
+    inci v13, 1
+    lda v13
+    jmp loop6
+loop6_exit:
+    lda v14
+    starr v2, v7
+    lda v7
+    ldarr v3
+    sub2 v15
+    starr v3, v7
+    lda v7
+    ldarr v3
+    jgtz loop5_exit
+    inci v7, 1
+    lda v7
+    jmp loop5
+loop5_exit:
+    jmp loop
+if:
+    call.short init2, v1, v2
+    movi v10, 0        #flipsCount
+loop3:
+    ldai 0
+    ldarr v1
+    sta v11            #k
+    jeqz loop3_exit
+    addi 1
+    shri 1
+    sta v12            #k2
+    movi v13, 0        #loop_counter
+    ldai 0
+loop4:
+    jeq v12, loop4_exit
+    ldarr v1
+    sta v14              #temp
+    sub v11, v13
+    ldarr v1
+    starr v1, v13
+    sub v11, v13
+    sta v0
+    lda v14
+    starr v1, v0
+    inci v13, 1
+    lda v13
+    jmp loop4
+loop4_exit:
+    inci v10, 1
+    lda v10
+    jmp loop3
+loop3_exit:
+    lda v5
+    jlt v10, if2
+endif2:
+    jmp endif
+if2:
+    mov v5, v10
+    call.short init2, v4, v2
+    jmp endif2
+if3:
+    lda v5
+    return
+label:
+    lda v6
+    ldarr v2
+    jne v6, if
+    jmp endif
+}
+
+.function void init (i32[] a0){
+    movi v1, 0
+    lenarr a0
+    sta v0       #sizeof(v0)
+    lda v1       #loop_counter
+loop:
+    jeq v0, loop_exit
+    lda v1
+    starr a0, v1
+    inci v1, 1
+    lda v1
+    jmp loop
+loop_exit:
+    return.void
+}
+
+.function void init2 (i32[] a0, i32[] a1){
+    lenarr a0
+    sta v0
+    movi v2, 0
+    lda v2
+loop:
+    jeq v0, loop_exit
+    ldarr a1
+    starr a0, v2
+    inci v2, 1
+    lda v2
+    jmp loop
+loop_exit:
+    return.void
+}

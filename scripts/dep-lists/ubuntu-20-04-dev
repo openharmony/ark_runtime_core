@@ -1,0 +1,24 @@
+# List of dependencies for testing Panda on Ubuntu 20.04
+clang-9=1:9*
+clang-format-9=1:9*
+clang-tidy-9=1:9*
+
+clang=1:10*
+g++=4:9.3*
+ninja-build=1.10.*
+
+lcov=1.14-*                                  # For coverage calculation
+libc++-dev:amd64=1:10**                      # For clang-tidy to find standard headers
+python3=3.8*                                 # For running multilingual benchmarks
+openjdk-8-jdk=8u292-*                        # For running Java benchmarks
+libasm-java=7.2-*                            # For running legacy Java files compilation
+doxygen=1.8.17-*                             # For generate documentation
+graphviz=2.42.2-*                            # For generate graphs in documentation
+unzip=6.0-*                                  # For unpacking jar
+parallel=20161222-*                          # For rt.jar test
+
+llvm=1:10*                                   # For Thread Sanitizer
+
+postgresql-client-12=12*                     # For pushing benchmark results to Grafana
+libdwarf-dev=20200114-*                      # For printing function names and line numbers
+zlib1g-dev=1:1.2.11*

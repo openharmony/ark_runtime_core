@@ -1,0 +1,3 @@
+# List of dependencies for cross-compiling Panda for x86 under Ubuntu 18.04 or 20.04 x86-64
+g++-8-multilib
+g++-multilib

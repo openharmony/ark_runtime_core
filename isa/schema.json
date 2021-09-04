@@ -1,0 +1,149 @@
+{
+    "title": "Panda Bytecode Spec (draft)",
+    "description": "Panda Bytecode specification in a machine-readable format",
+    "type": "object",
+    "required": ["chapters", "properties", "exceptions", "verification", "groups"],
+    "properties": {
+        "chapters" : {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "required": ["name", "text"],
+                "properties": {
+                    "name" : {
+                        "type": "string"
+                    },
+                    "text": {
+                        "type": "string"
+                    }
+                }
+            }
+        },
+        "properties": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "required": ["tag", "description"],
+                "properties": {
+                    "tag": {
+                       "type": "string"
+                    },
+                   "description": {
+                       "type": "string"
+                    }
+                }
+            }
+        },
+        "exceptions": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "required": ["tag", "description"],
+                "properties": {
+                    "tag": {
+                        "type": "string"
+                    },
+                    "description": {
+                        "type": "string"
+                    }
+                }
+            }
+        },
+        "verification": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "required": ["tag", "description"],
+                "properties": {
+                    "tag": {
+                        "type": "string"
+                    },
+                    "description": {
+                        "type": "string"
+                    }
+                }
+            }
+        },
+        "prefixes": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "required": ["name", "description"],
+                "properties": {
+                    "name": {
+                        "type": "string"
+                    },
+                    "description": {
+                        "type": "string"
+                    }
+                }
+            }
+        },
+        "groups": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "required": ["title", "description", "properties", "exceptions", "verification", "pseudo", "semantics", "instructions"],
+                "properties": {
+                    "title": {
+                        "type": "string"
+                    },
+                    "description": {
+                        "type": "string"
+                    },
+                    "properties": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    },
+                    "exceptions": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    },
+                    "verification": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    },
+                    "pseudo": {
+                        "type": "string"
+                    },
+                    "semantics": {
+                        "type": "string"
+                    },
+                    "prefix": {
+                        "type": "string"
+                    },
+                    "instructions": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "required": ["sig", "format", "acc"],
+                            "properties": {
+                                "sig": {
+                                    "type": "string"
+                                },
+                                "format": {
+                                    "type": "array",
+                                    "items": {
+                                        "type": "string"
+                                    }
+                                },
+                                "acc": {
+                                    "type": "string"
+                                },
+                                "prefix": {
+                                    "type": "string"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

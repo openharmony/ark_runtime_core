@@ -1,0 +1,109 @@
+# Copyright (c) 2021 Huawei Device Co., Ltd.
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+##include <iostream>
+
+#struct Obj {
+#    int data;
+#    Obj* next;
+#};
+#
+#void addNext(Obj* o, int data) {
+#    Obj* newObj = new Obj();
+#    newObj->data = data;
+#    o->next = newObj;
+#}
+
+
+#int main() {
+
+#    Obj* head = new Obj();
+#    head->data = -1;
+#    head->next = nullptr;
+#    Obj* cur;
+#    cur = head;
+#    for (int i = 0; i < 100000; i++) {
+#        addNext(cur, i);
+#        cur = cur->next;
+#    }
+
+#    int ret = 0;
+#    cur = head;
+#    for (int i = 0; i < 100000; i++) {
+#        ret += cur->data;
+#        cur = cur->next;
+#    }
+#    std::cout << ret;
+#    if(ret != 4999850000) return 1;
+#    return 0;
+#}
+
+.record IO <external>
+.record Obj {
+    i32 data
+    Obj next
+}
+.function void IO.printI64(i64 a0) <external>
+.function void addNext(Obj a0, i32 a1) {
+    newobj v0, Obj
+    lda a1          #data
+    stobj v0, Obj.data
+    lda.obj v0
+    stobj.obj a0, Obj.next
+    return.void
+}
+
+.function u1 main() {
+    movi v10, 100000
+    movi.64 v15, 4999850000
+    newobj v0, Obj
+    ldai -1
+    stobj v0, Obj.data
+    mov.obj v1, v0     #curr
+    movi v9, 0
+    ldai 0
+loop:
+    jeq v10, loop_exit
+    call.short addNext, v1, v9
+    ldobj.obj v1, Obj.next
+    sta.obj v1
+    inci v9, 1
+    lda v9
+    jmp loop
+loop_exit:
+    movi.64 v2, 0       #ret
+    mov.obj v1, v0
+    movi v9, 0
+    ldai 0
+loop2:
+    jeq v10, loop2_exit
+    ldobj v1, Obj.data
+    i32toi64
+    add2.64 v2
+    sta.64 v2
+    ldobj.obj v1, Obj.next
+    sta.obj v1
+    inci v9, 1
+    lda v9
+    jmp loop2
+loop2_exit:
+    call.short IO.printI64, v2
+    lda.64 v2
+    cmp.64 v15
+    jnez exit_failure
+    ldai 0
+    return
+exit_failure:
+    ldai 1
+    return
+}

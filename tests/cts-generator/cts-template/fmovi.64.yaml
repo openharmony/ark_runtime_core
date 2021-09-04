@@ -1,0 +1,260 @@
+# Copyright (c) 2021 Huawei Device Co., Ltd.
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+definitions: []
+tests:
+  - file-name: "fmovi.64"
+    isa:
+      title: Move immediate-to-register
+      description: >
+        Move integer immediate into a register. For short formats immediate is sign extended to operand size.
+      exceptions:
+        - x_none
+      verification:
+        - none
+    commands:
+      - file-name: "imm_64_p"
+        isa:
+          instructions:
+            - sig: fmovi.64 v:out:f64, imm:f64
+              acc: none
+              format: [op_v_8_imm_64]
+              properties: [acc_none, float]
+        code-template: |
+          #
+              fldai.64 %s
+              fmovi.64 v0, %s
+              fcmpg.64 v0
+        description: Check fmovi.64 with various positive values (f64 values, HEX literals).
+        tags: ['tsan']
+        cases:
+          - values:
+              - "0.0"
+              - "0.0"
+          - values:
+              - "0.1"
+              - "0.1"
+          - values:
+              - "1.0"
+              - "1"
+          - values:
+              - "12345678.90987654"
+              - "12345678.90987654"
+          - values:
+              - "3.141592653589793"
+              - "3.141592653589793"
+          - values:
+              - "3.1415e3"
+              - "0x40a88b0000000000"
+          - values:
+              - "1.7976931348623157e308"
+              - "0x7fefffffffffffff"
+          - values:
+              - "4.9e-324"
+              - "0x0000000000000001"
+          - values:
+              - "1.7976931348623157e308"
+              - "0x7fefffffffffffff"
+          - values:
+              - "0x1234567890ABCDEF"
+              - "5.626349108908516e-221"
+          - values:
+              - "0"
+              - "0x0000000000000000"
+          - values:
+              - "1"
+              - "0x3ff0000000000000"
+          - values:
+              - "0"
+              - "0x0000000000000000"
+          - values:
+              - "1"
+              - "0x3ff0000000000000"
+          - values:
+              - "9223372036854775807"
+              - "0x43e0000000000000"
+          - values:
+              - "0.55"
+              - "0x3fe199999999999a"
+
+      - file-name: "imm_64_n"
+        isa:
+          instructions:
+            - sig: fmovi.64 v:out:f64, imm:f64
+              acc: none
+              format: [op_v_8_imm_64]
+              properties: [acc_none, float]
+        code-template: |
+          #   test - check binary representation of FP literals
+              fmovi.64 v0, %s
+              fldai.64 %s
+              fcmpg.64 v0
+        description: Check fmovi.64 with various negative values (f64 values, HEX literals).
+        cases:
+          - values:
+              - "-0"
+              - "0x8000000000000000"
+          - values:
+              - "-0x0"
+              - "0x8000000000000000"
+          - values:
+              - "-1"
+              - "0xbff0000000000000"
+          - values:
+              - "-0x1"
+              - "0xbff0000000000000"
+          - values:
+              - "-0x7FFFFFFFFFFFFFFF"
+              - "0xc3e0000000000000"
+          - values:
+              - "-0.0"
+              - "0x8000000000000000"
+          - values:
+              - "-0.1"
+              - "0xbfb999999999999a"
+          - values:
+              - "-1.0"
+              - "0xbff0000000000000"
+          - values:
+              - "-12345678.90987654"
+              - "0xc1678c29dd1db568"
+          - values:
+              - "-3.141592653589793"
+              - "0xc00921fb54442d18"
+          - values:
+              - "-4.9e-324"
+              - "0x8000000000000001"
+          - values:
+              - "-1.7976931348623157e308"
+              - "0xffefffffffffffff"
+          - values:
+              - "-0.55"
+              - "0xbfe199999999999a"
+
+      - file-name: "err"
+        isa:
+          instructions:
+            - sig: fmovi.64 v:out:f64, imm:f64
+              acc: none
+              format: [op_v_8_imm_64]
+              properties: [acc_none, float]
+        code-template: |
+          #
+              fmovi.64 %s
+        check-type: none
+        runner-options: [compile-failure]
+        description: Check fmovi.64 with various incorrect f64 literals.
+        cases:
+
+          - values:
+              - "1e"
+          - values:
+              - "e1"
+          - values:
+              - "-1e"
+          - values:
+              - "-e1"
+          - values:
+              - "1e1e1"
+          - values:
+              - "-1e1e1"
+
+      - file-name: "range"
+        isa:
+          instructions:
+            - sig: fmovi.64 v:out:f64, imm:f64
+              acc: none
+              format: [op_v_8_imm_64]
+              properties: [acc_none, float]
+        code-template: |
+          #
+              fmovi.64 v0, %s
+        check-type: none
+        runner-options: [compile-only]
+        cases:
+          - values:
+              - "+2e-324"
+          - values:
+              - "-2e-324"
+          - values:
+              - "1.8e328"
+            bugid: ["1132"]
+            tags: ["clang_release_sanitizer"]
+          - values:
+              - "-1.8e328"
+            bugid: ["1132"]
+            tags: ["clang_release_sanitizer"]
+
+      - file-name: "range_val"
+        isa:
+          instructions:
+            - sig: fmovi.64 v:out:f64, imm:f64
+              acc: none
+              format: [op_v_8_imm_64]
+              properties: [acc_none, float]
+        code-template: |
+          #   test - check binary representation of FP literals
+              fmovi.64 v0, %s
+              fldai.64 %s
+              fcmpg.64 v0
+        cases:
+          - values:
+              - "+2e-325"
+              - "0"
+          - values:
+              - "-2e-325"
+              - "-0.0"
+          - values:
+              - "1.8e328"
+              - "0x7ff0000000000000"
+            bugid: ["1132"]
+            tags: ["clang_release_sanitizer"]
+          - values:
+              - "-1.8e328"
+              - "0xfff0000000000000"
+            bugid: ["1132"]
+            tags: ["clang_release_sanitizer"]
+
+      - file-name: "vd_8"
+        isa:
+          instructions:
+            - sig: fmovi.64 v:out:f64, imm:f64
+              acc: none
+              format: [op_v_8_imm_64]
+              properties: [acc_none, float]
+        code-template: |
+          #
+              fldai.64 1
+              fmovi.64 %s, 1
+              fcmpl.64 %s
+        cases:
+          - values:
+              - v0
+              - v0
+          - values:
+              - v1
+              - v1
+          - values:
+              - v15
+              - v15
+          - values:
+              - v16
+              - v16
+          - values:
+              - v255
+              - v255
+          - values:
+              - v256
+              - v0
+            runner-options: [compile-failure]
+            case-check-type: no-check

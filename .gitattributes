@@ -1,0 +1,6 @@
+#Set defaul end of lines for all files
+* text eol=lf
+# Denote all image files as binary
+*.png binary
+*.jpg binary
+*.gif binary

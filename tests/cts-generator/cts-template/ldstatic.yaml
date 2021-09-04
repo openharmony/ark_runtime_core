@@ -1,0 +1,358 @@
+# Copyright (c) 2021 Huawei Device Co., Ltd.
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+definitions:
+  - name: pandasm_header
+    template: |
+      .language PandaAssembly
+
+      .record panda.Object <external>
+
+      .record R {
+        u1             fu1       <static>
+        u8             fu8       <static>
+        i8             fi8       <static>
+        u16            fu16      <static>
+        i16            fi16      <static>
+        u32            fu32      <static>
+        i32            fi32      <static>
+        u64            fu64      <static>
+        i64            fi64      <static>
+        f32            ff32      <static>
+        f64            ff64      <static>
+        # objects:
+        i32[]          fi32Array <static>
+        panda.Object   fObj      <static>
+        panda.Object[] fObjArray <static>
+      }
+  - name: java_header
+    template: |
+      .language Java
+
+      .record java.lang.Object <external>
+
+      .record R {
+        u1             fu1       <static>
+        i8             fi8       <static>
+        u16            fu16      <static>
+        i16            fi16      <static>
+        i32            fi32      <static>
+        i64            fi64      <static>
+        f32            ff32      <static>
+        f64            ff64      <static>
+        # objects:
+        i32[]          fi32Array <static>
+        java.lang.Object   fObj      <static>
+        java.lang.Object[] fObjArray <static>
+      }
+
+tests:
+  - file-name: "ldstatic"
+    isa:
+      title: Get static field
+      description: >
+        Get static field value by field_id and put it into accumulator.
+      instructions:
+        - sig: ldstatic field_id
+          acc: out:i32
+          format: [op_id_16]
+    commands:
+
+      - file-name: "with_non_static_field_id"
+        description: Check that verifier reports an error if the field doesn't resolve to a static valid field
+        isa:
+          verification:
+            - field_id_static
+        header-template: []
+        check-type: exit-positive
+        code-template: |
+          .record W {
+            u1    fu1
+            i8    fi8
+            u16   fu16
+            i16   fi16
+            i32   fi32
+            i64   fi64
+            f32   ff32
+            f64   ff64
+            W     fW
+            i32[] fi32Array
+            W[]   fWArray
+          }
+          .function void W.object_function(W a0) {
+            return.void
+          }
+          .function void static_function() {
+            return.void
+          }
+
+          .function i32 main() {
+              ldstatic %s
+        cases:
+          - values:
+            - W.fu1
+            tags: [verifier]
+            runner-options: ['verifier-failure', 'verifier-debug-config']
+            bugid: ['1324', '1828']
+          - values:
+            - W.fi8
+            tags: [verifier]
+            runner-options: ['verifier-failure', 'verifier-debug-config']
+            bugid: ['1324', '1828']
+          - values:
+            - W.fu16
+            tags: [verifier]
+            runner-options: ['verifier-failure', 'verifier-debug-config']
+            bugid: ['1324', '1828']
+          - values:
+            - W.fi16
+            tags: [verifier]
+            runner-options: ['verifier-failure', 'verifier-debug-config']
+            bugid: ['1324', '1828']
+          - values:
+            - W.fi32
+            tags: [verifier]
+            runner-options: ['verifier-failure', 'verifier-debug-config']
+            bugid: ['1324', '1828']
+          - values:
+            - W.fi64
+            tags: [verifier]
+            runner-options: ['verifier-failure', 'verifier-debug-config']
+            bugid: ['1324', '1828']
+          - values:
+            - W.ff32
+            tags: [verifier]
+            runner-options: ['verifier-failure', 'verifier-debug-config']
+            bugid: ['1324', '1828']
+          - values:
+            - W.ff64
+            tags: [verifier]
+            runner-options: ['verifier-failure', 'verifier-debug-config']
+            bugid: ['1324', '1828']
+          - values:
+            - W.fW
+            tags: [verifier]
+            runner-options: ['verifier-failure', 'verifier-debug-config']
+            bugid: ['1324', '1828']
+          - values:
+            - W.fi32Array
+            tags: [verifier]
+            runner-options: ['verifier-failure', 'verifier-debug-config']
+            bugid: ['1324', '1828']
+          - values:
+            - W.fWArray
+            tags: [verifier]
+            runner-options: ['verifier-failure', 'verifier-debug-config']
+            bugid: ['1324', '1828']
+          - values:
+            - W
+            runner-options: [compile-failure]
+          - values:
+            - W.object_function
+            runner-options: [compile-failure]
+          - values:
+            - static_function
+            runner-options: [compile-failure]
+          - values:
+            - unknown_function
+            runner-options: [compile-failure]
+          - values:
+            - 0
+            runner-options: [compile-failure]
+          - values:
+            - -1.1
+            runner-options: [compile-failure]
+          - values:
+            - "null"
+            runner-options: [compile-failure]
+          - values:
+            - "\"abc\""
+            runner-options: [compile-failure]
+
+
+      - file-name: "with_wrong_field_size_p"
+        description: Check that verifier reports an error when the field resolves to a field with size that is not corresponding to bytecode in PandaAssembly context.
+        isa:
+          verification:
+            - field_id_size
+        header-template: [pandasm_header]
+        check-type: exit-positive
+        tags: [verifier]
+        runner-options: ['verifier-failure', 'verifier-debug-config']
+        bugid: ['1834', '2088']
+        code-template: |
+
+          .function i32 main() {
+            ldstatic %s
+        cases:
+          - values:
+            - R.fi64
+          - values:
+            - R.fu64
+          - values:
+            - R.ff64
+          - values:
+            - R.ff32
+          - values:
+            - R.fObj
+          - values:
+            - R.fObjArray
+          - values:
+            - R.fi32Array
+
+
+      - file-name: "from_all_field_types_p"
+        description: Check that field value is loaded into accumulator in PandaAssembly context. More tests on ldstatic can be found in ststatic tests.
+        isa:
+          description: >
+            For non-object variant, the size of the field is determined by the field_id,
+            most significant bits are sign or unsigned extended based on the field type to fit accumulator size.
+            If field size is less then 32, result will be sign or unsigned extended to i32 depedning on field type.
+        header-template: [pandasm_header]
+        check-type: exit-positive
+        tags: ['tsan']
+        code-template: |
+
+          .function i32 main() {
+            ldai %s
+            ststatic R.f%s
+            lda.null
+            movi v15, %s
+            ldstatic R.f%s
+            %s v15
+            jeqz success
+            ldai 1
+            return
+          success:
+        cases:
+          # u1
+          - values: [0, 'u1', 0, 'u1', 'ucmp']
+          - values: [1, 'u1', 1, 'u1', 'ucmp']
+          # u8
+          - values: [0, 'u8', 0, 'u8', 'ucmp']
+          - values: [0x000000ff, 'u8', 0x000000ff, 'u8', 'ucmp']
+          - values: [0x000000a5, 'u8', 0x000000a5, 'u8', 'ucmp']
+          # u16
+          - values: [0, 'u16', 0, 'u16', 'ucmp']
+          - values: [0x0000ffff, 'u16', 0x0000ffff, 'u16', 'ucmp']
+          - values: [0x0000a5a5, 'u16', 0x0000a5a5, 'u16', 'ucmp']
+          # u32
+          - values: [0, 'u32', 0, 'u32', 'ucmp']
+          - values: [0xffffffff, 'u32', 0xffffffff, 'u32', 'ucmp']
+          - values: [0xa5a5a5a5, 'u32', 0xa5a5a5a5, 'u32', 'ucmp']
+
+      - file-name: "from_all_field_types_p_int"
+        description: Check that field value is loaded into accumulator in PandaAssembly context. Signed integer types. More tests on ldstatic can be found in ststatic tests.
+        isa:
+          description: >
+            For non-object variant, the size of the field is determined by the field_id,
+            most significant bits are sign or unsigned extended based on the field type to fit accumulator size.
+            If field size is less then 32, result will be sign or unsigned extended to i32 depedning on field type.
+        header-template: [pandasm_header]
+        check-type: exit-positive
+        tags: ['tsan']
+        code-template: |
+
+          .function i32 main() {
+            ldai %s
+            ststatic R.f%s
+            lda.null
+            movi v15, %s
+            ldstatic R.f%s
+            jeq v15, success
+            ldai 1
+            return
+          success:
+        cases:
+          # i8
+          - values: [0, 'i8', 0, 'i8']
+          - values: [0x000000ff, 'i8', 0xffffffff, 'i8']
+          - values: [0x000000a5, 'i8', 0xffffffa5, 'i8']
+          - values: [0x0000005a, 'i8', 0x0000005a, 'i8']
+          # i16
+          - values: [0, 'i16', 0, 'i16']
+          - values: [0x0000ffff, 'i16', 0xffffffff, 'i16']
+          - values: [0x0000a5a5, 'i16', 0xffffa5a5, 'i16']
+          - values: [0x00005a5a, 'i16', 0x00005a5a, 'i16']
+          # i32
+          - values: [0, 'i32', 0, 'i32']
+          - values: [0xffffffff, 'i32', 0xffffffff, 'i32']
+          - values: [0xa5a5a5a5, 'i32', 0xa5a5a5a5, 'i32']
+          - values: [0x5a5a5a5a, 'i32', 0x5a5a5a5a, 'i32']
+
+      - file-name: "x_init_p"
+        description: Check that ExceptionInInitializerError is thrown if an unexpected exception occurs in static initializer.
+        isa:
+          exceptions:
+            - x_init
+        header-template: []
+        check-type: empty
+        tags: ['tsan']
+        bugid: ['5330']
+        ignore: true
+        code-template: |
+
+          .language PandaAssembly
+
+          .record panda.ExceptionInInitializerError <external>
+          .record panda.NullPointerException <external>
+          .record E1 {}
+          .record R {
+              i32     fi32    <static>
+          }
+
+          .function void R.func() <cctor> {
+              %s
+              return.void
+          }
+
+          .function i32 main() {
+          begin:
+              ldstatic R.fi32
+              ldai 2
+              return
+          end:
+          catch:
+              ldai 0
+              return
+          catch_all:
+              ldai 1
+              return
+          .catch panda.ExceptionInInitializerError, begin, end, catch
+          .catchall begin, end, catch_all
+          }
+        cases:
+          - values:
+            - |
+              #
+                  newobj v0, E1
+                  throw v0
+          - values:
+            - |
+              #
+                  newobj v0, panda.NullPointerException
+                  throw v0
+          - values:
+            - |
+              #
+                  movi v1, 0
+                  ldai 1
+                  div2 v1     # divide by zero
+          - values:
+            - |
+              #
+                  movi v1, 10
+                  newarr v1, v1, i32[]
+                  ldai 10
+                  ldarr v1    # get ArrayIndexOutOfBoundsException
+

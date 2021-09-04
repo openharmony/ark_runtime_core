@@ -1,0 +1,258 @@
+# Copyright (c) 2021 Huawei Device Co., Ltd.
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+definitions: []
+tests:
+  - file-name: "return.void"
+    isa:
+      title: Return from a void method
+      description: >
+        Return from the current method, i.e. restore the frame of method invoker and return control to the invoker.
+        Caller should treat accumulator value as undefined and cannot use it until accumulator definition in the caller
+        frame.
+      verification:
+        - none
+      exceptions:
+        - x_none
+    commands:
+      - file-name: "op_none"
+        bugid: ['5271']
+        # ignore: true
+        isa:
+          instructions:
+            - sig: return.void
+              acc: none
+              format: [op_none]
+        header-template: []
+        code-template: |
+          .function %s func(%s) {
+              return.void
+          }
+
+          .function i32 main() {
+              %s
+              call.short func%s
+        check-type: exit-positive
+        description: Check 'return.void' returns control flow to caller.
+        cases:
+          - values:
+              - void
+              - ''
+              - ''
+              - ''
+
+          - values:
+              - i32
+              - ''
+              - ''
+              - ''
+            tags: [verifier]
+            bugid: ['1324']
+            runner-options: ['verifier-failure', 'verifier-debug-config']
+            description: Return type of function does not match 'void' type.
+          - values:
+              - void
+              - 'i32 a0'
+              - 'movi v0, 0'
+              - ', v0'
+
+          - values:
+              - void
+              - 'i32 a0, f64 a1'
+              - |
+                #
+                    movi v0, 0
+                    fmovi.64 v1, 1.2
+              - ', v0, v1'
+
+      - file-name: "type"
+        tags: [verifier]
+        bugid: ['1324']
+        runner-options: ['verifier-failure', 'verifier-debug-config']
+        isa:
+          instructions:
+            - sig: return.void
+              acc: none
+              format: [op_none]
+        header-template: []
+        code-template: |
+          %s
+          .function %s func() {
+              return.void
+          }
+
+          .function i32 main() {
+              call.short func
+        check-type: exit-positive
+        description: Check 'return.void' is used in function with not void return type.
+        cases:
+          - values: ['', i32]
+          - values: ['', i64]
+          - values: ['', f64]
+          - values:
+              - .record Obj {}
+              - Obj
+
+      - file-name: "wrong_return"
+        tags: [verifier]
+        runner-options: ['verifier-failure', 'verifier-debug-config']
+        isa:
+          instructions:
+            - sig: return.void
+              acc: none
+              format: [op_none]
+        header-template: []
+        code-template: |
+          .function void func() {
+              %s
+          }
+
+          .function i32 main() {
+              call.short func
+        check-type: exit-positive
+        description: Check the verifier behavior when expected 'return.void' is not given.
+        cases:
+          - values:
+            - |
+              #
+                  lda.null
+          - values:
+            - |
+              #
+                  ldai 0
+                  return
+          - values:
+            - |
+              #
+                  fldai.64 1.0
+                  return.64
+          - values:
+            - |
+              #
+                  lda.str "test"
+                  return.obj
+
+      - file-name: "regs_restore"
+        isa:
+          instructions:
+            - sig: return.void
+              acc: none
+              format: [op_none]
+        header-template: []
+        check-type: none
+        code-template: |
+          .function void func(%s) {
+              %s
+              return.void
+          }
+
+          .function i32 main() {
+              %s
+              call.short func%s
+              %s
+        description: Check that after 'return.void' register are restored in caller.
+        cases:
+          - values:
+              - ''
+              - ''
+              - 'movi v0, 0x12345678'
+              - ''
+              - |
+                #
+                    ldai 0x12345678
+                    jne v0, exit_failure
+                    ldai 0
+                    return
+                exit_failure: ldai 1
+                    return
+            description: "Register is not used in function."
+          - values:
+              - 'i32 a0'
+              - 'movi v0, 0x87654321'
+              - 'movi v0, 0x12345678'
+              - ', v0'
+              - |
+                #
+                    ldai 0x12345678
+                    jne v0, exit_failure
+                    ldai 0
+                    return
+                exit_failure: ldai 1
+                    return
+            description: "Register is used in function."
+
+          - values:
+              - 'i32 a0'
+              - ''
+              - 'movi v0, 0x12345678'
+              - ', v0'
+              - |
+                #
+                    ldai 0x12345678
+                    jne v0, exit_failure
+                    ldai 0
+                    return
+                exit_failure: ldai 1
+                    return
+            description: "Register is not used in function."
+
+          - values:
+              - 'f64 a0, i64 a1'
+              - |
+                #
+                    fmovi.64 v0, 0
+                    movi.64 v1, 0
+              - |
+                #
+                    fmovi.64 v0, 3.1415926535
+                    movi.64 v1, 0x123456789ABCDEF0
+              - ', v0, v1'
+              - |
+                #
+                    fldai.64 3.1415926535
+                    fcmpg.64 v0
+                    jeqz check2
+                    ldai 1
+                    return
+                check2:
+                    ldai.64 0x123456789ABCDEF0
+                    cmp.64 v1
+                    jnez exit_failure
+                    ldai 0
+                    return
+                exit_failure:
+                    ldai 1
+                    return
+            description: "Registers are used in function."
+
+      - file-name: "undef_acc"
+        isa:
+          instructions:
+            - sig: return.void
+              acc: none
+              format: [op_none]
+        tags: [verifier]
+        bugid: ['1324']
+        runner-options: ['verifier-failure', 'verifier-debug-config']
+        description: Check accumulator value if undefined after 'return.void'.
+        header-template: []
+        code-template: |
+          .function void func() {
+              return.void
+          }
+
+          .function i32 main() {
+              ldai 0
+              call.short func
+              sta v0
+        check-type: exit-positive

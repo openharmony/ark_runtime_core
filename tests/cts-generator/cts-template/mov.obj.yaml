@@ -1,0 +1,447 @@
+# Copyright (c) 2021 Huawei Device Co., Ltd.
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+definitions: []
+
+tests:
+  - file-name: "mov.obj"
+    isa:
+      title: Move register-to-register
+      description: Move values between registers.
+      exceptions:
+        - x_none
+    commands:
+      - file-name: "op_p"
+        isa:
+          instructions:
+            - sig: mov.obj v1:out:ref, v2:in:ref
+              acc: none
+              format: [op_v1_4_v2_4, op_v1_8_v2_8, op_v1_16_v2_16]
+        code-template: |
+          %s
+          # header
+          .function i32 main() {
+          #
+              newobj v0, Object
+              lda.obj v0
+              mov.obj v1, v0
+              jne.obj v1, return_ne_num
+              ldai 0
+              return
+          return_ne_num:
+              ldai 1
+              return
+        header-template: []
+        description: Check mov.obj with different type of arguments (empty object, with fields, with static fields, string, type) in PandaAssemby context.
+        tags: ['tsan']
+        cases:
+          - values:
+              - |
+                .record Object {
+                }
+          - values:
+              - |
+                .record Object {
+                    i32 fld2
+                }
+          - values:
+              - |
+                .record Object {
+                    i64 fld2
+                }
+          - values:
+              - |
+                .record Object {
+                    u64 fld2
+                }
+          - values:
+              - |
+                .record Object {
+                    i32 fld2 <static>
+                }
+          - values:
+              - |
+                .record Object {
+                    i32 fld1
+                    i32 fld2 <static>
+                }
+
+          - values:
+              - |
+                .record Object {
+                    i64 fld1
+                    i64 fld2 <static>
+                }
+          - values:
+              - |
+                .record Object {
+                    f64 fld1
+                    f64 fld2 <static>
+                }
+          - values:
+              - |
+                .record Object {
+                    f32 fld1
+                    f32 fld2 <static>
+                    f64 fld3
+                    f64 fld4 <static>
+                    i32 fld5
+                    i32 fld6 <static>
+                    i64 fld7
+                    i64 fld8 <static>
+                }
+          - case-template: |
+              #
+              .function i32 main() {
+              # Check mov.obj for string
+                  lda.str ""
+                  sta.obj v0
+                  mov.obj v1, v0
+                  jne.obj v1, return_ne_num
+                  ldai 0
+                  return
+              return_ne_num:
+                  ldai 1
+                  return
+          - case-template: |
+              #
+              .record Object {}
+              .function i32 main() {
+              # Check mov.obj for type
+                  lda.type Object
+                  sta.obj v0
+                  mov.obj v1, v0
+                  jne.obj v1, return_ne_num
+                  ldai 0
+                  return
+              return_ne_num:
+                  ldai 1
+                  return
+
+      - file-name: "null"
+        isa:
+          instructions:
+            - sig: mov.obj v1:out:ref, v2:in:ref
+              acc: none
+              format: [op_v1_4_v2_4, op_v1_8_v2_8, op_v1_16_v2_16]
+        code-template: |
+          %s
+          # header
+          .function i32 main() {
+          # Check mov.obj for null
+              mov.null v0
+              mov.obj v1, v0
+              newobj v2, Object
+              lda.obj v2
+              jne.obj v1, ok
+              ldai 1
+              return
+          ok:
+              ldai 0
+              return
+        header-template: []
+        check-type: none
+        description: Check mov.obj with null value.
+        cases:
+          - values:
+              - |
+                .record Object {
+                }
+          - case-template: |
+              # header
+              .function i32 main() {
+              #
+                  mov.null v0
+                  mov.obj v1, v0
+                  lda.null
+                  jeq.obj v1, ok
+                  ldai 1
+                  return
+              ok:
+                  ldai 0
+                  return
+            case-check-type: none
+
+      - file-name: "op_4_8_16"
+        isa:
+            instructions:
+              - sig: mov.obj v1:out:ref, v2:in:ref
+                acc: none
+                format: [op_v1_4_v2_4, op_v1_8_v2_8, op_v1_16_v2_16]
+        code-template: |
+            .record Object {}
+            # header
+            .function i32 main() {
+            # Check mov.obj with different registers number
+                newobj v0, Object
+                lda.obj v0
+                mov.obj %s, v0
+                mov.obj v1, %s
+                jne.obj v1, return_ne_num
+                ldai 0
+                return
+            return_ne_num:
+                ldai 1
+                return
+        header-template: []
+        description: Check mov.obj instruction with different register numbers (4, 8, 16 bit).
+        cases:
+            - values: [v0, v0]
+            - values: [v7, v7]
+            - values: [v8, v8]
+            - values: [v15, v15]
+            - values: [v16, v16]
+            - values: [v127, v127]
+            - values: [v128, v128]
+            - values: [v255, v255]
+            - values: [v256, v256]
+            - values: [v16384, v16384]
+            - values: [v32767, v32767]
+            - values: [v32768, v32768]
+            - values: [v65524, v65524]
+            - values: [v65535, v65535]
+            - values: [v65536, v65536]
+              runner-options: [compile-failure]
+      - file-name: "op_4_8_16_null"
+        isa:
+            instructions:
+              - sig: mov.obj v1:out:ref, v2:in:ref
+                acc: none
+                format: [op_v1_4_v2_4, op_v1_8_v2_8, op_v1_16_v2_16]
+        code-template: |
+            # Check mov.obj with different registers number and null
+                mov.null v0
+                mov.obj %s, v0
+                mov.obj v1, %s
+                lda.null
+                jne.obj v1, return_ne_num
+                ldai 0
+                return
+            return_ne_num:
+                ldai 1
+                return
+        description: Check mov.obj instruction with different register numbers (4, 8, 16 bit) and null value.
+        cases:
+            - values: [v0, v0]
+            - values: [v7, v7]
+            - values: [v8, v8]
+            - values: [v15, v15]
+            - values: [v16, v16]
+            - values: [v127, v127]
+            - values: [v128, v128]
+            - values: [v255, v255]
+            - values: [v256, v256]
+            - values: [v16384, v16384]
+            - values: [v32767, v32767]
+            - values: [v32768, v32768]
+            - values: [v65524, v65524]
+            - values: [v65535, v65535]
+            - values: [v65536, v65536]
+              runner-options: [compile-failure]
+
+      - file-name: "op_type"
+        tags: ['verifier']
+        bugid: ['966', '964']
+        description: Check mov.obj instruction with incorrect type of source argument.
+        isa:
+            instructions:
+              - sig: mov.obj v1:out:ref, v2:in:ref
+                acc: none
+                format: [op_v1_4_v2_4, op_v1_8_v2_8, op_v1_16_v2_16]
+            verification:
+              - v2_type
+        code-template: |
+            # Check mov.obj with wrong type
+                %s
+                mov.obj v1, v0
+        check-type: none
+        runner-options: ['verifier-failure', 'verifier-debug-config']
+        cases:
+            - values:
+                - movi v0, 123
+            - values:
+                - movi.64 v0, 123
+            - values:
+                - fmovi.64 v0, 123
+            - values:
+                - movi v0, 0
+            - values:
+                - movi.64 v0, 0
+            - values:
+                - fmovi.64 v0, 0
+
+      - file-name: "err"
+        isa:
+            instructions:
+              - sig: mov.obj v1:out:ref, v2:in:ref
+                acc: none
+                format: [op_v1_4_v2_4, op_v1_8_v2_8, op_v1_16_v2_16]
+            verification:
+              - v2_type
+        code-template: |
+            #
+                %s
+        check-type: none
+        runner-options: [compile-failure]
+        description: Check mov.obj instruction with wrong arguments.
+        cases:
+            - values:
+                - mov.obj 1, 1
+            - values:
+                - mov.obj "", v0
+            - values:
+                - mov.obj v0, ""
+            - values:
+                - mov.obj v0, 1
+            - values:
+                - mov.obj 1, v0
+            - values:
+                - mov.obj 0, v0
+            - values:
+                - mov.obj v0, 0
+            - values:
+                - mov.obj v0, 1.1
+            - values:
+                - mov.obj 1.1, v0
+            - values:
+                - mov.obj a0, a0
+            - values:
+                - mov.obj a0, v0
+            - values:
+                - mov.obj v0, a0
+            - values:
+                - mov.obj "", ""
+            - values:
+                - mov.obj a0, ""
+            - values:
+                - mov.obj "", a0
+
+      - file-name: "type_p"
+        tags: ['verifier']
+        isa:
+          instructions:
+            - sig: mov.obj v1:out:ref, v2:in:ref
+              acc: none
+              format: [op_v1_4_v2_4, op_v1_8_v2_8, op_v1_16_v2_16]
+          verification:
+            - v2_type
+        runner-options: ['verifier-failure', 'verifier-debug-config']
+        header-template: []
+        code-template: |
+            #
+            .record A {}
+            .record B {}
+            .record panda.String <external>
+            .record panda.Object <external>
+            .function i32 main() {
+                %s
+                *s
+                mov.obj v0, v1
+                ldai 0
+        check-type: no-check
+        description: Check mov.obj with incorrect source register type in PandaAssembly context. Destination type is not checked.
+        template-cases:
+          - values:
+              - |
+                #
+                    lda.type B
+                    sta.obj v0
+          - values:
+              - |
+                #
+                    lda.type B[]
+                    sta.obj v0
+          - values:
+              - |
+                #
+                    lda.type panda.String
+                    sta.obj v0
+          - values:
+              - |
+                #
+                    lda.type panda.Object
+                    sta.obj v0
+          - values:
+              - |
+                #
+                    movi v0, 10
+                    newarr v0, v0, i32[]
+          - values:
+              - mov.null v0
+          - values:
+              - movi v0, 0
+          - values:
+              - movi.64 v0, 0
+          - values:
+              - fmovi.64 v0, 0
+        cases:
+          - values:
+              - movi v1, 0
+          - values:
+              - movi.64 v1, 0
+          - values:
+              - fmovi.64 v1, 0
+
+      - file-name: uninitialized_regs
+        isa:
+          instructions:
+            - sig: mov.obj v1:out:ref, v2:in:ref
+              acc: none
+              format: [op_v1_4_v2_4, op_v1_8_v2_8, op_v1_16_v2_16]
+        description: Check mov.obj with uninitialized registers.
+        tags: ['verifier']
+        runner-options: ['verifier-failure', 'verifier-debug-config']
+        header-template: []
+        code-template: |
+          #
+          .function i32 main() {
+              %s
+              *s
+              mov.obj %s, *s
+              ldai 0
+        check-type: no-check
+        template-cases:
+          - values: ['', 'v0']
+          - values: ['', 'v256']
+          - values: ['', 'v65535']
+          - values:
+              - movi v2, 0
+              - v2
+          - values:
+              - |
+                #
+                    mov.null v1
+                    mov.obj v65534, v1
+              - v65534
+          - values:
+              - |
+                #
+                    mov.null v1
+                    mov.obj v257, v1
+              - v257
+        cases:
+          - values:
+              - ''
+              - v0
+          - values:
+              - ''
+              - v8
+          - values:
+              - ''
+              - v15
+          - values:
+              - ''
+              - v256
+          - values:
+              - ''
+              - v65535

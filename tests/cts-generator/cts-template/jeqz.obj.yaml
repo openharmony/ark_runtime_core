@@ -1,0 +1,496 @@
+# Copyright (c) 2021 Huawei Device Co., Ltd.
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+definitions:
+  - name: java
+    template: |
+      .language Java
+
+tests:
+  - file-name: "jeqz.obj"
+    isa:
+      title: Conditional compared to null jump
+      description: >
+        Transfer execution to an instruction at offset bytes from the beginning of the current instruction if
+        object reference in accumulator compares with null as specified. Offset is sign extended to the size of
+        instruction address.
+      exceptions:
+        - x_none
+      instructions:
+        - sig: jeqz.obj imm:i32
+          acc: in:ref
+          format: [op_imm_8, op_imm_16]
+    commands:
+
+      - file-name: "invalid_offset"
+        isa:
+          verification:
+            - branch_target
+          instructions:
+            - sig: jeqz.obj imm:i32
+              acc: in:ref
+              format: [op_imm_8, op_imm_16]
+        runner-options: [compile-failure]
+        description: Check 'jeqz.obj' instruction with invalid offset.
+        header-template: []
+        code-template: |
+            .function i32 main() {
+                jeqz.obj %s
+            lbl:
+        check-type: exit-positive
+        cases:
+          - values: [""]
+          - values: ["main"]
+          - values: ["v1"]
+          - values: ["v1, lbl"]
+          - values: ["}"]
+          - values: ["# lbl"]
+          - values: ["Lbl"]
+          - values: ["LBL"]
+
+
+      - file-name: "uninitialized_acc"
+        isa:
+          verification:
+            - acc_obj_or_null
+        runner-options: ['verifier-failure', 'verifier-debug-config']
+        tags: [verifier]
+        description: Check 'jeqz.obj' instruction with uninitialized accumulator.
+        header-template: []
+        code-template: |
+            .function i32 main() {
+                jeqz.obj lbl
+                ldai 1
+                return
+            lbl:
+        check-type: exit-positive
+
+
+      - file-name: "invalid_branch_target"
+        isa:
+          verification:
+            - branch_target
+        runner-options: [compile-failure]
+        description: Check 'jeqz.obj' instruction with invalid branch target.
+        header-template: []
+        code-template: |
+            .record R {}
+
+            .function void R.ctor(R a0) <ctor> {
+            lbl_ctor:
+                return.void
+            }
+
+            .function void R.cctor() <cctor> {
+            lbl_cctor:
+                return.void
+            }
+
+            .function i32 foo() <static> {
+                lda.null
+                jeqz.obj %s
+            }
+
+            .function i32 bar() <static> {
+            lbl_bar:
+                ldai 1
+                return
+            }
+
+            .function i32 main() {
+                call.short foo
+            lbl_main:
+        check-type: exit-positive
+        cases:
+          - values: ["main"]
+          - values: ["foo"]
+          - values: ["bar"]
+          - values: ["baz"]
+          - values: ["R"]
+          - values: ["lbl_main"]
+          - values: ["lbl_bar"]
+          - values: ["lbl_ctor"]
+          - values: ["lbl_cctor"]
+
+
+      - file-name: "prohibited_branch_target_p"
+        isa:
+          verification:
+            - branch_target
+        runner-options: ['verifier-failure', 'verifier-debug-config']
+        tags: [verifier]
+        description: Check 'jeqz.obj' instruction with prohibited branch target in PandaAssembly context.
+        header-template: []
+        code-template: |
+            .record E1 {}
+            .record E2 {}
+            .record R {}
+
+            .function void R.ctor(R a0) <ctor> {
+                return.void
+            }
+
+            .function i32 main() {
+                lda.null
+                jeqz.obj %s
+
+            begin:
+                ldai 0
+                return
+            mid:
+                ldai 1
+                return
+            end:
+                ldai 2
+                return
+
+            catch_E1_begin:
+                ldai 3
+                return
+            catch_E1_mid:
+                ldai 4
+                return
+            catch_E1_end:
+                ldai 5
+                return
+
+            catch_E2_begin:
+                ldai 6
+                return
+            catch_E2_mid:
+                ldai 7
+                return
+            catch_E2_end:
+
+            quit:
+                ldai 8
+                return
+
+            .catch E1, begin, end, catch_E1_begin, catch_E1_end
+            .catch E2, catch_E1_begin, catch_E1_end, catch_E2_begin, catch_E2_end
+            outside:
+        check-type: none
+        cases:
+          - values: ["begin"]
+            runner-options: ['verifier-only', 'verifier-debug-config']
+          - values: ["mid"]
+            runner-options: ['verifier-only', 'verifier-debug-config']
+          - values: ["end"]
+            runner-options: ['verifier-only', 'verifier-debug-config']
+          - values: ["quit"]
+            runner-options: ['verifier-only', 'verifier-debug-config']
+          - values: ["catch_E1_begin"]
+          - values: ["catch_E1_mid"]
+          - values: ["catch_E1_end"]
+            runner-options: ['verifier-only', 'verifier-debug-config']
+          - values: ["catch_E2_begin"]
+          - values: ["catch_E2_mid"]
+          - values: ["catch_E2_end"]
+            runner-options: ['verifier-only', 'verifier-debug-config']
+          - values: ["outside"]
+
+
+      - file-name: "invalid_acc_value"
+        isa:
+          verification:
+            - acc_obj_or_null
+        runner-options: ['verifier-failure', 'verifier-debug-config']
+        tags: [verifier]
+        description: Check 'jeqz.obj' instruction with invalid accumulator value
+        header-template: []
+        code-template: |
+            .function i32 main() {
+                %s
+                jeqz.obj ok
+                ldai 1
+                return
+            ok:
+        check-type: exit-positive
+        cases:
+          - values:
+            - ldai 0
+          - values:
+            - ldai 1
+          - values:
+            - ldai 0x7fffffff
+          - values:
+            - ldai 0xffffffff
+          - values:
+            - ldai 0x80000000
+          - values:
+            - ldai.64 0
+          - values:
+            - ldai.64 1
+          - values:
+            - ldai.64 0x7fffffffffffffff
+          - values:
+            - ldai.64 0xffffffffffffffff
+          - values:
+            - ldai.64 0x8000000000000000
+          - values:
+            - |
+              #
+                  fldai.64 0x0000000000000000 # Positive zero (+0.0, hexadecimal representation is `0x0000000000000000`)
+          - values:
+            - |
+              #
+                  fldai.64 0x8000000000000000 # Negative zero (-0.0, hexadecimal representation is `0x8000000000000000`)
+          - values:
+            - |
+              #
+                  fldai.64 0x0000000000000001 # Minimal positive value (4.9E-324, hexadecimal representation is `0x0000000000000001`)
+          - values:
+            - |
+              #
+                  fldai.64 0x8000000000000001 # Maximal negative value (-4.9E-324, hexadecimal representation is `0x8000000000000001`)
+          - values:
+            - |
+              #
+                  fldai.64 0x7fefffffffffffff # Maximal positive value (1.7976931348623157e308, hexadecimal representation is `0x7fefffffffffffff`)
+          - values:
+            - |
+              #
+                  fldai.64 0xffefffffffffffff # Minimal negative value (-1.7976931348623157e308, hexadecimal representation is `0xffefffffffffffff`)
+          - values:
+            - |
+              #
+                  fldai.64 0x7ff0000000000000 # Positive infinity (hexadecimal representation is `0x7ff0000000000000`)
+          - values:
+            - |
+              #
+                  fldai.64 0xfff0000000000000 # Negative infinity (hexadecimal representation is `0xfff0000000000000`)
+          - values:
+            - |
+              #
+                  fldai.64 0x7ff8000000000000 # NaN
+
+
+      - file-name: "valid_null_value_p"
+        isa:
+          description: >
+            Transfer execution to an instruction at offset bytes from the beginning of the current instruction if
+            object reference in accumulator compares with null as specified. Offset is sign extended to the size of
+            instruction address.
+        description: Check 'jeqz.obj' instruction with valid null value in PandaAssembly context.
+        header-template: []
+        tags: [tsan]
+        code-template: |
+            .function i32 main() {
+                lda.null
+                jeqz.obj ok
+                ldai 1
+                return
+            ok:
+        check-type: exit-positive
+
+
+      - file-name: "valid_not_null_values_p"
+        isa:
+          description: >
+            Transfer execution to an instruction at offset bytes from the beginning of the current instruction if
+            object reference in accumulator compares with null as specified. Offset is sign extended to the size of
+            instruction address.
+        description: Check 'jeqz.obj' instruction with valid not null values in PandaAssembly context.
+        header-template: []
+        tags: [tsan]
+        code-template: |
+            .record panda.String <external>
+            .record panda.Class <external>
+            .record panda.Object <external>
+            .record R {}
+            .function void R.ctor(R a0) <ctor> {
+                return.void
+            }
+            .function i32 main() {
+                %s
+                jeqz.obj eq
+                ldai 0
+                return
+            eq:
+                ldai 1
+                return
+        check-type: none
+        cases:
+          - values:
+            - initobj R.ctor
+          - values:
+            - lda.str "test1"
+          - values:
+            - lda.type R
+          - values:
+            - lda.type panda.Object
+          - values:
+            - |
+              #
+                  movi v2, 10
+                  newarr v2, v2, u32[]
+                  lda.obj v2
+          - values:
+            - |
+              #
+                  movi v2, 10
+                  newarr v2, v2, u64[][]
+                  lda.obj v2
+          - values:
+            - |
+              #
+                  movi v2, 10
+                  newarr v2, v2, R[]
+                  lda.obj v2
+          - values:
+            - |
+              #
+                  movi v2, 10
+                  newarr v2, v2, panda.Class[][]
+                  lda.obj v2
+          - values:
+            - |
+              #
+                  movi v2, 10
+                  newarr v2, v2, panda.String[][][]
+                  lda.obj v2
+
+
+      - file-name: "valid_offset_values"
+        isa:
+          description: >
+            Transfer execution to an instruction at offset bytes from the beginning of the current instruction if
+            object reference in accumulator compares with null as specified. Offset is sign extended to the size of
+            instruction address.
+        description: Check 'jeqz.obj' instruction with valid offset values.
+        header-template: []
+        code-template: |
+            .function i32 main() {
+                lda.null
+                %s
+                ldai 1      # 2-byte instruction
+                return      # 1-byte instruction
+            quit:
+        check-type: exit-positive
+        cases:
+          - description: Same instruction jump, offset imm8, 0 bytes
+            values:
+              - |
+                #
+                    lda.str "test"
+                lbl:
+                    jeqz.obj lbl
+                    ldai 0
+                    return
+          - description: Max forward jump for imm8, 2 + 120 + 2 + 3 = 127 bytes
+            values:
+              - |
+                #
+                    jeqz.obj quit         # 2-byte instruction
+                    movi.64 v0, 0 ##*12
+                    lda.null
+                    lda.null
+          - description: Max backward jump for imm8, 3 + 120 + 5 = 128 bytes
+            values:
+              - |
+                #
+                    jmp lbl2
+                lbl1:
+                    jmp quit              # 3-byte instruction
+                    movi.64 v0, 0 ##*12
+                    ldai 1
+                    ldai 1
+                    return
+                lbl2:
+                    jeqz.obj lbl1
+            tags: [tsan]
+          - description: Max forward jump for imm16, 3 + 32760 + 1 + 3 = 32767 bytes
+            values:
+              - |
+                #
+                    jeqz.obj quit       # 3-byte instruction
+                    movi.64 v0, 0 ##*3276
+                    lda.null
+          - description: Beyond max forward jump for imm16, 3 + 40000 + 3 = 40006 bytes. Converted to jnez.obj + jmp by compiler.
+            values:
+              - |
+                #
+                    jeqz.obj quit      # 3-byte instruction
+                    movi.64 v0, 0 ##*4000
+            tags: [tsan]
+          - description: Max backward jump for imm16, 5 + 32760 + 3 = 32768 bytes
+            values:
+              - |
+                #
+                    jmp lbl2
+                lbl1:
+                    jmp quit              # 5-byte instruction
+                    movi.64 v0, 0 ##*3276
+                    ldai 1
+                    return
+                lbl2:
+                    jeqz.obj lbl1
+          - description: Beyond max backward jump for imm16, 5 + 40000 = 40005 bytes. Converted to jnez.obj + jmp by compiler.
+            values:
+              - |
+                #
+                    jmp lbl2
+                lbl1:
+                    jmp quit              # 5-byte instruction
+                    movi.64 v0, 0 ##*4000
+                    ldai 1
+                    return
+                lbl2:
+                    jeqz.obj lbl1
+          - description: Chain of forward jumps
+            values:
+              - |
+                #
+                    jeqz.obj lbl1
+                    ldai 2
+                    return
+                lbl1:
+                    jeqz.obj lbl2
+                    ldai 3
+                    return
+                lbl2:
+                    jeqz.obj lbl3
+                    ldai 4
+                    return
+                lbl3:
+                    jeqz.obj lbl4
+                    ldai 5
+                    return
+                lbl4:
+                    jeqz.obj quit
+          - description: Chain of backward jumps
+            values:
+              - |
+                #
+                    jmp lbl1
+                lbl6:
+                    jmp quit
+                lbl5:
+                    jeqz.obj lbl6
+                    ldai 5
+                    return
+                lbl4:
+                    jeqz.obj lbl5
+                    ldai 4
+                    return
+                lbl3:
+                    jeqz.obj lbl4
+                    ldai 3
+                    return
+                lbl2:
+                    jeqz.obj lbl3
+                    ldai 2
+                    return
+                lbl1:
+                    jeqz.obj lbl2
+            tags: [tsan]

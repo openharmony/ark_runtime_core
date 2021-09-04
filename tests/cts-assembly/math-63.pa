@@ -1,0 +1,288 @@
+# Copyright (c) 2021 Huawei Device Co., Ltd.
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+# (a0 << 21) & ~a1
+.function i32 and_not_shl_i32(i32 a0, i32 a1) <static> {
+  movi v0, 21
+  lda a0
+  shl2 v0
+  sta v0
+  lda a1
+  not
+  and2 v0
+  return
+}
+# (a0 >>> 21) & ~a1
+.function i32 and_not_shr_i32(i32 a0, i32 a1) <static> {
+  movi v0, 21
+  lda a0
+  shr2 v0
+  sta v0
+  lda a1
+  not
+  and2 v0
+  return
+}
+# (a0 >> 21) & ~a1
+.function i32 and_not_ashr_i32(i32 a0, i32 a1) <static> {
+  movi v0, 21
+  lda a0
+  ashr2 v0
+  sta v0
+  lda a1
+  not
+  and2 v0
+  return
+}
+# a1 & ~(a0 << 21)
+.function i32 and_not_shl_i32_2(i32 a0, i32 a1) <static> {
+  movi v0, 21
+  lda a0
+  shl2 v0
+  not
+  sta v0
+  lda a1
+  and2 v0
+  return
+}
+# a1 & ~(a0 >>> 21)
+.function i32 and_not_shr_i32_2(i32 a0, i32 a1) <static> {
+  movi v0, 21
+  lda a0
+  shr2 v0
+  not
+  sta v0
+  lda a1
+  and2 v0
+  return
+}
+# a1 & ~(a0 >> 21)
+.function i32 and_not_ashr_i32_2(i32 a0, i32 a1) <static> {
+  movi v0, 21
+  lda a0
+  ashr2 v0
+  not
+  sta v0
+  lda a1
+  and2 v0
+  return
+}
+# (a0 << 42) & ~a1
+.function i64 and_not_shl_i64(i64 a0, i64 a1) <static> {
+  movi.64 v0, 42
+  lda.64 a0
+  shl2.64 v0
+  sta.64 v0
+  lda.64 a1
+  not.64
+  and2.64 v0
+  return.64
+}
+# (a0 >>> 42) & ~a1
+.function i64 and_not_shr_i64(i64 a0, i64 a1) <static> {
+  movi.64 v0, 42
+  lda.64 a0
+  shr2.64 v0
+  sta.64 v0
+  lda.64 a1
+  not.64
+  and2.64 v0
+  return.64
+}
+# (a0 >> 42) & ~a1
+.function i64 and_not_ashr_i64(i64 a0, i64 a1) <static> {
+  movi.64 v0, 42
+  lda.64 a0
+  ashr2.64 v0
+  sta.64 v0
+  lda.64 a1
+  not.64
+  and2.64 v0
+  return.64
+}
+# a1 & ~(a0 << 42)
+.function i64 and_not_shl_i64_2(i64 a0, i64 a1) <static> {
+  movi.64 v0, 42
+  lda.64 a0
+  shl2.64 v0
+  not.64
+  sta.64 v0
+  lda.64 a1
+  and2.64 v0
+  return.64
+}
+# a1 & ~(a0 >>> 42)
+.function i64 and_not_shr_i64_2(i64 a0, i64 a1) <static> {
+  movi.64 v0, 42
+  lda.64 a0
+  shr2.64 v0
+  not.64
+  sta.64 v0
+  lda.64 a1
+  and2.64 v0
+  return.64
+}
+# a1 & ~(a0 >> 42)
+.function i64 and_not_ashr_i64_2(i64 a0, i64 a1) <static> {
+  movi.64 v0, 42
+  lda.64 a0
+  ashr2.64 v0
+  not.64
+  sta.64 v0
+  lda.64 a1
+  and2.64 v0
+  return.64
+}
+
+.function u1 main() <static> {
+  movi v0, 21
+  ldai 0x200000
+  shr2 v0
+  sta v0
+  movi v1, 0
+  call.short and_not_shl_i32, v0, v1
+  movi v0, 0x200000
+  jne v0, exit_error_0
+  movi v0, 21
+  ldai 1
+  shl2 v0
+  sta v0
+  movi v1, 2
+  call.short and_not_shr_i32, v0, v1
+  movi v0, 1
+  jne v0, exit_error_1
+  movi v0, 21
+  ldai -1
+  shl2 v0
+  sta v0
+  movi v1, 0
+  call.short and_not_ashr_i32, v0, v1
+  movi v0, -1
+  jne v0, exit_error_2
+  movi v0, 21
+  ldai 0x200000
+  shr2 v0
+  sta v0
+  movi v1, -1
+  call.short and_not_shl_i32_2, v0, v1
+  movi v0, 0xffdfffff
+  jne v0, exit_error_3
+  movi v0, 21
+  ldai 1
+  shl2 v0
+  sta v0
+  movi v1, 3
+  call.short and_not_shr_i32_2, v0, v1
+  movi v0, 2
+  jne v0, exit_error_4
+  movi v0, 21
+  ldai -1
+  shl2 v0
+  sta v0
+  movi v1, -1
+  call.short and_not_ashr_i32_2, v0, v1
+  movi v0, 0
+  jne v0, exit_error_5
+  movi.64 v0, 42
+  ldai.64 0x40000000000
+  shr2.64 v0
+  sta.64 v0
+  movi.64 v1, 0
+  call.short and_not_shl_i64, v0, v1
+  movi.64 v0, 0x40000000000
+  cmp.64 v0
+  jnez exit_error_6
+  movi.64 v0, 42
+  ldai.64 1
+  shl2.64 v0
+  sta.64 v0
+  movi.64 v1, 2
+  call.short and_not_shr_i64, v0, v1
+  movi.64 v0, 1
+  cmp.64 v0
+  jnez exit_error_7
+  movi.64 v0, 42
+  ldai.64 -1
+  shl2.64 v0
+  sta.64 v0
+  movi.64 v1, 0
+  call.short and_not_ashr_i64, v0, v1
+  movi.64 v0, -1
+  cmp.64 v0
+  jnez exit_error_8
+  movi.64 v0, 42
+  ldai.64 0x40000000000
+  shr2.64 v0
+  sta.64 v0
+  movi.64 v1, -1
+  call.short and_not_shl_i64_2, v0, v1
+  movi.64 v0, 0xfffffbffffffffff
+  cmp.64 v0
+  jnez exit_error_9
+  movi.64 v0, 42
+  ldai.64 1
+  shl2.64 v0
+  sta.64 v0
+  movi.64 v1, 3
+  call.short and_not_shr_i64_2, v0, v1
+  movi.64 v0, 2
+  cmp.64 v0
+  jnez exit_error_10
+  movi.64 v0, 42
+  ldai.64 -1
+  shl2.64 v0
+  sta.64 v0
+  movi.64 v1, -1
+  call.short and_not_ashr_i64_2, v0, v1
+  movi.64 v0, 0
+  cmp.64 v0
+  jnez exit_error_11
+  ldai 0
+  return
+exit_error_0:
+  ldai 1
+  return
+exit_error_1:
+  ldai 2
+  return
+exit_error_2:
+  ldai 3
+  return
+exit_error_3:
+  ldai 4
+  return
+exit_error_4:
+  ldai 5
+  return
+exit_error_5:
+  ldai 6
+  return
+exit_error_6:
+  ldai 7
+  return
+exit_error_7:
+  ldai 8
+  return
+exit_error_8:
+  ldai 9
+  return
+exit_error_9:
+  ldai 10
+  return
+exit_error_10:
+  ldai 11
+  return
+exit_error_11:
+  ldai 12
+  return
+}

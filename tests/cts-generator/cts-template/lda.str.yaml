@@ -1,0 +1,318 @@
+# Copyright (c) 2021 Huawei Device Co., Ltd.
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+definitions:
+  - name: java
+    template: |
+      .language Java
+
+      .record java.lang.Object <external>
+      .record java.lang.String <external>
+  - name: pandasm
+    template: |
+      .record panda.String <external>
+      .record panda.Object <external>
+
+tests:
+  - file-name: "lda.str"
+    isa:
+      title: Load accumulator from string constant pool
+      description: Load string specified by id into accumulator.
+      exceptions:
+        - x_none
+      verification:
+        - constant_string_id
+      instructions:
+        - sig: lda.str string_id
+          acc: out:ref
+          format: [op_id_32]
+    commands:
+
+
+      - file-name: "string_invalid"
+        isa:
+          description: Load string specified by id into accumulator.
+        runner-options: [compile-failure]
+        description: Check 'lda.str' instruction with invalid string.
+        code-template: |
+          #
+              lda.str %s
+        check-type: exit-positive
+        cases:
+          - values:
+            - ""
+          - values:
+            - "label:"
+          - values:
+            - "{}"
+          - values:
+            - "}"
+          - values:
+            - "# \"comment\""
+          - values:
+            - "null"
+          - values:
+            - "0"
+          - values:
+            - "v0"
+          - values:
+            - "\"test\", v0"
+          - values:
+            - "\"test\", \"string\""
+          - values:
+            - "test\"a\"string"
+          - values:
+            - "test'a'string"
+          # unknown escape sequence
+          - values:
+            - "\"test \\c string\""
+          - values:
+            - "\"test \\y string\""
+          - values:
+            - "\"123 = \\X31\\X32\\X33\""
+          # pandasm expects strings in mutf8 format, not \u or \U
+          - values:
+            - "\"utf-16: \\u018a\""
+          - values:
+            - "\"surrogate: \\U0001303F\""
+          # invalid mutf8 sequence
+          - values:
+            - "\"\\x32\\x00\\x33\""
+            bugid: ['3407']
+            ignore: true
+          - values:
+            - "\"\\xfd\\xa1\\xbe\\xed\""
+            bugid: ['3407']
+            ignore: true
+          - values:
+            - "\"\\x0\""
+          - values:
+            - "\"\\x 31\""
+          - values:
+            - "\"\\x3_1\""
+          - values:
+            - "\"\\xed\\xb0\""
+            bugid: ['3407']
+            ignore: true
+          - values:
+            - "\"\\xdf\\xdf\\xdf\""
+            bugid: ['3407']
+            ignore: true
+
+
+      - file-name: "string_valid"
+        isa:
+          description: Load string specified by id into accumulator.
+        runner-options: ['verifier-only', 'verifier-debug-config']
+        tags: [verifier]
+        description: Check 'lda.str' instruction with valid string.
+        code-template: |
+          #
+              lda.str %s
+        check-type: exit-positive
+        cases:
+          - values:
+            - "\"\""
+          - values:
+            - "\"   \""
+          - values:
+            - "\"\\\\\\\\\\\"\\\\\\\"\""
+          - values:
+            - "\" ~`!@#$%^&*()_-+={[}]|.,<>/?|0123456789@ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz\""
+          - values:
+            - "\"\\xe6\\x96\\x87\\xe5\\xad\\x97\\xe8\\x8c\\x83\\xe4\\xbe\\x8b\""
+          - values:
+            - "\"\\a \\b \\t \\n \\f \\r \\' \\\" \\\\ \""
+          - values:
+            - "\" ~`\\t!@#$%^&*()_-+={[}]|\\x22.,<>/?|01234567\\x389@\\x41BCDEFGHIJKLMNOPQRSTUVWXYZ\\x61bc\\x64efghijklmnopqrstuvwxyz\""
+          - values:
+            - "#{'\"' + '~`\\t!@#$%^&*()_-+={[}]|\\x22.,<>/?|01234567\\x389@\\x41BCDEFGHIJKLMNOPQRSTUVWXYZ\\x61bc\\x64efghijklmnopqrstuvwxyz' * 50 + '\"'}"
+
+
+      - file-name: "string_type_p"
+        isa:
+          description: Load string specified by id into accumulator.
+        description: Check type of object created by 'lda.str' instruction with valid string in PandaAssembly context.
+        header-template: [pandasm, main]
+        code-template: |
+          #
+              lda.null
+              lda.str %s
+              isinstance panda.String
+              subi 1
+        check-type: no-check
+        cases:
+          - values:
+            - "\"\""
+          - values:
+            - "\"   \""
+          - values:
+            - "\"ascii: ~`!@#$%^&*()_-+={[}]|.,<>/?|0123456789@ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz\""
+            tags: ['tsan']
+          - values:
+            - "\"mutf8: \\xe6\\x96\\x87\\xe5\\xad\\x97\\xe8\\x8c\\x83\\xe4\\xbe\\x8b\""
+            tags: ['tsan']
+          - values:
+            - "\"escaped: \\a \\b \\t \\n \\f \\r \\' \\\" \\\\ \""
+          - values:
+            - "\"\\xed\\xa1\\xbe\\xed\\xb7\\xa1\\xed\\xa1\\xbd\\xed\\xb0\\xbc\""
+          - values:
+            - "#{'\"<<' + 'aAbBcCdDeE' * 300 + '>>\"'}"
+
+
+      - file-name: "string_value_p"
+        isa:
+          description: Load string specified by id into accumulator.
+        description: Check value of object created by 'lda.str' instruction with valid string in PandaAssembly context.
+        header-template: []
+        code-template: |
+          .record panda.String <external>
+          .record Convert {} <external>
+          .function i32 Convert.stringToI32(panda.String a0) <external>
+          .function i32 main() {
+              movi v1, %s
+              lda.null
+              lda.str %s
+              sta.obj v0
+              call.short Convert.stringToI32, v0
+              jne v1, exit_failure
+              ldai 0
+              return
+          exit_failure:
+              ldai 1
+        check-type: no-check
+        cases:
+          # ascii
+          - values:
+            - 0
+            - "\"0\""
+          - values:
+            - 12345
+            - "\"12345\""
+            tags: ['tsan']
+          - values:
+            - -123
+            - "\"-123\""
+          - values:
+            - 0xffffffff
+            - "\"-1\""
+          - values:
+            - 0x7fffffff
+            - "\"2147483647\""
+          - values:
+            - 0x80000000
+            - "\"-2147483648\""
+          # mutf8 encoded
+          - values:
+            - 6789
+            - "\"\\x36\\x37\\x38\\x39\""
+          # mix of ascii and mutf8 encoded
+          - values:
+            - 31579
+            - "\"3\\x315\\x379\""
+
+
+      - file-name: "strings_eq"
+        isa:
+          description: Load string specified by id into accumulator.
+        description: Check that two strings created by 'lda.str' instructions are the same in the string constant pool.
+        code-template: |
+          #
+              lda.str %s
+              sta.obj v1
+              lda.null
+              lda.str %s
+              jeq.obj v1, ok
+              ldai 1
+              return
+          ok:
+        check-type: exit-positive
+        cases:
+          # empty strings
+          - values:
+            - "\"\""
+            - "\"\""
+          # ascii
+          - values:
+            - "\"abcdef\""
+            - "\"abcdef\""
+          - values:
+            - "\"abcdef\""
+            - "\"\\x61\\x62\\x63\\x64\\x65\\x66\""
+          - values:
+            - "\"abcdef\""
+            - "\"a\\x62\\x63\\x64e\\x66\""
+          - values:
+            - "\" ~`!@#$%^&*()_-+={[}]|.,<>/?|0123456789@ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz\""
+            - "\" ~`!@#$%^&*()_-+={[}]|.,<>/?|0123456789@ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz\""
+            tags: ['tsan']
+          - values:
+            - "\"\\xe6\\x96\\x87\\xe5\\xad\\x97\\xe8\\x8c\\x83\\xe4\\xbe\\x8b\""
+            - "\"\\xe6\\x96\\x87\\xe5\\xad\\x97\\xe8\\x8c\\x83\\xe4\\xbe\\x8b\""
+          - values:
+            - "\"I \\xed\\xa1\\xbe\\xed\\xb7\\xa1\\xed\\xa1\\xbd\\xed\\xb0\\xbc!\""
+            - "\"I \\xed\\xa1\\xbe\\xed\\xb7\\xa1\\xed\\xa1\\xbd\\xed\\xb0\\xbc\\x21\""
+          # escaping
+          - values:
+            - "\"\\b\\t\\n\\f\\r\\\"\\'\\\\\""
+            - "\"\\b\\t\\n\\f\\r\\\"\\'\\\\\""
+          - values:
+            - "\"\\b\\t\\n\\f\\r\\\"\\'\\\\\""
+            - "\"\\x08\\x09\\x0a\\x0c\\x0d\\x22\\x27\\x5c\""
+            tags: ['tsan']
+          - values:
+            - "\"\\x08\\x09\\x0a\\x0c\\x0d\\x22\\x27\\x5c\""
+            - "\"\\x08\\x09\\x0a\\x0c\\x0d\\x22\\x27\\x5c\""
+
+
+      - file-name: "strings_ne"
+        isa:
+          description: Load string specified by id into accumulator.
+        description: Check that two strings created by 'lda.str' instructions are different in the string constant pool.
+        code-template: |
+          #
+              lda.str %s
+              sta.obj v1
+              lda.null
+              lda.str %s
+              jne.obj v1, ok
+              ldai 1
+              return
+          ok:
+        check-type: exit-positive
+        cases:
+          - values:
+            - "\"\""
+            - "\" \""
+          - values:
+            - "\" \""
+            - "\"  \""
+          - values:
+            - "\"a\""
+            - "\"a \""
+          - values:
+            - "\"a\""
+            - "\"b\""
+            tags: ['tsan']
+          - values:
+            - "\"a\""
+            - "\"A\""
+          - values:
+            - "\"1\\x33\\x324\""
+            - "\"1234\""
+          - values:
+            - "\"\\x08\\x09\\x0a\\x0d\\x0c\\x22\\x27\\x5c\""
+            - "\"\\x08\\x09\\x0a\\x0c\\x0d\\x22\\x27\\x5c\""
+            tags: ['tsan']
+
+

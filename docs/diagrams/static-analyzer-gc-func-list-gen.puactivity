@@ -1,0 +1,34 @@
+' Copyright (c) 2021 Huawei Device Co., Ltd.
+' Licensed under the Apache License, Version 2.0 (the "License");
+' you may not use this file except in compliance with the License.
+' You may obtain a copy of the License at
+'
+' http://www.apache.org/licenses/LICENSE-2.0
+'
+' Unless required by applicable law or agreed to in writing, software
+' distributed under the License is distributed on an "AS IS" BASIS,
+' WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+' See the License for the specific language governing permissions and
+' limitations under the License.
+
+@startuml
+skinparam monochrome true
+title Generation list of GC unsafe functions(can have GC happen during work)
+
+split
+    -[hidden]->
+    :List of functions which can have GC inside;
+split again
+    while (iterate over Translation units)
+        :Translation unit;
+        :Clang frontend;
+        ->build AST;
+        :Clang frontend - Clang Static Analyzer stage;
+        ->Parse bodies of functions and get list of calling functions
+        and put them to list of all functions in project;
+        : ;
+    endwhile
+    :List of all functions in project;
+end split
+:Generate list of all functions which can call GC (GC FUNCTION LIST);
+@enduml

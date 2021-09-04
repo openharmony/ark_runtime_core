@@ -1,0 +1,70 @@
+/*
+ * Copyright (c) 2021 Huawei Device Co., Ltd.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+#include "disassembler.h"
+
+namespace panda::disasm {
+
+pandasm::Type Disassembler::PFTypeToPandasmType(const panda_file::Type& type, panda_file::ProtoDataAccessor& pda,
+                                                size_t& ref_idx) const {
+    pandasm::Type pandasm_type;
+
+    switch (type.GetId()) {
+% PandaFile::types.each do |type|
+    case panda_file::Type::TypeId::<%= type.name.upcase %>:
+% if (type.name == "reference")
+        pandasm_type = pandasm::Type::FromDescriptor(StringDataToString(file_->GetStringData(pda.GetReferenceType(ref_idx++))));
+        pandasm_type = pandasm::Type(MakePandasmFriendly(pandasm_type.GetComponentName()), pandasm_type.GetRank());
+% elsif (type.name == "tagged")
+        pandasm_type = pandasm::Type("any", 0);
+% else
+        pandasm_type = pandasm::Type("<%= type.name %>", 0);
+% end
+        break;
+% end
+    }
+
+    return pandasm_type;
+}
+
+pandasm::Type Disassembler::FieldTypeToPandasmType(const uint32_t& type) const {
+    pandasm::Type field_type;
+
+    auto pf_type = panda_file::Type::GetTypeFromFieldEncoding(type);
+
+    switch (pf_type.GetId()) {
+% PandaFile::types.each do |type|
+% if (type.name != "reference" && type.name != "tagged")
+    case panda_file::Type::TypeId::<%= type.name.upcase %>:
+        field_type = pandasm::Type("<%= type.name %>", 0);
+        break;
+% end
+% end
+    case panda_file::Type::TypeId::TAGGED:
+        field_type = pandasm::Type("any", 0);
+        break;
+    default:
+        panda_file::File::EntityId field_id(type);
+        std::string type_name = StringDataToString(file_->GetStringData(field_id));
+
+        field_type = pandasm::Type::FromDescriptor(type_name);
+        field_type = pandasm::Type(MakePandasmFriendly(field_type.GetComponentName()), field_type.GetRank());
+        break;
+    }
+
+    return field_type;
+}
+
+} // namespace panda::disasm

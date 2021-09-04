@@ -1,0 +1,82 @@
+# Copyright (c) 2021 Huawei Device Co., Ltd.
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+definitions: []
+tests:
+  - file-name: "mov.null"
+    isa:
+      title: Move null reference into register
+      description: Move null reference into a register.
+      exceptions:
+        - x_none
+      verification:
+        - none
+    commands:
+      - file-name: "op_vd_8"
+        isa:
+          instructions:
+            - sig: mov.null v:out:ref
+              acc: none
+              format: [op_v_8]
+        code-template: |
+          #
+              mov.null %s
+              lda.null
+              jne.obj %s, return_ne_num
+              ldai 0
+              return
+          return_ne_num:
+              ldai 1
+              return
+        description: Check mov.null moves null reference to register.
+        tags: ['tsan']
+        cases:
+          - values:
+              - v0
+              - v0
+          - values:
+              - v1
+              - v1
+          - values:
+              - v15
+              - v15
+          - values:
+              - v16
+              - v16
+          - values:
+              - v127
+              - v127
+          - values:
+              - v128
+              - v128
+          - values:
+              - v255
+              - v255
+          - values:
+              - v256
+              - v0
+            runner-options: [compile-failure]
+            case-check-type: no-check
+            description: Check mov.null with incorrect register number.
+          - values:
+              - 123
+              - v0
+            runner-options: [compile-failure]
+            case-check-type: no-check
+            description: Check mov.null with incorrect register number.
+          - values:
+              - a0
+              - v0
+            runner-options: [compile-failure]
+            case-check-type: no-check
+            description: Check mov.null with incorrect register number.

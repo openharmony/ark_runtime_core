@@ -1,0 +1,1043 @@
+# Copyright (c) 2021 Huawei Device Co., Ltd.
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+definitions: []
+tests:
+  - file-name: "fdiv2.64"
+    isa:
+      title: Two address floating-point binary operation on accumulator
+      description: >
+        Perform specified floating-point binary operation on accumulator and register and store result into accumulator.
+        The results of instructions correspond IEEE-754 arithmetic rules.
+      exceptions:
+        - x_none
+    commands:
+      - file-name: "op_vs_8_nan"
+        isa:
+          instructions:
+            - sig: fdiv2.64 v:in:f64
+              acc: inout:f64
+              format: [op_v_8]
+          description: Any operation with NaN results to NaN value.
+        check-type: check-acc-nan
+        code-template: |
+          #
+              fldai.64 %s
+              fmovi.64 v0, *s
+              fdiv2.64 v0
+        description: >
+          Check fdiv2.64 results in NaN when acc or v0 is NaN
+        template-cases:
+          - values:
+              # NaN
+              - "0x7ff8000000000000"
+          - values:
+              # NaN representation
+              - "0xFFFFFFFFFFFFFFFF"
+          - values:
+              # Positive zero
+              - "0"
+            tags: ["clang_release_sanitizer"]
+            bugid: ["966", "965"]
+            exclude: [hasval]
+          - values:
+              # Negative zero
+              - "0x8000000000000000"
+            tags: ["clang_release_sanitizer"]
+            bugid: ["966", "965"]
+            exclude: [hasval]
+          - values:
+              # 1d
+              - "1.0"
+            tags: ["clang_release_sanitizer"]
+            bugid: ["966", "965"]
+            exclude: [hasval]
+          - values:
+              - "-1"
+            exclude: [hasval]
+          - values:
+              # +Inf
+              - "0x7ff0000000000000"
+            exclude: [hasval]
+          - values:
+              # -Inf
+              - "0xfff0000000000000"
+            exclude: [hasval]
+          - values:
+            # +max
+            - "0x7fefffffffffffff"
+            exclude: [hasval]
+          - values:
+            # -max
+            - "0xffefffffffffffff"
+            exclude: [hasval]
+          - values:
+            # +min
+            - "0x0000000000000001"
+            exclude: [hasval]
+          - values:
+            # -min
+            - "0x8000000000000001"
+            exclude: [hasval]
+          - values:
+              # Some FP value, 3.14159265358979323846
+              - "0x400921fb54442d18"
+            exclude: [hasval]
+          - values:
+              # Some FP value
+              - "1234567890987654321"
+            exclude: [hasval]
+        cases:
+          - values:
+              # NaN
+              - "0x7ff8000000000000"
+          - values:
+              # NaN representation
+              - "0xFFFFFFFFFFFFFFFF"
+          - values:
+              # Positive zero
+              - "0"
+            tags: ["clang_release_sanitizer"]
+            bugid: ["966", "965"]
+            id: hasval
+          - values:
+              # Negative zero
+              - "0x8000000000000000"
+            tags: ["clang_release_sanitizer"]
+            bugid: ["966", "965"]
+            id: hasval
+          - values:
+              # 1d
+              - "1.0"
+            tags: ["clang_release_sanitizer"]
+            bugid: ["966", "965"]
+            id: hasval
+          - values:
+              - "-1"
+            id: hasval
+          - values:
+              # +Inf
+              - "0x7ff0000000000000"
+            id: hasval
+          - values:
+              # -Inf
+              - "0xfff0000000000000"
+            id: hasval
+          - values:
+            # +max
+            - "0x7fefffffffffffff"
+            id: hasval
+          - values:
+            # -max
+            - "0xffefffffffffffff"
+            id: hasval
+          - values:
+            # +min
+            - "0x0000000000000001"
+            id: hasval
+          - values:
+            # -min
+            - "0x8000000000000001"
+            id: hasval
+          - values:
+              # Some FP value, 3.14159265358979323846
+              - "0x400921fb54442d18"
+            id: hasval
+          - values:
+              # Some FP value
+              - "1234567890987654321"
+            id: hasval
+
+      - file-name: "op_vs_8_pinf"
+        isa:
+          instructions:
+            - sig: fdiv2.64 v:in:f64
+              acc: inout:f64
+              format: [op_v_8]
+          description: Division is infinity if any non zero value is divided by zero.
+        check-type: check-positive
+        code-template: |
+            #
+                fldai.64 0x7ff0000000000000 # +Inf
+                fmovi.64 v0, %s
+            # Div of +Inf and value
+                fdiv2.64 v0
+                fmovi.64 v1, %s
+                fcmpg.64 v1
+        description: Check fdiv2.64 with positive Inf and various values (NaN, Inf, min, max, numbers).
+        cases:
+          - values:
+              - "0"
+              # Inf
+              - "0x7ff0000000000000"
+            tags: ["clang_release_sanitizer"]
+            bugid: ["966", "965"]
+          - values:
+              # -0.0d
+              - "0x8000000000000000"
+              # -Inf
+              - "0xFFF0000000000000"
+            tags: ["clang_release_sanitizer"]
+            bugid: ["966", "965"]
+          - values:
+              # 1d
+              - "1"
+              # Inf
+              - "0x7ff0000000000000"
+          - values:
+              - "-1"
+              # -Inf
+              - "0xFFF0000000000000"
+          - values:
+              # +max
+              - "0x7fefffffffffffff"
+              # Inf
+              - "0x7FF0000000000000"
+          - values:
+              # -max
+              - "0xffefffffffffffff"
+              # -Inf
+              - "0xFFF0000000000000"
+          - values:
+              # +min
+              - "0x0000000000000001"
+              # Inf
+              - "0x7FF0000000000000"
+          - values:
+              # -min
+              - "0x8000000000000001"
+              # -Inf
+              - "0xFFF0000000000000"
+          - values:
+              # Some FP value, 3.14159265358979323846
+              - "0x400921fb54442d18"
+              # Inf
+              - "0x7FF0000000000000"
+          - values:
+              - "1234567890987654321"
+              # Inf
+              - "0x7FF0000000000000"
+
+      - file-name: "op_vs_8_ninf"
+        isa:
+          instructions:
+            - sig: fdiv2.64 v:in:f64
+              acc: inout:f64
+              format: [op_v_8]
+          description: Division is infinity if any non zero value is divided by zero.
+        check-type: check-positive
+        code-template: |
+            #
+                fldai.64 0xfff0000000000000 # -Inf
+                fmovi.64 v0, %s
+            # Div of -Inf and value
+                fdiv2.64 v0
+                fmovi.64 v1, %s
+                fcmpg.64 v1
+        description: Check fdiv2.64 with negative Inf and various values (NaN, Inf, min, max, numbers).
+        cases:
+            - values:
+                - "0"
+                # -Inf
+                - "0xfff0000000000000"
+              tags: ["clang_release_sanitizer"]
+              bugid: ["966", "965"]
+            - values:
+                # -0.0d
+                - "0x8000000000000000"
+                # +Inf
+                - "0x7FF0000000000000"
+              tags: ["clang_release_sanitizer"]
+              bugid: ["966", "965"]
+            - values:
+                # 1d
+                - "1"
+                # -Inf
+                - "0xfff0000000000000"
+            - values:
+                - "-1"
+                # +Inf
+                - "0x7FF0000000000000"
+            - values:
+                # +max
+                - "0x7fefffffffffffff"
+                # -Inf
+                - "0xfff0000000000000"
+            - values:
+                # -max
+                - "0xffefffffffffffff"
+                # +Inf
+                - "0x7FF0000000000000"
+            - values:
+                # +min
+                # - "0x0000000000000001"
+                - "1"
+                # -Inf
+                - "0xfff0000000000000"
+            - values:
+                # -min
+                - "0x8000000000000001"
+                # +Inf
+                - "0x7FF0000000000000"
+            - values:
+                # Some FP value, 3.14159265358979323846
+                - "0x400921fb54442d18"
+                # -Inf
+                - "0xfff0000000000000"
+
+            - values:
+                - "1234567890987654321"
+                # -Inf
+                - "0xfff0000000000000"
+
+      - file-name: "op_vs_8_inf_nan"
+        isa:
+          instructions:
+            - sig: fdiv2.64 v:in:f64
+              acc: inout:f64
+              format: [op_v_8]
+          description: >
+            Division is NaN if Infinity is divided by Infinity.
+        check-type: check-acc-nan
+        code-template: |
+            #
+                fldai.64 %s
+                fmovi.64 v0, *s
+            # Div of Inf by Inf
+                fdiv2.64 v0
+        description: >
+          Check fdiv2.64 of Inf by Inf is NaN.
+        template-cases:
+          - values: ["0x7ff0000000000000"]
+          - values: ["0xfff0000000000000"]
+        cases:
+          - values: ["0x7ff0000000000000"]
+          - values: ["0xfff0000000000000"]
+
+      - file-name: "op_vs_8_pzero"
+        isa:
+          instructions:
+            - sig: fdiv2.64 v:in:f64
+              acc: inout:f64
+              format: [op_v_8]
+        check-type: check-positive
+        code-template: |
+            #
+                fldai.64 0.0 #
+                fmovi.64 v0, %s
+            # Div of +0.0 and value
+                fdiv2.64 v0
+                fmovi.64 v1, %s
+                fcmpg.64 v1
+        description: Check fdiv2.64 with +0 and various values (NaN, Inf, min, max, numbers).
+        cases:
+            - values:
+                # +Inf
+                - "0x7ff0000000000000"
+                - "0"
+            - values:
+                # -Inf
+                - "0xfff0000000000000"
+                # -0.0
+                - "0x8000000000000000"
+            - values:
+                # 1d
+                - "1"
+                - "0"
+            - values:
+                # -1d
+                - "-1"
+                - "-0.0"
+            - values:
+                # +max
+                - "0x7fefffffffffffff"
+                - "0"
+            - values:
+                # -max
+                - "0xffefffffffffffff"
+                # -0.0
+                - "0x8000000000000000"
+            - values:
+                # +min
+                - "0x0000000000000001"
+                - "0"
+            - values:
+                # -min
+                - "0x8000000000000001"
+                # -0.0
+                - "0x8000000000000000"
+            - values:
+                # Some FP value,
+                - "3.14159265358979323846"
+                - "0"
+
+      - file-name: "op_vs_8_nzero"
+        isa:
+          instructions:
+            - sig: fdiv2.64 v:in:f64
+              acc: inout:f64
+              format: [op_v_8]
+        check-type: check-positive
+        code-template: |
+            #
+                fldai.64 -0.0 #
+                fmovi.64 v0, %s
+            # Div of -0.0 and value
+                fdiv2.64 v0
+                fmovi.64 v1, %s
+                fcmpg.64 v1
+        description: Check fdiv2.64 with -0 and various values (NaN, Inf, min, max, numbers).
+        cases:
+          - values:
+              # +Inf
+              - "0x7ff0000000000000"
+              # -0.0d
+              - "0x8000000000000000"
+          - values:
+              # -Inf
+              - "0xfff0000000000000"
+              - "0"
+          - values:
+              # 1d
+              - "1"
+              - "0"
+          - values:
+              - "-1"
+              - "0"
+          - values:
+              # +max
+              - "0x7fefffffffffffff"
+              - "0"
+          - values:
+              # -max
+              - "0xffefffffffffffff"
+              - "0"
+          - values:
+              # +min
+              - "0x0000000000000001"
+              # -0.0d
+              - "0x8000000000000000"
+          - values:
+              # -min
+              - "0x8000000000000001"
+              - "0"
+          - values:
+              - "3.14159265358979323846"
+              - "0"
+          - values:
+              # Some FP value,
+              - "-3.14159265358979323846"
+              - "0"
+      - file-name: "op_vs_8_pone"
+        isa:
+          instructions:
+            - sig: fdiv2.64 v:in:f64
+              acc: inout:f64
+              format: [op_v_8]
+          description: Division is infinity if any non zero value is divided by zero.
+        check-type: check-positive
+        code-template: |
+            #
+                fldai.64 1.0 #
+                fmovi.64 v0, %s
+            # Div of 1.0 and value
+                fdiv2.64 v0
+                fmovi.64 v1, %s
+                fcmpg.64 v1
+        description: Check fdiv2.64 with +1 and various values (NaN, Inf, min, max, numbers).
+        cases:
+          - values:
+              # +0.0d
+              - "0"
+              # +Inf
+              - "0x7ff0000000000000"
+            tags: ["clang_release_sanitizer"]
+            bugid: ["966", "965"]
+          - values:
+              # -0.0d
+              - "0x8000000000000000"
+              # -Inf
+              - "0xfff0000000000000"
+            tags: ["clang_release_sanitizer"]
+            bugid: ["966", "965"]
+          - values:
+              - "1"
+              - "1"
+          - values:
+              - "-1"
+              - "-1"
+          - values:
+              # +Inf
+              - "0x7ff0000000000000"
+              - "0"
+          - values:
+              # -Inf
+              - "0xfff0000000000000"
+              # -0.0d
+              - "0x8000000000000000"
+          - values:
+              # +max
+              - "0x7fefffffffffffff"
+              - "0x0004000000000000"
+          - values:
+              # -max
+              - "0xffefffffffffffff"
+              - "0x8004000000000000"
+          - values:
+              # +min
+              - "0x0000000000000001"
+              # +Inf
+              - "0x7FF0000000000000"
+          - values:
+              # -min
+              - "0x8000000000000001"
+              # -Inf
+              - "0xFFF0000000000000"
+          - values:
+              - "3.14159265358979323846"
+              - "0x3FD45F306DC9C883"
+          - values:
+              - "-3.14159265358979323846"
+              - "0xBFD45F306DC9C883"
+
+          - values:
+              # Some FP value
+              - "1234567890.987654321"
+              - "0x3E0BD4D5DD3DC711"
+
+      - file-name: "op_vs_8_none"
+        isa:
+          instructions:
+            - sig: fdiv2.64 v:in:f64
+              acc: inout:f64
+              format: [op_v_8]
+          description: Division is infinity if any non zero value is divided by zero.
+        check-type: check-positive
+        code-template: |
+            #
+                fldai.64 -1.0 #
+                fmovi.64 v0, %s
+            # Div of -1.0 and value
+                fdiv2.64 v0
+                fmovi.64 v1, %s
+                fcmpg.64 v1
+        description: Check fdiv2.64 with -1 and various values (NaN, Inf, min, max, numbers).
+        cases:
+          - values:
+              # +0.0d
+              - "0"
+              # -Inf
+              - "0xFFF0000000000000"
+            tags: ["clang_release_sanitizer"]
+            bugid: ["966", "965"]
+          - values:
+              # -0.0d
+              - "0x8000000000000000"
+              # +Inf
+              - "0x7FF0000000000000"
+            tags: ["clang_release_sanitizer"]
+            bugid: ["966", "965"]
+          - values:
+              # 1d
+              - "1"
+              - "-1"
+          - values:
+              - "-1"
+              - "1"
+            tags: ["clang_release_sanitizer"]
+            bugid: ["966", "965"]
+          - values:
+              # +Inf
+              - "0x7ff0000000000000"
+              - "0x8000000000000000"
+          - values:
+              # -Inf
+              - "0xFFF0000000000000"
+              - "0"
+          - values:
+              # +max
+              - "0x7fefffffffffffff"
+              - "0x8004000000000000"
+          - values:
+              # -max
+              - "0xffefffffffffffff"
+              - "0x0004000000000000"
+          - values:
+              # +min
+              - "0x0000000000000001"
+              # -Inf
+              - "0xFFF0000000000000"
+          - values:
+              # -min
+              - "0x8000000000000001"
+              # +Inf
+              - "0x7FF0000000000000"
+          - values:
+              # Some FP value, 3.14159265358979323846
+              - "0x400921fb54442d18"
+              - "0xBFD45F306DC9C883"
+          - values:
+              # Some FP value, -3.14159265358979323846
+              - "0xC00921FB54442D18"
+              - "0x3FD45F306DC9C883"
+          - values:
+              # Some FP value
+              - "1234567890.987654321"
+              - "0xBE0BD4D5DD3DC711"
+
+      - file-name: "op_vs_8"
+        isa:
+          instructions:
+            - sig: fdiv2.64 v:in:f64
+              acc: inout:f64
+              format: [op_v_8]
+        check-type: check-positive
+        code-template: |
+            #
+                fldai.64 %s #
+                fmovi.64 v0, %s
+            # Div of -1.0 and value
+                fdiv2.64 v0
+                fmovi.64 v1, %s
+                fcmpg.64 v1
+        description: Check fdiv2.64 with various values.
+        cases:
+            - values:
+                - "1.0"
+                - "-1.0"
+                - "-1.0"
+            - values:
+                - "1.0"
+                - "1.0"
+                - "1.0"
+            - values:
+                - "-1.0"
+                - "1.0"
+                - "-1.0"
+            - values:
+                - "1.0e100"
+                - "1.0e100"
+                - "1.0"
+            - values:
+                - "1.0e100"
+                - "-1.0e100"
+                - "-1.0"
+            - values:
+                - "1.0e+100"
+                - "1.0e-100"
+                - "1.0e+200"
+            - values:
+                - "-1.0e100"
+                - "1.0e100"
+                - "-1.0"
+            - values:
+                - "-1.0e-100"
+                - "1.0e-100"
+                - "-1.0"
+            - values:
+                - "-1.0e+100"
+                - "-1.0e-100"
+                - "1.0e+200"
+            - values:
+                - "3.14159265358979323846"
+                - "-3.14159265358979323846"
+                - "-1.0"
+            - values:
+                - "3.14159265358979323846e100"
+                - "-3.14159265358979323846e100"
+                - "-1.0"
+      - file-name: "op_vs_8_max"
+        isa:
+          instructions:
+            - sig: fdiv2.64 v:in:f64
+              acc: inout:f64
+              format: [op_v_8]
+        check-type: check-positive
+        code-template: |
+            #
+                fldai.64 %s
+                fmovi.64 v0, %s
+            # Div of two values
+                fdiv2.64 v0
+                fmovi.64 v1, %s
+                fcmpg.64 v1
+        description: Check fdiv2.64 with various max values.
+        cases:
+          - values:
+              # +max
+              - "0x7fefffffffffffff"
+              # +max
+              - "0x7fefffffffffffff"
+              - "1"
+          - values:
+              # -max
+              - "0xffefffffffffffff"
+              # -max
+              - "0xffefffffffffffff"
+              - "1"
+          - values:
+              # +max
+              - "0x7fefffffffffffff"
+              # -max
+              - "0xffefffffffffffff"
+              - "-1"
+          - values:
+              # -max
+              - "0xffefffffffffffff"
+              # +max
+              - "0x7fefffffffffffff"
+              - "-1"
+
+          - values:
+              # +max
+              - "0x7fefffffffffffff"
+              # 1d
+              - "0x3ff0000000000000"
+              # +max
+              - "0x7fefffffffffffff"
+
+          - values:
+              # +max
+              - "0x7fefffffffffffff"
+              - "-1"
+             # -max
+              - "0xffefffffffffffff"
+          - values:
+              # -max
+              - "0xffefffffffffffff"
+              # 1d
+              - "1"
+              # -max
+              - "0xffefffffffffffff"
+          - values:
+              # -max
+              - "0xffefffffffffffff"
+              - "-1"
+              # +max
+              - "0x7fefffffffffffff"
+
+      - file-name: "op_vs_8_zeroes_nan"
+        tags: ["clang_release_sanitizer"]
+        bugid: ["966", "965"]
+        isa:
+          instructions:
+            - sig: fdiv2.64 v:in:f64
+              acc: inout:f64
+              format: [op_v_8]
+          description: Division is NaN if zero is divided by zero.
+        check-type: check-acc-nan
+        code-template: |
+            #
+                fldai.64 %s #
+                fmovi.64 v0, %s
+            # Div of zero by zero
+                fdiv2.64 v0
+        cases:
+            - values:
+                - "0.0"
+                - "0.0"
+            - values:
+                - "0.0"
+                - "-0.0"
+            - values:
+                - "-0.0"
+                - "0.0"
+            - values:
+                - "-0.0"
+                - "-0.0"
+
+      - file-name: "incorrect_reg"
+        isa:
+          instructions:
+            - sig: fdiv2.64 v:in:f64
+              acc: inout:f64
+              format: [op_v_8]
+        check-type: none
+        runner-options: [compile-failure]
+        description: Check fdiv2.64 with incorrect register numbers.
+        code-template: |
+          #
+              fdiv2.64 %s
+        cases:
+          - values: [v256]
+          - values: [v65535]
+          - values: [a0]
+          - values: [a255]
+          - values: [null]
+          - values: [0]
+          - values: [1.1]
+          - values: ['2.2']
+
+      - file-name: "reg_number"
+        isa:
+          instructions:
+            - sig: fdiv2.64 v:in:f64
+              acc: inout:f64
+              format: [op_v_8]
+        check-type: none
+        runner-options: [compile-only]
+        description: Check fdiv2.64 with correct register numbers.
+        code-template: |
+          #
+              fdiv2.64 %s
+        cases:
+          - values: [v0]
+          - values: [v16]
+          - values: [v128]
+          - values: [v255]
+
+      - file-name: "calc"
+        isa:
+          instructions:
+            - sig: fdiv2.64 v:in:f64
+              acc: inout:f64
+              format: [op_v_8]
+        check-type: check-positive
+        code-template: |
+            #
+                fldai.64 %s #
+                fmovi.64 v0, %s
+                fdiv2.64 v0
+                fmovi.64 v1, %s
+                fcmpg.64 v1
+        description: Check fdiv2.64 with various values.
+        tags: ['tsan']
+        cases:
+            - values:
+                - "0.21632944224064465"
+                - "-0.34061047940179023"
+                - "-0.6351226850699991"
+            - values:
+                - "0.36570116840892575"
+                - "0.07029972877481794"
+                - "5.202028155475951"
+            - values:
+                - "0.4505041756500131"
+                - "0.2904757124583136"
+                - "1.5509185667791943"
+            - values:
+                - "0.21489520519704786"
+                - "0.33478852559234973"
+                - "0.6418834242207925"
+            - values:
+                - "0.35531139652581856"
+                - "0.4460468463980294"
+                - "0.7965786540025369"
+            - values:
+                - "-0.24111761338348803"
+                - "-0.3790812878499866"
+                - "0.6360578090019183"
+            - values:
+                - "-0.2518421854745503"
+                - "-0.3539177970501055"
+                - "0.7115838411451686"
+            - values:
+                - "0.07142813163523898"
+                - "0.39868489769899773"
+                - "0.17915936130885587"
+            - values:
+                - "-0.04234142902115756"
+                - "-0.3715421834325995"
+                - "0.11396129674960209"
+            - values:
+                - "0.3975660961066302"
+                - "0.10346800519624122"
+                - "3.842406117259067"
+            - values:
+                - "-3.6826725689471526e-41"
+                - "3.6599032943264284e-35"
+                - "-1.0062212776649103e-6"
+            - values:
+                - "-4.939281186064999e37"
+                - "-3.393962002010915e-40"
+                - "1.455314226599616e77"
+            - values:
+                - "4.86875450414945e86"
+                - "-2.028918984906647e56"
+                - "-2.3996791100919525e30"
+            - values:
+                - "-8.953713349505588e24"
+                - "1.3234092805699793e-58"
+                - "-6.765641952918232e82"
+            - values:
+                - "4.7527290388188516e-33"
+                - "-1.8946284320518358e26"
+                - "-2.5085282994891844e-59"
+            - values:
+                - "-3.2937848542180716e-43"
+                - "-4.797773588737306e65"
+                - "6.865236121083697e-109"
+            - values:
+                - "1.498933928727475e-91"
+                - "-7.11421943222429e-85"
+                - "-2.1069548711668389e-7"
+            - values:
+                - "-2.7504919851837074e-93"
+                - "1.883749159785447e73"
+                - "-1.4601158391475962e-166"
+            - values:
+                - "5.656506993783795e-19"
+                - "2751435.148108612"
+                - "2.0558387493422056e-25"
+            - values:
+                - "4.1632336257511446e-24"
+                - "-5.849191531926912e-90"
+                - "-7.117622329559179e65"
+      - file-name: "type"
+        isa:
+            instructions:
+              - sig: fdiv2.64 v:in:f64
+                acc: inout:f64
+                format: [op_v_8]
+            verification:
+              - acc_type
+              - v1_type
+        tags: ['verifier']
+        runner-options: ['verifier-failure', 'verifier-debug-config']
+        header-template: []
+        code-template: |
+          #
+          .record A {}
+          .record B {}
+          .record panda.String <external>
+          .record panda.Object <external>
+          .function i32 main() {
+              %s
+              *s
+              fdiv2.64 v0
+        check-type: exit-positive
+        description: Check 'fdiv2.64' with incorrect register and accumulator type.
+        template-cases:
+          - values:
+              - movi v0, 0
+          - values:
+              - movi.64 v0, 0
+          - values:
+              - fmovi.64 v0, 0
+            exclude: [val]
+          - values:
+              - |
+                #
+                    lda.type B
+                    sta.obj v0
+          - values:
+              - |
+                #
+                    lda.type B[]
+                    sta.obj v0
+          - values:
+              - |
+                #
+                    lda.type panda.String
+                    sta.obj v0
+          - values:
+              - |
+                #
+                    lda.str "string"
+                    sta.obj v0
+          - values:
+              - |
+                #
+                    movi v0, 10
+                    newarr v0, v0, i32[]
+          - values:
+              - mov.null v0
+
+        cases:
+          - values:
+              - ldai 0
+          - values:
+              - ldai.64 0
+          - values:
+              - fldai.64 0
+            id: val
+          - values:
+              - |
+                #
+                    lda.type A
+          - values:
+              - |
+                #
+                    lda.type A[]
+          - values:
+              - |
+                #
+                    lda.type panda.String
+          - values:
+              - |
+                #
+                    lda.str "string"
+          - values:
+              - |
+                #
+                    movi v1, 10
+                    newarr v1, v1, f64[]
+                    lda.obj v1
+          - values:
+              - lda.null
+
+      - file-name: uninitialized_regs
+        isa:
+          instructions:
+            - sig: fdiv2.64 v:in:f64
+              acc: inout:f64
+              format: [op_v_8]
+        description: Check 'fdiv2.64' with uninitialized register and accumulator.
+        tags: ['verifier']
+        runner-options: ['verifier-failure', 'verifier-debug-config']
+        header-template: []
+        code-template: |
+            #
+            .function i32 main() {
+                %s
+                *s
+                fdiv2.64 %s
+        check-type: exit-positive
+        template-cases:
+          - values:
+              - ''
+              - v0
+          - values:
+              - fmovi.64 v0, 0
+              - v0
+            exclude: [init]
+          - values:
+              - ''
+              - v7
+          - values:
+              - ''
+              - v15
+          - values:
+              - fmovi.64 v15, 0
+              - v15
+            exclude: [init]
+          - values:
+              - ''
+              - v128
+          - values:
+              - fmovi.64 v128, 0
+              - v128
+            exclude: [init]
+          - values:
+              - ''
+              - v255
+          - values:
+              - fmovi.64 v255, 0
+              - v255
+            exclude: [init]
+        cases:
+          - values:
+              - ''
+          - values:
+              - fldai.64 0
+            id: init
