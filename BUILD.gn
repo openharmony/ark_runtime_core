@@ -82,11 +82,12 @@ config("ark_config") {
       "PANDA_USE_FUTEX",
     ]
   } else {
-    defines += [ "PANDA_TARGET_UNIX", "PANDA_USE_FUTEX", ]
+    defines += [
+      "PANDA_TARGET_UNIX",
+      "PANDA_USE_FUTEX",
+    ]
     if (!is_standard_system && (current_cpu != "arm" || is_wearable_product)) {
-      defines += [
-        "PANDA_TARGET_MOBILE",
-      ]
+      defines += [ "PANDA_TARGET_MOBILE" ]
     }
   }
 

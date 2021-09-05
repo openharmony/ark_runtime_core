@@ -12,83 +12,83 @@
 # limitations under the License.
 
 template("ohos_executable") {
-    executable("${target_name}") {
-        forward_variables_from(invoker,
-                               "*",
-                               [
-                                    "configs",
-                                    "remove_configs",
-                                    "relative_install_dir",
-                                    "subsystem_name",
-                                    "install_enable",
-                               ])
-        if (defined(invoker.configs)) {
-            configs += invoker.configs
-        }
-
-        if (defined(invoker.remove_configs)) {
-            configs -= invoker.remove_configs
-        }
+  executable("${target_name}") {
+    forward_variables_from(invoker,
+                           "*",
+                           [
+                             "configs",
+                             "remove_configs",
+                             "relative_install_dir",
+                             "subsystem_name",
+                             "install_enable",
+                           ])
+    if (defined(invoker.configs)) {
+      configs += invoker.configs
     }
+
+    if (defined(invoker.remove_configs)) {
+      configs -= invoker.remove_configs
+    }
+  }
 }
 
 template("ohos_shared_library") {
-    shared_library("${target_name}") {
-        forward_variables_from(invoker,
-                               "*",
-                               [
-                                    "configs",
-                                    "remove_configs",
-                                    "relative_install_dir",
-                                    "subsystem_name",
-                                    "install_enable",
-                                    "part_name",
-                               ])
+  shared_library("${target_name}") {
+    forward_variables_from(invoker,
+                           "*",
+                           [
+                             "configs",
+                             "remove_configs",
+                             "relative_install_dir",
+                             "subsystem_name",
+                             "install_enable",
+                             "part_name",
+                           ])
 
-        if (defined(invoker.configs)) {
-            configs += invoker.configs
-        }
-
-        if (defined(invoker.remove_configs)) {
-            configs -= invoker.remove_configs
-        }
+    if (defined(invoker.configs)) {
+      configs += invoker.configs
     }
+
+    if (defined(invoker.remove_configs)) {
+      configs -= invoker.remove_configs
+    }
+  }
 }
 
 template("ohos_static_library") {
-    static_library("${target_name}") {
-        forward_variables_from(invoker,
-                               "*",
-                               [
-                                    "configs",
-                                    "remove_configs",
-                                    "relative_install_dir",
-                                    "subsystem_name",
-                                    "install_enable",
-                               ])
+  static_library("${target_name}") {
+    forward_variables_from(invoker,
+                           "*",
+                           [
+                             "configs",
+                             "remove_configs",
+                             "relative_install_dir",
+                             "subsystem_name",
+                             "install_enable",
+                           ])
 
-        if (defined(invoker.configs)) {
-            configs += invoker.configs
-        }
-
-        if (defined(invoker.remove_configs)) {
-            configs -= invoker.remove_configs
-        }
+    if (defined(invoker.configs)) {
+      configs += invoker.configs
     }
+
+    if (defined(invoker.remove_configs)) {
+      configs -= invoker.remove_configs
+    }
+  }
 }
 
 template("ohos_prebuilt_etc") {
-    copy("${target_name}") {
-        forward_variables_from(invoker,
-                               "*",
-                               [
-                                   "subsystem_name",
-                                   "install_enable",
-                                   "source",
-                                   "module_install_dir",
-                                   "part_name",
-                               ])
-        sources = [invoker.source]
-        outputs = ["${target_out_dir}/${invoker.source}"]
-    }
+  copy("${target_name}") {
+    forward_variables_from(invoker,
+                           "*",
+                           [
+                             "subsystem_name",
+                             "install_enable",
+                             "source",
+                             "module_install_dir",
+                             "part_name",
+                           ])
+    sources = [ invoker.source ]
+    outputs = [ "${target_out_dir}/${invoker.source}" ]
+  }
 }

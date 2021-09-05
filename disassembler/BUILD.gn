@@ -123,7 +123,7 @@ ark_gen_file("get_instructions_cpp") {
   data_file = "$ark_root/isa/builtins.yaml"
   requires = [
     "$ark_root/isa/builtinsapi.rb",
-    "//ark/js_runtime/ecmascript/ecma_builtins.rb"
+    "//ark/js_runtime/ecmascript/ecma_builtins.rb",
   ]
   output_file = "$target_gen_dir/get_instructions.cpp"
 }

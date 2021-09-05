@@ -23,13 +23,9 @@ config("arkfile_public_config") {
   ]
 
   if (!ark_standalone_build) {
-    include_dirs += [
-      "//third_party/miniz/amalgamation",
-    ]
+    include_dirs += [ "//third_party/miniz/amalgamation" ]
   } else {
-    include_dirs += [
-      "$ark_third_party_root/miniz",
-    ]
+    include_dirs += [ "$ark_third_party_root/miniz" ]
   }
 }
 
@@ -114,9 +110,7 @@ ark_gen_file("libarkfile_type_gen_h") {
 ark_gen_file("libarkfile_bytecode_builtin_enum_gen_h") {
   template_file = "templates/bytecode_builtin_enum_gen.h.erb"
   data_file = "$ark_root/isa/builtins.yaml"
-  requires = [
-    "$ark_root/isa/builtinsapi.rb",
-  ]
+  requires = [ "$ark_root/isa/builtinsapi.rb" ]
   output_file = "$target_gen_dir/bytecode_builtin_enum_gen.h"
 }
 

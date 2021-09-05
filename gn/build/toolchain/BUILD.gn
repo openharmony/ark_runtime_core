@@ -76,7 +76,8 @@ template("gcc_toolchain") {
       os_specific_option = "-Wl,-soname=$soname"
       rspfile_content = "-Wl,--whole-archive {{inputs}} {{solibs}} -Wl,--no-whole-archive {{libs}}"
 
-      command = "$ld -shared {{ldflags}} -o $sofile $os_specific_option @$rspfile"
+      command =
+          "$ld -shared {{ldflags}} -o $sofile $os_specific_option @$rspfile"
 
       description = "SOLINK $soname"
 

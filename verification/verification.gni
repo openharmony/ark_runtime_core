@@ -39,18 +39,18 @@ absint_sources = [
 ]
 
 debug_sources = [
+  "$ark_root/verification/debug/allowlist/allowlist.cpp",
   "$ark_root/verification/debug/breakpoint/breakpoint.cpp",
   "$ark_root/verification/debug/config/config_parse.cpp",
   "$ark_root/verification/debug/config/config_process.cpp",
   "$ark_root/verification/debug/config_load.cpp",
   "$ark_root/verification/debug/context/context.cpp",
-  "$ark_root/verification/debug/handlers/config_handler_breakpoints.cpp",
-  "$ark_root/verification/debug/handlers/config_handler_options.cpp",
-  "$ark_root/verification/debug/handlers/config_handler_allowlist.cpp",
-  "$ark_root/verification/debug/allowlist/allowlist.cpp",
-  "$ark_root/verification/debug/handlers/config_handler_method_options.cpp",
-  "$ark_root/verification/debug/handlers/config_handler_method_groups.cpp",
   "$ark_root/verification/debug/default_config.cpp",
+  "$ark_root/verification/debug/handlers/config_handler_allowlist.cpp",
+  "$ark_root/verification/debug/handlers/config_handler_breakpoints.cpp",
+  "$ark_root/verification/debug/handlers/config_handler_method_groups.cpp",
+  "$ark_root/verification/debug/handlers/config_handler_method_options.cpp",
+  "$ark_root/verification/debug/handlers/config_handler_options.cpp",
 ]
 
 job_queue_sources = [
@@ -62,8 +62,7 @@ job_queue_sources = [
 verifier_thread_sources =
     [ "$ark_root/verification/thread/verifier_thread.cpp" ]
 
-verifier_cache_sources =
-   [ "$ark_root/verification/cache/results_cache.cpp" ]
+verifier_cache_sources = [ "$ark_root/verification/cache/results_cache.cpp" ]
 
 verifier_sources = [ "$ark_root/verification/verification_options.cpp" ]
 verifier_sources += type_sources

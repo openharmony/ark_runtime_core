@@ -25,9 +25,7 @@ config("arkruntime_public_config") {
     "//third_party/icu/icu4c/source/i18n",
     "//third_party/icu/icu4c/source/",
   ]
-  configs = [
-    "$ark_root/verification/gen:verification_public_config",
-  ]
+  configs = [ "$ark_root/verification/gen:verification_public_config" ]
 }
 
 config("arkruntime_config") {
@@ -66,10 +64,10 @@ ohos_static_library("libarkruntime_static") {
     "file_manager.cpp",
     "gc_task.cpp",
     "handle_scope.cpp",
+    "imtable_builder.cpp",
     "interpreter/interpreter.cpp",
     "interpreter/runtime_interface.cpp",
     "intrinsics.cpp",
-    "imtable_builder.cpp",
     "language_context.cpp",
     "locks.cpp",
     "mark_word.cpp",
@@ -175,9 +173,9 @@ ohos_static_library("libarkruntime_static") {
   }
 
   core_vm_sources = [
-    "core/core_vm.cpp",
     "core/core_class_linker_extension.cpp",
     "core/core_language_context.cpp",
+    "core/core_vm.cpp",
   ]
 
   sources += core_vm_sources
@@ -335,6 +333,7 @@ template("gen_intrinsics_yaml") {
 
   action("$target_name") {
     script = "$ark_root/runtime/templates/gen_intrinsics_data.rb"
+
     # rerun action when data file or template file update
     inputs = [ template_file ]
     inputs += invoker.data_files
@@ -371,9 +370,7 @@ foreach(t, builtin_templates) {
   builtin_labels += [ ":${t}" ]
   ark_gen_file(t) {
     data_file = "$ark_root/isa/builtins.yaml"
-    requires = [
-      "$ark_root/isa/builtinsapi.rb",
-    ]
+    requires = [ "$ark_root/isa/builtinsapi.rb" ]
     template_file = "interpreter/templates/${t}.h.erb"
     output_file = output
   }

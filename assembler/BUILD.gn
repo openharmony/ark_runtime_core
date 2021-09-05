@@ -27,10 +27,10 @@ libarkassembler_sources = [
   "$target_gen_dir/ins_to_string.cpp",
   "annotation.cpp",
   "assembly-emitter.cpp",
+  "assembly-ins.cpp",
   "assembly-parser.cpp",
   "assembly-program.cpp",
   "assembly-type.cpp",
-  "assembly-ins.cpp",
   "context.cpp",
   "extensions/ecmascript/ecmascript_meta.cpp",
   "extensions/extensions.cpp",
@@ -164,7 +164,7 @@ ark_gen_file("builtin_parsing_cpp") {
   data_file = "../isa/builtins.yaml"
   requires = [
     "../isa/builtinsapi.rb",
-    "//ark/js_runtime/ecmascript/ecma_builtins.rb"
+    "//ark/js_runtime/ecmascript/ecma_builtins.rb",
   ]
   output_file = "$target_gen_dir/builtin_parsing.cpp"
 }
@@ -173,8 +173,8 @@ ark_gen_file("builtin_parsing_tests_cpp") {
   template_file = "templates/builtin_parsing_tests.cpp.erb"
   data_file = "../isa/builtins.yaml"
   requires = [
-    "../isa/builtinsapi.rb" ,
-    "//ark/js_runtime/ecmascript/ecma_builtins.rb"
+    "../isa/builtinsapi.rb",
+    "//ark/js_runtime/ecmascript/ecma_builtins.rb",
   ]
   output_file = "$target_gen_dir/builtin_parsing_tests.cpp"
 }
