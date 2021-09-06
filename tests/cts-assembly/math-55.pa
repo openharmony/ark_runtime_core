@@ -1,0 +1,120 @@
+# Copyright (c) 2021 Huawei Device Co., Ltd.
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+# - (a * b)
+.function i32 mneg_i32_0(i32 a0, i32 a1) {
+    mul a0, a1
+    neg
+    return
+}
+
+# (-a) * b
+.function i32 mneg_i32_1(i32 a0, i32 a1) {
+    lda a0
+    neg
+    mul2 a1
+    return
+}
+
+# - (a * b)
+.function i64 mneg_i64_0(i64 a0, i64 a1) {
+    lda.64 a0
+    mul2.64 a1
+    neg.64
+    return.64
+}
+
+# (-a) * b
+.function i64 mneg_i64_1(i64 a0, i64 a1) {
+    lda.64 a0
+    neg.64
+    mul2.64 a1
+    return.64
+}
+
+# (a * b)
+.function f64 mneg_f64_0(f64 a0, f64 a1) {
+    lda.64 a0
+    fmul2.64 a1
+    fneg.64
+    return.64
+}
+
+# (-a) * b
+.function f64 mneg_f64_1(f64 a0, f64 a1) {
+    lda.64 a0
+    fneg.64
+    fmul2.64 a1
+    return.64
+}
+
+.function u1 main() {
+    movi v0, 10
+    movi v1, 12
+    call.short mneg_i32_0, v0, v1
+    sta v0
+    ldai -120
+    jne v0, exit_error_0
+    movi v0, 10
+    movi v1, 12
+    call.short mneg_i32_1, v0, v1
+    sta v0
+    ldai -120
+    jne v0, exit_error_1
+    movi.64 v0, 1
+    movi.64 v1, 2
+    call.short mneg_i64_0, v0, v1
+    sta.64 v0
+    ldai.64 -2
+    cmp.64 v0
+    jnez exit_error_2
+    movi.64 v0, 1
+    movi.64 v1, 2
+    call.short mneg_i64_1, v0, v1
+    sta.64 v0
+    ldai.64 -2
+    cmp.64 v0
+    jnez exit_error_3
+    fmovi.64 v0, 0.5
+    fmovi.64 v1, 1.0
+    call.short mneg_f64_0, v0, v1
+    fmovi.64 v0, -0.5
+    fcmpl.64 v0
+    jnez exit_error_4
+    fmovi.64 v0, 0.5
+    fmovi.64 v1, 1.0
+    call.short mneg_f64_1, v0, v1
+    fmovi.64 v0, -0.5
+    fcmpl.64 v0
+    jnez exit_error_5  
+    ldai 0
+    return
+exit_error_0:
+    ldai 1
+    return
+exit_error_1:
+    ldai 2
+    return
+exit_error_2:
+    ldai 3
+    return
+exit_error_3:
+    ldai 4
+    return
+exit_error_4:
+    ldai 5
+    return
+exit_error_5:
+    ldai 6
+    return
+}

@@ -1,0 +1,173 @@
+# Copyright (c) 2021 Huawei Device Co., Ltd.
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+definitions: []
+tests:
+  - file-name: "movi.64"
+    isa:
+      title: Move immediate-to-register
+      description: >
+        Move integer immediate into a register. For short formats immediate is sign extended to operand size.
+      exceptions:
+        - x_none
+      verification:
+        - none
+    commands:
+      - file-name: "imm_64"
+        isa:
+          instructions:
+            - sig: movi.64 v:out:i64, imm:i64
+              acc: none
+              format: [op_v_8_imm_64]
+        code-template: |
+          #
+              ldai.64 %s
+              movi.64 v0, %s
+              cmp.64 v0
+        description: Check movi.64 with various values.
+        tags: ['tsan']
+        cases:
+          - values:
+              - 0
+              - 0
+          - values:
+              - 1
+              - 1
+          - values:
+              - -1
+              - -1
+          - values:
+              - 0xF
+              - 0xF
+          - values:
+              - -0xF
+              - -0xF
+          - values:
+              - 0x7F
+              - 0x7F
+          - values:
+              - -0x7F
+              - -0x7F
+          - values:
+              - 0xFF
+              - 0xFF
+          - values:
+              - -0xFF
+              - -0xFF
+          - values:
+              - 0x7FFF
+              - 0x7FFF
+          - values:
+              - -0x7FFF
+              - -0x7FFF
+          - values:
+              - 0xFFFF
+              - 0xFFFF
+          - values:
+              - -0xFFFF
+              - -0xFFFF
+          - values:
+              - 0x7FFFFFFF
+              - 0x7FFFFFFF
+          - values:
+              - -0x7FFFFFFF
+              - -0x7FFFFFFF
+          - values:
+              - 0xFFFFFFFF
+              - 0xFFFFFFFF
+          - values:
+              - -0xFFFFFFFF
+              - -0xFFFFFFFF
+          - values:
+              - 0x12345678
+              - 0x12345678
+          - values:
+              - -0x12345678
+              - -0x12345678
+          - values:
+              - 0xFEDCBA98
+              - 0xFEDCBA98
+          - values:
+              - -0xFEDCBA98
+              - -0xFEDCBA98
+          - values:
+              - 0x100000000
+              - 0x100000000
+          - values:
+              - -0x100000000
+              - -0x100000000
+          - values:
+              - 0x100000001
+              - 0x100000001
+          - values:
+              - -0x100000001
+              - -0x100000001
+          - values:
+              - 0xFEDCBA9876543210
+              - 0xFEDCBA9876543210
+          - values:
+              - -0xFEDCBA9876543210
+              - -0xFEDCBA9876543210
+          - values:
+              - 0
+              - 0.1
+            runner-options: [compile-failure]
+            case-check-type: no-check
+            description: Check movi.64 with incorrect value (f64 value).
+          - values:
+              - 0
+              - 1e1
+            runner-options: [compile-failure]
+            case-check-type: no-check
+            description: Check movi.64 with incorrect value (f64 value).
+          - values:
+              - 0
+              - e1
+            runner-options: [compile-failure]
+            case-check-type: no-check
+            description: Check movi.64 with incorrect value.
+
+      - file-name: "vd_8"
+        isa:
+          instructions:
+            - sig: movi.64 v:out:i64, imm:i64
+              acc: none
+              format: [op_v_8_imm_64]
+        code-template: |
+          #
+              ldai.64 1
+              movi.64 %s, 1
+              cmp.64 %s
+        description: Check mov.64 instruction with different register numbers (8 bit).
+        cases:
+          - values:
+              - v0
+              - v0
+          - values:
+              - v1
+              - v1
+          - values:
+              - v15
+              - v15
+          - values:
+              - v16
+              - v16
+          - values:
+              - v255
+              - v255
+          - values:
+              - v256
+              - v0
+            runner-options: [compile-failure]
+            case-check-type: no-check
+            description: Check movi.64 instruction with out-of-range register number.

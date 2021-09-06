@@ -1,0 +1,91 @@
+/*
+ * Copyright (c) 2021 Huawei Device Co., Ltd.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+#ifndef PANDA_VERIFICATION_ABS_INT_INL_COMPAT_CHECKS_H_
+#define PANDA_VERIFICATION_ABS_INT_INL_COMPAT_CHECKS_H_
+
+#include "absint/verification_status.h"
+#include "util/str.h"
+
+% checks = Verification.compatibility_checks
+namespace panda::verifier {
+
+struct CheckResult {
+    VerificationStatus status;
+    const char* msg;
+
+    bool IsOk() const {
+        return status == VerificationStatus::OK;
+    }
+    bool IsWarning() const {
+        return status == VerificationStatus::WARNING;
+    }
+    bool IsError() const {
+        return status == VerificationStatus::ERROR;
+    }
+
+% checks.results.ok.to_h.merge(checks.results.warnings.to_h).merge(checks.results.errors.to_h).each do |name, _|
+    static const CheckResult <%= name.to_s %>;
+% end
+};
+
+% checks.results.each_pair do |status, values|
+%   values.each_pair do |name, msg|
+inline const CheckResult CheckResult::<%= name.to_s %> = {VerificationStatus::<%= status.to_s.delete_suffix('s').upcase %>, "<%= msg %>"};
+%   end
+% end
+
+% checks.domains.each_pair do |_, domain|
+%   if domain.new_enum
+enum class <%= domain.new_enum %> {
+%     domain.values.each do |value|
+    <%= value.upcase %>,
+%     end
+};
+
+%   end
+% end
+% checks.checks.each_pair do |check_name, check|
+%   type1, type2 = Verification.domain_types(check)
+inline const CheckResult& Check<%= check_name.to_s %>(<%= type1 %> x, <%= type2 %> y) {
+    switch(x) {
+%   check.each_pair do |name, value|
+%     name = name.to_s
+%     if !name.start_with?('_')  # those are special like _domains and _default
+    case <%= type1 %>::<%= name.upcase %>:
+        switch(y) {
+%       value.each_pair do |name2, value2|
+%         name2 = name2.to_s
+%         if !name2.start_with?('_')
+%           Array(value2).each do |value2|
+        case <%= type2 %>::<%= value2.upcase %>:
+%           end
+            return CheckResult::<%= name2 %>;
+%         end
+%       end
+        default:
+            return CheckResult::<%= value._default || check._default %>;
+        }
+%     end
+%   end
+    default:
+        return CheckResult::<%= check._default %>;
+    }
+}
+% end
+
+}  // namespace panda::verifier
+
+#endif  // PANDA_VERIFICATION_ABS_INT_INL_COMPAT_CHECKS_H_

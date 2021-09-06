@@ -1,0 +1,222 @@
+# Copyright (c) 2021 Huawei Device Co., Ltd.
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+definitions: []
+tests:
+  - file-name: "ldai"
+    isa:
+      title: Load accumulator from immediate
+      description: >
+          Load immediate into accumulator. For short formats immediate is sign extended to operand size.
+      exceptions:
+          - x_none
+      verification:
+          - none
+    commands:
+      - file-name: "pos"
+        isa:
+          instructions:
+            - sig: ldai imm:i32
+              acc: out:i32
+              format: [op_imm_8, op_imm_16]
+            - sig: ldai imm:i32
+              acc: out:i32
+              format: [op_imm_32]
+        description: Check ldai with various positive values.
+        code-template: |
+          #
+              ldai %s
+              movi v0, %s
+              jne v0, set_failure
+              ldai 0
+              jmp fall_through
+          set_failure:
+              ldai 1
+          fall_through:
+        tags: ['tsan']
+        cases:
+          - values:
+              - "0"
+              - "0"
+          - values:
+              - "1"
+              - "1"
+          - values:
+              - "255"
+              - "255"
+          - values:
+              - "65535"
+              - "0xFFFF"
+          - values:
+              - "0x12345678"
+              - "0x12345678"
+          - values:
+              - "0xFFFFFFFF"
+              - "-1"
+          - values:
+              - "2147483647"
+              - "2147483647"
+          - values:
+              - "2147483648"
+              - "2147483648"
+          - values:
+              - "0x1234567890ABCDEF"
+              - "0x90ABCDEF"
+          - values:
+              - "4294967295"
+              - "4294967295"
+          - values:
+              - "4294967295"
+              - "-1"
+          - values:
+              - "4294967296"
+              - "4294967296"
+          - values:
+              - "4294967296"
+              - "0"
+          - values:
+              - "0.0"
+              - "0"
+            runner-options: [compile-failure]
+            description: Check ldai with incorrect positive values (f64).
+          - values:
+              - "1.1"
+              - "1"
+            runner-options: [compile-failure]
+            description: Check ldai with incorrect positive values (f64).
+      - file-name: "neg"
+        isa:
+          instructions:
+            - sig: ldai imm:i32
+              acc: out:i32
+              format: [op_imm_8, op_imm_16]
+        code-template: |
+          #
+              ldai %s
+              movi v0, %s
+              jne v0, set_failure
+              ldai 0
+              jmp fall_through
+          set_failure:
+              ldai 1
+          fall_through:
+        description: Check ldai with various negative values.
+        cases:
+          - values:
+              - "-0"
+              - "0"
+          - values:
+              - "-1"
+              - "-1"
+          - values:
+              - "-255"
+              - "-255"
+          - values:
+              - "-65535"
+              - "-0xFFFF"
+          - values:
+              - "-0x12345678"
+              - "-0x12345678"
+          - values:
+              - "-0xFFFFFFFF"
+              - "1"
+          - values:
+              - "-2147483647"
+              - "-2147483647"
+          - values:
+              - "-2147483648"
+              - "-2147483648"
+          - values:
+              - "-2147483649"
+              - "0x7FFFFFFF"
+          - values:
+              - "-2147483648"
+              - "0x80000000"
+          - values:
+              - "-0x1234567890ABCDEF"
+              - "-0x1234567890ABCDEF"
+
+          - values:
+              - "-4294967295"
+              - "-4294967295"
+          - values:
+              - "-4294967296"
+              - "0"
+          - values:
+              - "-0.0"
+              - "0"
+            runner-options: [compile-failure]
+            description: Check ldai with incorrect negative values (f64).
+          - values:
+              - "-1.1"
+              - "-1"
+            runner-options: [compile-failure]
+            description: Check ldai with incorrect negative values (f64).
+
+      - file-name: "vals"
+        isa:
+          instructions:
+            - sig: ldai imm:i32
+              acc: out:i32
+              format: [op_imm_8, op_imm_16]
+        description: Check compiler shrinks value to 32 bit.
+        code-template: |
+          #
+              ldai %s
+              movi v0, %s
+              jne v0, set_failure
+              ldai 0
+              jmp fall_through
+          set_failure:
+              ldai 1
+          fall_through:
+        cases:
+          - values:
+              - "2147483648"
+              - "0xFFFFFFFF80000000"
+          - values:
+              - "0x1234567890ABCDEF"
+              - "0xFFFFFFFF90ABCDEF"
+          - values:
+              - "0xFFFFFFFF"
+              - "0xFFFFFFFFFFFFFFFF"
+          - values:
+              - "-1"
+              - "0xFFFFFFFFFFFFFFFF"
+          - values:
+              - "0xFFFFFFFF7FFFFFFF"
+              - "0x7FFFFFFF"
+          - values:
+              - "0xFFFFFFFF00000000"
+              - "0"
+          - values:
+              - "-0xFFFFFFFF"
+              - "1"
+          - values:
+              - "0x80000000"
+              - "0xFFFFFFFF80000000"
+          - values:
+              - "0x1234567880000000"
+              - "0xFFFFFFFF80000000"
+          - values:
+              - "0x90ABCDEF80000000"
+              - "0xFFFFFFFF80000000"
+          - values:
+              - "-0x1234567890ABCDEF"
+              - "-0xFFFFFFFF90ABCDEF"
+          - values:
+              - "-4294967296"
+              - "0"
+          - values:
+              - "4294967296"
+              - "0"

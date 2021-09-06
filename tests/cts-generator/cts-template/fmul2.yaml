@@ -1,0 +1,983 @@
+# Copyright (c) 2021 Huawei Device Co., Ltd.
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+definitions: []
+tests:
+  - file-name: "fmul2.64"
+    isa:
+      title: Two address floating-point binary operation on accumulator
+      description: >
+        Perform specified floating-point binary operation on accumulator and register and store result into accumulator.
+        The results of instructions correspond IEEE-754 arithmetic rules.
+      exceptions:
+        - x_none
+    commands:
+      - file-name: "op_vs_8_nan"
+        isa:
+          instructions:
+            - sig: fmul2.64 v:in:f64
+              acc: inout:f64
+              format: [op_v_8]
+          description: Any operation with NaN results to NaN value.
+        check-type: check-acc-nan
+        code-template: |
+          #
+              fldai.64 %s
+              fmovi.64 v0, *s
+              fmul2.64 v0
+        description: >
+          Check fmul2.64 results in NaN when acc or v0 is NaN
+        template-cases:
+          - values:
+              # NaN
+              - "0x7ff8000000000000"
+          - values:
+              # NaN representation
+              - "0xFFFFFFFFFFFFFFFF"
+          - values:
+              - "0"
+            exclude: [hasval]
+          - values:
+              # -0.0d
+              - "0x8000000000000000"
+            exclude: [hasval]
+          - values:
+              - "1"
+            exclude: [hasval]
+          - values:
+              - "-1"
+            exclude: [hasval]
+          - values:
+              # +Inf
+              - "0x7ff0000000000000"
+            exclude: [hasval]
+          - values:
+              # -Inf
+              - "0xfff0000000000000"
+            exclude: [hasval]
+          - values:
+              # +max
+              - "0x7fefffffffffffff"
+            exclude: [hasval]
+          - values:
+              # -max
+              - "0xffefffffffffffff"
+            exclude: [hasval]
+          - values:
+              # +min
+              - "0x0000000000000001"
+            exclude: [hasval]
+          - values:
+              # -min
+              - "0x8000000000000001"
+            exclude: [hasval]
+          - values:
+              - "3.14159265358979323846"
+            exclude: [hasval]
+          - values:
+              - "1234567890987654321"
+            exclude: [hasval]
+        cases:
+          - values:
+              # NaN
+              - "0x7ff8000000000000"
+          - values:
+              # NaN
+              - "0xFFFFFFFFFFFFFFFF"
+          - values:
+              - "0"
+            id: hasval
+          - values:
+              # -0.0d
+              - "0x8000000000000000"
+            id: hasval
+          - values:
+              - "1"
+            id: hasval
+          - values:
+              - "-1"
+            id: hasval
+          - values:
+              # +Inf
+              - "0x7ff0000000000000"
+            id: hasval
+          - values:
+              # -Inf
+              - "0xfff0000000000000"
+            id: hasval
+          - values:
+              # +max
+              - "0x7fefffffffffffff"
+            id: hasval
+          - values:
+              # -max
+              - "0xffefffffffffffff"
+            id: hasval
+          - values:
+              # +min
+              - "0x0000000000000001"
+            id: hasval
+          - values:
+              # -min
+              - "0x8000000000000001"
+            id: hasval
+          - values:
+              - "3.14159265358979323846"
+            id: hasval
+          - values:
+              - "1234567890987654321"
+            id: hasval
+
+      - file-name: "op_vs_8_pinf"
+        isa:
+          instructions:
+            - sig: fmul2.64 v:in:f64
+              acc: inout:f64
+              format: [op_v_8]
+          description: Multiplication is infinity if any non zero value is multiplied by infinity.
+        check-type: check-positive
+        code-template: |
+            #
+                fldai.64 0x7ff0000000000000 # +Inf
+                fmovi.64 v0, %s
+            # Mult of +Inf and value
+                fmul2.64 v0
+                fmovi.64 v1, %s
+                fcmpg.64 v1
+        description: Check fmul2.64 with +Inf and various values (NaN, Inf, min, max, numbers).
+        cases:
+          - values:
+              - "1"
+              # Inf
+              - "0x7ff0000000000000"
+          - values:
+              - "-1"
+              # -Inf
+              - "0xFFF0000000000000"
+          - values:
+              # +Inf
+              - "0x7ff0000000000000"
+              # Inf
+              - "0x7ff0000000000000"
+          - values:
+              # -Inf
+              - "0xfff0000000000000"
+              # -Inf
+              - "0xFFF0000000000000"
+          - values:
+              # +max
+              - "0x7fefffffffffffff"
+              # Inf
+              - "0x7FF0000000000000"
+          - values:
+              # -max
+              - "0xffefffffffffffff"
+              # -Inf
+              - "0xFFF0000000000000"
+          - values:
+              # +min
+              - "0x0000000000000001"
+              # Inf
+              - "0x7FF0000000000000"
+          - values:
+              # -min
+              - "0x8000000000000001"
+              # -Inf
+              - "0xFFF0000000000000"
+          - values:
+              - "3.14159265358979323846"
+              # Inf
+              - "0x7FF0000000000000"
+          - values:
+              - "1234567890987654321"
+              # Inf
+              - "0x7FF0000000000000"
+
+      - file-name: "op_vs_8_ninf"
+        isa:
+          instructions:
+            - sig: fmul2.64 v:in:f64
+              acc: inout:f64
+              format: [op_v_8]
+          description: Multiplication is infinity if any non zero value is multiplied by infinity.
+        check-type: check-positive
+        code-template: |
+            #
+                fldai.64 0xfff0000000000000 # -Inf
+                fmovi.64 v0, %s
+            # Mult of -Inf and value
+                fmul2.64 v0
+                fmovi.64 v1, %s
+                fcmpg.64 v1
+        description: Check fmul2.64 with -Inf and various values (NaN, Inf, min, max, numbers).
+        cases:
+            - values:
+                - "1"
+                # -Inf
+                - "0xfff0000000000000"
+            - values:
+                - "-1"
+                # +Inf
+                - "0x7FF0000000000000"
+            - values:
+                # +Inf
+                - "0x7ff0000000000000"
+                # -Inf
+                - "0xfff0000000000000"
+            - values:
+                # -Inf
+                - "0xfff0000000000000"
+                # +Inf
+                - "0x7FF0000000000000"
+            - values:
+                # +max
+                - "0x7fefffffffffffff"
+                # -Inf
+                - "0xfff0000000000000"
+            - values:
+                # -max
+                - "0xffefffffffffffff"
+                # +Inf
+                - "0x7FF0000000000000"
+            - values:
+                # +min
+                - "0x0000000000000001"
+                # -Inf
+                - "0xfff0000000000000"
+            - values:
+                # -min
+                - "0x8000000000000001"
+                # +Inf
+                - "0x7FF0000000000000"
+            - values:
+                - "3.14159265358979323846"
+                # -Inf
+                - "0xfff0000000000000"
+            - values:
+                - "1234567890987654321"
+                # -Inf
+                - "0xfff0000000000000"
+
+      - file-name: "op_vs_8_pzero"
+        isa:
+          instructions:
+            - sig: fmul2.64 v:in:f64
+              acc: inout:f64
+              format: [op_v_8]
+          description: The sign of division or multiplication result is positive if both values have the same sign, negative if the values have different sign.
+        check-type: check-positive
+        code-template: |
+            #
+                fldai.64 0.0 #
+                fmovi.64 v0, %s
+            # Mult of +0.0 and value
+                fmul2.64 v0
+                fmovi.64 v1, %s
+                fcmpg.64 v1
+        description: Check fmul2.64 with +0 and various values (NaN, Inf, min, max, numbers).
+        cases:
+            - values:
+                - "0"
+                - "0"
+            - values:
+                - "-0.0"
+                - "-0.0"
+            - values:
+                - "1"
+                - "0"
+            - values:
+                - "-1"
+                - "-0.0"
+            - values:
+                # +max
+                - "0x7fefffffffffffff"
+                - "0"
+            - values:
+                # -max
+                - "0xffefffffffffffff"
+                - "-0.0"
+            - values:
+                # +min
+                - "0x0000000000000001"
+                - "0"
+            - values:
+                # -min
+                - "0x8000000000000001"
+                - "-0.0"
+            - values:
+                - "3.14159265358979323846"
+                - "0"
+
+      - file-name: "op_vs_8_nzero"
+        isa:
+          instructions:
+            - sig: fmul2.64 v:in:f64
+              acc: inout:f64
+              format: [op_v_8]
+          description: The sign of division or multiplication result is positive if both values have the same sign, negative if the values have different sign.
+        check-type: check-positive
+        code-template: |
+            #
+                fldai.64 -0.0 #
+                fmovi.64 v0, %s
+            # Mult of -0.0 and value
+                fmul2.64 v0
+                fmovi.64 v1, %s
+                fcmpg.64 v1
+        description: Check fmul2.64 with -0 and various values (NaN, Inf, min, max, numbers).
+        cases:
+          - values:
+              - "0"
+              - "0"
+          - values:
+              - "-0.0"
+              - "0"
+          - values:
+              - "1"
+              - "-0.0"
+          - values:
+              - "-1"
+              - "0"
+          - values:
+              # +max
+              - "0x7fefffffffffffff"
+              - "-0.0"
+          - values:
+              # -max
+              - "0xffefffffffffffff"
+              - "0"
+          - values:
+              # +min
+              - "0x0000000000000001"
+              - "-0.0"
+          - values:
+              # -min
+              - "0x8000000000000001"
+              - "0"
+          - values:
+              - "3.14159265358979323846"
+              - "-0.0"
+          - values:
+              - "-3.14159265358979323846"
+              - "0"
+
+      - file-name: "op_vs_8_zero_inf"
+        isa:
+          instructions:
+            - sig: fmul2.64 v:in:f64
+              acc: inout:f64
+              format: [op_v_8]
+          description: >
+            Multiplication is NaN if zero is multiplied by infinity.
+        check-type: check-acc-nan
+        code-template: |
+            #
+                fldai.64 %s
+                fmovi.64 v0, *s
+            # Mult 0 by Inf
+                fmul2.64 v0
+        description: >
+          Check fmul2.64 of 0 and Inf is NaN.
+        template-cases:
+          - values:
+            - "0x7ff0000000000000"
+            exclude: [inf]
+          - values:
+            - "0xfff0000000000000"
+            exclude: [inf]
+          - values:
+            - "0"
+            exclude: [zero]
+          - values:
+            # Negative Zero
+            - "0x8000000000000000"
+            exclude: [zero]
+        cases:
+          - values:
+            - "0x7ff0000000000000"
+            id: inf
+          - values:
+            - "0xfff0000000000000"
+            id: inf
+          - values:
+            - "0"
+            id: zero
+          - values:
+            # Negative Zero
+            - "0x8000000000000000"
+            id: zero
+
+      - file-name: "op_vs_8_pone"
+        isa:
+          instructions:
+            - sig: fmul2.64 v:in:f64
+              acc: inout:f64
+              format: [op_v_8]
+        check-type: check-positive
+        code-template: |
+            #
+                fldai.64 1.0 #
+                fmovi.64 v0, %s
+            # Mult of 1.0 and value
+                fmul2.64 v0
+                fmovi.64 v1, %s
+                fcmpg.64 v1
+        description: Check fmul2.64 with +1 and various values (NaN, Inf, min, max, numbers).
+        cases:
+          - values:
+              # +0.0d
+              - "0"
+              - "0"
+          - values:
+              - "-0.0"
+              - "-0.0"
+          - values:
+              - "1"
+              - "1"
+          - values:
+              - "-1"
+              - "-1"
+          - values:
+              # +Inf
+              - "0x7ff0000000000000"
+              # +Inf
+              - "0x7FF0000000000000"
+          - values:
+              # -Inf
+              - "0xfff0000000000000"
+              # -Inf
+              - "0xFFF0000000000000"
+          - values:
+              # +max
+              - "0x7fefffffffffffff"
+              # +max
+              - "0x7FEFFFFFFFFFFFFF"
+          - values:
+              # -max
+              - "0xFFEFFFFFFFFFFFFF"
+              # -max
+              - "0xFFEFFFFFFFFFFFFF"
+          - values:
+              # +min
+              - "0x0000000000000001"
+              - "0x0000000000000001"
+          - values:
+              # -min
+              - "0x8000000000000001"
+              - "0x8000000000000001"
+          - values:
+              - "3.14159265358979323846"
+              - "3.14159265358979323846"
+          - values:
+              - "-3.14159265358979323846"
+              - "-3.14159265358979323846"
+          - values:
+              - "1234567890.987654321"
+              - "1234567890.987654321"
+
+      - file-name: "op_vs_8_none"
+        isa:
+          instructions:
+            - sig: fmul2.64 v:in:f64
+              acc: inout:f64
+              format: [op_v_8]
+        check-type: check-positive
+        code-template: |
+            #
+                fldai.64 -1.0 #
+                fmovi.64 v0, %s
+            # Mult of -1.0 and value
+                fmul2.64 v0
+                fmovi.64 v1, %s
+                fcmpg.64 v1
+        description: Check fmul2.64 with -1 and various values (NaN, Inf, min, max, numbers).
+        cases:
+          - values:
+              - "0"
+              - "-0.0"
+          - values:
+              - "-0.0"
+              - "0"
+          - values:
+              - "1"
+              - "-1"
+          - values:
+              - "-1"
+              - "1"
+          - values:
+              # +Inf
+              - "0x7ff0000000000000"
+              # -Inf
+              - "0xFFF0000000000000"
+          - values:
+              # -Inf
+              - "0xfff0000000000000"
+              # +Inf
+              - "0x7FF0000000000000"
+          - values:
+              # +max
+              - "0x7fefffffffffffff"
+              - "0xFFEFFFFFFFFFFFFF"
+          - values:
+              # -max
+              - "0xFFEFFFFFFFFFFFFF"
+              - "0x7FEFFFFFFFFFFFFF"
+          - values:
+              # +min
+              - "0x0000000000000001"
+              - "0x8000000000000001"
+          - values:
+              # -min
+              - "0x8000000000000001"
+              - "0x0000000000000001"
+          - values:
+              - "3.14159265358979323846"
+              - "-3.14159265358979323846"
+          - values:
+              - "-3.14159265358979323846"
+              - "3.14159265358979323846"
+          - values:
+              - "1234567890.987654321"
+              - "-1234567890.987654321"
+
+      - file-name: "op_vs_8"
+        isa:
+          instructions:
+            - sig: fmul2.64 v:in:f64
+              acc: inout:f64
+              format: [op_v_8]
+          description: The sign of division or multiplication result is positive if both values have the same sign, negative if the values have different sign.
+        check-type: check-positive
+        code-template: |
+            #
+                fldai.64 %s #
+                fmovi.64 v0, %s
+            # Mult of -1.0 and value
+                fmul2.64 v0
+                fmovi.64 v1, %s
+                fcmpg.64 v1
+        description: Check fmul2.64 with various values (zeroes, Infs, min, max, numbers).
+        cases:
+            - values:
+                - "0.0"
+                - "0.0"
+                - "0.0"
+            - values:
+                - "0.0"
+                - "-0.0"
+                - "-0.0"
+            - values:
+                - "-0.0"
+                - "0.0"
+                - "-0.0"
+            - values:
+                - "-0.0"
+                - "-0.0"
+                - "0.0"
+            - values:
+                - "1.0"
+                - "-1.0"
+                - "-1.0"
+            - values:
+                - "1.0"
+                - "1.0"
+                - "1.0"
+            - values:
+                - "-1.0"
+                - "1.0"
+                - "-1.0"
+            - values:
+                - "1.0e100"
+                - "1.0e100"
+                - "1.0e200"
+            - values:
+                - "1.0e100"
+                - "-1.0e100"
+                - "-1.0e200"
+            - values:
+                - "1.0e+100"
+                - "1.0e-100"
+                - "1.0"
+            - values:
+                - "-1.0e100"
+                - "1.0e100"
+                - "-1.0e200"
+            - values:
+                - "-1.0e-100"
+                - "1.0e-100"
+                - "-1.0e-200"
+            - values:
+                - "-1.0e+100"
+                - "-1.0e-100"
+                - "1.0"
+            - values:
+                - "3.14159265358979323846"
+                - "-3.14159265358979323846"
+                - "-9.869604401089358"
+            - values:
+                - "3.14159265358979323846e100"
+                - "-3.14159265358979323846e100"
+                - "-9.869604401089358e200"
+      - file-name: "op_vs_8_max"
+        isa:
+          instructions:
+            - sig: fmul2.64 v:in:f64
+              acc: inout:f64
+              format: [op_v_8]
+        check-type: check-positive
+        code-template: |
+            #
+                fldai.64 %s
+                fmovi.64 v0, %s
+            # Mult of two values
+                fmul2.64 v0
+                fmovi.64 v1, %s
+                fcmpg.64 v1
+        description: Check fmul2.64 with various max values.
+        cases:
+          - values:
+              # +max
+              - "0x7fefffffffffffff"
+              # +max
+              - "0x7fefffffffffffff"
+              # +Inf
+              - "0x7ff0000000000000"
+          - values:
+              # -max
+              - "0xFFEFFFFFFFFFFFFF"
+              # -max
+              - "0xFFEFFFFFFFFFFFFF"
+              # +Inf
+              - "0x7ff0000000000000"
+          - values:
+              # +max
+              - "0x7fefffffffffffff"
+              # -max
+              - "0xFFEFFFFFFFFFFFFF"
+              # -Inf
+              - "0xfff0000000000000"
+          - values:
+              # +max
+              - "0x7fefffffffffffff"
+              # 1d
+              - "0x3ff0000000000000"
+              # +max
+              - "0x7fefffffffffffff"
+          - values:
+              # +max
+              - "0x7fefffffffffffff"
+              - "-1"
+              # -max
+              - "0xFFEFFFFFFFFFFFFF"
+          - values:
+              # -max
+              - "0xFFEFFFFFFFFFFFFF"
+              - "1"
+              # -max
+              - "0xFFEFFFFFFFFFFFFF"
+          - values:
+              # -max
+              - "0xFFEFFFFFFFFFFFFF"
+              - "-1"
+              # +max
+              - "0x7fefffffffffffff"
+
+      - file-name: "incorrect_reg"
+        isa:
+          instructions:
+            - sig: fmul2.64 v:in:f64
+              acc: inout:f64
+              format: [op_v_8]
+        check-type: none
+        runner-options: [compile-failure]
+        description: Check fmul2.64 with incorrect register numbers.
+        code-template: |
+          #
+              fmul2.64 %s
+        cases:
+          - values: [v256]
+          - values: [v65535]
+          - values: [a0]
+          - values: [a255]
+          - values: [null]
+          - values: [0]
+          - values: [1.1]
+          - values: ['2.2']
+
+      - file-name: "reg_number"
+        isa:
+          instructions:
+            - sig: fmul2.64 v:in:f64
+              acc: inout:f64
+              format: [op_v_8]
+        check-type: none
+        runner-options: [compile-only]
+        description: Check fmul2.64 with correct register numbers.
+        code-template: |
+          #
+              fmul2.64 %s
+        cases:
+          - values: [v0]
+          - values: [v16]
+          - values: [v128]
+          - values: [v255]
+
+      - file-name: "calc"
+        isa:
+          instructions:
+            - sig: fmul2.64 v:in:f64
+              acc: inout:f64
+              format: [op_v_8]
+        check-type: check-positive
+        code-template: |
+            #
+                fldai.64 %s #
+                fmovi.64 v0, %s
+                fmul2.64 v0
+                fmovi.64 v1, %s
+                fcmpg.64 v1
+        description: Check fmul2.64 with various values.
+        tags: ['tsan']
+        cases:
+            - values:
+                - "-0.9312987578177028"
+                - "-0.5269885911022338"
+                - "0.49078382027761164"
+            - values:
+                - "-0.7473367654362506"
+                - "0.5438369269893948"
+                - "-0.4064293299410447"
+            - values:
+                - "0.31647958126146847"
+                - "-0.5745936070002329"
+                - "-0.18184714413895048"
+            - values:
+                - "-0.21032659650962326"
+                - "0.3927316648101664"
+                - "-0.08260191440108049"
+            - values:
+                - "0.10120846222414825"
+                - "0.8246991807586994"
+                - "0.08346653588210284"
+            - values:
+                - "-0.4343271788175138"
+                - "0.7903281236389887"
+                - "-0.34326098428026125"
+            - values:
+                - "-0.20664108305757245"
+                - "0.34935450620458064"
+                - "-0.07219099353315796"
+            - values:
+                - "0.1333693748785436"
+                - "0.3799164493389853"
+                - "0.05066921935441635"
+            - values:
+                - "0.5937602845980485"
+                - "0.1781606722800979"
+                - "0.10578473147721058"
+            - values:
+                - "-0.8800125826624052"
+                - "0.8179463146149306"
+                - "-0.7198030488034813"
+            - values:
+                - "0.36292211209434644"
+                - "-0.6858150664631064"
+                - "-0.24889745242691516"
+            - values:
+                - "-3.9164094519790716e54"
+                - "2.4866884565281146e31"
+                - "-9.738890175273957e85"
+            - values:
+                - "4.868571305821797e-45"
+                - "-2.947689920115564e98"
+                - "-1.4351038563534779e54"
+            - values:
+                - "-4.9232256393438925e75"
+                - "6.468558635915e-93"
+                - "-3.184617372593608e-17"
+            - values:
+                - "-1.3534530635380337e-70"
+                - "3.3934802052784276e43"
+                - "-4.5929161798897635e-27"
+            - values:
+                - "-1.5150156586897712e-5"
+                - "3.7824026868513417e-85"
+                - "-5.730399298050046e-90"
+            - values:
+                - "-6.76727647923816e20"
+                - "4.013410468105432e94"
+                - "-2.7159858262338103e115"
+            - values:
+                - "-8.352558372943342e34"
+                - "-3.157398645567344e28"
+                - "2.637235649375349e63"
+            - values:
+                - "-4.778555666328233e-70"
+                - "-1.325369923134656e-37"
+                - "6.333353956176124e-107"
+            - values:
+                - "4.097369399892121e72"
+                - "3.088334967375387e-13"
+                - "1.2654049191940743e60"
+            - values:
+                - "-2.2726952943288126e-55"
+                - "1.1899191874472758e16"
+                - "-2.704323737942988e-39"
+      - file-name: "type"
+        isa:
+            instructions:
+              - sig: fmul2.64 v:in:f64
+                acc: inout:f64
+                format: [op_v_8]
+            verification:
+              - acc_type
+              - v1_type
+        tags: ['verifier']
+        runner-options: ['verifier-failure', 'verifier-debug-config']
+        header-template: []
+        code-template: |
+          #
+          .record A {}
+          .record B {}
+          .record panda.String <external>
+          .record panda.Object <external>
+          .function i32 main() {
+              %s
+              *s
+              fmul2.64 v0
+        check-type: exit-positive
+        description: Check 'fmul2.64' with incorrect register and accumulator type.
+        template-cases:
+          - values:
+              - movi v0, 0
+          - values:
+              - movi.64 v0, 0
+          - values:
+              - fmovi.64 v0, 0
+            exclude: [val]
+          - values:
+              - |
+                #
+                    lda.type B
+                    sta.obj v0
+          - values:
+              - |
+                #
+                    lda.type B[]
+                    sta.obj v0
+          - values:
+              - |
+                #
+                    lda.type panda.String
+                    sta.obj v0
+          - values:
+              - |
+                #
+                    lda.str "string"
+                    sta.obj v0
+          - values:
+              - |
+                #
+                    movi v0, 10
+                    newarr v0, v0, i32[]
+          - values:
+              - mov.null v0
+
+        cases:
+          - values:
+              - ldai 0
+          - values:
+              - ldai.64 0
+          - values:
+              - fldai.64 0
+            id: val
+          - values:
+              - |
+                #
+                    lda.type A
+          - values:
+              - |
+                #
+                    lda.type A[]
+          - values:
+              - |
+                #
+                    lda.type panda.String
+          - values:
+              - |
+                #
+                    lda.str "string"
+          - values:
+              - |
+                #
+                    movi v1, 10
+                    newarr v1, v1, f64[]
+                    lda.obj v1
+          - values:
+              - lda.null
+
+      - file-name: uninitialized_regs
+        isa:
+          instructions:
+            - sig: fmul2.64 v:in:f64
+              acc: inout:f64
+              format: [op_v_8]
+        description: Check 'fmul2.64' with uninitialized register and accumulator.
+        tags: ['verifier']
+        runner-options: ['verifier-failure', 'verifier-debug-config']
+        header-template: []
+        code-template: |
+            #
+            .function i32 main() {
+                %s
+                *s
+                fmul2.64 %s
+        check-type: exit-positive
+        template-cases:
+          - values:
+              - ''
+              - v0
+          - values:
+              - fmovi.64 v0, 0
+              - v0
+            exclude: [init]
+          - values:
+              - ''
+              - v7
+          - values:
+              - ''
+              - v15
+          - values:
+              - fmovi.64 v15, 0
+              - v15
+            exclude: [init]
+          - values:
+              - ''
+              - v128
+          - values:
+              - fmovi.64 v128, 0
+              - v128
+            exclude: [init]
+          - values:
+              - ''
+              - v255
+          - values:
+              - fmovi.64 v255, 0
+              - v255
+            exclude: [init]
+        cases:
+          - values:
+              - ''
+          - values:
+              - fldai.64 0
+            id: init

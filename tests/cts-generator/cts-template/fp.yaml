@@ -1,0 +1,584 @@
+# Copyright (c) 2021 Huawei Device Co., Ltd.
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+definitions: []
+tests:
+  - file-name: "fp_calc"
+    isa:
+      title: Two address floating-point binary operation on accumulator
+      description: >
+        Perform specified floating-point binary operation on accumulator and register and store result into accumulator.
+        The results of instructions correspond IEEE-754 arithmetic rules.
+      exceptions:
+          - x_none
+    commands:
+      - file-name: "sin_cheb7"
+        isa:
+          instructions:
+            - sig: fadd2.64 v:in:f64
+              acc: inout:f64
+              format: [op_v_8]
+            - sig: fmul2.64 v:in:f64
+              acc: inout:f64
+              format: [op_v_8]
+        check-type: empty
+        tags: ['tsan']
+        code-template: |
+          #
+              fmovi.64 v0, %s
+              call.short get_approx, v0
+
+              sta.64 v0
+              fldai.64 %s
+              fcmpg.64 v0
+              return
+          }
+
+          .function  f64 pow (i32 a0, f64 a1) {
+              mov.64 v2, a1  # v2 - value for calculation
+              fmovi.64 v1, 1.0 # v1 - initial value
+              mov v3, a0 # v3 - iteration counter
+          pow_iter:
+              ldai 0
+              jeq v3, exit
+              lda.64 v1
+              fmul2.64 v2
+              sta.64 v1
+              inci v3, -1
+              jmp pow_iter
+          exit:
+              lda.64 v1
+              return.64
+          }
+
+          .function f64 get_approx(f64 a0) {
+              # sin(PI * x / 2) approximation using polynom A1*x + A3*x^3 + A5*x^5 + A7*x^7
+              # Where A[i] is coefficients of Chebyshev polynomial approximation of sin(PI * x / 2) on [-1; 1]
+              fmovi.64 v0, 0.0 # Results
+              mov.64 v1, a0 # v1 = x
+              lda.64 a0 # x
+              fmovi.64 v2, 1.5707909877360093 # A1 coefficient
+              fmul2.64 v2 # x*A1
+              sta.64 v0 # v0 = A1 * x
+              movi v2, 3
+              call.short pow, v2, v1 # acc = x^3
+              fmovi.64 v2, -0.6458926627154391 # A3
+              fmul2.64 v2 # acc = A3 * x^3
+              fadd2.64 v0
+              sta.64 v0 # v0 = A1*x + A3*x^3
+              movi v2,5
+              call.short pow, v2, v1 # acc = x^5
+              fmovi.64 v2, 0.07943397081887174
+              fmul2.64 v2 # A5 * x^5
+              fadd2.64 v0
+              sta.64 v0 # v0 = A1*x + A3*x^3 + A5*x^5
+              movi v2,7
+              call.short pow, v2, v1 # acc = x^7
+              fmovi.64 v2, -0.0043328816450923634
+              fmul2.64 v2
+              fadd2.64 v0 #  acc = A1*x + A3*x^3 + A5*x^5 + A7*x^7
+              return.64
+          }
+        cases:
+          - values:
+              - "0.0"
+              - "0.0"
+          - values:
+              - "0.01"
+              - "0.015707263992640733"
+          - values:
+              - "0.1"
+              - "0.1564340000173055"
+          - values:
+              - "0.123456789"
+              - "0.19271172682380572"
+          - values:
+              - "0.14"
+              - "0.21814267639869997"
+          - values:
+              - "0.4"
+              - "0.5877855695485135"
+          - values:
+              - "0.7"
+              - "0.8910061441444742"
+          - values:
+              - "0.9"
+              - "0.9876886994127743"
+          - values:
+              - "0.99"
+              - "0.9998764601533426"
+          - values:
+              - "1.0"
+              - "0.9999994141943497"
+          - values:
+              - "-0.0"
+              - "0.0"
+          - values:
+              - "-0.01"
+              - "-0.015707263992640733"
+          - values:
+              - "-0.1"
+              - "-0.1564340000173055"
+          - values:
+              - "-0.123456789"
+              - "-0.19271172682380572"
+          - values:
+              - "-0.14"
+              - "-0.21814267639869997"
+          - values:
+              - "-0.4"
+              - "-0.5877855695485135"
+          - values:
+              - "-0.7"
+              - "-0.8910061441444742"
+          - values:
+              - "-0.9"
+              - "-0.9876886994127743"
+          - values:
+              - "-0.99"
+              - "-0.9998764601533426"
+          - values:
+              - "-1.0"
+              - "-0.9999994141943497"
+
+      - file-name: "cheb3"
+        isa:
+          instructions:
+            - sig: fadd2.64 v:in:f64
+              acc: inout:f64
+              format: [op_v_8]
+            - sig: fmul2.64 v:in:f64
+              acc: inout:f64
+              format: [op_v_8]
+        tags: ['tsan']
+        check-type: empty
+        code-template: |
+          #
+              fmovi.64 v0, %s
+              call.short get_value, v0
+              sta.64 v0
+              fldai.64 %s
+              fcmpg.64 v0
+              return
+          }
+
+          .function f64 get_value(f64 a0) {
+
+              # Calculate Chebyshev polynom value iteratively
+              # Since on [-1; 1] result value is limited by [-1; 1] iteration is possible
+              movi v0, 100
+              mov.64 v1, a0
+          loop:
+              ldai 0
+              jeq  v0, exit
+
+              lda.64 v1
+              fmul2.64 v1
+              fmul2.64 v1
+              fmovi.64 v2, 4.0
+              fmul2.64 v2 # 4 * x^3
+
+              sta.64 v3
+
+              lda.64 v1
+              fmovi.64 v2, -3.0
+              fmul2.64 v2
+              fadd2.64 v3
+              sta.64 v1
+
+           #  4*x*x*x - 3*x
+
+              inci v0, -1
+              jmp loop
+          exit:
+              lda.64 v1
+              return.64
+          }
+        cases:
+          - values:
+              - "0.0"
+              - "0.0"
+          - values:
+              - "0.3333333333333333"
+              - "0.9711499729865962"
+          - values:
+              - "0.9"
+              - "0.6562849760306007"
+          - values:
+              - "0.12"
+              - "0.7565938935844838"
+          - values:
+              - "0.55"
+              - "-0.6575967480875675"
+          - values:
+              - "0.5"
+              - "-1.0"
+          - values:
+              - "0.66666"
+              - "0.9388838883478421"
+          - values:
+              - "0.87654321"
+              - "0.02200409867255329"
+          - values:
+              - "1.0"
+              - "1.0"
+          - values:
+              - "-0.0"
+              - "0.0"
+          - values:
+              - "-0.3333333333333333"
+              - "-0.9711499729865962"
+          - values:
+              - "-0.9"
+              - "-0.6562849760306007"
+          - values:
+              - "-0.12"
+              - "-0.7565938935844838"
+          - values:
+              - "-0.55"
+              - "0.6575967480875675"
+          - values:
+              - "-0.5"
+              - "1.0"
+          - values:
+              - "-0.66666"
+              - "-0.9388838883478421"
+          - values:
+              - "-0.87654321"
+              - "-0.02200409867255329"
+          - values:
+              - "-1.0"
+              - "-1.0"
+
+      - file-name: "cheb11"
+        isa:
+          instructions:
+            - sig: fadd2.64 v:in:f64
+              acc: inout:f64
+              format: [op_v_8]
+            - sig: fmul2.64 v:in:f64
+              acc: inout:f64
+              format: [op_v_8]
+        tags: ['tsan']
+        check-type: empty
+        code-template: |
+          #
+              fmovi.64 v0, %s
+              call.short get_value, v0
+              sta.64 v0
+              fldai.64 %s
+              fcmpg.64 v0
+              return
+          }
+
+          .function f64 pow_mul(i32 a0, f64 a1, f64 a2) {
+              mov v0, a0
+              mov.64 v1, a1
+              mov.64 v2, a2
+              call.short pow, v0, v1
+              fmul2.64 v2
+              return.64
+          }
+
+          .function  f64 pow (i32 a0, f64 a1) {
+              mov.64 v2, a1  # v2 - value for calculation
+              fmovi.64 v1, 1.0 # v1 - initial value
+              mov v3, a0 # v3 - iteration counter
+          pow_iter:
+              ldai 0
+              jeq v3, exit
+              lda.64 v1
+              fmul2.64 v2
+              sta.64 v1
+              inci v3, -1
+              jmp pow_iter
+          exit:
+              lda.64 v1
+              return.64
+          }
+
+          .function f64 get_value(f64 a0) {
+
+              # Calculate Chebyshev polynom value iteratively
+              # x = 1024 * Math.pow(x, 11) - 2816 * Math.pow(x,9) + 2816 * Math.pow(x,7) - 1232 * Math.pow(x,5) + 220*Math.pow(x,3) - 11 *x;
+              # Since on [-1; 1] result value is limited by [-1; 1] iteration is possible
+              # Repeat 100 times
+
+              movi v0, 100
+              mov.64 v4, a0
+
+          loop:
+              mov.64 v1, v4
+              ldai 0
+              jeq  v0, exit
+
+              movi v2, 11
+              fmovi.64 v3, 1024.0
+              call pow_mul, v2, v1, v3 # acc = v1^11*1024
+              sta.64 v4
+
+              movi v2, 9
+              fmovi.64 v3, -2816.0
+              call pow_mul, v2, v1, v3 # acc = -v1^9*2816
+              fadd2.64 v4
+              sta.64 v4
+
+              movi v2, 7
+              fmovi.64 v3, 2816.0
+              call pow_mul, v2, v1, v3 # acc = v1^7*2816
+              fadd2.64 v4
+              sta.64 v4
+
+              movi v2, 5
+              fmovi.64 v3, -1232.0
+              call pow_mul, v2, v1, v3 # acc = -v1^5*1232
+              fadd2.64 v4
+              sta.64 v4
+
+              movi v2, 3
+              fmovi.64 v3, 220.0
+              call pow_mul, v2, v1, v3 # acc = v1^3*220
+              fadd2.64 v4
+              sta.64 v4
+
+              movi v2, 1
+              fmovi.64 v3, -11.0
+              call pow_mul, v2, v1, v3 # acc = -v1^1*11
+              fadd2.64 v4
+              sta.64 v4
+
+              inci v0, -1
+              jmp loop
+          exit:
+              lda.64 v4
+              return.64
+          }
+        cases:
+        - values:
+              - "0.0"
+              - "0.0"
+        - values:
+              - "0.3333333333333333"
+              - "0.7868241150060133"
+        - values:
+              - "0.9"
+              - "-0.22919667772362332"
+        - values:
+              - "0.12"
+              - "0.05719322440846497"
+        - values:
+              - "0.55"
+              - "-0.7222928963047401"
+        - values:
+              - "0.5"
+              - "0.5"
+        - values:
+              - "0.66666"
+              - "-0.9376142114702866"
+        - values:
+              - "0.87654321"
+              - "-0.2508041890501467"
+        - values:
+              - "1.0"
+              - "1.0"
+        - values:
+            - "-0.0"
+            - "0.0"
+        - values:
+            - "-0.3333333333333333"
+            - "-0.7868241150060133"
+        - values:
+            - "-0.9"
+            - "0.22919667772362332"
+        - values:
+            - "-0.12"
+            - "-0.05719322440846497"
+        - values:
+            - "-0.55"
+            - "0.7222928963047401"
+        - values:
+            - "-0.5"
+            - "-0.5"
+        - values:
+            - "-0.66666"
+            - "0.9376142114702866"
+        - values:
+            - "-0.87654321"
+            - "0.2508041890501467"
+        - values:
+            - "-1.0"
+            - "-1.0"
+
+      - file-name: "sin_taylor"
+        isa:
+          instructions:
+            - sig: fadd2.64 v:in:f64
+              acc: inout:f64
+              format: [op_v_8]
+            - sig: fmul2.64 v:in:f64
+              acc: inout:f64
+              format: [op_v_8]
+            - sig: fdiv2.64 v:in:f64
+              acc: inout:f64
+              format: [op_v_8]
+        tags: ['tsan']
+        check-type: empty
+        code-template: |
+          #   Calculate sin(x) using Taylor series for small x
+          #   Check relative deviation
+              fmovi.64 v0, %s
+              call.short get_value, v0
+              sta.64 v0
+              fldai.64 %s
+              fsub2.64 v0
+              fdiv2.64 v0
+              sta.64 v0
+              fldai.64 0.0
+              fcmpg.64 v0
+              jeqz l1
+              lda.64 v0
+              fneg.64
+              sta.64 v0
+          l1:
+              fldai.64 0.0001
+              fcmpg.64 v0
+              jltz err
+
+              ldai 0
+              return
+          err:
+              ldai 1
+              return
+          }
+
+          .function f64 fact(i32 a0) {
+              mov v0, a0
+              fmovi.64 v1, 1.0
+          loop:
+              ldai 1
+              jeq v0, exit
+
+              lda v0
+              i32tof64
+              fmul2.64 v1
+              sta.64 v1
+              inci v0, -1
+              jmp loop
+
+          exit:
+              lda.64 v1
+              return.64
+          }
+
+          .function f64 pow_div(i32 a0, f64 a1, f64 a2) {
+              mov v0, a0
+              mov.64 v1, a1
+              mov.64 v2, a2
+              call.short pow, v0, v1
+              fdiv2.64 v2
+              return.64
+          }
+
+          .function  f64 pow (i32 a0, f64 a1) {
+              mov.64 v2, a1  # v2 - value for calculation
+              fmovi.64 v1, 1.0 # v1 - initial value
+              mov v3, a0 # v3 - iteration counter
+          pow_iter:
+              ldai 0
+              jeq v3, exit
+              lda.64 v1
+              fmul2.64 v2
+              sta.64 v1
+              inci v3, -1
+              jmp pow_iter
+          exit:
+              lda.64 v1
+              return.64
+          }
+
+          .function f64 get_value(f64 a0) {
+
+              # Taylor series for sin(x)
+              movi v0, 1 # n
+              fmovi.64 v1, 1.0 # sign
+              fmovi.64 v2, 0.0 # result
+              mov.64 v3, a0
+
+          loop:
+
+              ldai 20
+              jlt  v0, exit
+
+
+              call fact, v0 # acc = v0!
+              sta.64 v4 # v4 = n!
+
+              call pow_div, v0, v3, v4 # x^n/n!
+              fmul2.64 v1 # *sign
+              fadd2.64 v2
+              sta.64 v2 # result
+
+              fldai.64 -1.0
+              fmul2.64 v1 # flip sign
+              sta.64 v1
+
+              inci v0, 2
+              jmp loop
+
+          exit:
+              lda.64 v2
+              return.64
+          }
+        cases:
+          - values:
+              - "1.0e-4"
+              - "9.999999950000001e-5"
+          - values:
+              - "0.001"
+              - "9.999995000000417e-4"
+          - values:
+              - "0.0015"
+              - "0.0014999983125003164"
+          - values:
+              - "0.005"
+              - "0.004999937500130208"
+          - values:
+              - "0.01"
+              - "0.009999500004166653"
+          - values:
+              - "0.0123456789"
+              - "0.012344738073763926"
+          - values:
+              - "0.015"
+              - "0.014998312531640386"
+          - values:
+              - "-1.0e-4"
+              - "-9.999999950000001e-5"
+          - values:
+              - "-0.001"
+              - "-9.999995000000417e-4"
+          - values:
+              - "-0.0015"
+              - "-0.0014999983125003164"
+          - values:
+              - "-0.005"
+              - "-0.004999937500130208"
+          - values:
+              - "-0.01"
+              - "-0.009999500004166653"
+          - values:
+              - "-0.0123456789"
+              - "-0.012344738073763926"
+          - values:
+              - "-0.015"
+              - "-0.014998312531640386"

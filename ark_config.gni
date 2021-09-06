@@ -1,0 +1,186 @@
+# Copyright (c) 2021 Huawei Device Co., Ltd.
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+if (!defined(ark_standalone_build)) {
+  ark_standalone_build = false
+}
+
+if (ark_standalone_build) {
+  ark_root = "//"
+  ark_third_party_root = "//ark-third-party"
+  with_ecmascript = true
+  use_pbqp = true
+} else {
+  ark_root = "//ark/runtime_core"
+  ark_third_party_root = "//third_party"
+  with_ecmascript = false
+  use_pbqp = false
+}
+
+ark_enable_global_register_variables = true
+enable_bytecode_optimizer = false
+
+if (ark_standalone_build) {
+  sdk_libc_secshared_dep = "$ark_third_party_root/securec:libc_secshared"
+  sdk_libc_secshared_config =
+      "$ark_third_party_root/securec:libsec_public_config"
+
+  if (is_mingw || is_mac || is_linux) {
+    sdk_libc_secshared_dep = "$ark_third_party_root/securec:libc_secstatic"
+  }
+} else {
+  sdk_libc_secshared_dep = "//utils/native/base:utilsecurec_shared"
+  sdk_libc_secshared_config = "//utils/native/base:utils_config"
+
+  if (is_mingw || is_mac || is_linux) {
+    sdk_libc_secshared_dep = "//utils/native/base:utilsecurec"
+  }
+}
+
+# Generate file for a template and YAML data provided.
+#
+# Mandatory arguments:
+# data_file -- YAML data full name
+# template_file -- template full name
+# output_file -- output file full name
+# requires -- a list of scripts that provide data-querying API for templates
+# extra_dependencies -- a list of files that should be considered as dependencies, must be lable
+template("ark_gen_file") {
+  assert(defined(invoker.data_file), "data_file is required!")
+  assert(defined(invoker.template_file), "template_file is required!")
+  assert(defined(invoker.output_file), "output_file is required!")
+
+  requires = ""
+  if (defined(invoker.requires)) {
+    requires = string_join(",", rebase_path(invoker.requires, root_build_dir))
+  }
+
+  extra_dependencies = []
+  if (defined(invoker.extra_dependencies)) {
+    extra_dependencies += invoker.extra_dependencies
+  }
+
+  action("$target_name") {
+    script = "$ark_root/isa/gen.rb"
+
+    # rerun action when data file or template file update
+    inputs = [
+      invoker.template_file,
+      invoker.data_file,
+    ]
+    outputs = [ invoker.output_file ]
+    args = [
+      "--template",
+      rebase_path(invoker.template_file, root_build_dir),
+      "--data",
+      rebase_path(invoker.data_file, root_build_dir),
+      "--require",
+      requires,
+      "--output",
+      rebase_path(outputs[0]),
+    ]
+
+    deps = extra_dependencies
+  }
+}
+
+# Generate files based on templates and YAML data provided.
+# Adds targets for every template. Also adds a target for the whole function invocation
+# with name ${data_name}_gen_${PROJECT_NAME} for ease of declaring dependencies on generated files.
+#
+# Mandatory arguments:
+# * data -- data source, YAML file
+# * template_files -- a list of templates to generate files
+# * requires -- a list of Ruby scripts that provide data-querying API for templates
+#
+# Optional arguments:
+# * sources -- a directory with templates, default is ${PROJECT_SOURCE_DIR}/templates
+# * destination -- a directory for output files, default is ${PANDA_BINARY_ROOT}
+# * extra_dependencies -- a list of files that should be considered as dependencies
+template("ark_gen") {
+  assert(defined(invoker.data), "data were not passed to ark_gen")
+  assert(defined(invoker.template_files),
+         "template_files were not passed to ark_gen")
+
+  dir = ""
+  if (defined(invoker.sources)) {
+    dir = invoker.sources
+  } else {
+    dir = "templates"
+  }
+
+  destination = ""
+  if (defined(invoker.destination)) {
+    destination = invoker.destination
+  } else {
+    destination = target_out_dir
+  }
+
+  input_requires = ""
+  if (defined(invoker.requires)) {
+    input_requires = invoker.requires
+  }
+
+  foreach(t, invoker.template_files) {
+    name = string_replace(t, ".erb", "")
+    output = "${destination}/${name}"
+    name = string_replace(name, ".", "_")
+    name = string_replace(name, "/", "_")
+    target = "${target_name}_${name}"
+
+    ark_gen_file(target) {
+      data_file = invoker.data
+      template_file = "${dir}/${t}"
+      output_file = output
+      requires = input_requires
+      extra_dependencies = []
+      if (defined(invoker.extra_dependencies)) {
+        extra_dependencies += invoker.extra_dependencies
+      }
+    }
+  }
+}
+
+# Calls `ark_gen` for ISA YAML.
+# Adds targets for every template. Also adds a target for the whole function invocation
+# with name isa_gen_${PROJECT_NAME} for ease of declaring dependencies on generated files.
+#
+# Mandatory arguments:
+# * template_files -- a list of templates to generate files
+#
+# Optional arguments:
+# * sources -- a directory with templates, default is ${PROJECT_SOURCE_DIR}/templates
+# * destination -- a directory for output files, default is ${target_out_dir}
+# * requires -- if defined, will require additional Ruby files for template generation, must be list
+# * extra_dependencies -- a list of files that should be considered as dependencies lable, must be list, not used
+template("ark_isa_gen") {
+  isa_data = "$ark_root/isa/isa.yaml"
+  isa_requires = [ "$ark_root/isa/isapi.rb" ]
+  if (defined(invoker.requires)) {
+    isa_requires += invoker.requires
+  }
+
+  dependencies = []
+  if (defined(invoker.extra_dependencies)) {
+    dependencies += invoker.extra_dependencies
+  }
+
+  ark_gen("$target_name") {
+    data = isa_data
+    template_files = invoker.template_files
+    sources = invoker.sources
+    destination = invoker.destination
+    requires = isa_requires
+    extra_dependencies = dependencies
+  }
+}

@@ -1,0 +1,44 @@
+{
+  "type": "object",
+  "required": ["tests"],
+  "additionalProperties": false,
+  "properties": {
+
+    "definitions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["name", "template"],
+        "additionalProperties": false,
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "template": {
+            "type": "string"
+          }
+        }
+      }
+    },
+
+    "tests": {
+      "type": "array",
+      "items": {
+        "oneOf": [
+          {
+            "$ref": "test-schema.json"
+          }, {
+            "type": "object",
+            "required": ["include"],
+            "additionalProperties": false,
+            "properties": {
+              "include": {
+                "type": "string"
+              }
+            }
+          }
+        ]
+      }
+    }
+  }
+}

@@ -1,0 +1,135 @@
+# Copyright (c) 2021 Huawei Device Co., Ltd.
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+import("//ark/runtime_core/ark_config.gni")
+import("//build/ohos.gni")
+
+config("arkbase_public_config") {
+  include_dirs = [
+    "$ark_root/libpandabase",
+    "$target_gen_dir",
+  ]
+}
+
+ark_gen_file("events_gen") {
+  template_file = "events/events_gen.h.erb"
+  data_file = "events/events.yaml"
+  requires = [ "events/events.rb" ]
+  output_file = "$target_gen_dir/events_gen.h"
+}
+
+if (is_mingw) {
+  libarkbase_sources = [
+    "$ark_root/libpandabase/mem/arena.cpp",
+    "$ark_root/libpandabase/mem/arena_allocator.cpp",
+    "$ark_root/libpandabase/mem/base_mem_stats.cpp",
+    "$ark_root/libpandabase/mem/mem_config.cpp",
+    "$ark_root/libpandabase/mem/pool_manager.cpp",
+    "$ark_root/libpandabase/mem/pool_map.cpp",
+    "$ark_root/libpandabase/os/dfx_option.cpp",
+    "$ark_root/libpandabase/os/filesystem.cpp",
+    "$ark_root/libpandabase/os/stacktrace_stub.cpp",
+    "$ark_root/libpandabase/os/unix/mutex.cpp",
+    "$ark_root/libpandabase/os/windows/error.cpp",
+    "$ark_root/libpandabase/os/windows/file.cpp",
+    "$ark_root/libpandabase/os/windows/mem.cpp",
+    "$ark_root/libpandabase/os/windows/thread.cpp",
+    "$ark_root/libpandabase/trace/windows/trace.cpp",
+    "$ark_root/libpandabase/utils/dfx.cpp",
+    "$ark_root/libpandabase/utils/json_parser.cpp",
+    "$ark_root/libpandabase/utils/logger.cpp",
+    "$ark_root/libpandabase/utils/utf.cpp",
+  ]
+} else {
+  libarkbase_sources = [
+    "$ark_root/libpandabase/mem/arena.cpp",
+    "$ark_root/libpandabase/mem/arena_allocator.cpp",
+    "$ark_root/libpandabase/mem/base_mem_stats.cpp",
+    "$ark_root/libpandabase/mem/code_allocator.cpp",
+    "$ark_root/libpandabase/mem/mem_config.cpp",
+    "$ark_root/libpandabase/mem/pool_manager.cpp",
+    "$ark_root/libpandabase/mem/pool_map.cpp",
+    "$ark_root/libpandabase/os/dfx_option.cpp",
+    "$ark_root/libpandabase/os/filesystem.cpp",
+    "$ark_root/libpandabase/os/native_stack.cpp",
+    "$ark_root/libpandabase/os/property.cpp",
+
+    # product build
+    "$ark_root/libpandabase/os/stacktrace_stub.cpp",
+    "$ark_root/libpandabase/os/time.cpp",
+    "$ark_root/libpandabase/os/unix/error.cpp",
+    "$ark_root/libpandabase/os/unix/file.cpp",
+    "$ark_root/libpandabase/os/unix/filesystem.cpp",
+    "$ark_root/libpandabase/os/unix/futex/mutex.cpp",
+    "$ark_root/libpandabase/os/unix/library_loader.cpp",
+    "$ark_root/libpandabase/os/unix/mem.cpp",
+    "$ark_root/libpandabase/os/unix/native_stack.cpp",
+    "$ark_root/libpandabase/os/unix/property.cpp",
+    "$ark_root/libpandabase/os/unix/thread.cpp",
+    "$ark_root/libpandabase/os/unix/time_unix.cpp",
+    "$ark_root/libpandabase/trace/trace.cpp",
+    "$ark_root/libpandabase/trace/unix/trace.cpp",
+    "$ark_root/libpandabase/utils/dfx.cpp",
+    "$ark_root/libpandabase/utils/json_parser.cpp",
+    "$ark_root/libpandabase/utils/logger.cpp",
+    "$ark_root/libpandabase/utils/terminate.cpp",
+    "$ark_root/libpandabase/utils/time.cpp",
+    "$ark_root/libpandabase/utils/type_converter.cpp",
+    "$ark_root/libpandabase/utils/utf.cpp",
+  ]
+
+  if (!is_mac) {
+    libarkbase_sources += [
+      "$ark_root/libpandabase/os/unix/exec.cpp",
+      "$ark_root/libpandabase/os/unix/pipe.cpp",
+      "$ark_root/libpandabase/os/unix/sighooklib/sighook.cpp",
+    ]
+  }
+}
+
+if (is_debug) {
+  libarkbase_sources += [ "$ark_root/libpandabase/utils/debug.cpp" ]
+}
+
+libarkbase_configs = [
+  sdk_libc_secshared_config,
+  ":arkbase_public_config",
+  "$ark_root:ark_config",
+]
+
+libarkbase_deps = [
+  ":events_gen",
+  sdk_libc_secshared_dep,
+]
+
+ohos_shared_library("libarkbase") {
+  sources = libarkbase_sources
+
+  configs = libarkbase_configs
+
+  deps = libarkbase_deps
+
+  output_extension = "so"
+  if (!is_standard_system) {
+    relative_install_dir = "ark"
+  }
+  subsystem_name = "ark"
+}
+
+ohos_static_library("libarkbase_frontend_static") {
+  sources = libarkbase_sources
+
+  configs = libarkbase_configs
+
+  deps = libarkbase_deps
+}

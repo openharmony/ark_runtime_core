@@ -1,0 +1,309 @@
+# Copyright (c) 2021 Huawei Device Co., Ltd.
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+# This file describes copmiler-to-runtime entrypoints.
+# Fields:
+#  * properties:
+#    - no_return: entrypoint doesn't jump back to the caller.
+#    - external: don't generate entrypoint and bridge declarations, initialize table's element by nullptr.
+#  * signature: signature of the entrypoint, the first element is the return value, the rest are arguments.
+#  * entrypoint: explicitly defined Entrypoint name.
+
+entrypoints:
+- name: Deoptimize
+  properties: [no_return]
+  signature:
+  - void
+  - uint8_t
+
+- name: AbstractMethodError
+  properties: [no_return]
+  signature:
+  - void
+  - panda::Method*
+
+- name: AnnotateSanitizers
+  properties: []
+  signature:
+  - void
+  - void const*
+  - size_t
+
+- name: CheckCast
+  properties: []
+  signature:
+  - void
+  - const panda::Method*
+  - const panda::ObjectHeader*
+  - panda::FileEntityId
+
+- name: CheckStoreArrayReference
+  properties: []
+  signature:
+  - void
+  - panda::coretypes::Array*
+  - panda::ObjectHeader*
+
+- name: ArithmeticException
+  properties: [no_return]
+  signature:
+  - void
+
+- name: ArrayIndexOutOfBoundsException
+  properties: [no_return]
+  signature:
+  - void
+  - ssize_t
+  - size_t
+
+- name: StringIndexOutOfBoundsException
+  properties: [no_return]
+  signature:
+  - void
+  - ssize_t
+  - size_t
+
+- name: ClassCastException
+  properties: [no_return]
+  signature:
+  - void
+  - panda::Class*
+  - panda::ObjectHeader*
+
+- name: NegativeArraySizeException
+  properties: [no_return]
+  signature:
+  - void
+  - ssize_t
+
+- name: NullPointerException
+  properties: [no_return]
+  signature:
+  - void
+
+- name: ThrowException
+  properties: [no_return]
+  signature:
+  - void
+  - panda::ObjectHeader*
+
+- name: ThrowNativeException
+  properties: [no_return]
+  signature:
+  - void
+
+- name: CreateArray
+  properties: []
+  signature:
+  - panda::coretypes::Array*
+  - const panda::Method*
+  - panda::FileEntityId
+  - size_t
+
+- name: CreateMultiArray
+  properties: []
+  signature:
+  - panda::coretypes::Array*
+  - panda::Class*
+  - uint32_t
+  - size_t*
+
+- name: CreateObjectByClass
+  properties: []
+  signature:
+  - panda::ObjectHeader*
+  - panda::Class*
+
+- name: Safepoint
+  properties: []
+  signature:
+  - void
+
+- name: GetCalleeMethod
+  properties: []
+  signature:
+  - panda::Method*
+  - const panda::Method*
+  - size_t
+
+- name: GetCalleeMethodDirect
+  properties: []
+  entrypoint: GetCalleeMethodEntrypoint
+  signature:
+  - panda::Method*
+  - const panda::Method*
+  - size_t
+
+- name: GetUnknownCalleeMethod
+  properties: []
+  signature:
+  - panda::Method*
+  - const panda::Method*
+  - size_t
+  - size_t*
+
+- name: GetFieldOffset
+  properties: []
+  signature:
+  - size_t
+  - panda::Method*
+  - uint32_t
+
+- name: GetStaticFieldAddress
+  properties: []
+  signature:
+  - uintptr_t
+  - panda::Method*
+  - uint32_t
+
+- name: GetUnknownStaticFieldMemoryAddress
+  properties: []
+  signature:
+  - uintptr_t
+  - panda::Method*
+  - uint32_t
+  - size_t*
+
+- name: GetUnknownStaticFieldPtr
+  properties: []
+  signature:
+    - uintptr_t
+    - panda::Method*
+    - uint32_t
+    - size_t*
+
+- name: InitializeClass
+  properties: []
+  signature:
+  - void
+  - panda::Class*
+
+- name: InitializeClassById
+  properties: []
+  signature:
+  - panda::Class*
+  - const panda::Method*
+  - panda::FileEntityId
+
+- name: InitializeClassByIdDirect
+  properties: []
+  entrypoint: InitializeClassByIdEntrypoint
+  signature:
+  - panda::Class*
+  - const panda::Method*
+  - panda::FileEntityId
+
+- name: IsInstance
+  properties: []
+  signature:
+  - uint8_t
+  - const panda::Method*
+  - panda::ObjectHeader*
+  - panda::FileEntityId
+
+- name: PostWrbUpdateCardFunc
+  properties: [external]
+  signature:
+  - void
+
+- name: PreWrbFunc
+  properties: [external]
+  signature:
+  - void
+  - void*
+
+- name: ResolveClass
+  properties: []
+  signature:
+  - void*
+  - const panda::Method*
+  - panda::FileEntityId
+
+- name: ResolveClassDirect
+  properties: []
+  entrypoint: ResolveClassEntrypoint
+  signature:
+  - void*
+  - const panda::Method*
+  - panda::FileEntityId
+
+- name: ResolveClassObject
+  properties: []
+  signature:
+  - void*
+  - const panda::Method*
+  - panda::FileEntityId
+
+- name: ResolveString
+  properties: []
+  signature:
+  - panda::coretypes::String*
+  - const panda::Method*
+  - panda::FileEntityId
+
+- name: ResolveStringAot
+  properties: []
+  signature:
+  - panda::coretypes::String*
+  - const panda::Method*
+  - panda::FileEntityId
+  - panda::ObjectHeader**
+
+- name: ResolveUnknownVirtualCall
+  properties: []
+  signature:
+  - uintptr_t
+  - const panda::Method*
+  - panda::ObjectHeader*
+  - size_t
+  - size_t*
+
+- name: ResolveVirtualCallAot
+  properties: []
+  signature:
+  - uintptr_t
+  - const panda::Method*
+  - panda::ObjectHeader*
+  - size_t
+
+- name: ResolveVirtualCall
+  properties: []
+  signature:
+  - uintptr_t
+  - const panda::Method*
+  - panda::ObjectHeader*
+
+- name: Trace
+  properties: []
+  signature:
+  - void
+  - size_t pid
+  - ...
+
+- name: WriteTlabStats
+  properties: []
+  signature:
+  - void
+  - size_t
+
+- name: LockObject
+  properties: []
+  signature:
+  - void
+  - panda::ObjectHeader*
+
+- name: UnlockObject
+  properties: []
+  signature:
+  - void
+  - panda::ObjectHeader*

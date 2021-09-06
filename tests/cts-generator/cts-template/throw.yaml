@@ -1,0 +1,473 @@
+# Copyright (c) 2021 Huawei Device Co., Ltd.
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+definitions:
+  - name: java_header
+    template: |
+      .language Java
+      .record java.lang.NullPointerException <external>
+      .record java.lang.RuntimeException <external>
+      .record java.lang.Exception <external>
+      .record java.lang.Throwable <external>
+      .record java.lang.Object <external>
+      .record E1 <java.extends=java.lang.Throwable> {}
+
+  - name: pandasm_header
+    template: |
+      .language PandaAssembly
+      .record panda.NullPointerException <external>
+      .record panda.Object <external>
+      .record E1 {}
+      .record E2 {}
+      .record E3 {}
+
+tests:
+  - file-name: "throw"
+    isa:
+      title: Throw exception
+      description: Throw an exception located in register.
+      instructions:
+        - sig: throw v:in:ref
+          acc: none
+          format: [op_v_8]
+    commands:
+
+      - file-name: "when_reg_is_invalid"
+        description: Check that compilation fails if register is invalid
+        isa:
+          instructions:
+            - sig: throw v:in:ref
+              acc: none
+              format: [op_v_8]
+          verification:
+            - v1_throw_type
+        runner-options: ['compile-failure']
+        header-template: []
+        check-type: empty
+        code-template: |
+
+          .function i32 main() {
+            throw %s
+          }
+        cases:
+          - values: ['v256']
+          - values: ['v65535']
+          - values: ['a0']
+          - values: ['']
+          - values: ['main']
+          - values: ['i32']
+          - values: ['throw']
+          - values: ['v0, v0']
+          - values: ['}']
+          - values: ['v255']
+            runner-options: ['compile-only']
+
+      - file-name: "when_reg_v_is_uninitialized"
+        description: Check that verifier report error when the register is not initialized
+        isa:
+          instructions:
+            - sig: throw v:in:ref
+              acc: none
+              format: [op_v_8]
+          verification:
+            - v1_throw_type
+        runner-options: ['verifier-failure', 'verifier-debug-config']
+        tags: ['verifier']
+        header-template: []
+        check-type: empty
+        code-template: |
+
+          .function i32 main() {
+            throw %s
+          }
+        cases:
+          - values: ['v0']
+          - values: ['v255']
+
+
+      - file-name: "when_reg_a_is_uninitialized"
+        description: Check that compiler reports error when 'a' register is not initialized
+        isa:
+          instructions:
+            - sig: throw v:in:ref
+              acc: none
+              format: [op_v_8]
+          verification:
+            - v1_throw_type
+        runner-options: ['compile-failure']
+        header-template: []
+        check-type: empty
+        code-template: |
+          .record E {}
+
+          .function void func(E a0) <static> {
+            throw %s
+            return.void
+          }
+
+          .function i32 main() {
+            newobj v0, E
+            call.short func, v0
+          }
+        cases:
+          - values: ['a0']
+            runner-options: ['run-failure']
+          - values: ['a1']
+          - values: ['a255']
+
+
+      - file-name: "when_reg_is_null_pa"
+        description: Check that NullPointerException is thrown when register value is null
+        isa:
+          exceptions: [x_null]
+        header-template: ['pandasm_header']
+        check-type: empty
+        code-template: |
+
+          .function i32 main() {
+            jmp try_begin
+          catch_NPE_block_begin:
+            ldai 0
+            return
+          try_begin:
+            mov.null v0
+            throw v0
+          try_end:
+          .catch panda.NullPointerException, try_begin, try_end, catch_NPE_block_begin
+          }
+
+
+      - file-name: "with_wrong_reg_value_pa"
+        description: "Check that VM thread fails when register contains not a Throwable"
+        isa:
+          description: Throw an exception located in register.
+          verification:
+            - v1_throw_type
+        header-template: ['pandasm_header']
+        check-type: empty
+        runner-options: ['verifier-failure', 'verifier-debug-config']
+        tags: ['verifier']
+        code-template: |
+
+          .function i32 main() {
+            jmp try_begin
+          catch_all_block_begin:
+            ldai 0
+            return
+          try_begin:
+            %s
+            throw v0
+          try_end:
+          .catchall try_begin, try_end, catch_all_block_begin
+          }
+        cases:
+          - values:
+            - movi v0, 100
+          - values:
+            - movi.64 v0, 0x1234567890
+          - values:
+            - fmovi.64 v0, 3.1415926
+          - values:
+            - newobj v0, panda.Object
+            bugid: ['1688']
+            ignore: true
+          - values:
+            - newobj v0, E1
+            bugid: ['1688']
+            ignore: true
+          - values:
+            - |
+              #
+                lda.type panda.Object
+                sta.obj v0
+            bugid: ['1688']
+            ignore: true
+          - values:
+            - |
+              #
+                lda.str "abc"
+                sta.obj v0
+            bugid: ['1688']
+            ignore: true
+
+
+      - file-name: "with_multiple_catch_blocks_pa"
+        description: "Check that correct catch block is selected"
+        isa:
+          description: Throw an exception located in register. The current method is searched for the first exception handler that matches the class of exception.
+        header-template: ['pandasm_header']
+        check-type: none
+        code-template: |
+
+          .function i32 main() {
+            jmp try_begin
+          catch_NPE_block_begin:
+            ldai %s
+            return
+          catch_E1_block_begin:
+            ldai %s
+            return
+          catch_E2_block_begin:
+            ldai %s
+            return
+          catch_E3_block_begin:
+            ldai %s
+            return
+          try_begin:
+            newobj v0, %s
+            throw v0
+          try_end:
+          .catch panda.NullPointerException, try_begin, try_end, catch_NPE_block_begin
+          .catch E1, try_begin, try_end, catch_E1_block_begin
+          .catch E2, try_begin, try_end, catch_E2_block_begin
+          .catch E3, try_begin, try_end, catch_E3_block_begin
+        cases:
+          - values: [0, 2, 3, 4, panda.NullPointerException]
+          - values: [1, 0, 3, 4, E1]
+          - values: [1, 2, 0, 4, E2]
+          - values: [1, 2, 3, 0, E3]
+
+
+      - file-name: "with_catchall_pa"
+        description: "Check that catchall block is selected correctly"
+        isa:
+          description: Throw an exception located in register. The current method is searched for the first exception handler that matches the class of exception.
+        header-template: ['pandasm_header']
+        check-type: empty
+        code-template: |
+
+          .function i32 main() {
+            jmp try_begin
+          catch_all_block_begin:
+            ldai %s
+            return
+          catch_E1_block_begin:
+            ldai %s
+            return
+          catch_E2_block_begin:
+            ldai %s
+            return
+          try_begin:
+            newobj v0, %s
+            throw v0
+          try_end:
+          .catch E1, try_begin, try_end, catch_E1_block_begin
+          .catchall try_begin, try_end, catch_all_block_begin
+          .catch E2, try_begin, try_end, catch_E2_block_begin
+          }
+        cases:
+          - values: [1, 0, 3, E1]
+          - values: [0, 2, 3, E2]
+          - values: [0, 2, 3, panda.NullPointerException]
+
+
+      - file-name: "with_reg_value_check_pa"
+        description: "Check that register keeps ref to exception object in catch block"
+        isa:
+          description: Throw an exception located in register.
+        header-template: ['pandasm_header']
+        check-type: empty
+        bugid: ["3975"]
+        code-template: |
+
+          .function i32 main() {
+            jmp try_begin
+          catch_block_begin:
+            lda.obj v0
+            jne.obj v1, return_ne_num
+            ldai 0
+            return
+          return_ne_num:
+            ldai 1
+            return
+          try_begin:
+            newobj v0, %s
+            mov.obj v1, v0
+            throw v0
+          try_end:
+          .catch E1, try_begin, try_end, catch_block_begin
+          .catch E2, try_begin, try_end, catch_block_begin
+          .catchall try_begin, try_end, catch_block_begin
+          }
+        cases:
+          - values:
+            - E1
+          - values:
+            - E2
+          - values:
+            - panda.NullPointerException
+
+
+      - file-name: "with_propagation_to_outer_block_pa"
+        description: "Check exception propagation to outer try-catch block"
+        isa:
+          description: The current method is searched for the first exception handler that matches the class of exception. If exception handler is found, control is passed to the exception handler.
+        header-template: ['pandasm_header']
+        check-type: empty
+        tags: ['tsan']
+        code-template: |
+
+          .function i32 main() {
+          begin3:
+            newobj v0, %s
+            lda.obj v0
+          begin2:
+            mov.obj v1, v0
+          begin1:
+            throw v0
+          end1:
+          end2:
+          end3:
+            ldai 4
+            return
+          catch1:
+            %s
+            return
+          catch2:
+            %s
+            return
+          catch3:
+            %s
+            return
+          .catch E1, begin1, end1, catch1
+          .catch E2, begin2, end2, catch2
+          .catch E3, begin3, end3, catch3
+          }
+        cases:
+          - values:
+            - E1
+            - |
+              #
+                jne.obj v1, return_ne_num
+                ldai 0
+                return
+                return_ne_num:
+                ldai 1
+            - ldai 2
+            - ldai 3
+          - values:
+            - E2
+            - ldai 2
+            - |
+              #
+                jne.obj v1, return_ne_num
+                ldai 0
+                return
+                return_ne_num:
+                ldai 1
+            - ldai 3
+            bugid: ['3975']
+          - values:
+            - E3
+            - ldai 2
+            - ldai 3
+            - |
+              #
+                jne.obj v1, return_ne_num
+                ldai 0
+                return
+                return_ne_num:
+                ldai 1
+            bugid: ['3975']
+
+
+      - file-name: "with_propagation_to_outer_frame_pa"
+        description: "Check exception propagation to outer frame"
+        isa:
+          description: If no exception handler is found, the frame of invoker is restored. If such frame exists, the exception is re-thrown.
+        header-template: ['pandasm_header']
+        check-type: empty
+        bugid: ["1837"]
+        code-template: |
+
+          .function i32 f2() {
+            newobj v0, %s
+          try2_begin:
+            throw v0
+          try2_end:
+            ldai 0
+            return
+          .catch %s, try2_begin, try2_end, try2_end
+          }
+
+          .function i32 f1() {
+          try1_begin:
+            call f2
+            return
+          try1_end:
+            ldai 0
+            return
+          .catch %s, try1_begin, try1_end, try1_end
+          }
+
+          .function i32 main() {
+          try_begin:
+            call f1
+            ldai %s
+            return
+          try_end:
+          catch_block_begin:
+            ldai %s
+            return
+          .catch %s, try_begin, try_end, catch_block_begin
+          }
+        cases:
+          - values: [E2, E1, E2, 0, 1, E3]
+          - values: [E3, E1, E2, 1, 0, E3]
+
+
+      - file-name: "with_no_handler_pa"
+        description: "Check exception propagation to outer frame and VM thread exit if handler is not found."
+        isa:
+          description: >
+            If no exception handler is found, the frame of invoker is restored. If such frame exists, the exception is re-thrown. If no
+            exception handler is found, the frame of invoker is restored. If such frame exists, the exception is re-thrown.
+            If no such frame exists, the current VM thread exits.
+        header-template: ['pandasm_header']
+        check-type: empty
+        runner-options: ['run-failure']
+        code-template: |
+
+          .function i32 f2() {
+            newobj v0, %s
+          try2_begin:
+            throw v0
+          try2_end:
+            return
+          .catch %s, try2_begin, try2_end, try2_end
+          }
+
+          .function i32 f1() {
+          try1_begin:
+            call f2
+          try1_end:
+            return
+          .catch %s, try1_begin, try1_end, try1_end
+          }
+
+          .function i32 main() {
+          try_begin:
+            call f1
+          try_end:
+            ldai %s
+            return
+          catch_block_begin:
+            ldai %s
+            return
+          .catch %s, try_begin, try_end, catch_block_begin
+          }
+        cases:
+          - values: [E2, E1, E3, 0, 0, E1]
+          - values: [E3, E1, E1, 0, 0, E1]
+
+

@@ -1,0 +1,461 @@
+# Copyright (c) 2021 Huawei Device Co., Ltd.
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+definitions: []
+tests:
+  - file-name: "modu2"
+    isa:
+      title: Two address integer division and modulo on accumulator
+      description: >
+        Perform integer division or modulo on accumulator and register and store result into accumulator
+      exceptions:
+        - x_arith
+    commands:
+      - file-name: "op_vs_8_zero"
+        isa:
+          instructions:
+            - sig: modu2 v:in:u32
+              acc: inout:u32
+              prefix: unsigned
+              format: [pref_op_v_8]
+        code-template: |
+          #
+              ldai 0
+              movi v0, %s
+              modu2 v0
+              movi v0, 0
+              ucmp v0
+        description: Check modu2 with zero and various values.
+        cases:
+          - values:
+              - "0"
+            runner-options: ['run-failure']
+            description: Division by zero causes to exception.
+          - values:
+              - "1"
+          - values:
+              - "-1"
+          - values:
+              - "0x7FFFFFFF"
+          - values:
+              - "0x80000000"
+          - values:
+              - "-0x7FFFFFFF"
+          - values:
+              - "-0x80000000"
+          - values:
+              - "0xFFFFFFFF"
+          - values:
+              - "-0xFFFFFFFF"
+
+      - file-name: "op_vs_8_pone"
+        isa:
+          instructions:
+            - sig: modu2 v:in:u32
+              acc: inout:u32
+              prefix: unsigned
+              format: [pref_op_v_8]
+        code-template: |
+          #
+              ldai 1
+              movi v0, %s
+              modu2 v0
+              movi v0, %s
+              ucmp v0
+        description: Check modu2 with +1 and various values.
+        cases:
+          - values:
+              - "0"
+              - "0x0"
+            runner-options: ['run-failure']
+            description: Division by zero causes to exception.
+          - values:
+              - "1"
+              - "0"
+          - values:
+              - "-1"
+              - "1"
+          - values:
+              - "0x7FFFFFFF"
+              - "1"
+          - values:
+              - "0x80000000"
+              - "1"
+          - values:
+              - "-0x7FFFFFFF"
+              - "1"
+          - values:
+              - "-0x80000000"
+              - "1"
+          - values:
+              - "0xFFFFFFFF"
+              - "1"
+          - values:
+              - "-0xFFFFFFFF"
+              - "0"
+
+      - file-name: "op_vs_8_none"
+        isa:
+          instructions:
+            - sig: modu2 v:in:u32
+              acc: inout:u32
+              prefix: unsigned
+              format: [pref_op_v_8]
+        code-template: |
+          #
+              ldai -1
+              movi v0, %s
+              modu2 v0
+              movi v0, %s
+              ucmp v0
+        description: Check modu2 with -1 and various values.
+        cases:
+          - values:
+              - "0"
+              - "0"
+            runner-options: ['run-failure']
+            description: Division by zero causes to exception.
+          - values:
+              - "1"
+              - "0"
+          - values:
+              - "-1"
+              - "0"
+          - values:
+              - "0x7FFFFFFF"
+              - "1"
+          - values:
+              - "0x80000000"
+              - "0x7FFFFFFF"
+          - values:
+              - "-0x7FFFFFFF"
+              - "0x7FFFFFFE"
+          - values:
+              - "-0x80000000"
+              - "0x7FFFFFFF"
+          - values:
+              - "0xFFFFFFFF"
+              - "0"
+          - values:
+              - "-0xFFFFFFFF"
+              - "0"
+
+      - file-name: "op_vs_8_pmax"
+        isa:
+          instructions:
+            - sig: modu2 v:in:u32
+              acc: inout:u32
+              prefix: unsigned
+              format: [pref_op_v_8]
+        code-template: |
+          #
+              ldai 0x7FFFFFFF
+              movi v0, %s
+              modu2 v0
+              movi v0, %s
+              ucmp v0
+        description: Check modu2 with +max and various values.
+        cases:
+          - values:
+              - "0"
+              - "0"
+            runner-options: ['run-failure']
+            description: Division by zero causes to exception.
+          - values:
+              - "1"
+              - "0"
+          - values:
+              - "-1"
+              - "0x7FFFFFFF"
+          - values:
+              - "0x7FFFFFFF"
+              - "0"
+          - values:
+              - "0x80000000"
+              - "0x7FFFFFFF"
+          - values:
+              - "-0x7FFFFFFF"
+              - "0x7FFFFFFF"
+          - values:
+              - "-0x80000000"
+              - "0x7FFFFFFF"
+          - values:
+              - "0xFFFFFFFF"
+              - "0x7FFFFFFF"
+          - values:
+              - "-0xFFFFFFFF"
+              - "0"
+
+      - file-name: "op_vs_8_nmax"
+        isa:
+          instructions:
+            - sig: modu2 v:in:u32
+              acc: inout:u32
+              prefix: unsigned
+              format: [pref_op_v_8]
+        code-template: |
+          #
+              ldai -0x80000000
+              movi v0, %s
+              modu2 v0
+              movi v0, %s
+              ucmp v0
+        description: Check modu2 with -max and various values.
+        cases:
+          - values:
+              - "0"
+              - "0"
+            runner-options: ['run-failure']
+            description: Division by zero causes to exception.
+          - values:
+              - "1"
+              - "0"
+          - values:
+              - "-1"
+              - "0x80000000"
+          - values:
+              - "0x7FFFFFFF"
+              - "1"
+          - values:
+              - "0x80000000"
+              - "0"
+          - values:
+              - "-0x7FFFFFFF"
+              - "0x80000000"
+          - values:
+              - "-0x80000000"
+              - "0"
+          - values:
+              - "0xFFFFFFFF"
+              - "0x80000000"
+          - values:
+              - "-0xFFFFFFFF"
+              - "0"
+
+      - file-name: "vals"
+        isa:
+          instructions:
+            - sig: modu2 v:in:u32
+              acc: inout:u32
+              prefix: unsigned
+              format: [pref_op_v_8]
+        code-template: |
+          #
+              ldai %s
+              movi v0, %s
+              modu2 v0
+              movi v0, %s
+              ucmp v0
+        description: Check modu2 with various values.
+        tags: ['tsan']
+        cases:
+          - values:
+              - "0x8A2D7087"
+              - "0x9738"
+              - "0x10E7"
+          - values:
+              - "0xF890E968"
+              - "0x2EB89"
+              - "0x1E6D1"
+          - values:
+              - "0x2C8979B4"
+              - "0x9D618"
+              - "0x1330C"
+          - values:
+              - "0x544FAA9D"
+              - "0xD3F57"
+              - "0x39E02"
+          - values:
+              - "0x732823F4"
+              - "0x507F"
+              - "0x4AF"
+          - values:
+              - "0xD3367BD4"
+              - "0x3A2D9"
+              - "0x1532E"
+          - values:
+              - "0x761956A8"
+              - "0x68812"
+              - "0x57140"
+          - values:
+              - "0xF7C3980D"
+              - "0xDDC89"
+              - "0xB63B6"
+          - values:
+              - "0xDF705C05"
+              - "0x4DDE8"
+              - "0x9BDD"
+          - values:
+              - "0xDD536643"
+              - "0xFF005"
+              - "0x150D4"
+
+      - file-name: "op_v_8_exception"
+        isa:
+          instructions:
+            - sig: modu2 v:in:u32
+              acc: inout:u32
+              prefix: unsigned
+              format: [pref_op_v_8]
+        header-template: [ArithmeticException, main]
+        code-template: |
+            #
+                ldai %s
+                movi v0, 0
+            begin:
+                modu2 v0
+            end:
+                ldai 1 # Should not reach this line
+                return
+
+            catch_AE:
+                ldai 0 # Expected panda.ArithmeticException
+                return
+
+            catch_all:
+                ldai 1 # Unexpected exception, test failed
+                return
+
+            .catch panda.ArithmeticException, begin, end, catch_AE
+            .catchall begin, end, catch_all
+        check-type: none
+        description: Check `modu2` throws ArithmeticException when divides by zero.
+        cases:
+          - values: ["0"]
+          - values: ["1"]
+          - values: ["0x7FFF"]
+          - values: ["0xFFFF"]
+          - values: ["0x7FFFFFFF"]
+          - values: ["0x80000000"]
+          - values: ["0xFFFFFFFF"]
+          - values: ["-1"]
+          - values: ["-0x7FFF"]
+          - values: ["-0xFFFF"]
+          - values: ["-0x7FFFFFFF"]
+          - values: ["-0x80000000"]
+          - values: ["-0xFFFFFFFF"]
+
+      - file-name: "vals_mod32_1"
+        bugid: ['1324']
+        tags: ['verifier']
+        runner-options: ['verifier-failure', 'verifier-debug-config']
+        isa:
+          instructions:
+            - sig: modu2 v:in:u32
+              acc: inout:u32
+              prefix: unsigned
+              format: [pref_op_v_8]
+        code-template: |
+          #
+              ldai %s
+              movi v0, %s
+              modu2 v0
+              movi.64 v0, %s
+              ucmp.64 v0
+        description: Check modu2 with incorrect accumulator and register type.
+        cases:
+          - values:
+              - "0xFFFFFFFF"
+              - "2"
+              - "1"
+          - values:
+              - "0xFFFFFFFF"
+              - "0x7FFFFFFE"
+              - "0x3"
+          - values:
+              - "0x80000001"
+              - "2"
+              - "1"
+
+      - file-name: "vals_mod32_2"
+        bugid: ['1324']
+        tags: ['verifier']
+        runner-options: ['verifier-failure', 'verifier-debug-config']
+        isa:
+          instructions:
+            - sig: modu2 v:in:u32
+              acc: inout:u32
+              prefix: unsigned
+              format: [pref_op_v_8]
+        code-template: |
+          #
+              ldai.64 %s
+              movi.64 v0, %s
+              modu2 v0
+              movi.64 v0, %s
+              ucmp.64 v0
+        description: Check modu2 with incorrect accumulator and register type.
+        cases:
+          - values:
+              - "0x180000001"
+              - "0xF00000002"
+              - "1"
+          - values:
+              - "0x777777777FFFFFFF"
+              - "0x11111111FFFFFFFE"
+              - "0x7FFFFFFF"
+          - values:
+              - "0xFEDCBA8780000001"
+              - "0x1234567800000002"
+              - "1"
+
+      - file-name: "regs"
+        isa:
+          instructions:
+            - sig: modu2 v:in:u32
+              acc: inout:u32
+              prefix: unsigned
+              format: [pref_op_v_8]
+        runner-options: ['compile-only']
+        code-template: |
+          #
+              modu2 %s
+        check-type: none
+        description: Check modu2 with various register numbers.
+        cases:
+          - values:
+              - "v255"
+          - values:
+              - "v256"
+            runner-options: ['compile-failure']
+
+      - file-name: "type"
+        isa:
+          instructions:
+            - sig: modu2 v:in:u32
+              acc: inout:u32
+              prefix: unsigned
+              format: [pref_op_v_8]
+          verification:
+            - acc_type
+            - v1_type
+        tags: ['verifier']
+        runner-options: ['verifier-failure', 'verifier-debug-config']
+        code-template: |
+          #
+              %s
+              %s
+              modu2 v0
+              ldai 0
+        check-type: no-check
+        description: Check modu2 with incorrect accumulator and register type.
+        cases:
+          - values:
+              - "lda.null"
+              - "movi v0, 0"
+          - values:
+              - "ldai 0 "
+              - "mov.null v0"
+          - values:
+              - "lda.null"
+              - "mov.null v0"

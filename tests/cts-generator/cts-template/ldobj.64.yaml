@@ -1,0 +1,381 @@
+# Copyright (c) 2021 Huawei Device Co., Ltd.
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+definitions:
+  - name: java_header
+    template: |
+      .language Java
+
+      .record java.lang.Object <external>
+
+      .record Q {}
+      .function void Q.ctor(Q a0) <ctor> {
+        return.void
+      }
+
+      .record R {
+        u1             fu1
+        i8             fi8
+        i16            fi16
+        u16            fu16
+        i32            fi32
+        i64            fi64
+        f32            ff32
+        f64            ff64
+
+        i32[]          fi32Array
+        Q              fQ
+        Q[]            fQArray
+        java.lang.Object   fObj
+        java.lang.Object[] fObjArray
+      }
+      .function void R.ctor(R a0) <ctor> {
+        return.void
+      }
+  - name: pandasm_header
+    template: |
+      .language PandaAssembly
+
+      .record panda.Object <external>
+
+      .record Q {}
+      .function void Q.ctor(Q a0) <ctor> {
+        return.void
+      }
+
+      .record R {
+        u1             fu1
+        u8             fu8
+        i8             fi8
+        u16            fu16
+        i16            fi16
+        u32            fu32
+        i32            fi32
+        u64            fu64
+        i64            fi64
+        f32            ff32
+        f64            ff64
+
+        i32[]          fi32Array
+        Q              fQ
+        Q[]            fQArray
+        panda.Object   fObj
+        panda.Object[] fObjArray
+      }
+      .function void R.ctor(R a0) <ctor> {
+        return.void
+      }
+  - name: get_null_R
+    template: |
+      .function R get_null_R() {
+          lda.null
+          return.obj
+      }
+
+tests:
+  - file-name: "ldobj.64"
+    isa:
+      title: Get field from object to accumulator
+      description: >
+        Get field value from an object by field id and put it into accumulator.
+      instructions:
+        - sig: ldobj.64 v:in:ref, field_id
+          acc: out:b64
+          format: [op_v_8_id_16]
+    commands:
+
+      - file-name: "check_if_regs_initialized_p"
+        description: Check that verifier reports error if source registers are not initialized in Panda context.
+        isa:
+          instructions:
+            - sig: ldobj.64 v:in:ref, field_id
+              acc: out:b64
+              format: [op_v_8_id_16]
+        header-template: ['pandasm_header']
+        check-type: exit-positive
+        tags: ['verifier']
+        bugid: ['1324', '2084', '3257']
+        runner-options: ['verifier-failure', 'verifier-debug-config']
+        code-template: |
+
+          .function i32 main() {
+            %s  # verifier error expected, because the register is not initialized
+        cases:
+          - values:
+            - 'ldobj.64 v0, R.fu64'
+          - values:
+            - 'ldobj.64 v1, R.fi64'
+          - values:
+            - 'ldobj.64 v15, R.ff32'
+          - values:
+            - 'ldobj.64 v240, R.ff64'
+          - values:
+            - 'ldobj.64 v255, R.fu64'
+
+      - file-name: "with_null_ref_p"
+        description: Check that NullPointerException is thrown if object ref is null in Panda context.
+        isa:
+          exceptions:
+            - x_null
+        header-template: ['pandasm_header', 'get_null_R']
+        check-type: empty
+        tags: ['tsan']
+        code-template: |
+          .record panda.NullPointerException <external>
+
+          .function i32 main() {
+            call.short get_null_R
+            sta.obj v0
+          try_begin:
+            ldobj.64 v0, %s
+            ldai 1
+            return
+          try_end:
+            ldai 0
+            return
+          .catch panda.NullPointerException, try_begin, try_end, try_end
+          }
+        cases:
+          - values:
+            - R.fi64
+          - values:
+            - R.fu64
+          - values:
+            - R.ff64
+          - values:
+            - R.ff32
+
+      - file-name: "with_non_object_ref_p"
+        description: Check that verifier reports an error when the 1st operand is not a ref to an object (other than array) in Panda context.
+        isa:
+          verification:
+            - v1_object
+        header-template: ['pandasm_header']
+        check-type: exit-positive
+        tags: ['verifier']
+        bugid: ['2085']
+        runner-options: ['verifier-failure', 'verifier-debug-config']
+        code-template: |
+          .function i32 main() {
+            %s
+            ldobj.64 v0, R.fi64
+        cases:
+          - values:
+            - movi v0, 0
+            tags: ['release', 'clang_release_sanitizer']
+            bugid: ['1324', '1826']
+          - values:
+            - movi v0, 1
+          - values:
+            - movi.64 v0, 0x00
+            tags: ['release', 'clang_release_sanitizer']
+            bugid: ['1324', '1826']
+          - values:
+            - movi.64 v0, 0xCAFECAFECAFECAFE
+          - values:
+            - fmovi.64 v0, 0.0
+            tags: ['release', 'clang_release_sanitizer']
+            bugid: ['1324', '1826']
+          - values:
+            - fmovi.64 v0, 6.62607015
+          - values:
+            - |
+                movi v1, 10
+                  newarr v0, v1, R[]
+            bugid: ['1827']
+
+      - file-name: "with_static_field_id_p"
+        description: |
+          Check that verifier reports an error when the field doesn't resolve to a non-static valid object field in Panda context.
+          Incorrect usage cannot be compiled.
+        isa:
+          verification:
+            - field_id_non_static
+        header-template: []
+        runner-options: ['compile-failure']
+        bugid: ['1324', '1828', '1833', '2086']
+        check-type: exit-positive
+        code-template: |
+          .record W {
+            i64   static_field  <static>
+          }
+          .function void W.ctor(W a0) <ctor> {
+            return.void
+          }
+          .record random_record_name {
+            i64 random_field_name
+          }
+          .function void random_function_name() {
+            return.void
+          }
+
+          .function i32 main() {
+            initobj W.ctor
+            sta.obj v0
+            ldobj.64 v0, %s
+        cases:
+          - values:
+            - W.static_field
+            runner-options: ['verifier-failure', 'verifier-debug-config']
+            tags: ['verifier']
+          - values:
+            - random_record_name
+          - values:
+            - random_function_name
+          - values:
+            - W.field_not_exists
+          - values:
+            - random_record_name.random_field_name
+            runner-options: ['verifier-failure', 'verifier-debug-config']
+            tags: ['verifier']
+            bugid: ['3536']
+            ignore: true
+          - values:
+            - 0
+          - values:
+            - -1.1
+          - values:
+            - "null"
+          - values:
+            - "\"abc\""
+
+      - file-name: "with_wrong_field_size_or_type_p"
+        description: Check that verifier reports an error when the field resolves to a field with size or type that is not corresponding to bytecode
+        isa:
+          verification:
+            - field_id_size
+        header-template: ['pandasm_header']
+        check-type: exit-positive
+        tags: ['verifier']
+        runner-options: ['verifier-failure', 'verifier-debug-config']
+        bugid: ['1834', '2088']
+        code-template: |
+
+          .function i32 main() {
+            initobj R.ctor
+            sta.obj v0
+            ldobj.64 v0, %s
+        cases:
+          - values:
+            - R.fu1
+          - values:
+            - R.fu8
+          - values:
+            - R.fi8
+          - values:
+            - R.fu16
+          - values:
+            - R.fi16
+          - values:
+            - R.fu32
+          - values:
+            - R.fi32
+          - values:
+            - R.fObj
+          - values:
+            - R.fObjArray
+          - values:
+            - R.fi32Array
+
+      - file-name: "op_v_8_id_16"
+        description: Check that compiler reports an error when the register number is incorrect
+        isa:
+          instructions:
+            - sig: ldobj.64 v:in:ref, field_id
+              acc: out:b64
+              format: [op_v_8_id_16]
+        header-template: ['pandasm_header']
+        check-type: exit-positive
+        runner-options: ['compile-failure']
+        code-template: |
+
+          .function i32 main() {
+            ldobj.64 %s, R.fi64
+        cases:
+          - values: ['v255']
+            runner-options: ['compile-only']
+          - values: ['v256']
+          - values: ['v65535']
+          - values: ['a0']
+          - values: ['a1']
+          - values: ['null']
+          - values: ['1']
+          - values: ['"0"']
+
+      - file-name: "from_all_int_field_types"
+        description: Check that accumulator value is loaded from field into accumulator. More tests on ldobj.64 can be found in stobj.64 tests
+        isa:
+          description: If field type is f32, load will implicitly convert value into f64 type.
+        header-template: ['pandasm_header']
+        check-type: exit-positive
+        tags: ['tsan']
+        code-template: |
+
+          .function i32 main() {
+            initobj.short R.ctor
+            sta.obj v0
+            ldai.64 %s
+            stobj.64 v0, R.f%s
+            movi.64 v15, %s
+            ldobj.64 v0, R.f%s
+            %s v15
+            jeqz success
+            ldai 1
+            return
+          success:
+        cases:
+          # u64
+          - values: [0, 'u64', 0, 'u64', 'ucmp.64']
+          - values: [0xffffffffffffffff, 'u64', 0xffffffffffffffff, 'u64', 'ucmp.64']
+          - values: [0xa5a5a5a5a5a5a5a5, 'u64', 0xa5a5a5a5a5a5a5a5, 'u64', 'ucmp.64']
+          # i64
+          - values: [0, 'i64', 0, 'i64', 'cmp.64']
+          - values: [-1, 'i64', -1, 'i64', 'cmp.64']
+          - values: [-6510615555426900571, 'i64', -6510615555426900571, 'i64', 'cmp.64']
+
+      - file-name: "from_all_float_field_types"
+        description: Check that accumulator value is loaded from field into accumulator. More tests on ldobj.64 can be found in stobj.64 tests
+        isa:
+          description: If field type is f32, load will implicitly convert value into f64 type.
+        header-template: ['pandasm_header']
+        bugid: ['3292']
+        check-type: exit-positive
+        code-template: |
+
+          .function i32 main() {
+            initobj.short R.ctor
+            sta.obj v0
+            %s
+            stobj.64 v0, R.f%s
+            lda.null
+            %s
+            ldobj.64 v0, R.f%s
+            fcmpg.64 v15
+            %s
+            jeqz success
+            ldai 1
+            return
+          success:
+        cases:
+          # f32
+          - values: ['fldai.64 0.0', 'f32', 'fmovi.64 v15, 0.0', 'f32', '']
+          - values: ['fldai.64 -6510615.0', 'f32', 'fmovi.64 v15, -6510615.0', 'f32', '']
+          - values: ['fldai.64 0x7FFFFFFFFFFFFFFF', 'f32', 'fmovi.64 v15, 0x7FFFFFFFFFFFFFFF', 'f32', 'subi 1']    # NaN
+          - values: ['fldai.64 0x7ff0000000000000', 'f32', 'fmovi.64 v15, 0x7ff0000000000000', 'f32', '']    # + Inf
+          - values: ['fldai.64 0xfff0000000000000', 'f32', 'fmovi.64 v15, 0xfff0000000000000', 'f32', '']    # - Inf
+          # f64
+          - values: ['fldai.64 0.0', 'f64', 'fmovi.64 v15, 0.0', 'f64', '']
+          - values: ['fldai.64 -6510615555426900571.0', 'f64', 'fmovi.64 v15, -6510615555426900571.0', 'f64', '']
+          - values: ['fldai.64 0x7FFFFFFFFFFFFFFF', 'f64', 'fmovi.64 v15, 0x7FFFFFFFFFFFFFFF', 'f64', 'subi 1']    # NaN
+          - values: ['fldai.64 0x7ff0000000000000', 'f64', 'fmovi.64 v15, 0x7ff0000000000000', 'f64', '']    # + Inf
+          - values: ['fldai.64 0xfff0000000000000', 'f64', 'fmovi.64 v15, 0xfff0000000000000', 'f64', '']    # - Inf

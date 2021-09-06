@@ -1,0 +1,358 @@
+# Copyright (c) 2021 Huawei Device Co., Ltd.
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+definitions: []
+tests:
+  - file-name: "mul2.64"
+    isa:
+      title: Two address binary operation on accumulator
+      description: >
+        Perform specified binary operation on accumulator and register and store result into accumulator
+      exceptions:
+        - x_none
+    commands:
+      - file-name: "op_vs_8_zero"
+        isa:
+          instructions:
+            - sig: mul2.64 v:in:i64
+              acc: inout:i64
+              format: [op_v_8]
+        code-template: |
+          #
+              ldai.64 0
+              movi.64 v0, %s
+              mul2.64 v0
+              movi.64 v0, 0
+              cmp.64 v0
+        description: Check mul2.64 with zero and various values.
+        cases:
+          - values:
+              - "0"
+          - values:
+              - "1"
+          - values:
+              - "-1"
+          - values:
+              - "0x7FFFFFFFFFFFFFFF"
+          - values:
+              - "0x8000000000000000"
+          - values:
+              - "-0x7FFFFFFFFFFFFFFF"
+          - values:
+              - "-0x8000000000000000"
+          - values:
+              - "0xFFFFFFFFFFFFFFFF"
+          - values:
+              - "-0xFFFFFFFFFFFFFFFF"
+
+      - file-name: "op_vs_8_pone"
+        isa:
+          instructions:
+            - sig: mul2.64 v:in:i64
+              acc: inout:i64
+              format: [op_v_8]
+        code-template: |
+          #
+              ldai.64 1
+              movi.64 v0, %s
+              mul2.64 v0
+              movi.64 v0, %s
+              cmp.64 v0
+        description: Check mul2.64 with +1 and various values.
+        cases:
+          - values:
+              - "0"
+              - "0"
+          - values:
+              - "1"
+              - "1"
+          - values:
+              - "-1"
+              - "-1"
+          - values:
+              - "0x7FFFFFFFFFFFFFFF"
+              - "0x7FFFFFFFFFFFFFFF"
+          - values:
+              - "0x8000000000000000"
+              - "0x8000000000000000"
+          - values:
+              - "-0x7FFFFFFFFFFFFFFF"
+              - "-0x7FFFFFFFFFFFFFFF"
+          - values:
+              - "-0x8000000000000000"
+              - "-0x8000000000000000"
+          - values:
+              - "0xFFFFFFFFFFFFFFFF"
+              - "0xFFFFFFFFFFFFFFFF"
+          - values:
+              - "-0xFFFFFFFFFFFFFFFF"
+              - "-0xFFFFFFFFFFFFFFFF"
+      - file-name: "op_vs_8_none"
+        isa:
+          instructions:
+            - sig: mul2.64 v:in:i64
+              acc: inout:i64
+              format: [op_v_8]
+        code-template: |
+          #
+              ldai.64 -1
+              movi.64 v0, %s
+              mul2.64 v0
+              movi.64 v0, %s
+              cmp.64 v0
+        description: Check mul2.64 with -1 and various values.
+        cases:
+          - values:
+              - "0"
+              - "0"
+          - values:
+              - "1"
+              - "-1"
+          - values:
+              - "-1"
+              - "1"
+          - values:
+              - "0x7FFFFFFFFFFFFFFF"
+              - "-0x7FFFFFFFFFFFFFFF"
+          - values:
+              - "0x8000000000000000"
+              - "0x8000000000000000"
+            tags: ["clang_release_sanitizer"]
+            bugid: ['966']
+          - values:
+              - "-0x7FFFFFFFFFFFFFFF"
+              - "0x7FFFFFFFFFFFFFFF"
+          - values:
+              - "-0x8000000000000000"
+              - "0x8000000000000000"
+            tags: ["clang_release_sanitizer"]
+            bugid: ['966']
+          - values:
+              - "0xFFFFFFFFFFFFFFFF"
+              - "1"
+          - values:
+              - "-0xFFFFFFFFFFFFFFFF"
+              - "-1"
+      - file-name: "op_vs_8_pmax"
+        isa:
+          instructions:
+            - sig: mul2.64 v:in:i64
+              acc: inout:i64
+              format: [op_v_8]
+        code-template: |
+          #
+              ldai.64 0x7FFFFFFFFFFFFFFF
+              movi.64 v0, %s
+              mul2.64 v0
+              movi.64 v0, %s
+              cmp.64 v0
+        description: Check mul2.64 with +max and various values.
+        cases:
+          - values:
+              - "0"
+              - "0"
+          - values:
+              - "1"
+              - "0x7FFFFFFFFFFFFFFF"
+          - values:
+              - "-1"
+              - "0x8000000000000001"
+          - values:
+              - "0x7FFFFFFFFFFFFFFF"
+              - "1"
+            tags: ["clang_release_sanitizer"]
+            bugid: ['966']
+          - values:
+              - "-0x7FFFFFFFFFFFFFFF"
+              - "-1"
+            tags: ["clang_release_sanitizer"]
+            bugid: ['966']
+          - values:
+              - "0x8000000000000000"
+              - "0x8000000000000000"
+            tags: ["clang_release_sanitizer"]
+            bugid: ['966']
+          - values:
+              - "-0x8000000000000000"
+              - "0x8000000000000000"
+            tags: ["clang_release_sanitizer"]
+            bugid: ['966']
+          - values:
+              - "0xFFFFFFFFFFFFFFFF"
+              - "0x8000000000000001"
+          - values:
+              - "-0xFFFFFFFFFFFFFFFF"
+              - "0x7FFFFFFFFFFFFFFF"
+
+      - file-name: "op_vs_8_nmax"
+        isa:
+          instructions:
+            - sig: mul2.64 v:in:i64
+              acc: inout:i64
+              format: [op_v_8]
+        code-template: |
+          #
+              ldai.64 -0x8000000000000000
+              movi.64 v0, %s
+              mul2.64 v0
+              movi.64 v0, %s
+              cmp.64 v0
+        description: Check mul2.64 with -max and various values.
+        cases:
+          - values:
+              - "0"
+              - "0"
+          - values:
+              - "1"
+              - "0x8000000000000000"
+          - values:
+              - "-1"
+              - "0x8000000000000000"
+            tags: ["clang_release_sanitizer"]
+            bugid: ['966']
+          - values:
+              - "0x7FFFFFFFFFFFFFFF"
+              - "0x8000000000000000"
+            tags: ["clang_release_sanitizer"]
+            bugid: ['966']
+          - values:
+              - "-0x7FFFFFFFFFFFFFFF"
+              - "0x8000000000000000"
+            tags: ["clang_release_sanitizer"]
+            bugid: ['966']
+          - values:
+              - "0x8000000000000000"
+              - "0x0"
+            tags: ["clang_release_sanitizer"]
+            bugid: ['966']
+          - values:
+              - "-0x8000000000000000"
+              - "0x0"
+            tags: ["clang_release_sanitizer"]
+            bugid: ['966']
+          - values:
+              - "0xFFFFFFFFFFFFFFFF"
+              - "0x8000000000000000"
+            tags: ["clang_release_sanitizer"]
+            bugid: ['966']
+          - values:
+              - "-0xFFFFFFFFFFFFFFFF"
+              - "0x8000000000000000"
+
+      - file-name: "vals"
+        tags: ['clang_release_sanitizer', 'tsan']
+        bugid: ['966']
+        isa:
+          instructions:
+            - sig: mul2.64 v:in:i64
+              acc: inout:i64
+              format: [op_v_8]
+        code-template: |
+          #
+              ldai.64 %s
+              movi.64 v0, %s
+              mul2.64 v0
+              movi.64 v0, %s
+              cmp.64 v0
+        description: Check mul2.64 with various values.
+        cases:
+          - values:
+              - "0x5C754A598000B1C9"
+              - "0x2CA2740976B63739"
+              - "0xC37F6EEFB13FC4C1"
+          - values:
+              - "0xDAB472ECDA737CC"
+              - "0x79F9DF504809677A"
+              - "0xB708275E9F4FAB38"
+          - values:
+              - "0xA31412BCF764575A"
+              - "0x5EC2792725427E87"
+              - "0x610F049E601C5C76"
+          - values:
+              - "0x84421CD84B625393"
+              - "0x40044033EFB99E4E"
+              - "0x8868F4CB49C530CA"
+          - values:
+              - "0xA58F0D0DF420A8B1"
+              - "0xA34242EE859F28E1"
+              - "0xCAC0B5E365FEEB91"
+          - values:
+              - "0x4BBB4B2F1563FC08"
+              - "0x600DA22C70BE6B5F"
+              - "0x884F94424861DEF8"
+          - values:
+              - "0x6342EE9A357EE2E0"
+              - "0x15E083DEF5CF6F86"
+              - "0xB482D0E3D7E9E140"
+          - values:
+              - "0xA573BE2E87C4FC6A"
+              - "0x7591429F66EEAF31"
+              - "0xA9FA05428BCCC64A"
+          - values:
+              - "0xD2C4E8374CF2FF68"
+              - "0xAB2AE1D3AC6A8E1"
+              - "0x211893B1339EBA68"
+          - values:
+              - "0x67AA822AEB637157"
+              - "0xC8E67E7B83C001DB"
+              - "0xC6BE3A0447C34C6D"
+
+      - file-name: "regs"
+        isa:
+          instructions:
+            - sig: mul2.64 v:in:i64
+              acc: inout:i64
+              format: [op_v_8]
+        runner-options: ['compile-only']
+        code-template: |
+          #
+              mul2.64 %s
+        check-type: none
+        description: Check mul2.64 with various register numbers.
+        cases:
+          - values:
+              - "v255"
+          - values:
+              - "v256"
+            runner-options: ['compile-failure']
+
+      - file-name: "type"
+        tags: ["verifier"]
+        bugid: ['966', '964']
+        isa:
+          instructions:
+            - sig: mul2.64 v:in:i64
+              acc: inout:i64
+              format: [op_v_8]
+          verification:
+            - acc_type
+            - v1_type
+        runner-options: ['verifier-failure', 'verifier-debug-config']
+        code-template: |
+          #
+              %s
+              %s
+              mul2.64 v0
+              ldai.64 0
+        check-type: no-check
+        description: Check mul2.64 with incorrect accumulator ang register type.
+        cases:
+          - values:
+              - "lda.null"
+              - "movi.64 v0, 0"
+          - values:
+              - "ldai.64 0 "
+              - "mov.null v0"
+          - values:
+              - "lda.null"
+              - "mov.null v0"

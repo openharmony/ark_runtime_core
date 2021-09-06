@@ -1,0 +1,43 @@
+# Copyright (c) 2021 Huawei Device Co., Ltd.
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+#Assert that operation call works fine
+.function i32 main(){
+    movi v0, 1
+    movi v1, 2
+    movi v2, 3
+    movi v3, 4
+    call foo, v0, v1, v2, v3
+    return
+}
+
+.function i32 foo(i32 a0, i32 a1, i32 a2, i32 a3){
+    ldai 1
+    jeq a0, label
+    return
+label:
+    ldai 2
+    jeq a1, label2
+    return
+label2:
+    ldai 3
+    jeq a2, label3
+    return
+label3:
+    ldai 4
+    jeq a3, label4
+    return
+label4:
+    ldai 0
+    return
+}

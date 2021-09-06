@@ -1,0 +1,372 @@
+# Copyright (c) 2021 Huawei Device Co., Ltd.
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+definitions: []
+tests:
+  - file-name: "sub2.64"
+    isa:
+      title: Two address binary operation on accumulator
+      description: >
+        Perform specified binary operation on accumulator and register and store result into accumulator
+      exceptions:
+        - x_none
+    commands:
+      - file-name: "op_vs_8_zero"
+        isa:
+          instructions:
+            - sig: sub2.64 v:in:i64
+              acc: inout:i64
+              format: [op_v_8]
+        code-template: |
+          #
+              ldai.64 0
+              movi.64 v0, %s
+              sub2.64 v0
+              movi.64 v0, %s
+              cmp.64 v0
+        description: Check sub2.64 with zero and various values.
+        cases:
+          - values:
+              - "0"
+              - "0"
+          - values:
+              - "1"
+              - "0xFFFFFFFFFFFFFFFF"
+          - values:
+              - "-1"
+              - "1"
+          - values:
+              - "0x7FFFFFFFFFFFFFFF"
+              - "0x8000000000000001"
+          - values:
+              - "-0x7FFFFFFFFFFFFFFF"
+              - "0x7FFFFFFFFFFFFFFF"
+          - values:
+              - "0x8000000000000000"
+              - "0x8000000000000000"
+            tags: ["clang_release_sanitizer"]
+            bugid: ['966']
+          - values:
+              - "-0x8000000000000000"
+              - "0x8000000000000000"
+            tags: ["clang_release_sanitizer"]
+            bugid: ['966']
+          - values:
+              - "0xFFFFFFFFFFFFFFFF"
+              - "1"
+          - values:
+              - "-0xFFFFFFFFFFFFFFFF"
+              - "0xFFFFFFFFFFFFFFFF"
+
+      - file-name: "op_vs_8_pone"
+        isa:
+          instructions:
+            - sig: sub2.64 v:in:i64
+              acc: inout:i64
+              format: [op_v_8]
+        code-template: |
+          #
+              ldai.64 1
+              movi.64 v0, %s
+              sub2.64 v0
+              movi.64 v0, %s
+              cmp.64 v0
+        description: Check sub2.64 with +1 and various values.
+        cases:
+          - values:
+              - "0"
+              - "1"
+          - values:
+              - "1"
+              - "0"
+          - values:
+              - "-1"
+              - "2"
+          - values:
+              - "0x7FFFFFFFFFFFFFFF"
+              - "0x8000000000000002"
+          - values:
+              - "-0x7FFFFFFFFFFFFFFF"
+              - "0x8000000000000000"
+            tags: ["clang_release_sanitizer"]
+            bugid: ['966']
+          - values:
+              - "0x8000000000000000"
+              - "0x8000000000000001"
+            tags: ["clang_release_sanitizer"]
+            bugid: ['966']
+          - values:
+              - "-0x8000000000000000"
+              - "0x8000000000000001"
+            tags: ["clang_release_sanitizer"]
+            bugid: ['966']
+          - values:
+              - "0xFFFFFFFFFFFFFFFF"
+              - "2"
+          - values:
+              - "-0xFFFFFFFFFFFFFFFF"
+              - "0"
+      - file-name: "op_vs_8_none"
+        isa:
+          instructions:
+            - sig: sub2.64 v:in:i64
+              acc: inout:i64
+              format: [op_v_8]
+        code-template: |
+          #
+              ldai.64 -1
+              movi.64 v0, %s
+              sub2.64 v0
+              movi.64 v0, %s
+              cmp.64 v0
+        description: Check sub2.64 with -1 and various values.
+        cases:
+          - values:
+              - "0"
+              - "-1"
+          - values:
+              - "1"
+              - "-2"
+          - values:
+              - "-1"
+              - "0"
+          - values:
+              - "0x7FFFFFFFFFFFFFFF"
+              - "0x8000000000000000"
+          - values:
+              - "-0x7FFFFFFFFFFFFFFF"
+              - "0x7FFFFFFFFFFFFFFE"
+          - values:
+              - "0x8000000000000000"
+              - "0x7FFFFFFFFFFFFFFF"
+          - values:
+              - "-0x8000000000000000"
+              - "0x7FFFFFFFFFFFFFFF"
+          - values:
+              - "0xFFFFFFFFFFFFFFFF"
+              - "0"
+          - values:
+              - "-0xFFFFFFFFFFFFFFFF"
+              - "0xFFFFFFFFFFFFFFFE"
+      - file-name: "op_vs_8_pmax"
+        isa:
+          instructions:
+            - sig: sub2.64 v:in:i64
+              acc: inout:i64
+              format: [op_v_8]
+        code-template: |
+          #
+              ldai.64 0x7FFFFFFFFFFFFFFF
+              movi.64 v0, %s
+              sub2.64 v0
+              movi.64 v0, %s
+              cmp.64 v0
+        description: Check sub2.64 with +max and various values.
+        cases:
+          - values:
+              - "0"
+              - "0x7FFFFFFFFFFFFFFF"
+          - values:
+              - "1"
+              - "0x7FFFFFFFFFFFFFFE"
+          - values:
+              - "-1"
+              - "0x8000000000000000"
+            tags: ["clang_release_sanitizer"]
+            bugid: ['966']
+          - values:
+              - "0x7FFFFFFFFFFFFFFF"
+              - "0"
+          - values:
+              - "-0x7FFFFFFFFFFFFFFF"
+              - "0xFFFFFFFFFFFFFFFE"
+            tags: ["clang_release_sanitizer"]
+            bugid: ['966']
+          - values:
+              - "0x8000000000000000"
+              - "0xFFFFFFFFFFFFFFFF"
+            tags: ["clang_release_sanitizer"]
+            bugid: ['966']
+          - values:
+              - "-0x8000000000000000"
+              - "0xFFFFFFFFFFFFFFFF"
+            tags: ["clang_release_sanitizer"]
+            bugid: ['966']
+          - values:
+              - "0xFFFFFFFFFFFFFFFF"
+              - "0x8000000000000000"
+            tags: ["clang_release_sanitizer"]
+            bugid: ['966']
+          - values:
+              - "-0xFFFFFFFFFFFFFFFF"
+              - "0x7FFFFFFFFFFFFFFE"
+
+      - file-name: "op_vs_8_nmax"
+        isa:
+          instructions:
+            - sig: sub2.64 v:in:i64
+              acc: inout:i64
+              format: [op_v_8]
+        code-template: |
+          #
+              ldai.64 -0x8000000000000000
+              movi.64 v0, %s
+              sub2.64 v0
+              movi.64 v0, %s
+              cmp.64 v0
+        description: Check sub2.64 with -max and various values.
+        cases:
+          - values:
+              - "0"
+              - "0x8000000000000000"
+          - values:
+              - "1"
+              - "0x7FFFFFFFFFFFFFFF"
+            tags: ["clang_release_sanitizer"]
+            bugid: ['966']
+          - values:
+              - "-1"
+              - "0x8000000000000001"
+          - values:
+              - "0x7FFFFFFFFFFFFFFF"
+              - "1"
+            tags: ["clang_release_sanitizer"]
+            bugid: ['966']
+          - values:
+              - "-0x7FFFFFFFFFFFFFFF"
+              - "0xFFFFFFFFFFFFFFFF"
+          - values:
+              - "0x8000000000000000"
+              - "0"
+          - values:
+              - "-0x8000000000000000"
+              - "0"
+          - values:
+              - "0xFFFFFFFFFFFFFFFF"
+              - "0x8000000000000001"
+          - values:
+              - "-0xFFFFFFFFFFFFFFFF"
+              - "0x7FFFFFFFFFFFFFFF"
+            tags: ["clang_release_sanitizer"]
+            bugid: ['966']
+
+      - file-name: "vals"
+        isa:
+          instructions:
+            - sig: sub2.64 v:in:i64
+              acc: inout:i64
+              format: [op_v_8]
+        code-template: |
+          #
+              ldai.64 %s
+              movi.64 v0, %s
+              sub2.64 v0
+              movi.64 v0, %s
+              cmp.64 v0
+        description: Check sub2.64 with various values.
+        tags: ['tsan']
+        cases:
+          - values:
+              - "0xCCF3DD187138D07E"
+              - "0x35AC263B7B8703C4"
+              - "0x9747B6DCF5B1CCBA"
+          - values:
+              - "0xD5F9EA52A84399E4"
+              - "0x6883F597ADDC08E1"
+              - "0x6D75F4BAFA679103"
+            tags: ["clang_release_sanitizer"]
+            bugid: ['966']
+          - values:
+              - "0x2A79F082FFB71130"
+              - "0x6DEE3B3E2F2DEAAE"
+              - "0xBC8BB544D0892682"
+          - values:
+              - "0x74502029EFFFAB7E"
+              - "0x233BE3208D8CCF83"
+              - "0x51143D096272DBFB"
+          - values:
+              - "0xF7D7013B0725FBC0"
+              - "0x3FD5EB0EB9786326"
+              - "0xB801162C4DAD989A"
+          - values:
+              - "0xB779A757B3FD4653"
+              - "0xD691F722BC859450"
+              - "0xE0E7B034F777B203"
+          - values:
+              - "0xA6F57DD074EAAC42"
+              - "0xB4725C193D93AB85"
+              - "0xF28321B7375700BD"
+          - values:
+              - "0x1C870CC1E446CF6D"
+              - "0xED7F524E5F2991DE"
+              - "0x2F07BA73851D3D8F"
+          - values:
+              - "0x38118AA197B1FAB9"
+              - "0xC7147EFF6911DD63"
+              - "0x70FD0BA22EA01D56"
+          - values:
+              - "0x24DDD5A31111F41C"
+              - "0x8CCCF02B129681BE"
+              - "0x9810E577FE7B725E"
+            tags: ["clang_release_sanitizer"]
+            bugid: ['966']
+
+      - file-name: "regs"
+        isa:
+          instructions:
+            - sig: sub2.64 v:in:i64
+              acc: inout:i64
+              format: [op_v_8]
+        runner-options: ['compile-only']
+        code-template: |
+          #
+              sub2.64 %s
+        check-type: none
+        description: Check sub2.64 with various register numbers.
+        cases:
+          - values:
+            - "v255"
+          - values:
+              - "v256"
+            runner-options: ['compile-failure']
+
+      - file-name: "type"
+        tags: ["verifier"]
+        bugid: ['966', '964']
+        isa:
+          instructions:
+            - sig: sub2.64 v:in:i64
+              acc: inout:i64
+              format: [op_v_8]
+          verification:
+            - acc_type
+            - v1_type
+        runner-options: ['verifier-failure', 'verifier-debug-config']
+        code-template: |
+          #
+              %s
+              %s
+              sub2.64 v0
+              ldai 0
+        check-type: no-check
+        description: Check sub2.64 with incorrect accumulator and register types.
+        cases:
+          - values:
+              - "lda.null"
+              - "movi v0, 0"
+          - values:
+              - "ldai 0 "
+              - "mov.null v0"
+          - values:
+              - "lda.null"
+              - "mov.null v0"

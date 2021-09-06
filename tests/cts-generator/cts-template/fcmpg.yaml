@@ -1,0 +1,445 @@
+# Copyright (c) 2021 Huawei Device Co., Ltd.
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+definitions: []
+tests:
+  - file-name: "fcmpg.64"
+    isa:
+      title: Floating-point comparison
+      description: Perform specified floating point comparison between register and accumulator.
+      exceptions:
+        - x_none
+    commands:
+      - file-name: "op_vs_8_zero"
+        isa:
+          instructions:
+            - sig: fcmpg.64 v:in:f64
+              acc: inout:f64->i32
+              format: [op_v_8]
+        check-type: check-positive
+        description: Check fcmpg.64 compares zero with other zero values.
+        code-template: |
+            #
+                fldai.64 %s
+                fmovi.64 v0, %s
+                fcmpg.64 v0
+        cases:
+          - values:
+              - "0.0"
+              - "0.0"
+          - values:
+              - "-0.0"
+              - "-0.0"
+          - values:
+              - "-0.0"
+              - "0.0"
+          - values:
+              - "0.0"
+              - "-0.0"
+
+      - file-name: "op_vs_8_nan"
+        isa:
+          instructions:
+            - sig: fcmpg.64 v:in:f64
+              acc: inout:f64->i32
+              format: [op_v_8]
+        check-type: check-acc-1
+        description: Check fcmpg.64 compares NaN values.
+        code-template: |
+          #   test - check binary representation and comparison of FP literals - NaN
+              fldai.64 0x7ff8000000000000
+              fmovi.64 v0, %s
+              fcmpg.64 v0
+        cases:
+          - values:
+              - "0x7ff8000000000000"
+          - values:
+              - "0x7ff8000000000001"
+          - values:
+              - "0x7ff8000000000010"
+          - values:
+              - "0x7fffffffffffffff"
+          - values:
+              - "0xFFFFFFFFFFFFFFFF"
+          - values:
+              - "0x7ff8123456789012"
+          - values:
+              # +Inf
+              - "0x7ff0000000000000"
+            description: Check fcmpg.64 compares NaN with +Inf
+          - values:
+              # -Inf
+              - "0xfff0000000000000"
+            description: Check fcmpg.64 compares NaN with -Inf
+      - file-name: "op_vs_8_nan_numbers_1"
+        isa:
+          instructions:
+            - sig: fcmpg.64 v:in:f64
+              acc: inout:f64->i32
+              format: [op_v_8]
+        check-type: check-acc-1
+        description: Check fcmpg.64 compares NaN with various values.
+        code-template: |
+          #   test - check comparison of NaN with values
+              fldai.64 0x7ff8000000000000 # One of valid NaN values
+              fmovi.64 v0, %s
+              fcmpg.64 v0
+        cases:
+          - values:
+              - "4e300"
+          - values:
+              - "0.0"
+          - values:
+              - "-1.0e20"
+
+      - file-name: "op_vs_8_numbers_2"
+        isa:
+          instructions:
+            - sig: fcmpg.64 v:in:f64
+              acc: inout:f64->i32
+              format: [op_v_8]
+        check-type: check-positive
+        code-template: |
+          #   test - check comparison of values
+              fldai.64 %s
+              fmovi.64 v0, %s
+              movi v1, %s
+              fcmpg.64 v0
+              jne v1, set_failure
+              ldai 0
+              jmp fall_through
+          set_failure:
+              ldai 1
+          fall_through:
+        description: Check fcmpg.64 compares various values.
+        tags: ['tsan']
+        cases:
+          - values:
+            - "1.0"
+            - "0.0"
+            - "1"
+          - values:
+              - "12345678.9098765"
+              - "12345678.9098764"
+              - "1"
+          - values:
+              - "12345678.9098765"
+              - "-12345678.9098765"
+              - "1"
+          - values:
+              - "-1.0"
+              - "0.0"
+              - "-1"
+          - values:
+              - "-12345678.9098765"
+              - "0.0"
+              - "-1"
+          - values:
+              - "-12345678.9098765"
+              - "12345678.9098765"
+              - "-1"
+          - values:
+              - "-12345678.9098765"
+              - "12345678.9098765"
+              - "-1"
+      - file-name: "op_vs_8_pinf"
+        isa:
+          instructions:
+            - sig: fcmpg.64 v:in:f64
+              acc: inout:f64->i32
+              format: [op_v_8]
+        check-type: check-positive
+        description: Check fcmpg.64 compares positive Inf with various values.
+        code-template: |
+          #   test - check comparison of values
+              # +Inf
+              fldai.64 0x7ff0000000000000
+              fmovi.64 v0, %s
+              fcmpg.64 v0
+              movi v1, 1
+              jne v1, set_failure
+              ldai 0
+              jmp fall_through
+          set_failure:
+              ldai 1
+          fall_through:
+        cases:
+          - values:
+              - "1.0"
+          - values:
+              - "12345678.9098765"
+          - values:
+              - "-12345678.9098765"
+          - values:
+              - "-1.0"
+          - values:
+              - "4e300"
+          - values:
+              - "-4e300"
+      - file-name: "op_vs_8_ninf"
+        isa:
+          instructions:
+            - sig: fcmpg.64 v:in:f64
+              acc: inout:f64->i32
+              format: [op_v_8]
+        check-type: check-positive
+        description: Check fcmpg.64 compares negative Inf with various values.
+        code-template: |
+          #   test - check comparison of values
+              # -Inf
+              fldai.64 0xfff0000000000000
+              fmovi.64 v0, %s
+              fcmpg.64 v0
+              movi v1, -1
+              jne v1, set_failure
+              ldai 0
+              jmp fall_through
+          set_failure:
+              ldai 1
+          fall_through:
+        cases:
+          - values:
+              - "1.0"
+          - values:
+              - "12345678.9098765"
+          - values:
+              - "-12345678.9098765"
+          - values:
+              - "-1.0"
+          - values:
+              - "4e300"
+          - values:
+              - "-4e300"
+
+      - file-name: "op_vs_8_inf"
+        isa:
+          instructions:
+            - sig: fcmpg.64 v:in:f64
+              acc: inout:f64->i32
+              format: [op_v_8]
+        check-type: check-positive
+        code-template: |
+          #   test - check comparison of values
+              fldai.64 %s
+              # +Inf
+              fmovi.64 v0, %s
+              movi v1, %s
+              fcmpg.64 v0
+              jne v1, set_failure
+              ldai 0
+              jmp fall_through
+          set_failure:
+              ldai 1
+          fall_through:
+        cases:
+          - values:
+              # -Inf
+              - "0xfff0000000000000"
+              - "0x7ff0000000000000"
+              - "-1"
+          - values:
+              - "0x7ff0000000000000"
+              # -Inf
+              - "0xfff0000000000000"
+              - "+1"
+
+      - file-name: "incorrect_register"
+        isa:
+          instructions:
+            - sig: fcmpg.64 v:in:f64
+              acc: inout:f64->i32
+              format: [op_v_8]
+        check-type: none
+        runner-options: [compile-failure]
+        description: Check fcmpg.64 with incorrect register numbers.
+        code-template: |
+          #
+              fcmpg.64 %s
+        cases:
+          - values: [v256]
+          - values: [a0]
+          - values: [0]
+          - values: ['1.1']
+          - values: [1.1]
+
+      - file-name: "applicable_register"
+        isa:
+          instructions:
+            - sig: fcmpg.64 v:in:f64
+              acc: inout:f64->i32
+              format: [op_v_8]
+        check-type: none
+        runner-options: [compile-only]
+        description: Check fcmpg.64 with correct register numbers.
+        code-template: |
+          #
+              fcmpg.64 %s
+        cases:
+          - values: [v0]
+          - values: [v8]
+          - values: [v16]
+          - values: [v64]
+          - values: [v128]
+          - values: [v255]
+
+
+      - file-name: type
+        isa:
+          instructions:
+            - sig: fcmpg.64 v:in:f64
+              acc: inout:f64->i32
+              format: [op_v_8]
+          verification:
+            - v1_type
+            - acc_type
+        tags: ['verifier']
+        runner-options: ['verifier-failure', 'verifier-debug-config']
+        header-template: []
+        code-template: |
+          #
+          .record A {}
+          .record B {}
+          .record panda.String <external>
+          .record panda.Object <external>
+          .function i32 main() {
+              %s
+              *s
+              fcmpg.64 v0
+              ldai 0
+        check-type: no-check
+        description: Check 'fcmpg.64' with incorrect register type.
+        template-cases:
+          - values:
+              - movi v0, 0
+          - values:
+              - movi.64 v0, 0
+          - values:
+              - fmovi.64 v0, 0
+            exclude: [val]
+          - values:
+              - |
+                #
+                    lda.type B
+                    sta.obj v0
+          - values:
+              - |
+                #
+                    lda.type B[]
+                    sta.obj v0
+          - values:
+              - |
+                #
+                    lda.type panda.String
+                    sta.obj v0
+          - values:
+              - |
+                #
+                    lda.str "string"
+                    sta.obj v0
+          - values:
+              - |
+                #
+                    movi v0, 10
+                    newarr v0, v0, i32[]
+          - values:
+              - mov.null v0
+
+        cases:
+          - values:
+              - ldai 0
+          - values:
+              - ldai.64 0
+          - values:
+              - fldai.64 0
+            id: val
+          - values:
+              - |
+                #
+                    lda.type A
+          - values:
+              - |
+                #
+                    lda.type A[]
+          - values:
+              - |
+                #
+                    lda.type panda.String
+          - values:
+              - |
+                #
+                    lda.str "string"
+          - values:
+              - |
+                #
+                    movi v1, 10
+                    newarr v1, v1, f64[]
+                    lda.obj v1
+          - values:
+              - lda.null
+
+      - file-name: uninitialized_regs
+        isa:
+          instructions:
+            - sig: fcmpg.64 v:in:f64
+              acc: inout:f64->i32
+              format: [op_v_8]
+        description: Check 'fcmpg.64' with uninitialized registers.
+        tags: ['verifier']
+        runner-options: ['verifier-failure', 'verifier-debug-config']
+        header-template: []
+        code-template: |
+            #
+            .function i32 main() {
+                %s
+                *s
+                fcmpg.64 %s
+                ldai 0
+        check-type: no-check
+        template-cases:
+          - values:
+              - ''
+              - v0
+          - values:
+              - fmovi.64 v0, 0
+              - v0
+            exclude: [init]
+          - values:
+              - ''
+              - v7
+          - values:
+              - ''
+              - v15
+          - values:
+              - 'fmovi.64 v15, 0'
+              - v15
+            exclude: [init]
+          - values:
+              - ''
+              - v128
+          - values:
+              - 'fmovi.64 v128, 0'
+              - v128
+            exclude: [init]
+          - values:
+              - ''
+              - v255
+          - values:
+              - 'fmovi.64 v255, 0'
+              - v255
+            exclude: [init]
+        cases:
+          - values:
+              - ''
+          - values:
+              - fldai.64 0
+            id: init

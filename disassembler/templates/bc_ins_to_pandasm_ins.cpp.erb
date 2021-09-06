@@ -1,0 +1,109 @@
+/*
+ * Copyright (c) 2021 Huawei Device Co., Ltd.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+#include "disassembler.h"
+
+namespace panda::disasm {
+
+pandasm::Ins Disassembler::BytecodeInstructionToPandasmInstruction(BytecodeInstruction bc_ins,
+                                                                   panda_file::File::EntityId method_id,
+                                                                   pandasm::extensions::Language language) const {
+    pandasm::Ins ins{};
+
+    ins.opcode = BytecodeOpcodeToPandasmOpcode(bc_ins.GetOpcode());
+
+    const BytecodeInstruction::Format format = bc_ins.GetFormat();
+
+    switch (format) {
+% insns_uniq_sort_fmts.each do |i| # Panda::formats.each do |fmt|
+%   imm_count = 0
+%   reg_count = 0
+%
+    case BytecodeInstruction::Format::<%=i.format.pretty.upcase%>:
+%
+%   i.operands.each do |operand|
+%      if (operand.name == :imm)
+%         if (operand.type != "i64")
+        ins.imms.push_back(static_cast<int64_t>(bc_ins.GetImm<BytecodeInstruction::Format::<%=i.format.pretty.upcase%>, <%=imm_count%>>()));
+%         else 
+        ins.imms.push_back(bc_ins.GetImm<BytecodeInstruction::Format::<%=i.format.pretty.upcase%>, <%=imm_count%>>());        
+%         end
+%         imm_count += 1
+%
+%      elsif (operand.name == :v)
+        ins.regs.push_back(bc_ins.GetVReg(<%=reg_count%>));
+%         reg_count += 1
+%      elsif (i.operands.count(&:id?) != 0)
+        ins.ids.push_back(IDToString(bc_ins, method_id, language));
+%      end   
+%   end
+        break;
+% end
+    default:
+        break;
+    }
+
+    if (ins.IsCall()) {
+        // clearing excessive arguments if there are any
+        // if format has ID in it - receive it. else instruction is indirect call and id = method_id
+        panda_file::File::EntityId id;
+
+        if (bc_ins.HasId(format, 0)) {
+            auto idx = bc_ins.GetId().AsIndex();
+            id = file_->ResolveMethodIndex(method_id, idx);
+        } else {
+            id = method_id;
+        }
+        
+        panda_file::MethodDataAccessor mda(*file_, id);
+        panda_file::ProtoDataAccessor pda(*file_, mda.GetProtoId());
+
+        int overhead;
+
+        const bool is_initobj = ins.opcode == pandasm::Opcode::INITOBJ_SHORT ||
+                                ins.opcode == pandasm::Opcode::INITOBJ_RANGE || ins.opcode == pandasm::Opcode::INITOBJ;
+
+        const bool is_acc = ins.opcode == pandasm::Opcode::CALL_ACC_SHORT || ins.opcode == pandasm::Opcode::CALL_ACC ||
+                            ins.opcode == pandasm::Opcode::CALL_VIRT_ACC_SHORT ||
+                            ins.opcode == pandasm::Opcode::CALL_VIRT_ACC;
+
+        if (mda.IsStatic() || is_initobj) {
+            overhead = ins.regs.size() - pda.GetNumArgs();
+        } else {
+            overhead = ins.regs.size() - pda.GetNumArgs() - 1;
+        }
+        // call.acc receives fixed amount of registers
+        if (is_acc) {
+            return ins;
+        }
+        if (overhead < 0 || overhead > static_cast<int>(ins.regs.size())) {
+            LOG(ERROR, DISASSEMBLER)
+                << "> error encountered in code of " << std::dec << method_id.GetOffset() << " ("
+                << "0x" << std::hex << method_id.GetOffset() << ") while disassembling call <" << ins.ToString("")
+                << ">. Invalid method id given or corrupted: calculated overhead (difference "
+                   "between amount of registers specified by instruction format and amount of function's arguments) "
+                   "exceeds number of registers specified in ISA or is lesser than 0!";
+            return ins;
+        }
+
+        for (int i = 0; i < overhead; i++) {
+            ins.regs.pop_back();
+        }
+    }
+
+    return ins;
+}
+
+} // namespace panda::disasm

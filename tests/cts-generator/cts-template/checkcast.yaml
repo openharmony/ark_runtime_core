@@ -1,0 +1,474 @@
+# Copyright (c) 2021 Huawei Device Co., Ltd.
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+definitions:
+  - name: java_header
+    template: |
+      .language Java
+
+      .record java.lang.Object <external>
+      .record java.lang.String <external>
+      .record java.lang.Exception <external>
+      .record java.lang.RuntimeException <external>
+      .record java.lang.ClassCastException <external>
+      .record java.io.Serializable <external>
+
+      .record R <> {}
+      .record I <java.interface> {}
+      .record Q <java.extends=R, java.implements=I> {}
+      .record A <java.annotation, java.annotation.type=runtime> {}
+
+  - name: pandasm_header
+    template: |
+      .language PandaAssembly
+
+      .record panda.Object <external>
+      .record panda.String <external>
+      .record panda.ClassCastException <external>
+
+      .record R {}
+      .record Q {}
+
+
+tests:
+  - file-name: "checkcast"
+    isa:
+      title: Check cast
+      description: >
+        Resolve object type by specified id and if an object in accumulator can be cast to the
+        resolved type, accumulator content remains unchanged. Otherwise ClassCastException is thrown.
+      instructions:
+        - sig: checkcast type_id
+          acc: in:ref
+          format: [op_id_16]
+    commands:
+
+      - file-name: "null_to_any_type_pa"
+        tags: ['tsan']
+        description: Check that null object reference can be cast to any type
+        isa:
+          description: >
+            'null' object reference can be cast to every type.
+        header-template: ['pandasm_header']
+        check-type: empty
+        code-template: |
+
+          .function i32 main() {
+          try_begin:
+            lda.null
+            sta.obj v1
+            %s
+            jne.obj v1, try_end # check that acc == null
+            ldai 0
+            return
+          try_end:
+            ldai 2
+            return
+          .catch panda.ClassCastException, try_begin, try_end, try_end
+          }
+        cases:
+          - values:
+            - checkcast panda.Object
+          - values:
+            - checkcast panda.String
+          - values:
+            - checkcast R
+          - values:
+            - |
+              checkcast R
+              checkcast Q
+          - values:
+            - |
+              checkcast panda.ClassCastException
+              checkcast R
+
+
+      - file-name: "null_to_array_type_pa"
+        description: Check that null object reference can be cast to any array type
+        isa:
+          description: >
+            'null' object reference can be cast to every type.
+        header-template: ['pandasm_header']
+        check-type: empty
+        bugid: ["1710"]
+        code-template: |
+
+          .function i32 main() {
+          try_begin:
+            lda.null
+            sta.obj v1
+            %s
+            jne.obj v1, try_end # check that acc == null
+            ldai 0
+            return
+          try_end:
+            ldai 2
+            return
+          .catch panda.ClassCastException, try_begin, try_end, try_end
+          }
+        cases:
+          - values:
+            - checkcast panda.Object[]
+          - values:
+            - checkcast panda.String[]
+          - values:
+            - checkcast R[]
+          - values:
+            - |
+              checkcast R[]
+              checkcast Q[]
+          - values:
+            - |
+              checkcast panda.ClassCastException[]
+              checkcast R[]
+
+
+      - file-name: "against_base_type_pa"
+        description: Check that any object can be cast to the base type
+        isa:
+          description: Object of type O can be cast to type T if O is the same as T or is subtype of T.
+        header-template: ['pandasm_header']
+        check-type: empty
+        tags: ['tsan']
+        code-template: |
+
+          .function i32 main() {
+          try_begin:
+            %s
+            %s
+            checkcast panda.Object
+            jne.obj v1, try_end  # check that acc isn't changed
+            ldai 0
+            return
+          try_end:
+            ldai 2
+            return
+          .catch panda.ClassCastException, try_begin, try_end, try_end
+          }
+        cases:
+          - values:
+            - newobj v1, panda.ClassCastException
+            - lda.obj v1
+          - values:
+            - newobj v1, R
+            - lda.obj v1
+          - values:
+            - lda.str ""
+            - sta.obj v1
+          - values:
+            - lda.str "abc"
+            - sta.obj v1
+          - values:
+            - lda.type R
+            - sta.obj v1
+
+
+      - file-name: "against_same_type_pa"
+        description: Check that any object can be cast to its type
+        isa:
+          description: Object of type O can be cast to type T if O is the same as T or is subtype of T.
+        header-template: ['pandasm_header']
+        check-type: empty
+        code-template: |
+
+          .function i32 main() {
+          try_begin:
+            %s
+            %s
+            checkcast %s
+            jne.obj v1, try_end  # check that acc hasn't been changed
+            ldai 0
+            return
+          try_end:
+            ldai 2
+            return
+          .catch panda.ClassCastException, try_begin, try_end, try_end
+          }
+        cases:
+          - values:
+            - newobj v1, panda.ClassCastException
+            - lda.obj v1
+            - panda.ClassCastException
+          - values:
+            - newobj v1, R
+            - lda.obj v1
+            - R
+          - values:
+            - lda.str ""
+            - sta.obj v1
+            - panda.String
+          - values:
+            - lda.str "abc"
+            - sta.obj v1
+            - panda.String
+
+
+      - file-name: "array_against_base_type_pa"
+        description: Check that any array can be cast to base type
+        isa:
+          description: >
+            Object of type O can be cast to type T if O is the same as T or is subtype of T. For arrays O can be cast
+            to T if T is a root type in type hierarchy or T is such array that O array elements are the same or subtype of
+            T array elements.
+        header-template: ['pandasm_header']
+        check-type: empty
+        code-template: |
+
+          .function i32 main() {
+          try_begin:
+            movi v0, 10
+            newarr v1, v0, %s[]
+            lda.obj v1
+            checkcast panda.Object
+            jne.obj v1, try_end # check that acc isn't changed
+            ldai 0
+            return
+          try_end:
+            ldai 2
+            return
+          .catch panda.ClassCastException, try_begin, try_end, try_end
+          }
+        cases:
+          - values:
+            - panda.ClassCastException
+          - values:
+            - R
+          - values:
+            - panda.String
+
+
+      - file-name: "array_against_its_type_pa"
+        description: Check that any array can be cast to its type
+        isa:
+          description: >
+            For arrays O can be cast
+            to T if T is a root type in type hierarchy or T is such array that O array elements are the same or subtype of
+            T array elements.
+        header-template: ['pandasm_header']
+        check-type: empty
+        bugid: ["1710"]
+        code-template: |
+
+          .function i32 main() {
+          try_begin:
+            movi v0, 10
+            newarr v1, v0, %s[]
+            lda.obj v1
+            checkcast %s[]
+            jne.obj v1, try_end # check that acc isn't changed
+            ldai 0
+            return
+          try_end:
+            ldai 2
+            return
+          .catch panda.ClassCastException, try_begin, try_end, try_end
+          }
+        cases:
+          - values:
+            - panda.ClassCastException
+            - panda.ClassCastException
+          - values:
+            - R
+            - R
+          - values:
+            - panda.String
+            - panda.String
+
+
+      - file-name: "array_against_basetype_array_pa"
+        description: Check that any array can be cast to base type array
+        isa:
+          description: >
+            For arrays O can be cast
+            to T if T is a root type in type hierarchy or T is such array that O array elements are the same or subtype of
+            T array elements.
+        header-template: ['pandasm_header']
+        check-type: empty
+        bugid: ["1710"]
+        code-template: |
+
+          .function i32 main() {
+          try_begin:
+            movi v0, 10
+            newarr v1, v0, %s[]
+            lda.obj v1
+            checkcast panda.Object[]
+            jne.obj v1, try_end # check that acc isn't changed
+            ldai 0
+            return
+          try_end:
+            ldai 2
+            return
+          .catch panda.ClassCastException, try_begin, try_end, try_end
+          }
+        cases:
+          - values:
+            - panda.ClassCastException
+          - values:
+            - R
+          - values:
+            - panda.String
+
+
+      - file-name: "against_other_type_pa"
+        description: Check that ClassCastException is thrown when object cannot be cast to a type
+        isa:
+          description: >
+            Otherwise ClassCastException is thrown.
+            Object of type O can be cast to type T if O is the same as T or is subtype of T. For arrays O can be cast
+            to T if T is a root type in type hierarchy or T is such array that O array elements are the same or subtype of
+            T array elements.
+          exceptions:
+            - x_cast
+        header-template: ['pandasm_header']
+        check-type: empty
+        code-template: |
+
+          .function i32 main() {
+          try_begin:
+            %s
+            checkcast %s
+            ldai 1
+            return
+          try_end:
+            ldai 0
+            return
+          .catch panda.ClassCastException, try_begin, try_end, try_end
+          }
+        cases:
+          - values:
+            - |
+              newobj v0, Q
+              lda.obj v0
+            - Q[]
+            bugid: ["1710"]
+          - values:
+            - |
+              newobj v0, Q
+              lda.obj v0
+            - R[]
+            bugid: ["1710"]
+          - values:
+            - |
+              newobj v0, R
+              lda.obj v0
+            - Q
+          - values:
+            - lda.str ""
+            - panda.ClassCastException
+          - values:
+            - lda.str "abc"
+            - R
+          - values:
+            - lda.type R
+            - R
+
+
+      - file-name: "array_against_other_type_pa"
+        description: Check that ClassCastException is thrown when array cannot be cast to a type
+        isa:
+          description: >
+            Otherwise ClassCastException is thrown.
+            Object of type O can be cast to type T if O is the same as T or is subtype of T. For arrays O can be cast
+            to T if T is a root type in type hierarchy or T is such array that O array elements are the same or subtype of
+            T array elements.
+          exceptions:
+            - x_cast
+        header-template: ['pandasm_header']
+        check-type: empty
+        code-template: |
+
+          .function i32 main() {
+          try_begin:
+            movi v0, 10
+            newarr v0, v0, %s
+            lda.obj v0
+            checkcast %s
+            ldai 1
+            return
+          try_end:
+            ldai 0
+            return
+          .catch panda.ClassCastException, try_begin, try_end, try_end
+          }
+        cases:
+          - values:
+            - Q[]
+            - Q
+          - values:
+            - Q[]
+            - R
+          - values:
+            - R[]
+            - Q[]
+            bugid: ["1710"]
+          - values:
+            - panda.String[]
+            - panda.ClassCastException[]
+            bugid: ["1710"]
+
+
+      - file-name: "with_wrong_acc_value_pa"
+        description: Check that verification fails when accumulator contains wrong value, not an object or null
+        isa:
+          verification:
+            - acc_obj_or_null
+        header-template: ['pandasm_header']
+        check-type: empty
+        tags: ['verifier']
+        runner-options: ['verifier-failure', 'verifier-debug-config']
+        code-template: |
+
+          .function i32 main() {
+            %s
+            checkcast panda.Object
+            ldai 0
+            return
+          }
+        cases:
+          - values:
+            - ldai -1
+          - values:
+            - ldai.64 1
+          - values:
+            - fldai.64 -1.1
+
+
+      - file-name: "with_wrong_type_id_pa"
+        description: Check that verification fails when accumulator contains wrong value, not an object or null
+        isa:
+          verification:
+            - type_id_any_object
+        header-template: ['pandasm_header']
+        check-type: empty
+        runner-options: ['compile-failure']
+        code-template: |
+
+          .function i32 main() {
+            newobj v0, panda.Object
+            lda.obj v0
+            checkcast %s
+            ldai 0
+            return
+          }
+        cases:
+          - values:
+            - "0x7fffffff"
+          - values:
+            - "0x1234567890"
+          - values:
+            - 3.1415926
+          - values:
+            - "\"abc\""
+
+

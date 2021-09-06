@@ -1,0 +1,651 @@
+# Copyright (c) 2021 Huawei Device Co., Ltd.
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+definitions:
+  - name: java
+    template: |
+      .language Java
+  - name: aoobe_p
+    template: |
+      .record panda.ArrayIndexOutOfBoundsException<external>
+  - name: aoobe_j
+    template: |
+      .record java.lang.ArrayIndexOutOfBoundsException<external>
+  - name: npe_p
+    template: |
+      .record panda.NullPointerException <external>
+  - name: npe_j
+    template: |
+      .record java.lang.NullPointerException <external>
+tests:
+  - file-name: "fldarr.64"
+    isa:
+      title: Load from array
+      description: >
+        Load an element from array using accumulator as an index and puts it into accumulator.
+    commands:
+      - file-name: "read_arr_p"
+        isa:
+          instructions:
+            - sig: fldarr.64 v:in:f64[]
+              acc: inout:i32->f64
+              format: [op_v_8]
+              properties: [acc_read, acc_write, float]
+        description: Check fldarr.64 reads items from array of different size and type in Panda Assembly context.
+        code-template: |
+          #
+              movi v0, %s
+              newarr v0, v0, f64[]
+              ldai 0
+              fldarr.64 v0
+        check-type: exit-positive
+        cases:
+          - values: ['1']
+          - values: ['255']
+            tags: ['tsan']
+          - values: ['65536']
+
+      - file-name: "acceptable_primitive_types_p"
+        isa:
+          instructions:
+            - sig: fldarr.64 v:in:f64[]
+              acc: inout:i32->f64
+              format: [op_v_8]
+              properties: [acc_read, acc_write, float]
+        tags: ['tsan', 'verifier']
+        description: Check acceptable array of primitive types for fldarr.64 instruction in Panda Assembly context.
+        code-template: |
+          #
+              movi v0, 1
+              newarr v0, v0, f64[]
+              ldai 0
+              fldarr.64 v0
+        check-type: exit-positive
+        runner-options: ['verifier-only', 'verifier-debug-config']
+
+      - file-name: "rejectable_primitive_types_p"
+        isa:
+          instructions:
+            - sig: fldarr.64 v:in:f64[]
+              acc: inout:i32->f64
+              format: [op_v_8]
+              properties: [acc_read, acc_write, float]
+        description: Check rejectable array of primitive types for fldarr.64 instruction in Panda Assembly context.
+        code-template: |
+          #
+              movi v0, 1
+              newarr v0, v0, %s
+              ldai 0
+              fldarr.64 v0
+
+        check-type: exit-positive
+        runner-options: ['verifier-failure', 'verifier-debug-config']
+        tags: [verifier]
+        cases:
+          - values: ['u1[]']
+          - values: ['i8[]']
+          - values: ['u8[]']
+          - values: ['i16[]']
+          - values: ['u16[]']
+          - values: ['i32[]']
+          - values: ['u32[]']
+          - values: ['i64[]']
+          - values: ['u64[]']
+          - values: ['f32[]']
+
+      - file-name: "read_values"
+        isa:
+          instructions:
+            - sig: fldarr.64 v:in:f64[]
+              acc: inout:i32->f64
+              format: [op_v_8]
+              properties: [acc_read, acc_write, float]
+        description: Check fldarr.64 reads correct items from array of primitives.
+        header-template: [xorshift32, main]
+        code-template: |
+          #
+              movi v3, 10000   # iterations
+              movi v2, %s
+                               # index
+              movi v0, %s
+                               # array size
+              newarr v1, v0, f64[]       # v1 - testable array
+
+              movi v0, 1       # initial random number
+          loop:
+              call.short nextRand, v0
+              sta v0           # v0 - next random number
+              i32tof64
+              sta.64 v5
+              fstarr.64 v1, v2 # save random number v1[v2] = acc
+              lda v2
+              fldarr.64 v1     # acc = v1[v2]
+              fcmpl.64 v5      # Compare random number and stored value from array
+              jeqz passed
+              ldai 1
+              return
+          passed:
+              inci v3, -1
+              lda v3
+              jnez loop
+        check-type: exit-positive
+        cases:
+          - values: ['0', '1']
+          - values: ['254', '255']
+          - values: ['65535', '65536']
+          - values: ['7', '16']
+          - values: ['123', '255']
+          - values: ['49151', '65536']
+
+      - file-name: "read_all_values"
+        isa:
+          instructions:
+            - sig: fldarr.64 v:in:f64[]
+              acc: inout:i32->f64
+              format: [op_v_8]
+              properties: [acc_read, acc_write, float]
+        description: Check fldarr.64 reads correct items from array of primitives. Inspect different indexes and values.
+        code-template: |
+          #
+              movi v1, 0       # v1 - index
+              movi v0, %s
+                               # v0 is array size
+              mov v2, v0       # v2 is size too
+              newarr v0, v0, f64[]       # v0 - testable array
+          fill_array:
+              lda v1
+              i32tof64         # acc = (f64)v1
+              fstarr.64 v0, v1 # v0[v1] = acc
+              inci v1, 1
+              lda v1
+              jne v2, fill_array
+
+              movi v1, 0       # index
+          check_array:
+              lda v1
+              fldarr.64 v0
+              sta.64 v3
+              lda v1
+              i32tof64
+              fcmpl.64 v3
+              jeqz ok
+              ldai 1
+              return
+          ok:
+              inci v1, 1
+              lda v1
+              jne v2, check_array
+        check-type: exit-positive
+        cases:
+          - values: ['100']
+          - values: ['255']
+            tags: ['tsan']
+          - values: ['65535']
+            tags: ['tsan']
+
+      - file-name: "reg_number"
+        isa:
+          instructions:
+            - sig: fldarr.64 v:in:f64[]
+              acc: inout:i32->f64
+              format: [op_v_8]
+              properties: [acc_read, acc_write, float]
+        check-type: empty
+        runner-options: [compile-only]
+        description: Check 'fldarr.64' instruction with different registers numbers.
+        header-template: []
+        code-template: |
+          #
+          .function i32 main() {
+              fldarr.64 %s
+          }
+        cases:
+          - values: [v0]
+          - values: [v16]
+          - values: [v128]
+          - values: [v255]
+          - values: [v256]
+            runner-options: [compile-failure]
+          - values: [v65535]
+            runner-options: [compile-failure]
+          - case-template: |
+              #
+              .function void f1(i32 a0) {
+                  fldarr.64 a0 # valid name of register
+              }
+
+              .function i32 main() {
+                  movi v0, 0
+                  call.short f1, v0
+              }
+          - case-template: |
+              #
+              .function void f1(i32 a0) {
+                  fldarr.64 a1 # invalid name of register
+              }
+
+              .function i32 main() {
+                  movi v0, 0
+                  call.short f1, v0
+              }
+            runner-options: [compile-failure]
+          - values: [a0]
+            runner-options: [compile-failure]
+          - values: [a255]
+            runner-options: [compile-failure]
+          - values: [null]
+            runner-options: [compile-failure]
+          - values: [0]
+            runner-options: [compile-failure]
+          - values: [1.1]
+            runner-options: [compile-failure]
+          - values: ['2.2']
+            runner-options: [compile-failure]
+
+      - file-name: "arr_type"
+        isa:
+          instructions:
+            - sig: fldarr.64 v:in:f64[]
+              acc: inout:i32->f64
+              format: [op_v_8]
+              properties: [acc_read, acc_write, float]
+          verification:
+            - v1_array_type
+        tags: ['verifier']
+        runner-options: ['verifier-failure', 'verifier-debug-config']
+        header-template: []
+        code-template: |
+          #
+          .record A {}
+          .record panda.String <external>
+          .record panda.Object <external>
+          .function i32 main() {
+              %s
+              ldai 0
+              fldarr.64 v0
+        check-type: exit-positive
+        description: Check 'fldarr.64' with incorrect array type. See also "rejectable_primitive_types" tests.
+        cases:
+          - values:
+              - movi v0, 0
+          - values:
+              - movi.64 v0, 0
+          - values:
+              - fmovi.64 v0, 0
+          - values:
+              - |
+                #
+                    lda.type A
+                    sta.obj v0
+          - values:
+              - |
+                #
+                    lda.type A[]
+                    sta.obj v0
+          - values:
+              - |
+                #
+                    lda.type panda.String
+                    sta.obj v0
+          - values:
+              - |
+                #
+                    lda.type panda.String[]
+                    sta.obj v0
+          - values:
+              - |
+                #
+                    lda.type panda.Object
+                    sta.obj v0
+          - values:
+              - |
+                #
+                    lda.type panda.Object[]
+                    sta.obj v0
+          - values:
+              - |
+                #
+                    movi v0, 1
+                    newarr v0, v0, panda.Object[]
+          - values:
+              - |
+                #
+                    movi v0, 1
+                    newarr v0, v0, panda.String[]
+          - values:
+              - |
+                #
+                    lda.str "string"
+                    sta.obj v0
+
+      - file-name: "acc_type"
+        isa:
+          instructions:
+            - sig: fldarr.64 v:in:f64[]
+              acc: inout:i32->f64
+              format: [op_v_8]
+              properties: [acc_read, acc_write, float]
+          verification:
+            - acc_i32
+        tags: ['verifier']
+        runner-options: ['verifier-failure', 'verifier-debug-config']
+        header-template: []
+        code-template: |
+          #
+          .record A {}
+          .record panda.String <external>
+          .record panda.Object <external>
+          .function i32 main() {
+              movi v0, 0
+              newarr v0, v0, f64[]
+              %s
+              fldarr.64 v0
+        check-type: exit-positive
+        description: Check 'fldarr.64' with incorrect index type.
+        cases:
+          - values:
+              - ldai.64 0
+          - values:
+              - fldai.64 0
+          - values:
+              - |
+                #
+                    lda.type A
+          - values:
+              - |
+                #
+                    lda.type A[]
+          - values:
+              - |
+                #
+                    lda.type panda.String
+
+          - values:
+              - |
+                #
+                    lda.type panda.String[]
+          - values:
+              - |
+                #
+                    lda.type panda.Object
+          - values:
+              - |
+                #
+                    lda.type panda.Object[]
+          - values:
+              - |
+                #
+                    lda.str "string"
+          - values:
+              - |
+                #
+                    movi v1, 1
+                    newarr v1, v1, panda.Object[]
+                    lda.obj v1
+          - values:
+              - |
+                #
+                    movi v1, 1
+                    newarr v1, v1, panda.String[]
+                    lda.obj v1
+
+      - file-name: "arr_acc_type"
+        isa:
+          instructions:
+            - sig: fldarr.64 v:in:f64[]
+              acc: inout:i32->f64
+              format: [op_v_8]
+              properties: [acc_read, acc_write, float]
+          verification:
+            - v1_array_type
+        tags: ['verifier']
+        runner-options: ['verifier-failure', 'verifier-debug-config']
+        header-template: []
+        code-template: |
+          #
+          .record A {}
+          .record panda.String <external>
+          .record panda.Object <external>
+          .function i32 main() {
+              %s
+              *s
+              fldarr.64 v0
+        check-type: exit-positive
+        description: Check 'fldarr.64' with incorrect register and accumulator types.
+        template-cases:
+          - values:
+              - movi v0, 0
+          - values:
+              - movi.64 v0, 0
+          - values:
+              - fmovi.64 v0, 0
+          - values:
+              - |
+                #
+                    lda.type A
+                    sta.obj v0
+          - values:
+              - |
+                #
+                    lda.type A[]
+                    sta.obj v0
+          - values:
+              - |
+                #
+                    lda.type panda.String
+                    sta.obj v0
+          - values:
+              - |
+                #
+                    lda.type panda.String[]
+                    sta.obj v0
+          - values:
+              - |
+                #
+                    lda.type panda.Object
+                    sta.obj v0
+          - values:
+              - |
+                #
+                    lda.type panda.Object[]
+                    sta.obj v0
+          - values:
+              - |
+                #
+                    lda.str "string"
+                    sta.obj v0
+          - values:
+              - |
+                #
+                    movi v1, 1
+                    newarr v0, v1, panda.Object[]
+          - values:
+              - |
+                #
+                    movi v1, 1
+                    newarr v0, v1, panda.String[]
+        cases:
+          - values:
+              - ldai 0
+          - values:
+              - ldai.64 0
+          - values:
+              - fldai.64 0
+          - values:
+              - |
+                #
+                    lda.type A
+          - values:
+              - |
+                #
+                    lda.type A[]
+          - values:
+              - |
+                #
+                    lda.type panda.String
+          - values:
+              - |
+                #
+                    lda.type panda.String[]
+          - values:
+              - |
+                #
+                    lda.type panda.Object
+          - values:
+              - |
+                #
+                    lda.type panda.Object[]
+          - values:
+              - |
+                #
+                    lda.str "string"
+          - values:
+              - |
+                #
+                    movi v1, 1
+                    newarr v1, v1, panda.Object[]
+                    lda.obj v1
+          - values:
+              - |
+                #
+                    movi v1, 1
+                    newarr v1, v1, panda.String[]
+                    lda.obj v1
+
+      - file-name: uninitialized_acc_regs
+        isa:
+          instructions:
+            - sig: fldarr.64 v:in:f64[]
+              acc: inout:i32->f64
+              format: [op_v_8]
+              properties: [acc_read, acc_write, float]
+        description: Check 'fldarr.64' with uninitialized register and accumulator.
+        tags: ['verifier']
+        runner-options: ['verifier-failure', 'verifier-debug-config']
+        header-template: []
+        code-template: |
+            #
+            .function i32 main() {
+                %s
+                fldarr.64 v0
+        check-type: exit-positive
+        cases:
+          - values: ['ldai 0']
+          - values: ['']
+
+      - file-name: array_out_of_bound_exception_p
+        isa:
+          instructions:
+            - sig: fldarr.64 v:in:f64[]
+              acc: inout:i32->f64
+              format: [op_v_8]
+              properties: [acc_read, acc_write, float]
+          exceptions:
+            - x_bounds
+        description: Check 'fldarr.64' behavior when index is out of array bounds.
+        header-template: [aoobe_p, main]
+        code-template: |
+          #
+              movi v0, %s
+              newarr v0, v0, f64[]
+              ldai %s
+          begin:
+              fldarr.64 v0
+          end:
+              ldai 1 # Should not reach this line
+              return
+
+          catch_AOOBE:
+              ldai 0 # Expected panda.ArrayIndexOutOfBoundsException
+              return
+
+          catch_all:
+              ldai 2 # Unexpected exception, test failed
+              return
+
+          .catch panda.ArrayIndexOutOfBoundsException, begin, end, catch_AOOBE
+          .catchall begin, end, catch_all
+        check-type: none
+        cases:
+          - values: [0, 0]
+            tags: ['tsan']
+          - values: [0, 1]
+          - values: [10, 10]
+          - values: [10, 128]
+          - values: [255, 255]
+          - values: [254, 255]
+          - values: [65535, 65535]
+            tags: ['tsan']
+          - values: [65535, 65536]
+          - values: [10, 0xFFFFFFFF]
+          - values: [256, 0xFFFFFFFE]
+          - values: [65536, 0xFFFFFFFD]
+            tags: ['tsan']
+          - values: [0x100000, 0xFFFFFFFC]
+          - values: [10, 0x80000000]
+          - values: [256, 0x80000001]
+          - values: [65536, 0x80000002]
+            tags: ['tsan']
+          - values: [0x100000, 0x80000003]
+
+      - file-name: null_pointer_p
+        isa:
+          instructions:
+            - sig: fldarr.64 v:in:f64[]
+              acc: inout:i32->f64
+              format: [op_v_8]
+              properties: [acc_read, acc_write, float]
+          exceptions:
+            - x_null
+        description: Check 'fldarr.64' behavior when array is null reference.
+        header-template: [npe_p]
+        code-template: |
+          .function f64[] get_null() {
+              lda.null
+              return.obj
+          }
+
+          .function i32 main() {
+              call.short get_null
+              sta.obj v0
+              ldai %s
+          begin:
+              fldarr.64 v0
+          end:
+              ldai 1 # Should not reach this line
+              return
+
+          catch_NPE:
+              ldai 0 # Expected panda.NullPointerException
+              return
+
+          catch_all:
+              ldai 2 # Unexpected exception, test failed
+              return
+
+          .catch panda.NullPointerException, begin, end, catch_NPE
+          .catchall begin, end, catch_all
+        check-type: none
+        cases:
+          - values: [0]
+            tags: ['tsan']
+          - values: [1]
+          - values: [10]
+          - values: [128]
+          - values: [255]
+          - values: [65535]
+            tags: ['tsan']
+          - values: [0x7FFFFFFF]
+          - values: [0xFFFFFFFF]
+          - values: [0x80000000]
+

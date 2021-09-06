@@ -1,0 +1,484 @@
+# Copyright (c) 2021 Huawei Device Co., Ltd.
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+definitions: []
+tests:
+  - file-name: "div2"
+    isa:
+      title: Two address integer division and modulo on accumulator
+      description: >
+        Perform integer division or modulo on accumulator and register and store result into accumulator
+      exceptions:
+        - x_arith
+    commands:
+      - file-name: "op_vs_8_zero"
+        isa:
+          instructions:
+            - sig: div2 v:in:i32
+              acc: inout:i32
+              format: [op_v_8]
+        code-template: |
+          #
+              ldai 0
+              movi v0, %s
+              div2 v0
+              movi v0, 0
+              jne v0, set_failure
+              ldai 0
+              jmp fall_through
+          set_failure:
+              ldai 1
+          fall_through:
+        description: Check div2 with zero and various values.
+        cases:
+          - values:
+              - "0"
+            runner-options: ['run-failure']
+            description: Division by zero causes to exception.
+          - values:
+              - "1"
+          - values:
+              - "-1"
+          - values:
+              - "0x7FFFFFFF"
+          - values:
+              - "0x80000000"
+          - values:
+              - "-0x7FFFFFFF"
+          - values:
+              - "-0x80000000"
+          - values:
+              - "0xFFFFFFFF"
+          - values:
+              - "-0xFFFFFFFF"
+
+      - file-name: "op_vs_8_pone"
+        isa:
+          instructions:
+            - sig: div2 v:in:i32
+              acc: inout:i32
+              format: [op_v_8]
+        code-template: |
+          #
+              ldai 1
+              movi v0, %s
+              div2 v0
+              movi v0, %s
+              jne v0, set_failure
+              ldai 0
+              jmp fall_through
+          set_failure:
+              ldai 1
+          fall_through:
+        description: Check div2 with +1 and various values.
+        cases:
+          - values:
+              - "0"
+              - "0x0"
+            runner-options: ['run-failure']
+            description: Division by zero causes to exception.
+          - values:
+              - "1"
+              - "0x1"
+          - values:
+              - "-1"
+              - "0xFFFFFFFF"
+          - values:
+              - "0x7FFFFFFF"
+              - "0x0"
+          - values:
+              - "0x80000000"
+              - "0x0"
+          - values:
+              - "-0x7FFFFFFF"
+              - "0x0"
+          - values:
+              - "-0x80000000"
+              - "0x0"
+          - values:
+              - "0xFFFFFFFF"
+              - "0xFFFFFFFF"
+          - values:
+              - "-0xFFFFFFFF"
+              - "0x1"
+
+      - file-name: "op_vs_8_none"
+        isa:
+          instructions:
+            - sig: div2 v:in:i32
+              acc: inout:i32
+              format: [op_v_8]
+        code-template: |
+          #
+              ldai -1
+              movi v0, %s
+              div2 v0
+              movi v0, %s
+              jne v0, set_failure
+              ldai 0
+              jmp fall_through
+          set_failure:
+              ldai 1
+          fall_through:
+        description: Check div2 with -1 and various values.
+        cases:
+          - values:
+              - "0"
+              - "0x0"
+            runner-options: ['run-failure']
+            description: Division by zero causes to exception.
+          - values:
+              - "1"
+              - "0xFFFFFFFF"
+          - values:
+              - "-1"
+              - "0x1"
+          - values:
+              - "0x7FFFFFFF"
+              - "0x0"
+          - values:
+              - "0x80000000"
+              - "0x0"
+          - values:
+              - "-0x7FFFFFFF"
+              - "0x0"
+          - values:
+              - "-0x80000000"
+              - "0x0"
+          - values:
+              - "0xFFFFFFFF"
+              - "0x1"
+          - values:
+              - "-0xFFFFFFFF"
+              - "0xFFFFFFFF"
+
+      - file-name: "op_vs_8_pmax"
+        isa:
+          instructions:
+            - sig: div2 v:in:i32
+              acc: inout:i32
+              format: [op_v_8]
+        code-template: |
+          #
+              ldai 0x7FFFFFFF
+              movi v0, %s
+              div2 v0
+              movi v0, %s
+              jne v0, set_failure
+              ldai 0
+              jmp fall_through
+          set_failure:
+              ldai 1
+          fall_through:
+        description: Check div2 with +max and various values.
+        cases:
+          - values:
+              - "0"
+              - "0x0"
+            runner-options: ['run-failure']
+            description: Division by zero causes to exception.
+          - values:
+              - "1"
+              - "0x7FFFFFFF"
+          - values:
+              - "-1"
+              - "0x80000001"
+          - values:
+              - "0x7FFFFFFF"
+              - "0x1"
+          - values:
+              - "0x80000000"
+              - "0x0"
+          - values:
+              - "-0x7FFFFFFF"
+              - "0xFFFFFFFF"
+          - values:
+              - "-0x80000000"
+              - "0x0"
+          - values:
+              - "0xFFFFFFFF"
+              - "0x80000001"
+          - values:
+              - "-0xFFFFFFFF"
+              - "0x7FFFFFFF"
+
+      - file-name: "op_vs_8_nmax"
+        isa:
+          instructions:
+            - sig: div2 v:in:i32
+              acc: inout:i32
+              format: [op_v_8]
+        code-template: |
+          #
+              ldai -0x80000000
+              movi v0, %s
+              div2 v0
+              movi v0, %s
+              jne v0, set_failure
+              ldai 0
+              jmp fall_through
+          set_failure:
+              ldai 1
+          fall_through:
+        description: Check div2 with -max and various values.
+        cases:
+          - values:
+              - "0"
+              - "0x0"
+            runner-options: ['run-failure']
+            description: Division by zero causes to exception.
+          - values:
+              - "1"
+              - "0x80000000"
+          - values:
+              - "-1"
+              - "0x80000000"
+          - values:
+              - "0x7FFFFFFF"
+              - "0xFFFFFFFF"
+          - values:
+              - "0x80000000"
+              - "0x1"
+          - values:
+              - "-0x7FFFFFFF"
+              - "0x1"
+          - values:
+              - "-0x80000000"
+              - "0x1"
+          - values:
+              - "0xFFFFFFFF"
+              - "0x80000000"
+          - values:
+              - "-0xFFFFFFFF"
+              - "0x80000000"
+
+      - file-name: "vals"
+        isa:
+          instructions:
+            - sig: div2 v:in:i32
+              acc: inout:i32
+              format: [op_v_8]
+        code-template: |
+          #
+              ldai %s
+              movi v0, %s
+              div2 v0
+              movi v0, %s
+              jne v0, set_failure
+              ldai 0
+              jmp fall_through
+          set_failure:
+              ldai 1
+          fall_through:
+        description: Check div2 with various values.
+        tags: ['tsan']
+        cases:
+          - values:
+              - "0x5A2A7A20"
+              - "0x92C42"
+              - "0x9D4"
+          - values:
+              - "0x723F999F"
+              - "0x6C589"
+              - "0x10DF"
+          - values:
+              - "0x5B39A21C"
+              - "0xDFD2A"
+              - "0x685"
+          - values:
+              - "0xEC29B76A"
+              - "0x6126B"
+              - "0xFFFFFCBC"
+          - values:
+              - "0x9617582D"
+              - "0x2BD45"
+              - "0xFFFFD957"
+          - values:
+              - "0x9B35145B"
+              - "0x9014F"
+              - "0xFFFFF4CF"
+          - values:
+              - "0xA9D5C5AB"
+              - "0xA2323"
+              - "0xFFFFF781"
+          - values:
+              - "0xD90A7511"
+              - "0x64F85"
+              - "0xFFFFF9D4"
+          - values:
+              - "0x97C40EB3"
+              - "0x7670F"
+              - "0xFFFFF1EC"
+          - values:
+              - "0x3D0C14FE"
+              - "0x89837"
+              - "0x71A"
+          - values: ["0x80000000", "-1", "0x80000000"]
+          - values: ["-2147483648", "-1", "-2147483648"]
+
+
+      - file-name: "op_v_8_exception"
+        isa:
+          instructions:
+            - sig: div2 v:in:i32
+              acc: inout:i32
+              format: [op_v_8]
+        header-template: [ArithmeticException, main]
+        code-template: |
+            #
+                ldai %s
+                movi v0, 0
+            begin:
+                div2 v0
+            end:
+                ldai 1 # Should not reach this line
+                return
+
+            catch_AE:
+                ldai 0 # Expected panda.ArithmeticException
+                return
+
+            catch_all:
+                ldai 1 # Unexpected exception, test failed
+                return
+
+            .catch panda.ArithmeticException, begin, end, catch_AE
+            .catchall begin, end, catch_all
+        check-type: none
+        description: Check `div2` throws ArithmeticException when divides by zero.
+        cases:
+          - values: ["0"]
+          - values: ["1"]
+          - values: ["0x7FFF"]
+          - values: ["0xFFFF"]
+          - values: ["0x7FFFFFFF"]
+          - values: ["0x80000000"]
+          - values: ["0xFFFFFFFF"]
+          - values: ["-1"]
+          - values: ["-0x7FFF"]
+          - values: ["-0xFFFF"]
+          - values: ["-0x7FFFFFFF"]
+          - values: ["-0x80000000"]
+          - values: ["-0xFFFFFFFF"]
+
+      - file-name: "vals_mod32_1"
+        bugid: ['1324', '2072']
+        tags: ['verifier']
+        runner-options: ['verifier-failure', 'verifier-debug-config']
+        isa:
+          instructions:
+            - sig: div2 v:in:i32
+              acc: inout:i32
+              format: [op_v_8]
+        code-template: |
+          #
+              ldai %s
+              movi v0, %s
+              div2 v0
+              movi.64 v0, %s
+              cmp.64 v0
+        description: Check div2 with incorrect type of accumulator and register.
+        cases:
+          - values:
+              - "0xFFFFFFFF"
+              - "1"
+              - "0xFFFFFFFFFFFFFFFF"
+          - values:
+              - "0x7FFFFFFF"
+              - "-1"
+              - "0xFFFFFFFF80000001"
+          - values:
+              - "0x80000000"
+              - "-1"
+              - "0xFFFFFFFF80000000"
+
+      - file-name: "vals_mod32_2"
+        bugid: ['1324']
+        tags: ['verifier']
+        runner-options: ['verifier-failure', 'verifier-debug-config']
+        isa:
+          instructions:
+            - sig: div2 v:in:i32
+              acc: inout:i32
+              format: [op_v_8]
+        code-template: |
+          #
+              ldai.64 %s
+              movi.64 v0, %s
+              div2 v0
+              movi.64 v0, %s
+              cmp.64 v0
+        description: Check div2 with incorrect type of accumulator and register.
+        cases:
+          - values:
+              - "0x1FFFFFFFF"
+              - "0xFFFFFFFF"
+              - "1"
+          - values:
+              - "0x777777777FFFFFFF"
+              - "0x11111111FFFFFFFF"
+              - "0xFFFFFFFF80000001"
+          - values:
+              - "0x180000000"
+              - "0x100000001"
+              - "0xFFFFFFFF80000000"
+
+      - file-name: "regs"
+        isa:
+          instructions:
+            - sig: div2 v:in:i32
+              acc: inout:i32
+              format: [op_v_8]
+        runner-options: ['compile-only']
+        code-template: |
+          #
+              div2 %s
+        check-type: none
+        description: Check div2 with various register numbers.
+        cases:
+          - values:
+              - "v255"
+          - values:
+              - "v256"
+            runner-options: ['compile-failure']
+
+      - file-name: "type"
+        isa:
+          instructions:
+            - sig: div2 v:in:i32
+              acc: inout:i32
+              format: [op_v_8]
+          verification:
+            - acc_type
+            - v1_type
+        runner-options: ['verifier-failure', 'verifier-debug-config']
+        bugid: ["964"]
+        tags: ["verifier"]
+        code-template: |
+          #
+              %s
+              %s
+              div2 v0
+              ldai 0
+        check-type: no-check
+        description: Check div2 with incorrect type of accumulator and register.
+        cases:
+          - values:
+              - "lda.null"
+              - "movi v0, 0"
+          - values:
+              - "ldai 0 "
+              - "mov.null v0"
+          - values:
+              - "lda.null"
+              - "mov.null v0"

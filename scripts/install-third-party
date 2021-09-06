@@ -1,0 +1,61 @@
+#!/bin/bash -e
+# Copyright (c) 2021 Huawei Device Co., Ltd.
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+# When public OpenHarmony source tree is available:
+# * List all required third party components in a manifest:
+#
+#      library-1      remote-url-1
+#      library-2      remote-url-2
+#      <...>
+#
+# * Clone each component separately, based on the manifest
+# * Enable this script to work with custom manifests to allow
+#   avoid depenencies on OpenHarmony infrastructure
+# * Remove dependency on private GitLab (and, eventually, GITLAB_PULL_TOKEN)
+# * If we need to apply patches to third party libs,
+#   need to support according machinery as well.
+
+MSG_PREFIX="[ARK THIRD PARTY]"
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd -P)"
+PANDA_ROOT=$SCRIPT_DIR/..
+PANDA_THIRD_PARTY_DIR=$PANDA_ROOT/ark-third-party
+
+if [[ -d "$PANDA_THIRD_PARTY_DIR" ]] ; then
+    echo "$MSG_PREFIX Third-party dependencies are found in $PANDA_THIRD_PARTY_DIR"
+    exit 0
+fi
+
+echo "$MSG_PREFIX Third-party dependencies are not found in $PANDA_THIRD_PARTY_DIR"
+
+SECUREC_URL="https://gitee.com/openharmony/utils_native.git"
+echo "$MSG_PREFIX Cloning securec from $SECUREC_URL"
+
+git clone --verbose "$SECUREC_URL" "$PANDA_THIRD_PARTY_DIR/utils_native"
+mkdir "$PANDA_THIRD_PARTY_DIR/securec"
+ln -s "$PANDA_THIRD_PARTY_DIR/utils_native/base/src/securec" "$PANDA_THIRD_PARTY_DIR/securec/src"
+ln -s "$PANDA_THIRD_PARTY_DIR/utils_native/base/include" "$PANDA_THIRD_PARTY_DIR/securec/include"
+
+GOOGLETEST_URL="https://gitee.com/openharmony/third_party_googletest.git"
+echo "$MSG_PREFIX Cloning googletest from $GOOGLETEST_URL"
+
+git clone --verbose "$GOOGLETEST_URL" "$PANDA_THIRD_PARTY_DIR/googletest"
+
+MINIZ_URL="https://gitee.com/OHOS_STD/third_party_miniz.git"
+echo "$MSG_PREFIX Cloning miniz from $MINIZ_URL"
+
+git clone --verbose "$MINIZ_URL" "$PANDA_THIRD_PARTY_DIR/miniz"
+
+echo "$MSG_PREFIX Third-party dependencies cloned"
+exit 0
+

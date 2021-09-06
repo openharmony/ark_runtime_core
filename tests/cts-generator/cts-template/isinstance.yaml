@@ -1,0 +1,430 @@
+# Copyright (c) 2021 Huawei Device Co., Ltd.
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+definitions:
+  - name: java_header
+    template: |
+      .language Java
+
+      .record java.lang.Class <external>
+      .record java.lang.Object <external>
+      .record java.lang.String <external>
+      .record java.io.Serializable <external>
+      .record java.lang.NullPointerException <external>
+
+      .record R <> {}
+      .record I <java.interface> {}
+      .record Q <java.extends=R, java.implements=I> {}
+      .record A <java.annotation, java.annotation.type=runtime> {}
+      .record J <java.interface, java.implements=I> {}
+
+  - name: pandasm_header
+    template: |
+      .language PandaAssembly
+
+      .record panda.Class <external>
+      .record panda.Object <external>
+      .record panda.String <external>
+      .record panda.ClassCastException <external>
+
+      .record R {}
+      .record Q {}
+
+
+tests:
+  - file-name: "isinstance"
+    isa:
+      title: Is instance
+      description: >
+        Resolve object type by specified id and if an object in accumulator is an instance of the resolved type,
+        put 1 into accumulator, otherwise put 0.
+        Object of type O is instance of type T if O is the same as T or is subtype of T. For arrays T should be a root
+        type in type hierarchy or T is such array that O array elements are the same or subtype of T array elements.
+      instructions:
+        - sig: isinstance type_id
+          acc: inout:ref->i32
+          format: [op_id_16]
+    commands:
+
+      - file-name: "of_null_pa"
+        description: Check that null object reference is not an instance of any class
+        isa:
+          description: >
+            'null' object is not an instance of any class.
+        header-template: ['pandasm_header']
+        check-type: empty
+        code-template: |
+
+          .function i32 main() {
+            lda.null
+            isinstance %s
+            return
+          }
+        cases:
+          - values: ['panda.Class']
+          - values: ['panda.Object']
+          - values: ['R']
+
+
+      - file-name: "with_wrong_typeid_pa"
+        description: Check that compiler fails when type_id cannot be resolved to object type
+        isa:
+          verification:
+            - type_id_any_object
+        header-template: ['pandasm_header']
+        runner-options: ['compile-failure']
+        check-type: exit-positive
+        code-template: |
+
+          .function i32 main() {
+            %s
+            isinstance %s
+        cases:
+          - values:
+            - lda.null
+            - panda.XYZObj
+          - values:
+            - lda.null
+            - "null"
+          - values:
+            - |
+              newobj v0, panda.Object
+              lda.obj v0
+            - XYZObj
+          - values:
+            - |
+              newobj v0, panda.Object
+              lda.obj v0
+            - "\"xyz\""
+          - values:
+            - |
+              newobj v0, panda.Object
+              lda.obj v0
+            - i32
+          - values:
+            - ldai 1
+            - 1
+          - values:
+            - ldai.64 0xC0BAC0BAC0BA
+            - 0xC0BAC0BAC0BA
+          - values:
+            - fldai.64 2.7182818284590452353603
+            - 2.7182818284590452353603
+
+
+      - file-name: "with_wrong_acc_value_pa"
+        description: Check that verifier fails when accumulator contains wrong value - neither object, nor null
+        isa:
+          verification:
+            - acc_obj_or_null
+        header-template: ['pandasm_header']
+        runner-options: ['verifier-failure', 'verifier-debug-config']
+        tags: ['verifier']
+        check-type: exit-positive
+        code-template: |
+
+          .function i32 main() {
+            %s
+            isinstance %s
+        cases:
+          - values:
+            - ldai 1
+            - panda.Object
+          - values:
+            - ldai.64 0xC0BAC0BAC0BA
+            - panda.Object
+          - values:
+            - fldai.64 2.7182818284590452353603
+            - panda.Object
+
+
+      - file-name: "when_1_is_expected_pa"
+        description: Check that the instruction sets accumulator to 1 when expected
+        isa:
+          description: >
+            Resolve object type by specified id and if an object in accumulator is an instance of the resolved type,
+            put 1 into accumulator, otherwise put 0.
+            Object of type O is instance of type T if O is the same as T or is subtype of T. For arrays T should be a root
+            type in type hierarchy or T is such array that O array elements are the same or subtype of T array elements.
+        header-template: ['pandasm_header']
+        check-type: empty
+        tags: ['tsan']
+        code-template: |
+
+          .function i32 main() {
+            %s
+            isinstance %s
+            subi 1
+            return
+          }
+        cases:
+          # O has a type of T
+          - values:
+            - |
+              # O and T are of the same type, std object
+                newobj v0, panda.Object
+                lda.obj v0
+            - panda.Object
+          - values:
+            - |
+              # O and T are of the same type, custom object
+                newobj v0, R
+                lda.obj v0
+            - R
+          - values:
+            - |
+              # O and T are of the same type, string
+                lda.str "xyz"
+            - panda.String
+          - values:
+            - |
+              # O and T are of the same type, type
+                lda.type R
+            - panda.Class
+          # O is a subtype of T
+          - values:
+            - |
+              # O is a subtype of T, std object
+                newobj v0, panda.ClassCastException
+                lda.obj v0
+            - panda.Object
+          - values:
+            - |
+              # O is a subtype of T, custom object
+                newobj v0, R
+                lda.obj v0
+            - panda.Object
+          - values:
+            - |
+              # O is a subtype of T, string
+                lda.str "xyz"
+            - panda.Object
+          - values:
+            - |
+              # O is a subtype of T, type
+                lda.type R
+            - panda.Object
+          # O[] has a type of T[]
+          - values:
+            - |
+              # O and T are of the same type, both arrays, std object
+                movi v0, 10
+                newarr v0, v0, panda.Object[]
+                lda.obj v0
+            - panda.Object[]
+            bugid: ["1805"]
+          - values:
+            - |
+              # O and T are of the same type, both arrays, custom object
+                movi v0, 10
+                newarr v0, v0, R[]
+                lda.obj v0
+            - R[]
+            bugid: ["1805"]
+          - values:
+            - |
+              # O and T are of the same type, both arrays, string
+                movi v0, 10
+                newarr v0, v0, panda.String[]
+                lda.obj v0
+            - panda.String[]
+            bugid: ["1805"]
+          # O[] is a subtype of T[]
+          - values:
+            - |
+              # O is a subtype of T, both arrays, std object
+                movi v0, 10
+                newarr v0, v0, panda.ClassCastException[]
+                lda.obj v0
+            - panda.Object[]
+            bugid: ["1805"]
+          - values:
+            - |
+              # O is a subtype of T, both arrays, custom object
+                movi v0, 10
+                newarr v0, v0, R[]
+                lda.obj v0
+            - panda.Object[]
+            bugid: ["1805"]
+          # T is a root type for O[]
+          - values:
+            - |
+              # T is a root type for O[], std object
+                movi v0, 10
+                newarr v0, v0, panda.ClassCastException[]
+                lda.obj v0
+            - panda.Object
+          - values:
+            - |
+              # T is a root type for O[], custom object
+                movi v0, 10
+                newarr v0, v0, R[]
+                lda.obj v0
+            - panda.Object
+
+
+      - file-name: "when_0_is_expected_pa"
+        description: Check that the instruction sets accumulator to 0 when expected
+        isa:
+          description: >
+            Resolve object type by specified id and if an object in accumulator is an instance of the resolved type,
+            put 1 into accumulator, otherwise put 0.
+            Object of type O is instance of type T if O is the same as T or is subtype of T. For arrays T should be a root
+            type in type hierarchy or T is such array that O array elements are the same or subtype of T array elements.
+        header-template: ['pandasm_header']
+        check-type: empty
+        code-template: |
+
+          .function i32 main() {
+            %s
+            isinstance %s
+            return
+          }
+        cases:
+          # O is not related to T
+          - values:
+            - |
+              # O and T are of unrelated types, std object
+                newobj v0, panda.ClassCastException
+                lda.obj v0
+            - R
+          - values:
+            - |
+              # O and T are of unrelated types, custom object
+                newobj v0, R
+                lda.obj v0
+            - Q
+          - values:
+            - |
+              # O and T are of unrelated types, string
+                lda.str "xyz"
+            - R
+          - values:
+            - |
+              # O and T are of unrelated types, type
+                lda.type R
+            - panda.ClassCastException
+          # O is a supertype of T
+          - values:
+            - |
+              # O is a supertype of T, std object
+                newobj v0, panda.Object
+                lda.obj v0
+            - panda.ClassCastException
+          - values:
+            - |
+              # O is a supertype of T, custom object
+                newobj v0, panda.Object
+                lda.obj v0
+            - R
+          # O[] is not related to T[]
+          - values:
+            - |
+              # O and T are of unrelated types, both arrays, std object
+                movi v0, 10
+                newarr v0, v0, panda.ClassCastException[]
+                lda.obj v0
+            - R[]
+            bugid: ["1805"]
+          - values:
+            - |
+              # O and T are of unrelated types, both arrays, custom object
+                movi v0, 10
+                newarr v0, v0, R[]
+                lda.obj v0
+            - Q[]
+            bugid: ["1805"]
+          # O[] is a supertype of T[]
+          - values:
+            - |
+              # O is a supertype of T, both arrays, std object
+                movi v0, 10
+                newarr v0, v0, panda.Object[]
+                lda.obj v0
+            - panda.ClassCastException[]
+            bugid: ["1805"]
+          - values:
+            - |
+              # O is a supertype of T, both arrays, custom object
+                movi v0, 10
+                newarr v0, v0, panda.Object[]
+                lda.obj v0
+            - R[]
+            bugid: ["1805"]
+          # T is not a root type for O[]
+          - values:
+            - |
+              # T is a not a root type for O[], std object
+                movi v0, 10
+                newarr v0, v0, panda.ClassCastException[]
+                lda.obj v0
+            - panda.String
+          - values:
+            - |
+              # T is a not a root type for O[], custom object
+                movi v0, 10
+                newarr v0, v0, R[]
+                lda.obj v0
+            - panda.ClassCastException
+
+
+      - file-name: "with_nodef_typeid_pa"
+        description: Check that NoClassDefFoundError is thrown when expected
+        isa:
+          exceptions:
+            - x_classdef
+        header-template: ['pandasm_header']
+        check-type: empty
+        bugid: ['5385']
+        ignore: true
+        code-template: |
+          .record panda.NoClassDefFoundError <external>
+          .record panda.XYZObj <external>
+
+          .function i32 main() {
+          begin:
+            %s
+            isinstance %s
+            ldai 1
+            return
+          end:
+          catch_NCDFE:
+            ldai 0
+            return
+          catch_all:
+            ldai 2
+            return
+          .catch panda.NoClassDefFoundError, begin, end, catch_NCDFE
+          .catchall begin, end, catch_all
+          }
+        cases:
+          - values:
+            - lda.null
+            - panda.XYZObj
+          - values:
+            - lda.null
+            - panda.XYZObj[]
+          - values:
+            - |
+              #
+                newobj v0, panda.Object
+                lda.obj v0
+            - panda.XYZObj
+          - values:
+            - |
+              #
+                movi v0, 10
+                newarr v0, v0, panda.Object
+                lda.obj v0
+            - panda.XYZObj[]
+

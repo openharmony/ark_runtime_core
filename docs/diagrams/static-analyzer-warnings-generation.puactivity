@@ -1,0 +1,39 @@
+' Copyright (c) 2021 Huawei Device Co., Ltd.
+' Licensed under the Apache License, Version 2.0 (the "License");
+' you may not use this file except in compliance with the License.
+' You may obtain a copy of the License at
+'
+' http://www.apache.org/licenses/LICENSE-2.0
+'
+' Unless required by applicable law or agreed to in writing, software
+' distributed under the License is distributed on an "AS IS" BASIS,
+' WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+' See the License for the specific language governing permissions and
+' limitations under the License.
+
+@startuml
+skinparam monochrome true
+title Creation of files with warnings
+
+start;
+while (iterate over Translation units)
+    :Translation unit;
+    ->
+    :Clang frontend;
+    ->build AST and build CFG;
+    :Clang frontend - Clang Static Analyzer stage;
+    ->build Exploded Graph(symbolic execution of CFG);
+    while (iterate over called functions)
+        if (function in GC FUNCTION LIST)
+            :Apply path-sensitive checker for detection usage of
+            raw pointers of ObjectHeader after calling the function:
+            - detect and mark memory regions for ObjectHeader
+            - in case of calling function from GC FUNCTION LIST, mark regions as not safe
+            - in case if it is a store to raw pointer - mark it as safe
+            - in case of reading from raw pointers (except cast to bool), generate warning;
+        endif
+    endwhile
+    :Write warnings to the file;
+endwhile
+stop;
+@enduml

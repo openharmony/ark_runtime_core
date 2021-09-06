@@ -1,0 +1,72 @@
+/*
+ * Copyright (c) 2021 Huawei Device Co., Ltd.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+// NOLINTNEXTLINE(readability-function-size)
+
+VerificationStatus AbstractInterpret([[maybe_unused]] VerificationLevel v_level, VerificationContext* v_ctx, const uint8_t* pc, EntryPointType code_type) {
+#if defined(__clang__)
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wvoid-ptr-dereference"
+#pragma clang diagnostic ignored "-Wgnu-label-as-value"
+#elif defined(__GNUC__)
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wpedantic"
+#endif
+    std::array<const void*, <%= Panda::dispatch_table.handler_names.size %>> dispatch_table{
+% Panda::dispatch_table.handler_names.each do |name|
+        &&HANDLE_<%= name %>,
+% end
+    };
+
+    AbsIntInstructionHandler handler(v_ctx, pc, code_type);
+    uint8_t secondary_opcode;
+
+    if(handler.GetPrimaryOpcode() > <%= Panda::dispatch_table.primary_opcode_bound %>) {
+        LOG(ERROR, VERIFIER) << "Incorrect opcode";
+        return VerificationStatus::ERROR;
+    }
+    goto* dispatch_table[handler.GetPrimaryOpcode()];
+
+% Panda::instructions.each do |i|
+%   mnemonic = i.mnemonic.split('.').map { |p| p == '64' ? 'Wide' : p.capitalize }.join
+HANDLE_<%= Panda::dispatch_table.instruction_handler_name(i) %>:
+    if (!handler.template Handle<%= mnemonic %><BytecodeInstructionSafe::Format::<%= i.format.pretty.upcase %>>()) {
+        return handler.GetStatus();
+    }
+    if(handler.GetPrimaryOpcode() > <%= Panda::dispatch_table.primary_opcode_bound %>) {
+        LOG(ERROR, VERIFIER) << "Incorrect opcode";
+        return VerificationStatus::ERROR;
+    }
+    goto* dispatch_table[handler.GetPrimaryOpcode()];
+% end
+
+% Panda::prefixes.each do |p|
+HANDLE_<%= Panda::dispatch_table.prefix_hanlder_name(p) %>:
+    secondary_opcode = handler.GetSecondaryOpcode();
+    LOG(DEBUG, VERIFIER) << "CFLOW: Prefix subdispatch: " << "<%= p.name %>, " << secondary_opcode;
+
+    if (secondary_opcode > <%= Panda::dispatch_table.secondary_opcode_bound(p) %> ) {
+        LOG(ERROR, VERIFIER) << "Incorrect opcode";
+        return VerificationStatus::ERROR;
+    }
+    goto *dispatch_table[<%= Panda::dispatch_table.secondary_opcode_offset(p) %> + secondary_opcode];
+% end
+
+#if defined(__clang__)
+#pragma clang diagnostic pop
+#elif defined(__GNUC__)
+#pragma GCC diagnostic pop
+#endif
+}

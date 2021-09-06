@@ -1,0 +1,136 @@
+# Copyright (c) 2021 Huawei Device Co., Ltd.
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+definitions: []
+tests:
+  - file-name: "u32tof64"
+    isa:
+      title: Conversions between integer and floating point types
+      description: >
+        Perform specified primitive type conversion of accumulator.
+      exceptions:
+        - x_none
+    commands:
+      - file-name: "op_none"
+        isa:
+          instructions:
+            - sig: u32tof64
+              acc: inout:u32->f64
+              prefix: cast
+              format: [pref_op_none]
+        code-template: |
+          #
+              ldai %s
+              u32tof64
+              fmovi.64 v0, %s
+              fcmpg.64 v0
+        tags: ['tsan']
+        description: Check u32tof64 with various values.
+        cases:
+          - values:
+              - "0"
+              - "0.0"
+          - values:
+              - "1"
+              - "1.0"
+          - values:
+              - "-1"
+              - "4294967295"
+          - values:
+              - "0x7fffffff"
+              - "2.147483647e9"
+          - values:
+              - "-0x7fffffff"
+              - "2.147483649e9"
+          - values:
+              - "0x80000000"
+              - "2.147483648e9"
+          - values:
+              - "-0x80000000"
+              - "2.147483648e9"
+          - values:
+              - "0xFFFFFFFF"
+              - "4294967295"
+          - values:
+              - "-0xFFFFFFFF"
+              - "1"
+          - values:
+              - "-2147483648"
+              - "2.147483648e9"
+
+      - file-name: "type"
+        isa:
+          instructions:
+            - sig: u32tof64
+              acc: inout:u32->f64
+              prefix: cast
+              format: [pref_op_none]
+          verification:
+              - acc_type
+        bugid: ["964", "1653"]
+        tags: ["verifier"]
+        description: |
+          Check `u32tof64` with incorrect accumulator type.
+          Load different values (objects, strings, types, 64-bit floating point values, 64-bit integer values) and invokes `u32tof64`.
+          Return 0 to indicate that negative test failed, because this line is unreachable and code will not be executed after verification error.
+        runner-options: ['verifier-failure', 'verifier-debug-config']
+        header-template: []
+        code-template: |
+            #
+            .record B {}
+            .record panda.String <external>
+            .record panda.Object <external>
+            .function i32 main() {
+                %s
+                u32tof64
+        check-type: exit-positive
+        cases:
+            - values:
+                - ldai.64 0
+            - values:
+                - fldai.64 0
+            - values:
+                - lda.type B
+            - values:
+                - lda.type B[]
+            - values:
+                - lda.type panda.String
+            - values:
+                - lda.str "string"
+            - values:
+                - lda.type panda.Object
+            - values:
+                - |
+                  #
+                      movi v0, 10
+                      newarr v0, v0, i32[]
+                      lda.obj v0
+            - values:
+                - lda.null
+
+      - file-name: uninitialized_regs
+        isa:
+          instructions:
+            - sig: u32tof64
+              acc: inout:u32->f64
+              prefix: cast
+              format: [pref_op_none]
+        description: Check u32tof64 with uninitialized accumulator.
+        tags: ['verifier']
+        runner-options: ['verifier-failure', 'verifier-debug-config']
+        header-template: []
+        code-template: |
+            #
+            .function i32 main() {
+                u32tof64
+        check-type: exit-positive

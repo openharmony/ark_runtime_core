@@ -1,0 +1,166 @@
+# Copyright (c) 2021 Huawei Device Co., Ltd.
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+definitions: []
+tests:
+  - file-name: "not.64"
+    isa:
+      title: Unary
+      description: >
+        Perform specified operation on accumulator
+      exceptions:
+      - x_none
+
+    commands:
+      - file-name: "op_none"
+        isa:
+          instructions:
+            - sig: not.64
+              acc: inout:i64
+              prefix: bit
+              format: [pref_op_none]
+        code-template: |
+            #
+                ldai.64 %s
+                not.64
+                movi.64 v0, %s
+                cmp.64 v0
+        description: Check `not.64` with various values.
+        tags: ['tsan']
+        cases:
+          - values: ["0", "0xFFFFFFFFFFFFFFFF"]
+          - values: ["1", "0xFFFFFFFFFFFFFFFE"]
+          - values: ["0xF", "0xFFFFFFFFFFFFFFF0"]
+          - values: ["0xFF", "0xFFFFFFFFFFFFFF00"]
+          - values: ["0xFFF", "0xFFFFFFFFFFFFF000"]
+          - values: ["0xFFFF", "0xFFFFFFFFFFFF0000"]
+          - values: ["0xFFFFF", "0xFFFFFFFFFFF00000"]
+          - values: ["0xFFFFFF", "0xFFFFFFFFFF000000"]
+          - values: ["0xFFFFFFF", "0xFFFFFFFFF0000000"]
+          - values: ["0xFFFFFFFF", "0xFFFFFFFF00000000"]
+          - values: ["0xFFFFFFFFF", "0xFFFFFFF000000000"]
+          - values: ["0xFFFFFFFFFF", "0xFFFFFF0000000000"]
+          - values: ["0xFFFFFFFFFFF", "0xFFFFF00000000000"]
+          - values: ["0xFFFFFFFFFFFF", "0xFFFF000000000000"]
+          - values: ["0xFFFFFFFFFFFFF", "0xFFF0000000000000"]
+          - values: ["0xFFFFFFFFFFFFFF", "0xFF00000000000000"]
+          - values: ["0xFFFFFFFFFFFFFFF", "0xF000000000000000"]
+          - values: ["0xFFFFFFFFFFFFFFFF", "0x0"]
+          - values: ["0x8000000000000000", "0x7FFFFFFFFFFFFFFF"]
+          - values: ["0x7FFFFFFFFFFFFFFF", "0x8000000000000000"]
+          - values: ["-0x7FFFFFFFFFFFFFFF", "0x7FFFFFFFFFFFFFFE"]
+
+      - file-name: "vals"
+        isa:
+          instructions:
+            - sig: not.64
+              acc: inout:i64
+              prefix: bit
+              format: [pref_op_none]
+        code-template: |
+          #
+              ldai.64 %s
+              not.64
+              movi.64 v0, %s
+              cmp.64 v0
+        description: Check `not.64` with various values.
+        cases:
+          - values: ["0xA7A54FC76D2CCC7C", "0x585AB03892D33383"]
+          - values: ["0xB16F357A99C0D8A7", "0x4E90CA85663F2758"]
+          - values: ["0xFB98B737DC041B28", "0x46748C823FBE4D7"]
+          - values: ["0x14DFCAC9CD5FF6AF", "0xEB20353632A00950"]
+          - values: ["0xCDA373D7E2AB14B5", "0x325C8C281D54EB4A"]
+          - values: ["0x7D6137CE13614EF5", "0x829EC831EC9EB10A"]
+          - values: ["0xDFC0F4740D9496B6", "0x203F0B8BF26B6949"]
+          - values: ["0x526CFE9CA0267252", "0xAD9301635FD98DAD"]
+          - values: ["0x606CBD38816FFFC9", "0x9F9342C77E900036"]
+          - values: ["0x1D48537EC4386C70", "0xE2B7AC813BC7938F"]
+          - values: ["0x2EB5301A47794231", "0xD14ACFE5B886BDCE"]
+          - values: ["0x9DD1BB7C7246287D", "0x622E44838DB9D782"]
+          - values: ["0x61D822912F62D5C", "0xF9E27DD6ED09D2A3"]
+          - values: ["0xC2DD833F3B48080A", "0x3D227CC0C4B7F7F5"]
+          - values: ["0xD9DE84BEBDC002D9", "0x26217B41423FFD26"]
+          - values: ["0xF183B326AD268E23", "0xE7C4CD952D971DC"]
+          - values: ["0x4DFE00C32BC60340", "0xB201FF3CD439FCBF"]
+          - values: ["0xA24A0147E55691D", "0xF5DB5FEB81AA96E2"]
+          - values: ["0x43FAFCB397905439", "0xBC05034C686FABC6"]
+          - values: ["0x2B72F3FC001DC9F", "0xFD48D0C03FFE2360"]
+
+      - file-name: type
+        bugid: ["964", "966", "2090", "3133"]
+        tags: ["verifier"]
+        isa:
+          instructions:
+            - sig: not.64
+              acc: inout:i64
+              prefix: bit
+              format: [pref_op_none]
+          verification:
+            - acc_type
+        runner-options: ['verifier-failure', 'verifier-debug-config']
+        header-template: []
+        code-template: |
+            .record T {}
+            .record panda.String <external>
+            .record panda.Object <external>
+            #
+            .function i32 main() {
+                %s
+                not.64
+        check-type: exit-positive
+        description: Check `not.64` with incorrect accumulator type.
+        cases:
+          - values:
+            - ldai 1
+          - values: [fldai.64 1.0]
+          - values:
+            - lda.type T
+          - values:
+            - lda.type T[]
+          - values:
+            - lda.type panda.Object
+          - values:
+            - lda.type panda.String
+          - values:
+            - lda.str "x"
+          - values:
+            - |
+              newobj v0, T
+              lda.obj v0
+          - values:
+            - lda.null
+          - values:
+            - |
+              #
+                  movi v0, 10
+                  newarr v0, v0, i32[]
+                  lda.obj v0
+
+      - file-name: uninitialized_regs
+        bugid: ["2787"]
+        tags: ["verifier"]
+        isa:
+          instructions:
+            - sig: not.64
+              acc: inout:i64
+              prefix: bit
+              format: [pref_op_none]
+        description: Check not.64 with uninitialized accumulator.
+        runner-options: ['verifier-failure', 'verifier-debug-config']
+        header-template: []
+        code-template: |
+          #
+          .function i32 main() {
+              # acc is undefined
+              not.64
+        check-type: exit-positive

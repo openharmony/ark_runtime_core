@@ -1,0 +1,894 @@
+# Copyright (c) 2021 Huawei Device Co., Ltd.
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+---
+definitions:
+  - name: java
+    template: >
+      .language Java
+  - name: r_A
+    template: |
+      .record A {}
+
+      .function void A.constructor(A a0) <ctor> {
+          return.void
+      }
+  - name: r_R
+    template: |
+      # Record to test
+      .record R {
+          i32            fi32
+          i64            fi64
+          f64            ff64
+          panda.String[] fstr
+          panda.Object[] faPO
+          i32[]          fai32
+          i64[]          fai64
+          f64[]          faf64
+      }
+  - name: r_RJ
+    template: |
+      # Record to test
+      .record R {
+          i32            fi32
+          i64            fi64
+          f64            ff64
+          java.lang.String[] fstr
+          java.lang.Object[] faPO
+          i32[]          fai32
+          i64[]          fai64
+          f64[]          faf64
+      }
+  - name: NPE
+    template: |
+      .record panda.NullPointerException <external>
+  - name: j_NPE
+    template: |
+      .record java.lang.NullPointerException <external>
+  - name: AME
+    template: |
+      .record panda.AbstractMethodError <external>
+      .record panda.Class <external>
+  - name: j_AME
+    template: |
+      .record java.lang.AbstractMethodError <external>
+      .record java.lang.Class <external>
+tests:
+  - file-name: call.virt.short
+    isa:
+      instructions:
+        - sig: call.virt.short method_id, v1:in:top, v2:in:top
+          acc: out:top
+          format: [op_v1_4_v2_4_id_16]
+      title: Object calls
+      description: >
+        Call indicated object method, i.e. create new frame, pass values of arguments and
+        continue execution from the first instruction of a method.
+        Callee should treat accumulator value as undefined and cannot use it until accumulator
+        definition in the new frame.
+        Result (if any) is returned in accumulator (see 'Calling sequence' chapter for more details).
+        Method, its class and the number of argument is resolved by given method_id in runtime
+        constant-pool based on object reference using language-specific semantics (currently only Java
+        virtual methods are supported, further extensions are TBD).
+        Object reference is passed in the first source register, arguments are passed starting from
+        the second source register in the same order as in method signature.
+        Non-range instructions can be used to pass up to 4 arguments (including object reference).
+        Unused register slot values will be discarded and corresponding registers will not be
+        passed to the callee).
+        For methods with more arguments range kinds of instruction are to be used, which takes
+        the needed number of arguments starting from 'vs' register (including object reference).
+      verification:
+        - method_id_non_static
+        - compatible_arguments
+        - method_id_accessible
+      exceptions:
+        - x_null
+        - x_abstract
+    commands:
+      - file-name: method_call
+        isa:
+          instructions:
+            - sig: call.virt.short method_id, v1:in:top, v2:in:top
+              acc: out:top
+              format: [op_v1_4_v2_4_id_16]
+        header-template: [r_A]
+        description: >
+          Invoke virtual method with different amount (0 or 1) and type of argument. Primitives and reference types are used as second argument.
+          Check return value.
+        tags: ['tsan']
+        code-template: |
+          *s
+          .function %s A.foo(A a0*s) {
+              %s
+          }
+
+          .function i32 main() {
+              initobj.short A.constructor
+              sta.obj v0
+              *s
+              call.virt.short A.foo, v0*s
+              %s
+        template-cases:
+            - values:
+              - i32
+              - |
+                #
+                    ldai 123456789
+                    return
+              - |
+                #
+                    movi v0, 123456789
+                    jne v0, exit_failure
+                    ldai 0
+                    return
+                exit_failure:
+                    ldai 1
+                    return
+            - values:
+              - i64
+              - |
+                #
+                    ldai.64 123456789
+                    return.64
+              - |
+                #
+                    movi.64 v0, 123456789
+                    cmp.64 v0
+                    jnez exit_failure
+                    ldai 0
+                    return
+                exit_failure:
+                    ldai 1
+                    return
+            - values:
+              - f64
+              - |
+                #
+                    fldai.64 1234567.89
+                    return.64
+              - |
+                #
+                    fmovi.64 v0, 1234567.89
+                    fcmpg.64 v0
+                    jnez exit_failure
+                    ldai 0
+                    return
+                exit_failure:
+                    ldai 1
+                    return
+        check-type: none
+        cases:
+          - values:
+            - ''
+            - ''
+            - ''
+            - ''
+          - values:
+            - ''
+            - ',i32 a1'
+            - 'movi v1, 123'
+            - ', v1'
+          - values:
+            - ''
+            - ',i32[] a1'
+            - |
+              #
+                  movi v1, 123
+                  newarr v1, v1, i32[]
+            - ', v1'
+          - values:
+            - ''
+            - ',i64 a1'
+            - 'movi.64 v1, 123'
+            - ', v1'
+          - values:
+            - ''
+            - ',i64[] a1'
+            - |
+              #
+                  movi v1, 123
+                  newarr v1, v1, i64[]
+            - ', v1'
+          - values:
+            - ''
+            - ',A a1'
+            - |
+              #
+                  initobj.short A.constructor
+                  sta.obj v1
+            - ', v1'
+          - values:
+            - ''
+            - ',A[] a1'
+            - |
+              #
+                  movi v1, 123
+                  newarr v1, v1, A[]
+            - ', v1'
+
+          - values:
+            - ''
+            - ',f64 a1'
+            - 'fmovi.64 v1, 123.321'
+            - ', v1'
+          - values:
+            - ''
+            - ',f64[] a1'
+            - |
+              #
+                  movi v1, 123
+                  newarr v1, v1, f64[]
+            - ', v1'
+          - values:
+            - '.record panda.String <external>'
+            - ',panda.String a1'
+            - |
+              #
+                  lda.str "some string"
+                  sta.obj v1
+            - ', v1'
+          - values:
+            - '.record panda.String <external>'
+            - ',panda.String[] a1'
+            - |
+              #
+                  movi v1, 123
+                  newarr v1, v1, panda.String[]
+            - ', v1'
+
+          - values:
+            - '.record panda.Object <external>'
+            - ',panda.Object[] a1'
+            - |
+              #
+                  movi v1, 123
+                  newarr v1, v1, panda.Object[]
+            - ', v1'
+          - values:
+            - '.record panda.Object <external>'
+            - ',panda.Object[] a1'
+            - 'mov.null v1'
+            - ', v1'
+
+          - values:
+            - '.record panda.Object <external>'
+            - ',panda.Object a1'
+            - |
+              #
+                  mov.null v1
+            - ', v1'
+
+      - file-name: p_method_call_args
+        isa:
+          instructions:
+            - sig: call.virt.short method_id, v1:in:top, v2:in:top
+              acc: out:top
+              format: [op_v1_4_v2_4_id_16]
+        header-template: [xorshift32, r_R]
+        description: >
+            Invoke virtual method with different pseudo-random values and check if correct value is stored in object field. Check i32, i64, f64 and reference types.
+            Use PandaAssembly language context.
+        tags: ['tsan']
+        code-template: |
+            .record panda.String <external>
+            .record panda.Object <external>
+
+            .function void R.constructor(R a0) <ctor> {
+                return.void
+            }
+
+            .function void R.storeValue(R a0, %s a1) {
+                lda%s a1
+                stobj%s a0, R.%s
+                return.void
+            }
+
+            .function i32 main() {
+                # Create R object
+                initobj.short R.constructor
+                # Keep them in v0
+                sta.obj v0
+                # Iterations
+                movi v2, 10
+                # Start value
+                movi v3, *s
+
+            loop:
+                %s
+                inci v2, -1
+                lda v2
+                jnez loop
+                ldai 0
+                return
+            exit_err:
+                ldai 1
+                return
+        check-type: none
+        template-cases:
+            - values:
+              - i32
+              - ''
+              - ''
+              - fi32
+              - |
+                # Get next random number
+                    call.short nextRand, v3
+                    sta v3
+                # Store in object
+                    call.virt.short R.storeValue, v0, v3
+                # Get object field
+                    ldobj v0, R.fi32
+                # Compare field value
+                    jne v3, exit_err
+            - values:
+              - i32[]
+              - '.obj'
+              - '.obj'
+              - fai32
+              - |
+                # Get next random number
+                    call.short nextRand, v3
+                    sta v3
+                    andi 0x7f
+                    sta v4
+                    newarr v4, v4, i32[]
+                # Store in object
+                    call.virt.short R.storeValue, v0, v4
+                # Get object field
+                    ldobj.obj v0, R.fai32
+                # Compare field value
+                    jne.obj v4, exit_err
+            - values:
+              - i64
+              - '.64'
+              - '.64'
+              - fi64
+              - |
+                # Get next random number
+                    call.short nextRand, v3
+                    sta v3
+                # Convert to i64 to get high 32 bits
+                    u32toi64
+                    movi.64 v5, 32
+                    shl2.64 v5
+                    sta.64 v5
+                # Get next random
+                    call.short nextRand, v3
+                    sta v3
+                # Convert to i64 to get lowest 32 bits
+                    u32toi64
+                    or2.64 v5
+                    sta.64 v4
+                # Store in object
+                    call.virt.short R.storeValue, v0, v4
+                # Get object field value
+                    ldobj.64 v0, R.fi64
+                # Compare field value
+                    cmp.64 v4
+                    jnez exit_err
+            - values:
+              - i64[]
+              - '.obj'
+              - '.obj'
+              - fai64
+              - |
+                # Get next random number
+                    call.short nextRand, v3
+                    sta v3
+                    andi 0xff
+                    sta v4
+                    newarr v4, v4, i64[]
+                # Store in object
+                    call.virt.short R.storeValue, v0, v4
+                # Get object field
+                    ldobj.obj v0, R.fai64
+                # Compare field value
+                    jne.obj v4, exit_err
+            - values:
+              - f64
+              - '.64'
+              - '.64'
+              - ff64
+              - |
+                #
+                    call.short nextRand, v3
+                    sta v3
+                    u32toi64
+                    movi.64 v5, 32
+                    shl2.64 v5
+                    sta.64 v5
+                    call.short nextRand, v3
+                    sta v3
+                    u32toi64
+                    or2.64 v5
+                    sta.64 v4
+                    lda.64 v4
+                # Conver i64 to f64 to check f64 value passed to virtual function.
+                    i64tof64
+                    sta.64 v4
+                    call.virt.short R.storeValue, v0, v4
+                    ldobj.64 v0, R.ff64
+                    fcmpg.64 v4
+                    jnez exit_err
+            - values:
+              - f64[]
+              - '.obj'
+              - '.obj'
+              - faf64
+              - |
+                # Get next random number
+                    call.short nextRand, v3
+                    sta v3
+                    andi 0xff
+                    sta v4
+                    newarr v4, v4, f64[]
+                # Store in object
+                    call.virt.short R.storeValue, v0, v4
+                # Get object field
+                    ldobj.obj v0, R.faf64
+                # Compare field value
+                    jne.obj v4, exit_err
+            - values:
+              - panda.Object[]
+              - '.obj'
+              - '.obj'
+              - faPO
+              - |
+                # Get next random number
+                    call.short nextRand, v3
+                    sta v3
+                    andi 0x7f
+                    sta v4
+                    newarr v4, v4, panda.Object[]
+                # Store in object
+                    call.virt.short R.storeValue, v0, v4
+                # Get object field
+                    ldobj.obj v0, R.faPO
+                # Compare field value
+                    jne.obj v4, exit_err
+            - values:
+              - panda.String[]
+              - '.obj'
+              - '.obj'
+              - fstr
+              - |
+                # Get next random number
+                    call.short nextRand, v3
+                    sta v3
+                    andi 0x7f
+                    sta v4
+                    newarr v4, v4, panda.String[]
+                # Store in object
+
+                    call.virt.short R.storeValue, v0, v4
+                # Get object field
+                    ldobj.obj v0, R.fstr
+                # Compare field value
+                    jne.obj v4, exit_err
+        cases:
+          - values:
+              - "0xBADC0FFE"
+          - values:
+              - "0x12345678"
+          - values:
+              - "0xFEDCBA98"
+          - values:
+              - "1"
+          - values:
+              - "0xFFFFFFFF"
+          - values:
+              - "0x80000000"
+          - values:
+              - "0x7FFFFFFF"
+
+      - file-name: restore_register
+        isa:
+          instructions:
+            - sig: call.virt.short method_id, v1:in:top, v2:in:top
+              acc: out:top
+              format: [op_v1_4_v2_4_id_16]
+        header-template: [r_A]
+        description: >
+          Invoke virtual method and check if registers after calling is restored.
+        code-template: |
+          .function void A.foo(A a0) {
+              %s
+              lda.null
+              sta.obj v0
+              mov.obj v256, v0
+              return.void
+          }
+
+          .function i32 main() {
+              initobj.short A.constructor
+              sta.obj v0
+              %s
+              mov%s v256, %s
+              call.virt.short A.foo, v0
+              mov%s v100, v256
+              lda%s v100
+              %s
+        cases:
+          - values:
+            - 'movi v1, 123'
+            - 'movi v1, 321'
+            - ''
+            - 'v1'
+            - ''
+            - ''
+            - |
+              #
+                  jne v1, set_failure
+                  ldai 0
+                  jmp done
+              set_failure:
+                  ldai 1
+              done:
+          - values:
+            - 'movi.64 v8, 123'
+            - 'movi v8, 321'
+            - ''
+            - 'v8'
+            - ''
+            - ''
+            - |
+              #
+                  jne v8, set_failure
+                  ldai 0
+                  jmp done
+              set_failure:
+                  ldai 1
+              done:
+          - values:
+            - 'fmovi.64 v16, 123'
+            - 'movi v16, 321'
+            - ''
+            - 'v16'
+            - ''
+            - ''
+            - |
+              #
+                  jne v16, set_failure
+                  ldai 0
+                  jmp done
+              set_failure:
+                  ldai 1
+              done:
+          - values:
+            - 'mov.null v128'
+            - 'movi v128, 321'
+            - ''
+            - 'v128'
+            - ''
+            - ''
+            - |
+              #
+                  jne v128, set_failure
+                  ldai 0
+                  jmp done
+              set_failure:
+                  ldai 1
+              done:
+          - values:
+            - |
+              #
+                  lda.str "123"
+                  sta.obj v255
+            - 'movi v255, 321'
+            - ''
+            - 'v255'
+            - ''
+            - ''
+            - |
+              #
+                  jne v255, set_failure
+                  ldai 0
+                  jmp done
+              set_failure:
+                  ldai 1
+              done:
+          - values: ['movi v1, 123',   'movi.64 v1, 321', '.64', 'v1', '.64', '.64', 'cmp.64 v1']
+          - values: ['movi.64 v8, 123',   'movi.64 v8, 321', '.64', 'v8', '.64', '.64', 'cmp.64 v8']
+          - values: ['fmovi.64 v16, 123',  'movi.64 v16, 321', '.64', 'v16', '.64', '.64', 'cmp.64 v16']
+          - values: ['mov.null v128', 'movi.64 v128, 321', '.64', 'v128', '.64', '.64', 'cmp.64 v128']
+          - values:
+              - |
+                #
+                    lda.str "123"
+                    sta.obj v255
+              - 'movi.64 v255, 321'
+              - '.64'
+              - 'v255'
+              - '.64'
+              - '.64'
+              - 'cmp.64 v255'
+          - values: ['movi v1, 123',   'fmovi.64 v1, 321', '.64', 'v1', '.64', '.64', 'fcmpg.64 v1']
+          - values: ['movi.64 v8, 123',   'fmovi.64 v8, 321', '.64', 'v8', '.64', '.64', 'fcmpg.64 v8']
+          - values: ['fmovi.64 v16, 123',  'fmovi.64 v16, 321', '.64', 'v16', '.64', '.64', 'fcmpg.64 v16']
+          - values: ['mov.null v128', 'fmovi.64 v128, 321', '.64', 'v128', '.64', '.64', 'fcmpg.64 v128']
+          - values:
+              - |
+                #
+                    lda.str "123"
+                    sta.obj v255
+              - 'fmovi.64 v255, 321'
+              - '.64'
+              - 'v255'
+              - '.64'
+              - '.64'
+              - 'fcmpg.64 v255'
+
+      - file-name: regs
+        isa:
+          instructions:
+            - sig: call.virt.short method_id, v1:in:top, v2:in:top
+              acc: out:top
+              format: [op_v1_4_v2_4_id_16]
+        header-template: [r_A]
+        description: >
+          Check available registers number and registers width.
+        code-template: |
+            .function void A.foo(A a0%s) {
+                return.void
+            }
+
+            .function i32 main() {
+                call.virt.short A.foo, %s
+            }
+        check-type: empty
+        runner-options: [compile-only]
+        cases:
+          - values: ['', 'v0']
+          - values: ['', 'v8']
+          - values: ['', 'v15']
+          - values: ['', 'v16']
+            runner-options: [compile-failure]
+          - values: ['', '0']
+            runner-options: [compile-failure]
+          - values: [',i32 a1', 'v0, v0']
+          - values: [',i32 a1', 'v0, v8']
+          - values: [',i32 a1', 'v0, v15']
+          - values: [',i32 a1', 'v0, v16']
+            runner-options: [compile-failure]
+          - values: [',i32 a1', 'v0, 0']
+            runner-options: [compile-failure]
+          - values: [',i32 a1', 'v16, v0']
+            runner-options: [compile-failure]
+          - values: [',i32 a1', 'v16, v8']
+            runner-options: [compile-failure]
+          - values: [',i32 a1', 'v16, v15']
+            runner-options: [compile-failure]
+          - values: [',i32 a1', 'v16, v16']
+            runner-options: [compile-failure]
+          - values: [',i32 a1', 'v16, 0']
+            runner-options: [compile-failure]
+          - values: [',i32 a1', 'v15, v15']
+          - values: [',i32 a1', 'v15, v16']
+            runner-options: [compile-failure]
+          - values: [',i32 a1', 'v15, 0']
+            runner-options: [compile-failure]
+          - values: [',i32 a1', '0, 0']
+            runner-options: [compile-failure]
+          - values: [',i32 a1, i32 a2', 'v0, v0, v0']
+            runner-options: [compile-failure]
+          - values: [',i32 a1, i32 a2', 'v0, v0, v15']
+            runner-options: [compile-failure]
+          - values: [',i32 a1, i32 a2', 'v0, v15, v16']
+            runner-options: [compile-failure]
+          - values: [',i32 a1, i32 a2', 'v15, v16, v16']
+            runner-options: [compile-failure]
+          - values: [',i32 a1, i32 a2', 'v16, v16, 0']
+            runner-options: [compile-failure]
+          - values: [',i32 a1, i32 a2', 'v16, 0, 0']
+            runner-options: [compile-failure]
+          - values: [',i32 a1, i32 a2', '0, 0, 0']
+            runner-options: [compile-failure]
+
+      - file-name: panda_npe
+        isa:
+          instructions:
+            - sig: call.virt.short method_id, v1:in:top, v2:in:top
+              acc: out:top
+              format: [op_v1_4_v2_4_id_16]
+          exceptions:
+            - x_null
+        header-template: [NPE]
+        description: >
+              Check incorrect usage of `call.virt.short` instruction.
+              Null reference usage causes to panda.NullPointerException. Method_id points to virtual method of base class. Use PandaAssembly language context.
+        code-template: |
+          %s
+          .record B {}
+
+          .function void B.constructor(B a0) <ctor> {
+              return.void
+          }
+
+          .function i32 B.func(B a0%s) <noimpl>
+
+          .function i32 main() {
+              mov.null v0
+              %s
+          begin:
+              call.virt.short B.func, v0%s
+          end:
+              ldai 1
+              return
+
+          catch_NPE:
+              ldai 0 # Expected panda.NullPointerException
+              return
+
+          catch_all:
+              ldai 2 # Unexpected exception, test failed
+              return
+
+          .catch panda.NullPointerException, begin, end, catch_NPE
+          .catchall begin, end, catch_all
+
+        check-type: none
+        cases:
+          - values:
+            - ''
+            - ''
+            - ''
+            - ''
+          - values:
+            - ''
+            - ', i32 a1'
+            - 'movi v1, 0'
+            - ', v1'
+          - values:
+            - ''
+            - ', i64 a1'
+            - 'movi.64 v1, 0'
+            - ', v1'
+          - values:
+            - ''
+            - ', f64 a1'
+            - 'fmovi.64 v1, 0'
+            - ', v1'
+          - values:
+            - ''
+            - ', B a1'
+            - |
+              initobj B.constructor
+                  sta.obj v1
+            - ', v1'
+          - values:
+            - '.record panda.String <external>'
+            - ', panda.String a1'
+            - |
+              lda.str "some string"
+                  sta.obj v1
+            - ', v1'
+
+          - values:
+              - '.record panda.Class <external>'
+              - ', panda.Class a1'
+              - |
+                #
+                    lda.type B
+                    sta.obj v1
+              - ', v1'
+
+      - file-name: panda_ame
+        isa:
+          instructions:
+            - sig: call.virt.short method_id, v1:in:top, v2:in:top
+              acc: out:top
+              format: [op_v1_4_v2_4_id_16]
+          exceptions:
+            - x_abstract
+        header-template: [AME]
+        description: >
+          Check incorrect usage of `call.virt.short` instruction. Call of abstract method, check if panda.AbstractMethodError is thrown.
+          Use PandaAssembly language context.
+        tags: ['tsan']
+        code-template: |
+          %s
+          .record B {}
+
+            .function void B.constructor(B a0) <ctor> {
+                return.void
+            }
+
+            .function i32 B.func(B a0%s) <noimpl>
+
+          .function i32 main() {
+              initobj.short B.constructor
+              sta.obj v0
+              %s
+          begin:
+              call.virt.short B.func, v0%s
+          end:
+              ldai 1
+              return
+
+          catch_AME:
+              ldai 0 # Expected panda.AbstractMethodError
+              return
+
+          catch_all:
+              ldai 2 # Unexpected exception, test failed
+              return
+
+          .catch panda.AbstractMethodError, begin, end, catch_AME
+          .catchall begin, end, catch_all
+
+        check-type: none
+        cases:
+          - values:
+            - ''
+            - ''
+            - ''
+            - ''
+          - values:
+            - ''
+            - ', i32 a1'
+            - 'movi v1, 0'
+            - ', v1'
+          - values:
+            - ''
+            - ', i64 a1'
+            - 'movi.64 v1, 0'
+            - ', v1'
+          - values:
+            - ''
+            - ', f64 a1'
+            - 'fmovi.64 v1, 0'
+            - ', v1'
+          - values:
+            - ''
+            - ', B a1'
+            - |
+              initobj.short B.constructor
+                  sta.obj v1
+            - ', v1'
+          - values:
+            - '.record panda.String <external>'
+            - ', panda.String a1'
+            - |
+              lda.str "some string"
+                  sta.obj v1
+            - ', v1'
+
+          - values:
+              - ''
+              - ', panda.Class a1'
+              - |
+                #
+                    lda.type B
+                    sta.obj v1
+              - ', v1'
+
+      - file-name: unused_regs
+        isa:
+          description: >
+            Unused register slot values will be discarded and corresponding registers will not be
+            passed to the callee).
+        header-template: []
+        description: Verifier should ignore unused register slots.
+        code-template: |
+            .record A {}
+            .function void A.ctor(A a0) <ctor> {
+                return.void
+            }
+            .function i32 A.foo(A a0) {
+                ldai 0
+                return
+            }
+            .function i32 main() {
+                initobj A.ctor
+                sta.obj v5
+                call.virt.short A.foo, v5, v4
+        check-type: no-check

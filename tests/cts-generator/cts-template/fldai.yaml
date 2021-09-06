@@ -1,0 +1,226 @@
+# Copyright (c) 2021 Huawei Device Co., Ltd.
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+definitions: []
+tests:
+  - file-name: "fldai.64"
+    isa:
+      title: Load accumulator from immediate
+      description: >
+        Load immediate into accumulator. For short formats immediate is sign extended to operand size.
+      exceptions:
+        - x_none
+      verification:
+        - none
+    commands:
+      - file-name: "op_imm_64_bits_positive"
+        isa:
+          instructions:
+            - sig: fldai.64 imm:f64
+              acc: out:f64
+              format: [op_imm_64]
+              properties: [acc_write, float]
+        code-template: |
+          #   test - check binary representation of FP literals - positive
+              fldai.64 %s
+              fmovi.64 v0, %s
+              fcmpg.64 v0
+        description: Check fldai.64 with various positive values (f64 and HEX literal).
+        tags: ['tsan']
+        cases:
+          - values:
+              - "0.0"
+              - "0x0"
+          - values:
+              - "0.1"
+              - "0x3FB999999999999A"
+          - values:
+              - "1.0"
+              - "0x3ff0000000000000"
+          - values:
+              - "12345678.90987654"
+              - "0x41678c29dd1db568"
+          - values:
+              - "3.141592653589793"
+              - "0x400921fb54442d18"
+          - values:
+              - "3.1415e3"
+              - "0x40a88b0000000000"
+          - values:
+              - "1.7976931348623157e308"
+              - "0x7FEFFFFFFFFFFFFF"
+          - values:
+              - "4.9e-324"
+              - "0x1"
+          - values:
+              - "1.7976931348623157e308"
+              - "0x7fefffffffffffff"
+          - values:
+              - "0x1234567890ABCDEF"
+              - "5.626349108908516e-221"
+          - values:
+              - "0"
+              - "0x0000000000000000"
+          - values:
+              - "1"
+              - "0x3ff0000000000000"
+          - values:
+              - "0"
+              - "0x0000000000000000"
+          - values:
+              - "1"
+              - "0x3ff0000000000000"
+          - values:
+              - "9223372036854775807"
+              - "0x43e0000000000000"
+          - values:
+              - "0.55"
+              - "0x3fe199999999999a"
+
+      - file-name: "op_imm_64_bits_negative"
+        isa:
+          instructions:
+            - sig: fldai.64 imm:f64
+              acc: out:f64
+              format: [op_imm_64]
+              properties: [acc_write, float]
+        code-template: |
+          #   test - check binary representation of FP literals - negative
+              fldai.64 %s
+              fmovi.64 v0, %s
+              fcmpg.64 v0
+        description: Check fldai.64 with various negative values (f64 and HEX literal).
+        cases:
+          - values:
+              - "-0"
+              - "0x8000000000000000"
+          - values:
+              - "-1"
+              - "0xbff0000000000000"
+          - values:
+              - "-0x7FFFFFFFFFFFFFFF"
+              - "0xc3e0000000000000"
+          - values:
+              - "-0.0"
+              - "0x8000000000000000"
+          - values:
+              - "-0.1"
+              - "0xbfb999999999999a"
+          - values:
+              - "-1.0"
+              - "0xbff0000000000000"
+          - values:
+              - "-12345678.90987654"
+              - "0xc1678c29dd1db568"
+          - values:
+              - "-3.141592653589793"
+              - "0xc00921fb54442d18"
+          - values:
+              - "-4.9e-324"
+              - "0x8000000000000001"
+          - values:
+              - "-1.7976931348623157e308"
+              - "0xffefffffffffffff"
+          - values:
+              - "-0.55"
+              - "0xbfe199999999999a"
+
+      - file-name: "op_imm_64_err"
+        isa:
+          instructions:
+            - sig: fldai.64 imm:f64
+              acc: out:f64
+              format: [op_imm_64]
+              properties: [acc_write, float]
+        code-template: |
+          #
+              fldai.64 %s
+        check-type: none
+        runner-options: [compile-failure]
+        description: Check fldai.64 with incorrect literal.
+        cases:
+
+          - values:
+              - "1e"
+          - values:
+              - "e1"
+            ignore: true
+            bugid: ['932']
+          - values:
+              - "-1e"
+          - values:
+              - "-e1"
+            ignore: true
+            bugid: ['932']
+          - values:
+              - "1e1e1"
+          - values:
+              - "-1e1e1"
+
+      - file-name: "op_imm_64_range"
+        isa:
+          instructions:
+            - sig: fldai.64 imm:f64
+              acc: out:f64
+              format: [op_imm_64]
+              properties: [acc_write, float]
+        code-template: |
+          #
+              fldai.64 %s
+        check-type: none
+        runner-options: [compile-only]
+        description: Check fldai.64 with minimal/maximal positive/negative values.
+        cases:
+          - values:
+              - "+2e-324"
+          - values:
+              - "-2e-324"
+          - values:
+              - "1.8e328"
+            tags: ["clang_release_sanitizer"]
+            bugid: ["966", "965"]
+          - values:
+              - "-1.8e328"
+            bugid: ["966", "965"]
+            tags: ["clang_release_sanitizer"]
+
+      - file-name: "op_imm_64_range_val"
+        isa:
+          instructions:
+            - sig: fldai.64 imm:f64
+              acc: out:f64
+              format: [op_imm_64]
+              properties: [acc_write, float]
+        code-template: |
+          #   test - check binary representation of FP literals - positive
+              fldai.64 %s
+              fmovi.64 v0, %s
+              fcmpg.64 v0
+        description: Check fldai.64 with out-of-range positive/negative values.
+        cases:
+          - values:
+              - "+2e-325"
+              - "0"
+          - values:
+              - "-2e-325"
+              - "0x8000000000000000"
+          - values:
+              - "1.8e328"
+              - "0x7ff0000000000000"
+            tags: ["clang_release_sanitizer"]
+            bugid: ["966", "965"]
+          - values:
+              - "-1.8e328"
+              - "0xfff0000000000000"
+            tags: ["clang_release_sanitizer"]
+            bugid: ["966", "965"]

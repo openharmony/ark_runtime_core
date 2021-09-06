@@ -1,0 +1,137 @@
+# Copyright (c) 2021 Huawei Device Co., Ltd.
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+---
+
+groups:
+  - title: Conversions between integer and floating point types
+    description: Conversion from floating-point types to integer one obeys the following
+      rules
+
+  - title: Create new object
+    description: The instruction is DEPRECATED and should no longer be in use.
+
+
+  - title: Load accumulator from string constant pool
+    description: In dynamically-typed language context load string as 'any' value.
+
+
+  - title: Type conversions
+    description: |
+      Conversion from floating-point types to integer one obeys the following rules.
+
+
+  - title: Object equality comparison
+    description: |
+      The instruction is DEPRECATED and should no longer be in use.
+
+
+  - title: Static call
+    description: In dynamically-typed language context accept 'any' values in source
+      registers.
+
+  - title: Dynamic move register-to-register
+    description: Move 'any' values between registers
+    instructions:
+    - sig: mov.dyn v1:out:any, v2:in:any
+      acc: none
+      format:
+      - op_v1_8_v2_8
+      - op_v1_16_v2_16
+    exceptions:
+    - x_none
+    verification:
+    - valid_in_dynamic_context
+  - title: Dynamic load accumulator from register
+    description: Move 'any' value from register to accumulator
+    instructions:
+    - sig: lda.dyn v:in:any
+      acc: out:any
+      format:
+      - op_v_8
+    exceptions:
+    - x_none
+    verification:
+    - valid_in_dynamic_context
+
+
+  - title: Dynamic store accumulator
+    description: Move 'any' value from accumulator to register
+    instructions:
+    - sig: sta.dyn v:out:any
+      acc: in:any
+      format:
+      - op_v_8
+    exceptions:
+    - x_none
+    verification:
+    - valid_in_dynamic_context
+  - title: Dynamic load accumulator from immediate
+    description: Move immediate as 'any' value to accumulator
+    instructions:
+    - sig: ldai.dyn imm:i32
+      acc: out:any
+      format:
+      - op_imm_32
+    - sig: fldai.dyn imm:f64
+      acc: out:any
+      format:
+      - op_imm_64
+      properties:
+      - acc_write
+      - float
+      - dynamic
+    exceptions:
+    - x_none
+    verification:
+    - valid_in_dynamic_context
+
+
+  - title: Dynamic return from method
+    description: Return 'any' value in accumulator from method to its caller
+    instructions:
+    - sig: return.dyn
+      acc: in:any
+      format:
+      - op_none
+    exceptions:
+    - x_none
+    verification:
+    - valid_in_dynamic_context
+  - title: Dynamic indirect call
+    description: Call 'any' value that represents a function, i.e. create a new frame,
+      pass values of arguments and continue execution from the first instruction of
+      a method. Callee should treat accumulator value as undefined and cannot use it
+      until accumulator definition in the new frame. The callee must always return the
+      result in the accumulator. First source register contains a function 'any' value,
+      other imm source registers contain arguments of a function. Non-range instructions
+      can be used to pass up to 4 arguments (unused register slot values will be discarded
+      and corresponding registers will not be passed to the callee). For methods with
+      more arguments range kind of instruction is to be used, which takes the needed
+      number of arguments starting from 'v' register.
+    instructions:
+    - sig: calli.dyn.short imm, v1:in:any, v2:in:any, v3:in:any
+      acc: out:any
+      format:
+      - op_imm_4_v1_4_v2_4_v3_4
+    - sig: calli.dyn imm, v1:in:any, v2:in:any, v3:in:any, v4:in:any, v5:in:any
+      acc: out:any
+      format:
+      - op_imm_4_v1_4_v2_4_v3_4_v4_4_v5_4
+    - sig: calli.dyn.range imm, v:in:any
+      acc: out:any
+      format:
+      - op_imm_16_v_16
+    exceptions:
+    - x_none
+    verification:
+    - valid_in_dynamic_context

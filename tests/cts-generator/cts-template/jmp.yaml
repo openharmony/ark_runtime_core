@@ -1,0 +1,249 @@
+# Copyright (c) 2021 Huawei Device Co., Ltd.
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+definitions: []
+tests:
+  - file-name: "jmp"
+    isa:
+      title: Unconditional jump
+      description: >
+        Unconditionally transfer execution to an instruction at offset bytes from the beginning of the current
+        instruction. Offset is sign extended to the size of instruction address.
+      verification:
+        - branch_target
+      exceptions:
+        - x_none
+    commands:
+      - file-name: "op_none"
+        isa:
+          instructions:
+            - sig: jmp imm:i32
+              acc: none
+              format: [op_imm_8, op_imm_16, op_imm_32]
+        description: Check execution is transferred, jump forward, backward, jump on current instruction.
+        code-template: |
+          #
+              %s
+        check-type: exit-positive
+        tags: ['tsan']
+        cases:
+          - values:
+              - |
+                # Jump forward
+                    jmp l1
+                    lda.null
+                l1:
+                    lda.null
+
+          - values:
+              - |
+                #
+                    jmp l1
+                    ldai 255 ##*255
+                    # should not be here
+                    return
+                l1:
+
+          - values:
+              - |
+                #
+                    jmp l1
+                    lda.null ##*256
+                l1:
+
+          - values:
+              - |
+                #
+                    jmp l1
+                    ldai 255 ##*32767
+                    # should not be here
+                    return
+                l1:
+
+          - values:
+              - |
+                #
+                    jmp l1
+                    ldai 255 ##*65536
+                    # should not be here
+                    return
+                l1:
+
+          - values:
+              - |
+                #
+                    jmp l1
+                l2: jmp l3
+                l4: jmp l5
+                l3: jmp l4
+                l1: jmp l2
+                l5:
+
+          - values:
+              - |
+                # Jump back
+                    jmp l1
+                l3:
+                    lda.null
+                    jmp l2
+                l1:
+                    jmp l3
+                l2:
+
+          - values:
+              - |
+                # Jump back
+                    jmp l1
+                l3:
+                    lda.null ##*255
+                    jmp l2
+                    ldai 255
+                    # should not be here
+                    return
+                l1:
+                    jmp l3
+                l2:
+
+          - values:
+              - |
+                # Jump back
+                    jmp l1
+                l3:
+                    lda.null ##*256
+                    jmp l2
+                l1:
+                    jmp l3
+                l2:
+
+          - values:
+              - |
+                # Jump back
+                    jmp l1
+                l3:
+                    lda.null ##*32767
+                    jmp l2
+                l1:
+                    jmp l3
+                l2:
+            description: Check jump with large offset.
+
+          - values:
+              - |
+                # Jump back
+                    jmp l1
+                l3:
+                    lda.null ##*65536
+                    jmp l2
+                    ldai 255
+                    # should not be here
+                    return
+                l1:
+                    jmp l3
+                l2:
+            description: Check jump with large offset.
+
+          - values:
+              - |
+                # Jump back
+                loop:
+                    jmp loop
+            runner-options: [compile-only]
+
+          - values:
+              - |
+                # Jump outside function
+                    jmp loop
+                }
+                .function u1 some_fnc() {
+                loop:
+            runner-options: [compile-failure]
+
+          - values:
+              - |
+                #
+                    call jmp_wrap
+                    ldai 0
+                    return
+                }
+
+                .function u1 jmp_target() {
+                label:
+                    return
+                }
+                .function u1 jmp_wrap() {
+                # Jump back, other function
+                    jmp label
+                }
+            case-check-type: empty
+            runner-options: [compile-failure]
+
+          - values:
+              - |
+                #
+                    call jmp_wrap
+                    ldai 0
+                    return
+                }
+
+                .function u1 jmp_wrap() {
+                # Jump forward, other function
+                    jmp label
+
+                }
+                .function u1 jmp_target() {
+                label:
+                    return
+                }
+            case-check-type: empty
+            runner-options: [compile-failure]
+
+          - values:
+              - |
+                # Check jump out of bounds of method body is not allowed.
+                    jmp label
+                    ldai 0
+                    return
+                label:
+                }
+            case-check-type: empty
+            runner-options: ['verifier-failure', 'verifier-debug-config']
+            tags: ['verifier']
+
+      - file-name: "outside_try_catch_p"
+        isa:
+          instructions:
+            - sig: jmp imm:i32
+              acc: none
+              format: [op_imm_8, op_imm_16, op_imm_32]
+        description: Jump outside try/catch block.
+        bugid: ['3425']
+        header-template: []
+        code-template: |
+          .record panda.ArithmeticException <external>
+          .function i32 main() {
+          begin:
+              jmp outside
+              newobj v0, panda.ArithmeticException
+              throw v0
+          end:
+              ldai 1
+              return
+          catch_ae:
+              ldai 2
+              return
+          .catch panda.ArithmeticException, begin, end, catch_ae
+              ldai 3
+              return
+          outside:
+        check-type: exit-positive
+

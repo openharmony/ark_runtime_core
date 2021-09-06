@@ -1,0 +1,710 @@
+# Copyright (c) 2021 Huawei Device Co., Ltd.
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+definitions:
+  - name: java
+    template: |
+      .language Java
+  - name: aoobe_p
+    template: |
+      .record panda.ArrayIndexOutOfBoundsException<external>
+  - name: aoobe_j
+    template: |
+      .record java.lang.ArrayIndexOutOfBoundsException<external>
+  - name: npe_p
+    template: |
+      .record panda.NullPointerException <external>
+  - name: npe_j
+    template: |
+      .record java.lang.NullPointerException <external>
+
+tests:
+  - file-name: "starr.64"
+    isa:
+      title: Store to array
+      description: >
+        Store accumulator content into array slot pointed by index.
+      instructions:
+        - sig: starr.64 v1:in:i64[], v2:in:i32
+          acc: in:i64
+          format: [op_v1_4_v2_4]
+    commands:
+
+
+      - file-name: "reg_valid"
+        isa:
+          instructions:
+            - sig: starr.64 v1:in:i64[], v2:in:i32
+              acc: in:i64
+              format: [op_v1_4_v2_4]
+        check-type: empty
+        runner-options: [compile-only]
+        description: Check 'starr.64' instruction with valid register numbers.
+        header-template: []
+        code-template: |
+          #
+          .function i32 main() {
+              starr.64 %s, %s
+              ldai 0
+              return
+          }
+        cases:
+          - values: [v0, v15]
+          - values: [v15, v0]
+          - values: [v15, v15]
+          - case-template: |
+              #
+              .function i32 f1(i64[] a0, i32 a1) {
+                  starr.64 a0, a1   # valid registers
+                  ldai 0
+                  return
+              }
+
+              .function i32 main() {
+                  call.short f1, v1, v2
+                  return
+              }
+
+
+      - file-name: "reg_v_invalid"
+        isa:
+          instructions:
+            - sig: starr.64 v1:in:i64[], v2:in:i32
+              acc: in:i64
+              format: [op_v1_4_v2_4]
+        runner-options: [compile-failure]
+        description: Check 'starr.64' instruction with invalid register numbers.
+        code-template: |
+          #
+              starr.64 %s, *s
+        check-type: exit-positive
+        template-cases:
+          - values: [v0]
+            exclude: [v0, v15]
+          - values: [v15]
+            exclude: [v0, v15]
+          - values: [v255]
+          - values: [v256]
+          - values: [v65536]
+          - values: [a0]
+          - values: ['V1']
+          - values: [null]
+          - values: [0]
+        cases:
+          - values: [v0]
+            id: v0
+          - values: [v15]
+            id: v15
+          - values: [v255]
+          - values: [v256]
+          - values: [v65536]
+          - values: [a0]
+          - values: ['V1']
+          - values: [null]
+          - values: [0]
+
+
+      - file-name: "reg_a_invalid"
+        isa:
+          instructions:
+            - sig: starr.64 v1:in:i64[], v2:in:i32
+              acc: in:i64
+              format: [op_v1_4_v2_4]
+        runner-options: [compile-failure]
+        description: Check 'starr.64' instruction with invalid register numbers.
+        header-template: []
+        code-template: |
+              #
+              .function void f1(i64[] a0, i32 a1) {
+                  starr.64 %s
+                  return.void
+              }
+
+              .function i32 main() {
+                  call.short f1, v1, v2
+        check-type: exit-positive
+        cases:
+          - values:
+            - 'a0, a2'
+          - values:
+            - 'a2, a1'
+
+
+      - file-name: null_pointer_p
+        isa:
+          exceptions:
+            - x_null
+        description: Check 'starr.64' behavior when array is null reference.
+        header-template: [npe_p]
+        code-template: |
+          .function i64[] get_null() {
+              lda.null
+              return.obj
+          }
+          .function i32 main() {
+              call.short get_null
+              sta.obj v0
+              movi v1, %s
+              ldai.64 0
+          begin:
+              starr.64 v0, v1
+          end:
+              ldai 1 # Should not reach this line
+              return
+
+          catch_NPE:
+              ldai 0 # Expected panda.NullPointerException
+              return
+
+          catch_all:
+              ldai 2 # Unexpected exception, test failed
+              return
+
+          .catch panda.NullPointerException, begin, end, catch_NPE
+          .catchall begin, end, catch_all
+        check-type: none
+        cases:
+          - values: [0]
+            tags: ['tsan']
+          - values: [1]
+          - values: [10]
+          - values: [128]
+          - values: [255]
+          - values: [65535]
+            tags: ['tsan']
+          - values: [0x7FFFFFFF]
+          - values: [0xFFFFFFFF]
+          - values: [0x80000000]
+
+
+      - file-name: array_out_of_bounds_exception_p
+        isa:
+          exceptions:
+            - x_bounds
+        description: Check 'starr.64' behavior when index is out of array bounds.
+        header-template: [aoobe_p, main]
+        code-template: |
+          #
+              movi v0, *s
+              newarr v0, v0, %s
+              movi v1, *s
+              ldai.64 0
+          begin:
+              starr.64 v0, v1
+          end:
+              ldai 1 # Should not reach this line
+              return
+
+          catch_AOOBE:
+              ldai 0 # Expected panda.ArrayIndexOutOfBoundsException
+              return
+
+          catch_all:
+              ldai 2 # Unexpected exception, test failed
+              return
+
+          .catch panda.ArrayIndexOutOfBoundsException, begin, end, catch_AOOBE
+          .catchall begin, end, catch_all
+        check-type: none
+        template-cases:
+            - values:
+              - 'u64[]'
+            - values:
+              - 'i64[]'
+        cases:
+          - values: [0, 0]
+            tags: ['tsan']
+          - values: [0, 1]
+          - values: [10, -10]
+          - values: [10, 128]
+          - values: [255, 255]
+          - values: [254, 255]
+          - values: [65535, 65535]
+            tags: ['tsan']
+          - values: [65535, 65536]
+          - values: [10, 0xFFFFFFFF]
+          - values: [256, 0xFFFFFFFE]
+          - values: [65536, 0xFFFFFFFD]
+            tags: ['tsan']
+          - values: [0x100000, 0xFFFFFFFC]
+          - values: [10, 0x80000000]
+          - values: [256, 0x80000001]
+          - values: [65536, 0x80000002]
+            tags: ['tsan']
+          - values: [0x100000, 0x80000003]
+
+
+      - file-name: uninitialized_regs
+        isa:
+          verification:
+            - v1_array_type
+            - v2_i32
+            - acc_type
+        description: Check 'starr.64' with uninitialized registers
+        tags: ['verifier']
+        runner-options: ['verifier-failure', 'verifier-debug-config']
+        header-template: []
+        code-template: |
+            #
+            .function i32 main() {
+                %s
+                starr.64 v1, v2
+        check-type: exit-positive
+        cases:
+          - values:
+              - |
+                # acc is not initialized
+                    movi v0, 10
+                    newarr v1, v0, i64[]
+                    movi v2, 0
+          - values:
+              - |
+                # v1 is not initialized
+                    movi v2, 0
+                    ldai.64 0
+          - values:
+              - |
+                # v2 is not initialized
+                    movi v0, 10
+                    newarr v1, v0, i64[]
+                    ldai.64 0
+          - values:
+              - |
+                # all regs are not initialized
+
+
+      - file-name: "acceptable_primitive_types_p"
+        isa:
+          verification:
+            - v1_array_type
+        description: Check acceptable array of primitive types for starr.64 instruction in Panda Assembly context.
+        runner-options: ['verifier-only', 'verifier-debug-config']
+        tags: ['verifier']
+        header-template: [main]
+        code-template: |
+          #
+              movi v0, 1
+              newarr v1, v0, %s
+              movi v2, 0
+              ldai.64 0
+              starr.64 v1, v2
+        check-type: exit-positive
+        cases:
+          - values:
+            - 'u64[]'
+          - values:
+            - 'i64[]'
+
+
+      - file-name: "rejectable_primitive_types_p"
+        isa:
+          verification:
+            - v1_array_type
+        description: Check rejectable array of primitive types for starr.64 instruction in Panda Assembly context.
+        runner-options: ['verifier-failure', 'verifier-debug-config']
+        tags: ['verifier']
+        header-template: [main]
+        code-template: |
+          #
+              movi v0, 1
+              newarr v1, v0, %s
+              movi v2, 0
+              ldai.64 0
+              starr.64 v1, v2
+        check-type: exit-positive
+        cases:
+          - values: ['u1[]']
+          - values: ['i8[]']
+          - values: ['u8[]']
+          - values: ['i16[]']
+          - values: ['u16[]']
+          - values: ['i32[]']
+          - values: ['u32[]']
+          - values: ['f32[]']
+          - values: ['f64[]']
+
+
+      - file-name: "arr_type_p"
+        isa:
+          verification:
+            - v1_array_type
+        description: Check 'starr.64' with incorrect array type in Panda Assembly context. See also "rejectable_primitive_types" tests.
+        runner-options: ['verifier-failure', 'verifier-debug-config']
+        tags: ['verifier']
+        header-template: []
+        code-template: |
+          #
+          .record A {}
+          .function void A.ctor(A a0) <ctor> {
+              return.void
+          }
+          .record panda.String <external>
+          .record panda.Object <external>
+          .function i32 main() {
+              %s
+              movi v1, 0
+              ldai.64 0
+              starr.64 v0, v1
+        check-type: exit-positive
+        cases:
+          - values:
+              - movi v0, 0
+          - values:
+              - movi.64 v0, 0
+          - values:
+              - fmovi.64 v0, 0
+          - values:
+              - |
+                #
+                    initobj A.ctor
+                    sta.obj v0
+          - values:
+              - |
+                #
+                    movi v0, 1
+                    newarr v0, v0, A[]
+          - values:
+              - |
+                #
+                    lda.type A
+                    sta.obj v0
+          - values:
+              - |
+                #
+                    lda.type A[]
+                    sta.obj v0
+          - values:
+              - |
+                #
+                    lda.type panda.String
+                    sta.obj v0
+          - values:
+              - |
+                #
+                    lda.type panda.String[]
+                    sta.obj v0
+          - values:
+              - |
+                #
+                    lda.type panda.Object
+                    sta.obj v0
+          - values:
+              - |
+                #
+                    lda.type panda.Object[]
+                    sta.obj v0
+          - values:
+              - |
+                #
+                    lda.str "string"
+                    sta.obj v0
+          - values:
+              - |
+                #
+                    movi v0, 1
+                    newarr v0, v0, panda.Object[]
+          - values:
+              - |
+                #
+                    movi v0, 1
+                    newarr v0, v0, panda.String[]
+
+
+      - file-name: "index_type_p"
+        isa:
+          verification:
+            - v2_i32
+        description: Check 'starr.64' with incorrect array index type in Panda Assembly context.
+        runner-options: ['verifier-failure', 'verifier-debug-config']
+        tags: ['verifier']
+        header-template: []
+        code-template: |
+          #
+          .record A {}
+          .function void A.ctor(A a0) <ctor> {
+              return.void
+          }
+          .record panda.String <external>
+          .record panda.Object <external>
+          .function i32 main() {
+              movi v0, 1
+              newarr v1, v0, *s
+              %s
+              ldai.64 0
+              starr.64 v1, v2
+        check-type: exit-positive
+        cases:
+          - values: ['u64[]']
+          - values: ['i64[]']
+        template-cases:
+          - values:
+              - mov.null v2
+          - values:
+              - movi.64 v2, 0
+          - values:
+              - fmovi.64 v2, 0
+          - values:
+              - |
+                #
+                    initobj A.ctor
+                    sta.obj v1
+          - values:
+              - |
+                #
+                    movi v0, 1
+                    newarr v2, v0, A[]
+          - values:
+              - |
+                #
+                    lda.type A
+                    sta.obj v2
+          - values:
+              - |
+                #
+                    lda.type A[]
+                    sta.obj v2
+          - values:
+              - |
+                #
+                    lda.type panda.String
+                    sta.obj v2
+          - values:
+              - |
+                #
+                    lda.type panda.String[]
+                    sta.obj v2
+          - values:
+              - |
+                #
+                    lda.type panda.Object
+                    sta.obj v2
+          - values:
+              - |
+                #
+                    lda.type panda.Object[]
+                    sta.obj v2
+          - values:
+              - |
+                #
+                    lda.str "string"
+                    sta.obj v2
+          - values:
+              - |
+                #
+                    movi v0, 1
+                    newarr v2, v0, panda.Object[]
+          - values:
+              - |
+                #
+                    movi v0, 1
+                    newarr v2, v0, panda.String[]
+
+
+      - file-name: "acc_type_p"
+        isa:
+          verification:
+            - acc_type
+        description: Check 'starr.64' with incorrect accumulator type in Panda Assembly context.
+        runner-options: ['verifier-failure', 'verifier-debug-config']
+        tags: ['verifier']
+        header-template: []
+        code-template: |
+          #
+          .record A {}
+          .function void A.ctor(A a0) <ctor> {
+              return.void
+          }
+          .record panda.String <external>
+          .record panda.Object <external>
+          .function i32 main() {
+              movi v0, 1
+              newarr v1, v0, *s
+              movi v2, 0
+              %s
+              starr.64 v1, v2
+        check-type: exit-positive
+        cases:
+          - values: ['u64[]']
+          - values: ['i64[]']
+        template-cases:
+          - values:
+              - lda.null
+          - values:
+              - ldai 0
+          - values:
+              - fldai.64 0
+          - values:
+              - |
+                #
+                    initobj A.ctor
+          - values:
+              - |
+                #
+                    lda.type A
+          - values:
+              - |
+                #
+                    lda.type panda.String
+          - values:
+              - |
+                #
+                    lda.type panda.String[]
+          - values:
+              - |
+                #
+                    lda.type panda.Object
+          - values:
+              - |
+                #
+                    lda.type panda.Object[]
+          - values:
+              - |
+                #
+                    lda.str "string"
+          - values:
+              - |
+                #
+                    movi v0, 1
+                    newarr v0, v0, panda.Object[]
+                    lda.obj v0
+          - values:
+              - |
+                #
+                    movi v0, 1
+                    newarr v0, v0, panda.String[]
+                    lda.obj v0
+
+
+      - file-name: "mult_regs_types_p"
+        isa:
+          verification:
+            - v1_array_type
+            - v2_i32
+            - acc_type
+        description: Check 'starr.64' with multiple incorrect register types in Panda Assembly context.
+        runner-options: ['verifier-failure', 'verifier-debug-config']
+        tags: ['verifier']
+        header-template: []
+        code-template: |
+          #
+          .record A {}
+          .function void A.ctor(A a0) <ctor> {
+              return.void
+          }
+          .record panda.String <external>
+          .record panda.Object <external>
+          .function void panda.Object.ctor(panda.Object a0) <external,ctor>
+          .function i32 main() {
+              %s
+              starr.64 v1, v2
+        check-type: exit-positive
+        cases:
+          - values:
+              - |
+                # all registers invalid
+                    initobj panda.Object.ctor
+                    sta.obj v1
+                    movi.64 v2, 0
+                    lda.str "test string"
+          - values:
+              - |
+                # v1 and v2 invalid
+                    lda.str "test string"
+                    sta.obj v1
+                    fmovi.64 v2, 1
+                    ldai 0
+          - values:
+              - |
+                # v1 and acc invalid
+                    lda.type panda.Object
+                    sta.obj v1
+                    movi v2, 0
+                    lda.str "test string"
+          - values:
+              - |
+                # v2 and acc invalid
+                    movi v0, 1
+                    newarr v1, v0, i64[]
+                    sta.obj v2
+                    initobj A.ctor
+
+
+      - file-name: "store_arr_p"
+        isa:
+          instructions:
+            - sig: starr.64 v1:in:i64[], v2:in:i32
+              acc: in:i64
+              format: [op_v1_4_v2_4]
+        description: Check starr.64 stores items to array of different size and type in Panda Assembly context.
+        code-template: |
+          #
+              movi v0, *s
+              newarr v1, v0, %s
+              movi v2, *s
+              ldai.64 1234567890
+              starr.64 v1, v2
+        check-type: exit-positive
+        template-cases:
+          - values: ['u64[]']
+          - values: ['i64[]']
+        cases:
+          - values: ['1', '0']
+          - values: ['255', '254']
+            tags: ['tsan']
+          - values: ['65536', '65535']
+
+      - file-name: "store_all_elements"
+        isa:
+          description: >
+            Store accumulator content into array slot pointed by index.
+        description: Check starr.64 stores correct items into array of primitives.
+        header-template: []
+        code-template: |
+            .function i32 main() {
+                movi v7, *s         # v7 is array size
+                newarr v1, v7, %s          # v1 - testable array
+
+                movi v2, 0          # array index
+            fill_array:
+                lda v2
+                i32toi64
+                starr.64 v1, v2      # v1[v2] = acc
+                inci v2, 1           # v2 += 1
+                lda v2
+                jne v7, fill_array
+                inci v2, -1
+            check_array:
+                lda v2
+                i32toi64
+                sta.64 v3            # value to compare with
+                lda v2
+                ldarr.64 v1
+                %s
+                jeqz ok
+                ldai 2
+                return
+            ok:
+                inci v2, -1
+                lda v2
+                jgez check_array
+        check-type: exit-positive
+        template-cases:
+          - values:
+            - i64[]
+            - cmp.64 v3
+            tags: ['tsan']
+          - values:
+            - u64[]
+            - ucmp.64 v3
+        cases:
+          - values: [10000]

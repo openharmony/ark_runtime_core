@@ -1,0 +1,156 @@
+/*
+ * Copyright (c) 2021 Huawei Device Co., Ltd.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+template <typename CflowHandler>
+class CflowIterInstructionHandler {
+public:
+    CflowIterInstructionHandler(const uint8_t* pc, const uint8_t* from, const uint8_t* to, CflowHandler handler)
+        : inst_(pc, from, to), handler_(std::move(handler)) {
+    }
+
+    uint8_t GetPrimaryOpcode()
+    {
+        return inst_.GetPrimaryOpcode();
+    }
+
+    uint8_t GetSecondaryOpcode()
+    {
+        return inst_.GetSecondaryOpcode();
+    }
+
+
+#include "cflow_iterate_inl_gen_builtin_handlers.h"
+
+% Panda::instructions.uniq{|i| i.mnemonic}.each do |i|
+%   mnemonic = i.mnemonic.split('.').map { |p| p == '64' ? 'Wide' : p.capitalize }.join
+    template <BytecodeInstructionSafe::Format format>
+    std::optional<CflowStatus> Handle<%= mnemonic %>() {
+        if (!inst_.IsValid()) {
+            LOG(DEBUG, VERIFIER) << "Next instruction offset is out of bounds of method body.";
+            return CflowStatus::ERROR;
+        }
+        const uint8_t* pc = inst_.GetAddress();
+        const size_t sz = inst_.Size(format);
+%   if i.mnemonic.split('.').at(0) == 'builtin'
+        bool const EXC_SRC = IsExceptionSource<%= mnemonic %><format>();
+%   elsif i.properties.include?('call') or i.stripped_mnemonic == 'throw' or !i.exceptions.include?('x_none')
+        // TOOD: add support of builtins: monitorenter monitorexit
+        bool const EXC_SRC = true;
+%   else
+        bool const EXC_SRC = false;
+%   end
+%   if i.properties.include?('jump')
+%       if i.properties.include?('conditional')
+        const InstructionType inst_type = InstructionType::COND_JUMP;
+        LOG_INST();
+%       else
+        const InstructionType inst_type = InstructionType::JUMP;
+        LOG_INST();
+%       end
+%   elsif i.stripped_mnemonic == 'throw'
+        const InstructionType inst_type = InstructionType::THROW;
+        LOG_INST();
+%   elsif i.properties.include?('return')
+        const InstructionType inst_type = InstructionType::RETURN;
+        LOG_INST();
+%   else
+        const InstructionType inst_type = InstructionType::NORMAL;
+        LOG_INST() << (EXC_SRC ? " (exception source)" : "" );
+%   end
+%   if i.properties.include?('jump')
+        auto imm = inst_.GetImm<format>();
+        if (!inst_.IsValid()) {
+            LOG(DEBUG, VERIFIER) << "Jump instruction imm field is out of bounds of method body. "
+                                 << "Jump instruction offset: " << std::hex << static_cast<uint32_t>(reinterpret_cast<uintptr_t>(pc) - reinterpret_cast<uintptr_t>(inst_.GetFrom()));
+            return CflowStatus::ERROR;
+        }
+        auto target_inst = inst_.JumpTo(imm);
+        const uint8_t* jump_pc = target_inst.GetAddress();
+        if (!target_inst.IsValid()) {
+            auto offset = static_cast<uint32_t>(reinterpret_cast<uintptr_t>(pc) - reinterpret_cast<uintptr_t>(inst_.GetFrom()));
+            LOG(DEBUG, VERIFIER) << "Jump offset is out of bounds of method body. "
+                                 << "Jump instruction offset: 0x" << std::hex << offset
+                                 << ". Jump target offset: 0x" << std::hex << (imm + offset);
+            return CflowStatus::ERROR;
+        }
+%   else
+        const uint8_t *jump_pc = nullptr;
+%   end
+        inst_ = inst_.GetNext<format>();
+        return handler_(inst_type, pc, sz, EXC_SRC, jump_pc);
+    }
+% end
+
+private:
+    BytecodeInstructionSafe inst_;
+    CflowHandler handler_;
+};
+
+template <typename CflowHandler>
+// NOLINTNEXTLINE(readability-function-size)
+CflowStatus IterateOverInstructions(const uint8_t* pc, const uint8_t* from, const uint8_t* to, CflowHandler cflow_handler) {
+#if defined(__clang__)
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wvoid-ptr-dereference"
+#pragma clang diagnostic ignored "-Wgnu-label-as-value"
+#elif defined(__GNUC__)
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wpedantic"
+#endif
+
+    std::array<const void*, <%= Panda::dispatch_table.handler_names.size %>> dispatch_table{
+% Panda::dispatch_table.handler_names.each do |name|
+        &&HANDLE_<%= name %>,
+% end
+    };
+
+    CflowIterInstructionHandler handler(pc, from, to, std::move(cflow_handler));
+    std::optional<CflowStatus> status;
+    uint8_t secondary_opcode;
+
+    ASSERT(handler.GetPrimaryOpcode() <= <%= Panda::dispatch_table.primary_opcode_bound %>);
+    goto* dispatch_table[handler.GetPrimaryOpcode()];
+
+% Panda::instructions.each do |i|
+%   mnemonic = i.mnemonic.split('.').map { |p| p == '64' ? 'Wide' : p.capitalize }.join
+HANDLE_<%= Panda::dispatch_table.instruction_handler_name(i) %>:
+    status = handler.template Handle<%= mnemonic %><BytecodeInstructionSafe::Format::<%= i.format.pretty.upcase %>>();
+    if (status) { return *status; }
+    if (handler.GetPrimaryOpcode() > <%= Panda::dispatch_table.primary_opcode_bound %>) {
+        LOG(DEBUG, VERIFIER) << "Opcode value is out of range. "
+                             << "Current value is: " << handler.GetPrimaryOpcode()
+                             << "Maximum allowed value is: " << <%= Panda::dispatch_table.primary_opcode_bound %>;
+        return CflowStatus::ERROR;
+    }
+    goto* dispatch_table[handler.GetPrimaryOpcode()];
+% end
+% Panda::prefixes.each do |p|
+HANDLE_<%= Panda::dispatch_table.prefix_hanlder_name(p) %>:
+    secondary_opcode = handler.GetSecondaryOpcode();
+    LOG(DEBUG, VERIFIER) << "CFLOW: Prefix subdispatch: " << "<%= p.name %>, " << secondary_opcode;
+
+    if (secondary_opcode > <%= Panda::dispatch_table.secondary_opcode_bound(p) %> ) {
+        LOG(ERROR, VERIFIER) << "Incorrect opcode";
+        return CflowStatus::ERROR;
+    }
+    goto *dispatch_table[<%= Panda::dispatch_table.secondary_opcode_offset(p) %> + secondary_opcode];
+% end
+
+#if defined(__clang__)
+#pragma clang diagnostic pop
+#elif defined(__GNUC__)
+#pragma GCC diagnostic pop
+#endif
+}

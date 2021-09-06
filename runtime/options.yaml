@@ -1,0 +1,549 @@
+# Copyright (c) 2021 Huawei Device Co., Ltd.
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+module:
+  name: runtime
+  namespace: panda
+
+options:
+- name: boot-panda-files
+  type: arg_list_t
+  default:
+      - $ORIGIN/../pandastdlib/arkstdlib.abc
+  description: Boot panda files separated by colon
+  delimiter: ":"
+
+- name: panda-files
+  type: arg_list_t
+  default: []
+  description: Panda files separated by colon which is not within boot-panda-files
+  delimiter: ":"
+
+- name: boot-intrinsic-spaces
+  type: arg_list_t
+  default:
+    - core
+  possible_values:
+    - core
+    - ecmascript
+  description: Load specified intrinsic spaces
+  delimiter: ":"
+
+- name: boot-class-spaces
+  type: arg_list_t
+  default:
+    - core
+  possible_values:
+    - core
+    - ecmascript
+  description: Load specified class spaces
+  delimiter: ":"
+
+- name: runtime-type
+  type: std::string
+  default: core
+  possible_values:
+    - core
+    - ecmascript
+  description: Runtime type
+
+- name: runtime-compressed-strings-enabled
+  type: bool
+  default: true
+  description: Enable/disable compressed strings
+
+- name: run-gc-in-place
+
+  type: bool
+  default: false
+  description: Enable/disable running GC only in place
+
+- name: compiler-enable-jit
+  type: bool
+  default: true
+  description: Enables/disables JIT compiler
+
+- name: ecma-enable-jit
+  type: bool
+  default: false
+  description: Enables/disables JIT compiler for Ecmascript
+
+- name: compiler-hotness-threshold
+  type: uint32_t
+  default: 3000
+  description: Threshold for "hotness" counter of the method after that it will be compiled
+
+- name: debugger-library-path
+  type: std::string
+  default: ""
+  description: Path to debugger library
+
+- name: debugger-port
+  type: uint32_t
+  default: 19015
+  description: Port for serving debugger clients via socket
+
+- name: agent-lib
+  type: std::string
+  default: jdwp=transport=dt_socket,address=19015,server=y,suspend=n
+  description: arguments for jvmti agent
+
+- name: jdwp-provider
+  type: std::string
+  default: default
+  possible_values:
+    - default
+    - hdcconnection
+    - dt-socket
+  description: The provider for choosing jdwp transport protocol.
+
+- name: log-components
+  type: arg_list_t
+  default:
+    - all
+  possible_values:
+    - all
+    - alloc
+    - alloc-obj
+    - classlinker
+    - common
+    - gc
+    - gc_trigger
+    - reference_processor
+    - interpreter
+    - pandafile
+    - memorypool
+    - runtime
+    - trace
+    - debugger
+    - interop
+    - verifier
+    - events
+    - ecmascript
+    - scheduler
+  description: Enable logs from specified components
+  delimiter: ":"
+
+- name: reference-dump
+  type: uint64_t
+  default: 1
+  possible_values:
+    - 0
+    - 1
+  description: Dfx option for reference-dump
+
+- name: signal-catcher
+  type: uint64_t
+  default: 1
+  possible_values:
+    - 0
+    - 1
+  description: Dfx option for signal-catcher
+
+- name: signal-handler
+  type: uint64_t
+  default: 1
+  possible_values:
+    - 0
+    - 1
+  description: Dfx option for signal-handler
+
+- name: sigquit-flag
+  type: uint64_t
+  default: 1
+  possible_values:
+    - 0
+    - 1
+  description: Dfx option for sigquit
+
+- name: sigusr1-flag
+  type: uint64_t
+  default: 1
+  possible_values:
+    - 0
+    - 1
+  description: Dfx option for sigusr1
+
+- name: sigusr2-flag
+  type: uint64_t
+  default: 1
+  possible_values:
+    - 0
+    - 1
+  description: Dfx option for sigusr2
+
+- name: mobile-log-flag
+  type: uint64_t
+  default: 1
+  possible_values:
+    - 0
+    - 1
+  description: Dfx option for mobile-log
+
+- name: dfx-log
+  type: uint64_t
+  default: 0
+  possible_values:
+    - 0
+    - 1
+  description: Dfx option for dfx log
+
+- name: gc-type
+
+  type: std::string
+  default: gen-gc
+  possible_values:
+    - epsilon
+    - stw
+    - gen-gc
+    - g1-gc
+  description: Type of used GC
+
+- name: ic-enable
+  type: bool
+  default: true
+  description: switch of inline cache
+
+- name: gc-trigger-type
+
+  type: std::string
+  default: heap-trigger-test
+  possible_values:
+    - heap-trigger-test
+    - heap-trigger
+    - no-gc-for-start-up
+    - debug
+  description: Type of used GC trigger
+
+- name: skip-startup-gc-count
+
+  type: uint32_t
+  default: 10
+  description: No stw gc count for no-gc-for-start-up
+
+- name: young-space-size
+  type: uint64_t
+  default: 4194304
+  description: Young space size of gen-gc
+
+- name: young-shared-space-size
+  type: uint64_t
+  default: 524288
+  description: How much space in young-gen are shared (this space is not used for tlabs)
+
+- name: min-extra-heap-size
+  type: uint64_t
+  default: 1048576
+  description: Minimum extra heap size for trigger gc
+
+- name: max-extra-heap-size
+  type: uint64_t
+  default: 8388608
+  description: Maximum extra heap size for trigger gc
+
+- name: gc-debug-trigger-start
+
+  type: uint64_t
+  default: 0
+  description: First iteration to start returning true in debug trigger
+
+- name: gc-dump-heap
+
+  type: bool
+  default: false
+  description: Dump heap before and after GC
+
+- name: log-level
+  type: std::string
+  default: error
+  possible_values:
+    - debug
+    - info
+    - error
+    - fatal
+  description: Log level
+
+- name: log-stream
+  type: std::string
+  default: std
+  possible_values:
+    - std
+    - file
+    - dummy
+  description: Log level
+
+- name: log-file
+  type: std::string
+  default: ""
+  description: File name for file-logger
+
+- name: gc-enable-tracing
+
+  type: bool
+  default: false
+  description: enables/disables tracing gc
+
+- name: distributed-profiling
+  type: bool
+  default: false
+  description: Enable/disable collection of information for distributed profiling
+
+- name: aot-file
+  type: std::string
+  default: ""
+  description: path to aot file
+
+- name: aot-files
+  type: arg_list_t
+  default: []
+  description: List of aot files to be loaded
+  delimiter: ':'
+
+- name: use-tlab-for-allocations
+  type: bool
+  default: true
+  description: Enable/disable TLAB using for object allocations. Now, it is ignored for all GCs except GenGC. Temporary option for quick switch between modes.
+
+- name: object-pool-size
+  type: uint32_t
+  default: 536870912
+  description: Size of pool used for objects
+
+- name: internal-pool-size
+  type: uint64_t
+  default: 2147483648
+  description: Size of pool used for internal memory.
+
+- name: code-pool-size
+  type: uint32_t
+  default: 33554432
+  description: Size of pool used for compiled code memory
+
+- name: compiler-pool-size
+  type: uint32_t
+  default: 268435456
+  description: Size of pool used for internal compiler memory
+
+- name: print-memory-statistics
+  type: bool
+  default: false
+  description: Enable/disable printing memory statistics in the end of the program
+
+- name: print-gc-statistics
+
+  type: bool
+  default: false
+  description: Enable/disable printing gc statistics in the end of the program
+
+- name: no-async-jit
+  type: bool
+  default: false
+  description: Perform compilation in the main thread or in parallel worker
+
+- name: limit-standard-alloc
+  type: bool
+  default: false
+  description: Limit standard allocations usage in runtime
+
+- name: internal-allocator-type
+  type: std::string
+  default: default
+  possible_values:
+    - panda_allocators
+    - malloc
+    - default
+  description: Default means using malloc for Release, and panda allocators for Debug builds. If we use malloc, we will ignore limit-standard-alloc option.
+
+- name: finalizer-timeout-ms
+  type: uint32_t
+  default: 10000
+  description: Set finalizer daemon watchdog time
+
+- name: properties
+  type: arg_list_t
+  default:
+    - user.locale=en-US
+  description: command-line property settings of VM
+
+- name: events-output
+  type: std::string
+  default: none
+  possible_values:
+    - none
+    - csv
+    - memory
+    - log
+  description: Specify events output
+
+- name: events-file
+  type: std::string
+  default: events.csv
+  description: Path to events output file (if needed)
+
+- name: startup-time
+  type: bool
+  default: false
+  description: Print the start time of command execution
+
+- name: max-free
+  type: uint32_t
+  default: 8388608
+  description: Trigger native memory recycling watermark, default 8 M
+
+- name: native-gc-trigger-type
+
+  type: std::string
+  default: simple-strategy
+  possible_values:
+    - no-native-gc-trigger
+    - simple-strategy
+  description: Type of native gc trigger
+
+- name: profilesaver-sleeping-time-ms
+  type: uint32_t
+  default: 2000
+  description: Set wake up period time of daemon thread for profile saver
+
+- name: profilesaver-delta-number-threshold
+  type: uint64_t
+  default: 0
+  description: delta number threashold of newly added method or class for profile saver
+
+- name: profilesaver-enabled
+  type: bool
+  default: false
+  description: whether open the profilesaver functions
+
+- name: start-as-zygote
+  type: bool
+  default: false
+  description: whether current vm is zygote
+
+- name: verification-enabled
+  type: bool
+  default: false
+  description: enable verification
+
+- name: verification-options
+  type: arg_list_t
+  default:
+    - show-status
+    - update-cache
+    - debug-enable
+  possible_values:
+    - show-status
+    - cflow-allow-jumps-body-to-handler
+    - cflow-allow-jumps-body-into-handler
+    - cflow-allow-jumps-handler-into-body
+    - cflow-allow-jumps-handler-to-handler
+    - cflow-allow-jumpe-handler-into-handler
+    - only-build-typesystem
+    - verify-all-runtime-library-methods
+    - verify-only-entry-point
+    - verifier-does-not-fail
+    - only-verify
+    - debug-enable
+    - do-not-assume-library-methods-verified
+    - sync-on-class-initialization
+    - update-cache
+  description: verification options
+  delimiter: ","
+
+- name: verification-threads
+  type: uint32_t
+  default: 1
+  description: number of verification threads
+
+- name: verification-debug-config-file
+  type: std::string
+  default: "default"
+  description: filename with debug config for verifier
+
+- name: verification-cache-file
+  type: std::string
+  default: ""
+  description: verifier cache filename
+
+- name: fail-on-heap-verification
+  type: bool
+  default: false
+  description: if enabled then fail execution if heap verifier found heap corruption
+
+- name: pre-gc-heap-verify-enabled
+
+  type: bool
+  default: false
+  description: whether verify heap before GC
+
+- name: post-gc-heap-verify-enabled
+
+  type: bool
+  default: false
+  description: whether verify heap after GC
+
+- name: max-global-ref-size
+  type: uint32_t
+  default: 65535
+  description: max size of global reference storage
+
+- name: global-reference-size-check-enabled
+  type: bool
+  default: false
+  description: whether open the global reference size check
+
+- name: concurrent-gc-enabled
+
+  type: bool
+  default: true
+  description: whether concurrent GC is enabled
+
+- name: snapshot-serialize-enabled
+  type: bool
+  default: false
+  description: whether snapshot serialize is enabled
+
+- name: snapshot-deserialize-enabled
+  type: bool
+  default: true
+  description: whether snapshot deserialize is enabled
+
+- name: snapshot-file
+  type: std::string
+  default: "/system/etc/snapshot"
+  description: snapshot file
+
+- name: framework-abc-file
+  type: std::string
+  default: "strip.native.min.abc"
+  description: snapshot file
+
+- name: enable-an
+  type: bool
+  default: false
+  description: Load/Unload ARK an file base on abc file location
+
+- name: verify-call-stack
+  type: bool
+  default: false
+  description: Verify call stack before using of the StackWalker
+
+- name: enable-paralled-young-gc
+
+  type: bool
+  default: true
+  description: enable-paralled-young-gc
+
+- name: safepoint-backtrace
+  type: bool
+  default: false
+  description: Print backtrace each time a thread gets suspended

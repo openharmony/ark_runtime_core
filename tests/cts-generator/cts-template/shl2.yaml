@@ -1,0 +1,466 @@
+# Copyright (c) 2021 Huawei Device Co., Ltd.
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+definitions: []
+tests:
+  - file-name: "shl2"
+    isa:
+      title: Two address binary operation on accumulator
+      description: >
+        Perform specified binary operation on accumulator and register and store result into accumulator
+      exceptions:
+        - x_none
+    commands:
+      - file-name: "op_vs_8_zero"
+        isa:
+          instructions:
+            - sig: shl2 v:in:i32
+              acc: inout:i32
+              prefix: bit
+              format: [pref_op_v_8]
+        code-template: |
+          #
+              ldai 0
+              movi v0, %s
+              mov v1, v0
+              shl2 v0
+              movi v0, 0
+              jne v0, set_failure
+              ldai 0
+              jmp fall_through
+          set_failure:
+              ldai 1
+          fall_through:
+        description: Check shl2 with zero and various values.
+        cases:
+          - values:
+              - "0"
+          - values:
+              - "1"
+          - values:
+              - "-1"
+            bugid: ['1387']
+            tags: ["clang_release_sanitizer_jit"]
+          - values:
+              - "0x7FFFFFFF"
+            bugid: ['1387']
+            tags: ["clang_release_sanitizer_jit"]
+          - values:
+              - "0x80000000"
+            bugid: ['1387']
+            tags: ["clang_release_sanitizer_jit"]
+          - values:
+              - "-0x7FFFFFFF"
+            bugid: ['1387']
+            tags: ["clang_release_sanitizer_jit"]
+          - values:
+              - "-0x80000000"
+            bugid: ['1387']
+            tags: ["clang_release_sanitizer_jit"]
+          - values:
+              - "0xFFFFFFFF"
+            bugid: ['1387']
+            tags: ["clang_release_sanitizer_jit"]
+          - values:
+              - "-0xFFFFFFFF"
+
+      - file-name: "op_vs_8_pone"
+        isa:
+          instructions:
+            - sig: shl2 v:in:i32
+              acc: inout:i32
+              prefix: bit
+              format: [pref_op_v_8]
+        code-template: |
+          #
+              ldai 1
+              movi v0, %s
+              shl2 v0
+              movi v0, %s
+              jne v0, set_failure
+              ldai 0
+              jmp fall_through
+          set_failure:
+              ldai 1
+          fall_through:
+        description: Check shl2 with +1 and various values.
+        cases:
+          - values:
+              - "0"
+              - "1"
+          - values:
+              - "1"
+              - "2"
+          - values:
+              - "-1"
+              - "0x80000000"
+            bugid: ['1387']
+            tags: ["clang_release_sanitizer_jit"]
+          - values:
+              - "0x7FFFFFFF"
+              - "0x80000000"
+            bugid: ['1387']
+            tags: ["clang_release_sanitizer_jit"]
+          - values:
+              - "0x80000000"
+              - "1"
+            bugid: ['1387']
+            tags: ["clang_release_sanitizer_jit"]
+          - values:
+              - "-0x7FFFFFFF"
+              - "2"
+            bugid: ['1387']
+            tags: ["clang_release_sanitizer_jit"]
+          - values:
+              - "-0x80000000"
+              - "1"
+            bugid: ['1387']
+            tags: ["clang_release_sanitizer_jit"]
+          - values:
+              - "0xFFFFFFFF"
+              - "0x80000000"
+            bugid: ['1387']
+            tags: ["clang_release_sanitizer_jit"]
+          - values:
+              - "-0xFFFFFFFF"
+              - "2"
+      - file-name: "op_vs_8_none"
+        isa:
+          instructions:
+            - sig: shl2 v:in:i32
+              acc: inout:i32
+              prefix: bit
+              format: [pref_op_v_8]
+        code-template: |
+          #
+              ldai -1
+              movi v0, %s
+              shl2 v0
+              movi v0, %s
+              jne v0, set_failure
+              ldai 0
+              jmp fall_through
+          set_failure:
+              ldai 1
+          fall_through:
+        description: Check shl2 with -1 and various values.
+        cases:
+          - values:
+              - "0"
+              - "0xFFFFFFFF"
+          - values:
+              - "1"
+              - "0xFFFFFFFE"
+          - values:
+              - "-1"
+              - "0x80000000"
+            bugid: ['1387']
+            tags: ["clang_release_sanitizer_jit"]
+          - values:
+              - "0x7FFFFFFF"
+              - "0x80000000"
+            bugid: ['1387']
+            tags: ["clang_release_sanitizer_jit"]
+          - values:
+              - "0x80000000"
+              - "0xFFFFFFFF"
+            bugid: ['1387']
+            tags: ["clang_release_sanitizer_jit"]
+          - values:
+              - "-0x7FFFFFFF"
+              - "0xFFFFFFFE"
+            bugid: ['1387']
+            tags: ["clang_release_sanitizer_jit"]
+          - values:
+              - "-0x80000000"
+              - "0xFFFFFFFF"
+            bugid: ['1387']
+            tags: ["clang_release_sanitizer_jit"]
+          - values:
+              - "0xFFFFFFFF"
+              - "0x80000000"
+            bugid: ['1387']
+            tags: ["clang_release_sanitizer_jit"]
+          - values:
+              - "-0xFFFFFFFF"
+              - "0xFFFFFFFE"
+
+      - file-name: "op_vs_8_pmax"
+        isa:
+          instructions:
+            - sig: shl2 v:in:i32
+              acc: inout:i32
+              prefix: bit
+              format: [pref_op_v_8]
+        code-template: |
+          #
+              ldai 0x7FFFFFFF
+              movi v0, %s
+              shl2 v0
+              movi v0, %s
+              jne v0, set_failure
+              ldai 0
+              jmp fall_through
+          set_failure:
+              ldai 1
+          fall_through:
+        description: Check shl2 with +max and various values.
+        cases:
+          - values:
+              - "0"
+              - "0x7FFFFFFF"
+          - values:
+              - "1"
+              - "0xFFFFFFFE"
+          - values:
+              - "-1"
+              - "0x80000000"
+            bugid: ['1387']
+            tags: ["clang_release_sanitizer_jit"]
+          - values:
+              - "0x7FFFFFFF"
+              - "0x80000000"
+            bugid: ['1387']
+            tags: ["clang_release_sanitizer_jit"]
+          - values:
+              - "0x80000000"
+              - "0x7FFFFFFF"
+            bugid: ['1387']
+            tags: ["clang_release_sanitizer_jit"]
+          - values:
+              - "-0x7FFFFFFF"
+              - "0xFFFFFFFE"
+            bugid: ['1387']
+            tags: ["clang_release_sanitizer_jit"]
+          - values:
+              - "-0x80000000"
+              - "0x7FFFFFFF"
+            bugid: ['1387']
+            tags: ["clang_release_sanitizer_jit"]
+          - values:
+              - "0xFFFFFFFF"
+              - "0x80000000"
+            bugid: ['1387']
+            tags: ["clang_release_sanitizer_jit"]
+          - values:
+              - "-0xFFFFFFFF"
+              - "0xFFFFFFFE"
+
+      - file-name: "op_vs_8_nmax"
+        isa:
+          instructions:
+            - sig: shl2 v:in:i32
+              acc: inout:i32
+              prefix: bit
+              format: [pref_op_v_8]
+        code-template: |
+          #
+              ldai -0x80000000
+              movi v0, %s
+              shl2 v0
+              movi v0, %s
+              jne v0, set_failure
+              ldai 0
+              jmp fall_through
+          set_failure:
+              ldai 1
+          fall_through:
+        description: Check shl2 with -max and various values.
+        cases:
+          - values:
+              - "0"
+              - "0x80000000"
+          - values:
+              - "1"
+              - "0"
+          - values:
+              - "-1"
+              - "0"
+            bugid: ['1387']
+            tags: ["clang_release_sanitizer_jit"]
+          - values:
+              - "0x7FFFFFFF"
+              - "0x0"
+            bugid: ['1387']
+            tags: ["clang_release_sanitizer_jit"]
+          - values:
+              - "0x80000000"
+              - "0x80000000"
+            bugid: ['1387']
+            tags: ["clang_release_sanitizer_jit"]
+          - values:
+              - "-0x7FFFFFFF"
+              - "0"
+            bugid: ['1387']
+            tags: ["clang_release_sanitizer_jit"]
+          - values:
+              - "-0x80000000"
+              - "0x80000000"
+            bugid: ['1387']
+            tags: ["clang_release_sanitizer_jit"]
+          - values:
+              - "0xFFFFFFFF"
+              - "0"
+            bugid: ['1387']
+            tags: ["clang_release_sanitizer_jit"]
+          - values:
+              - "-0xFFFFFFFF"
+              - "0"
+
+      - file-name: "vals"
+        bugid: ['1387']
+        tags: ["clang_release_sanitizer_jit", "tsan"]
+        isa:
+          instructions:
+            - sig: shl2 v:in:i32
+              acc: inout:i32
+              prefix: bit
+              format: [pref_op_v_8]
+        code-template: |
+          #
+              ldai %s
+              movi v0, %s
+              shl2 v0
+              movi v0, %s
+              jne v0, set_failure
+              ldai 0
+              jmp fall_through
+          set_failure:
+              ldai 1
+          fall_through:
+        description: Check shl2 with various values.
+        cases:
+          - values:
+              - "0x61696FFF"
+              - "0x56B814E8"
+              - "0x696FFF00"
+          - values:
+              - "0x76C5AE08"
+              - "0x8DFD0A2F"
+              - "0xD7040000"
+          - values:
+              - "0x15FFEF1D"
+              - "0x2C85774D"
+              - "0xFDE3A000"
+          - values:
+              - "0x3130A634"
+              - "0xD3CDE405"
+              - "0x2614C680"
+          - values:
+              - "0x8E8A9883"
+              - "0xDE3A4635"
+              - "0x10600000"
+          - values:
+              - "0x3BF5A79C"
+              - "0xE799C159"
+              - "0x38000000"
+          - values:
+              - "0xBF8EF337"
+              - "0x66068B26"
+              - "0xE3BCCDC0"
+          - values:
+              - "0xDC2D1B09"
+              - "0x3D252477"
+              - "0x84800000"
+          - values:
+              - "0x960BD85E"
+              - "0xB357B7D"
+              - "0xC0000000"
+          - values:
+              - "0x40BB756D"
+              - "0xDAAA49C4"
+              - "0xBB756D0"
+
+      - file-name: "vals_mod32_1"
+        bugid: ['1324']
+        tags: ['verifier']
+        runner-options: ['verifier-failure', 'verifier-debug-config']
+        isa:
+          instructions:
+            - sig: shl2 v:in:i32
+              acc: inout:i32
+              prefix: bit
+              format: [pref_op_v_8]
+        code-template: |
+          #
+              ldai.64 %s
+              movi.64 v0, %s
+              shl2 v0
+              movi.64 v0, %s
+              cmp.64 v0
+        description: Check shl2 with incorrect accumulator and register types.
+        cases:
+          - values:
+              - "0x17FFFFFFF"
+              - "0x1F"
+              - "0xFFFFFFFF80000000"
+          - values:
+              - "0x77777777FFFFFFFF"
+              - "0x1111111180000000"
+              - "0xFFFFFFFFFFFFFFFF"
+          - values:
+              - "0x180000000"
+              - "0x180000000"
+              - "0xFFFFFFFF80000000"
+
+      - file-name: "regs"
+        isa:
+          instructions:
+            - sig: shl2 v:in:i32
+              acc: inout:i32
+              prefix: bit
+              format: [pref_op_v_8]
+        runner-options: ['compile-only']
+        code-template: |
+          #
+              shl2 %s
+        check-type: none
+        description: Check shl2 with various register numbers.
+        cases:
+          - values:
+              - "v255"
+          - values:
+              - "v256"
+            runner-options: ['compile-failure']
+
+      - file-name: "type"
+        bugid: ["964", "966"]
+        tags: ["verifier"]
+        isa:
+          instructions:
+            - sig: shl2 v:in:i32
+              acc: inout:i32
+              prefix: bit
+              format: [pref_op_v_8]
+          verification:
+            - acc_type
+            - v1_type
+        runner-options: ['verifier-failure', 'verifier-debug-config']
+        code-template: |
+          #
+              %s
+              %s
+              shl2 v0
+              ldai 0
+        check-type: no-check
+        description: Check shl2 with incorrect accumulator and register types.
+        cases:
+          - values:
+              - "lda.null"
+              - "movi v0, 0"
+          - values:
+              - "ldai 0 "
+              - "mov.null v0"
+          - values:
+              - "lda.null"
+              - "mov.null v0"

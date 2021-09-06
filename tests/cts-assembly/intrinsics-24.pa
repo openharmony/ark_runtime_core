@@ -1,0 +1,57 @@
+# Copyright (c) 2021 Huawei Device Co., Ltd.
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+.record panda.String <external>
+.record Convert <external>
+.function u32 Convert.stringToU32(panda.String a0) <external>
+
+.function u1 main(){
+    # Convert.stringToI32("-1") == -1
+    lda.str "-1"
+    sta.obj v0
+    call Convert.stringToU32, v0
+    movi v1, 4294967295
+    ucmp v1
+    jnez exit_failure
+
+    # Convert.stringToU32("1") == 1
+    lda.str "1"
+    sta.obj v0
+    call Convert.stringToU32, v0
+    movi v1, 1
+    ucmp v1
+    jnez exit_failure
+
+    # Convert.stringToU32("4294967295") == 4294967295
+    lda.str "4294967295"
+    sta.obj v0
+    call Convert.stringToU32, v0
+    movi v1, 4294967295
+    ucmp v1
+    jnez exit_failure
+
+    # Convert.stringToU32("4294967296") == 0
+    lda.str "4294967296"
+    sta.obj v0
+    call Convert.stringToU32, v0
+    movi v1, 0
+    ucmp v1
+    jnez exit_failure
+
+    ldai 0
+    return
+
+exit_failure:
+    ldai 1
+    return
+}

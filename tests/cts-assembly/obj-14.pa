@@ -1,0 +1,123 @@
+# Copyright (c) 2021 Huawei Device Co., Ltd.
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+.record panda.String <external>
+.record IO <external>
+.function void IO.printString(panda.String a0) <external>
+.function void IO.printI32(i32 a0) <external>
+
+# void do() {
+#    String[] v6 = new String[5];
+#    for(int i = 0; i < 5; i++) {
+#       String[] s = allocString();
+#       v6[i] = s[0];
+#   }
+#   for(int i = 0; i < 5; i++) {
+#       // we expect that v6[i] is still reachable
+#       printString(v6[i]);
+#   }
+# }
+
+# String[] allocString() {
+#   String[] v1 = new String[1];
+#   v1[0] = "asdf"
+#   return v1
+#}
+
+.function u1 main(){
+    call.short do
+
+    # safe-point for trigger GC in the end
+    lda.str "finish test\n"
+    sta.obj v2
+    call.short IO.printString, v2, v2
+
+    ldai 0
+    return
+}
+
+# String[] v1 = new String[1];
+# v1[0] = "asdf"
+# return v1
+.function panda.String[] allocString(){
+    lda.str "asdf\n"
+    sta.obj v2
+
+    movi v0, 1
+    # v1 = new String[v0]
+    newarr v1, v0, panda.String[]
+
+    # v1[v3] = v2
+    lda.obj v2
+    movi v3, 0
+    starr.obj v1, v3
+
+    lda.obj v1
+    return.obj
+}
+
+.function void do (){
+    movi v0, 5
+
+    # v6 = new String[v0]
+    newarr v6, v0, panda.String[]
+
+    # (for int v2=0; v2 != v0; v2++)
+    movi v2, 0
+    ldai 0
+    loop:
+        jeq v0, loop_exit
+
+
+        # v5=allocString()[0]  + print v5
+        call.short allocString
+        sta.obj v3
+
+        movi v4, 0
+        lda v4
+        ldarr.obj v3
+        sta.obj v5
+        #call.short IO.printString, v5, v5
+
+        # v6[v2] = v5
+        lda.obj v5
+        starr.obj v6, v2
+
+        inci v2, 1
+        lda v2
+        jmp loop
+    loop_exit:
+        subi 1
+        sta v2
+
+
+    movi v0, 5
+    movi v2, 0
+    ldai 0
+    loop2:
+        jeq v0, loop2_exit
+
+        movi v4, 0
+        lda v4
+        ldarr.obj v6
+        sta.obj v5
+        call.short IO.printString, v5, v5
+
+        inci v2,1
+        lda v2
+        jmp loop2
+    loop2_exit:
+        subi 1
+        sta v2
+    return.void
+}

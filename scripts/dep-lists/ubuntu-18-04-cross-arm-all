@@ -1,0 +1,15 @@
+# Dependency list for cross-compiling
+# Panda for ARM and AArch64 under Ubuntu 18.04 x86-64
+g++-8-aarch64-linux-gnu=8.4.0-*
+g++-8-arm-linux-gnueabi=8.4.0-*
+g++-8-arm-linux-gnueabihf=8.4.0-*
+
+g++-aarch64-linux-gnu=4:7.4.0-*
+g++-arm-linux-gnueabi=4:7.4.0-*
+g++-arm-linux-gnueabihf=4:7.4.0-*
+
+libglib2.0-bin=2.56.4-*                    # Need for QEMU
+
+qemu-efi-aarch64=0~20180205.c0d9813c-*     # QEMU: EFI support, Aarch64
+qemu-efi-arm=0~20180205.c0d9813c-*         # QEMU: EFI support, ARM32
+gdb-multiarch=8.1.1-*                      # GDB with support for multiple architectures

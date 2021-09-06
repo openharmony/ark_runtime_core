@@ -1,0 +1,42 @@
+# Copyright (c) 2021 Huawei Device Co., Ltd.
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+definitions: []
+tests:
+  - file-name: "lda.null"
+    isa:
+      title: Load null reference into accumulator
+      description: Load null reference into accumulator.
+      exceptions:
+        - x_none
+      verification:
+        - none
+    commands:
+      - file-name: "op_none"
+        isa:
+          instructions:
+            - sig: lda.null
+              acc: out:ref
+              format: [op_none]
+        description: Check lda.null loads null reference into accumulator.
+        tags: ['tsan']
+        code-template: |
+          #
+              mov.null v0
+              lda.null
+              jne.obj v0, return_ne_num
+              ldai 0
+              return
+          return_ne_num:
+              ldai 1
+              return

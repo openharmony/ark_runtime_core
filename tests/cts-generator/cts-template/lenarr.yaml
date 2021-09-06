@@ -1,0 +1,295 @@
+# Copyright (c) 2021 Huawei Device Co., Ltd.
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+definitions:
+  - name: pandasm_obj
+    template: |
+      .record panda.Object <external>
+      .record panda.String <external>
+      .record panda.NullPointerException <external>
+      .record R {}
+
+  - name: java_obj
+    template: |
+      .language Java
+
+      .record java.lang.Class <external>
+      .record java.lang.Object <external>
+      .record java.lang.String <external>
+      .record java.lang.NullPointerException <external>
+
+      .record R <> {}
+      .record I <java.interface> {}
+      .record Q <java.extends=R, java.implements=I> {}
+      .record A <java.annotation, java.annotation.type=runtime> {}
+      .record J <java.interface, java.implements=I> {}
+  - name: java
+    template: |
+      .language Java
+  - name: NPE_p
+    template: |
+      .record panda.NullPointerException <external>
+  - name: NPE_j
+    template: |
+      .language Java
+      .record java.lang.NullPointerException <external>
+
+tests:
+  - file-name: "lenarr"
+    isa:
+      title: Array length
+      description: Get length of an array and put it into accumulator.
+    commands:
+      - file-name: "prim_array"
+        description: Check 'lenarr' returns correct array lenght with array of primitives.
+        isa:
+          instructions:
+            - sig: lenarr v:in:top[]
+              acc: out:i32
+              format: [op_v_8]
+        check-type: none
+        code-template: |
+          #
+              movi v0, *s
+              mov v1, v0
+              newarr %s, v0, %s
+              lenarr %s
+              jne v1, exit_failure
+                ldai 0
+                return
+            exit_failure:
+                ldai 1
+                return
+        template-cases:
+          - values: ['v2', 'u1[]', 'v2']
+          - values: ['v7', 'i8[]', 'v7']
+          - values: ['v15', 'u8[]', 'v15']
+          - values: ['v0', 'f64[]', 'v0']
+        cases:
+          - values: [0]
+          - values: [1]
+          - values: [16]
+          - values: [0x8000]
+          - values: [0x100000]
+
+      - file-name: "ref_array_p"
+        description: Check 'lenarr' returns correct array lenght with array of objects in Panda Assembly context.
+        isa:
+          instructions:
+            - sig: lenarr v:in:top[]
+              acc: out:i32
+              format: [op_v_8]
+        check-type: none
+        header-template: ['pandasm_obj', 'main']
+        code-template: |
+          #
+              movi v0, *s
+              mov v1, v0
+              newarr v0, v0, %s
+              lenarr v0
+              jne v1, exit_failure
+              ldai 0
+              return
+            exit_failure:
+              ldai 1
+              return
+        template-cases:
+          - values: ['u1[][]']
+          - values: ['i8[][][]']
+          - values: ['u8[][][][]']
+          - values: ['i16[][][][][]']
+          - values: ['u16[][][][][][]']
+          - values: ['i32[][][][][][][]']
+          - values: ['u32[][][][][][][][]']
+          - values: ['i64[][][][][][][][][]']
+          - values: ['u64[][][][][][][][][][]']
+          - values: ['f32[][][][][][][][][][][]']
+          - values: ['f64[][][][][][][][][][][][]']
+          - values: ['panda.Object[]']
+          - values: ['panda.Object[][]']
+          - values: ['panda.String[]']
+          - values: ['panda.String[][][]']
+          - values: ['panda.NullPointerException[]']
+          - values: ['panda.NullPointerException[][][][]']
+          - values: ['R[]']
+          - values: ['R[][][][][]']
+        cases:
+          - values: [0]
+          - values: [1]
+          - values: [0x8000]
+          - values: [0x100000]
+
+      - file-name: "npe_p"
+        description: Check 'lenarr' throws NPE when null is passed as argument with Panda Assembly context.
+        isa:
+          instructions:
+            - sig: lenarr v:in:top[]
+              acc: out:i32
+              format: [op_v_8]
+          exceptions:
+            - x_null
+        check-type: none
+        header-template: ['NPE_p', 'main']
+        code-template: |
+          #
+              mov.null %s
+          begin:
+              lenarr %s
+          end:
+              ldai 1 # Should not reach this line
+              return
+
+          catch_NPE:
+              ldai 0 # Expected panda.NullPointerException
+              return
+
+          catch_all:
+              ldai 2 # Unexpected exception, test failed
+              return
+
+          .catch panda.NullPointerException, begin, end, catch_NPE
+          .catchall begin, end, catch_all
+
+        cases:
+          - values: ['v0', 'v0']
+          - values: ['v1', 'v1']
+          - values: ['v128', 'v128']
+          - values: ['v255', 'v255']
+
+      - file-name: "incorrect_reg"
+        description: Check 'lenarr' instruction with incorrect register.
+        isa:
+          instructions:
+            - sig: lenarr v:in:top[]
+              acc: out:i32
+              format: [op_v_8]
+        runner-options: [compile-failure]
+        check-type: none
+        code-template: |
+          #
+              lenarr %s
+        cases:
+          - values: [v256]
+          - values: [v65535]
+          - values: [a0]
+          - values: [a255]
+          - values: [null]
+          - values: [0]
+          - values: [1.1]
+          - values: ['2.2']
+
+      - file-name: "reg_number"
+        isa:
+          instructions:
+            - sig: lenarr v:in:top[]
+              acc: out:i32
+              format: [op_v_8]
+        check-type: none
+        runner-options: [compile-only]
+        description: Check 'lenarr' instruction with correct register number.
+        code-template: |
+          #
+              lenarr %s
+        cases:
+          - values: [v0]
+          - values: [v16]
+          - values: [v128]
+          - values: [v255]
+
+      - file-name: "type"
+        isa:
+            instructions:
+              - sig: lenarr v:in:top[]
+                acc: out:i32
+                format: [op_v_8]
+            verification:
+              - v1_array
+        tags: ['verifier']
+        runner-options: ['verifier-failure', 'verifier-debug-config']
+        header-template: []
+        code-template: |
+          #
+          .record A {}
+          .record panda.String <external>
+          .record panda.Object <external>
+          .function i32 main() {
+              %s
+              lenarr v0
+        check-type: exit-positive
+        description: Check 'lenarr' with incorrect register type.
+        cases:
+          - values:
+              - movi v0, 0
+          - values:
+              - movi.64 v0, 0
+          - values:
+              - fmovi.64 v0, 0
+          - values:
+              - |
+                #
+                    lda.type A
+                    sta.obj v0
+          - values:
+              - |
+                #
+                    lda.type A[]
+                    sta.obj v0
+            bugid: ['2740']
+          - values:
+              - |
+                #
+                    lda.type panda.String
+                    sta.obj v0
+          - values:
+              - |
+                #
+                    lda.type panda.String[]
+                    sta.obj v0
+            bugid: ['2740']
+          - values:
+              - |
+                #
+                    lda.type panda.Object
+                    sta.obj v0
+          - values:
+              - |
+                #
+                    lda.type panda.Object[]
+                    sta.obj v0
+            bugid: ['2740']
+          - values:
+              - |
+                #
+                    lda.str "string"
+                    sta.obj v0
+
+      - file-name: uninitialized_regs
+        isa:
+          instructions:
+            - sig: lenarr v:in:top[]
+              acc: out:i32
+              format: [op_v_8]
+        description: Check 'lenarr' with uninitialized register.
+        tags: ['verifier']
+        runner-options: ['verifier-failure', 'verifier-debug-config']
+        header-template: []
+        code-template: |
+            #
+            .function i32 main() {
+                lenarr %s
+        check-type: exit-positive
+        cases:
+          - values: ['v0']
+          - values: ['v1']
+          - values: ['v128']
+          - values: ['v255']

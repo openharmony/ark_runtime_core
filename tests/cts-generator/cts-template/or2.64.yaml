@@ -1,0 +1,334 @@
+# Copyright (c) 2021 Huawei Device Co., Ltd.
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+definitions: []
+tests:
+  - file-name: "or2.64"
+    isa:
+      title: Two address binary operation on accumulator
+      description: >
+        Perform specified binary operation on accumulator and register and store result into accumulator
+      exceptions:
+        - x_none
+    commands:
+      - file-name: "op_vs_8_zero"
+        isa:
+          instructions:
+            - sig: or2.64 v:in:i64
+              acc: inout:i64
+              prefix: bit
+              format: [pref_op_v_8]
+        code-template: |
+          #
+              ldai.64 0
+              movi.64 v0, %s
+              mov.64 v1, v0
+              or2.64 v0
+              mov.64 v0, v1
+              cmp.64 v0
+        description: Check or2.64 with zero and various values.
+        cases:
+          - values:
+              - "0"
+          - values:
+              - "1"
+          - values:
+              - "-1"
+          - values:
+              - "0x7FFFFFFFFFFFFFFF"
+          - values:
+              - "0x8000000000000000"
+          - values:
+              - "-0x7FFFFFFFFFFFFFFF"
+          - values:
+              - "-0x8000000000000000"
+          - values:
+              - "0xFFFFFFFFFFFFFFFF"
+          - values:
+              - "-0xFFFFFFFFFFFFFFFF"
+
+      - file-name: "op_vs_8_pone"
+        isa:
+          instructions:
+            - sig: or2.64 v:in:i64
+              acc: inout:i64
+              prefix: bit
+              format: [pref_op_v_8]
+        code-template: |
+          #
+              ldai.64 1
+              movi.64 v0, %s
+              or2.64 v0
+              movi.64 v0, %s
+              cmp.64 v0
+        description: Check or2.64 with +1 and various values.
+        cases:
+          - values:
+              - "0"
+              - "1"
+          - values:
+              - "1"
+              - "1"
+          - values:
+              - "-1"
+              - "-1"
+          - values:
+              - "0x7FFFFFFFFFFFFFFF"
+              - "0x7FFFFFFFFFFFFFFF"
+          - values:
+              - "0x8000000000000000"
+              - "0x8000000000000001"
+          - values:
+              - "-0x7FFFFFFFFFFFFFFF"
+              - "-0x7FFFFFFFFFFFFFFF"
+          - values:
+              - "-0x8000000000000000"
+              - "0x8000000000000001"
+          - values:
+              - "0xFFFFFFFFFFFFFFFF"
+              - "0xFFFFFFFFFFFFFFFF"
+          - values:
+              - "-0xFFFFFFFFFFFFFFFF"
+              - "1"
+      - file-name: "op_vs_8_none"
+        isa:
+          instructions:
+            - sig: or2.64 v:in:i64
+              acc: inout:i64
+              prefix: bit
+              format: [pref_op_v_8]
+        code-template: |
+          #
+              ldai.64 -1
+              movi.64 v0, %s
+              or2.64 v0
+              movi.64 v0, -1
+              cmp.64 v0
+        description: Check or2.64 with -1 and various values.
+        cases:
+          - values:
+              - "0"
+          - values:
+              - "1"
+          - values:
+              - "-1"
+          - values:
+              - "0x7FFFFFFFFFFFFFFF"
+          - values:
+              - "0x8000000000000000"
+          - values:
+              - "-0x7FFFFFFFFFFFFFFF"
+          - values:
+              - "-0x8000000000000000"
+          - values:
+              - "0xFFFFFFFFFFFFFFFF"
+          - values:
+              - "-0xFFFFFFFFFFFFFFFF"
+
+      - file-name: "op_vs_8_pmax"
+        isa:
+          instructions:
+            - sig: or2.64 v:in:i64
+              acc: inout:i64
+              prefix: bit
+              format: [pref_op_v_8]
+        code-template: |
+          #
+              ldai.64 0x7FFFFFFFFFFFFFFF
+              movi.64 v0, %s
+              or2.64 v0
+              movi.64 v0, %s
+              cmp.64 v0
+        description: Check or2.64 with +max and various values.
+        cases:
+          - values:
+              - "0"
+              - "0x7FFFFFFFFFFFFFFF"
+          - values:
+              - "1"
+              - "0x7FFFFFFFFFFFFFFF"
+          - values:
+              - "-1"
+              - "0xFFFFFFFFFFFFFFFF"
+          - values:
+              - "0x7FFFFFFFFFFFFFFF"
+              - "0x7FFFFFFFFFFFFFFF"
+          - values:
+              - "0x8000000000000000"
+              - "0xFFFFFFFFFFFFFFFF"
+          - values:
+              - "-0x7FFFFFFFFFFFFFFF"
+              - "0xFFFFFFFFFFFFFFFF"
+          - values:
+              - "-0x8000000000000000"
+              - "0xFFFFFFFFFFFFFFFF"
+          - values:
+              - "0xFFFFFFFFFFFFFFFF"
+              - "0xFFFFFFFFFFFFFFFF"
+          - values:
+              - "-0xFFFFFFFFFFFFFFFF"
+              - "0x7FFFFFFFFFFFFFFF"
+
+      - file-name: "op_vs_8_nmax"
+        isa:
+          instructions:
+            - sig: or2.64 v:in:i64
+              acc: inout:i64
+              prefix: bit
+              format: [pref_op_v_8]
+        code-template: |
+          #
+              ldai.64 -0x8000000000000000
+              movi.64 v0, %s
+              or2.64 v0
+              movi.64 v0, %s
+              cmp.64 v0
+        description: Check or2.64 with -max and various values.
+        cases:
+          - values:
+              - "0"
+              - "0x8000000000000000"
+          - values:
+              - "1"
+              - "0x8000000000000001"
+          - values:
+              - "-1"
+              - "0xFFFFFFFFFFFFFFFF"
+          - values:
+              - "0x7FFFFFFFFFFFFFFF"
+              - "0xFFFFFFFFFFFFFFFF"
+          - values:
+              - "0x8000000000000000"
+              - "0x8000000000000000"
+          - values:
+              - "-0x7FFFFFFFFFFFFFFF"
+              - "0x8000000000000001"
+          - values:
+              - "-0x8000000000000000"
+              - "0x8000000000000000"
+          - values:
+              - "0xFFFFFFFFFFFFFFFF"
+              - "0xFFFFFFFFFFFFFFFF"
+          - values:
+              - "-0xFFFFFFFFFFFFFFFF"
+              - "0x8000000000000001"
+
+      - file-name: "vals"
+        isa:
+          instructions:
+            - sig: or2.64 v:in:i64
+              acc: inout:i64
+              prefix: bit
+              format: [pref_op_v_8]
+        code-template: |
+          #
+              ldai.64 %s
+              movi.64 v0, %s
+              or2.64 v0
+              movi.64 v0, %s
+              cmp.64 v0
+        description: Check or2.64 with various values.
+        tags: ['tsan']
+        cases:
+          - values:
+              - "0x4419C42BDD63FDBD"
+              - "0xC47F0B12F05DE1E1"
+              - "0xC47FCF3BFD7FFDFD"
+          - values:
+              - "0x943C8CF5378042AF"
+              - "0x36D73CB573479A51"
+              - "0xB6FFBCF577C7DAFF"
+          - values:
+              - "0xDE8314611EA45D76"
+              - "0x6E4839A2AF132D3A"
+              - "0xFECB3DE3BFB77D7E"
+          - values:
+              - "0xCCF0A31AC676C6A2"
+              - "0xF2FD1715A4240809"
+              - "0xFEFDB71FE676CEAB"
+          - values:
+              - "0xD01A79457938FFA8"
+              - "0x185B633A949F5FA7"
+              - "0xD85B7B7FFDBFFFAF"
+          - values:
+              - "0xE9A1C2F2A25E3DBF"
+              - "0xFF45DC655B23F39F"
+              - "0xFFE5DEF7FB7FFFBF"
+          - values:
+              - "0x350F5F7569191790"
+              - "0x71F43744568FD084"
+              - "0x75FF7F757F9FD794"
+          - values:
+              - "0x7087F97DD4E84D3"
+              - "0x4EEFF47D2E9C9436"
+              - "0x4FEFFFFFFFDE94F7"
+          - values:
+              - "0x7D1EF9DBCE053DA"
+              - "0x85C549E42649AD0A"
+              - "0x87D5EFFDBEE9FFDA"
+          - values:
+              - "0xFAAE67467FCB3A51"
+              - "0xD74B54B963E25C19"
+              - "0xFFEF77FF7FEB7E59"
+
+      - file-name: "regs"
+        isa:
+          instructions:
+            - sig: or2.64 v:in:i64
+              acc: inout:i64
+              prefix: bit
+              format: [pref_op_v_8]
+        runner-options: ['compile-only']
+        code-template: |
+          #
+              or2.64 %s
+        check-type: none
+        description: Check or2.64 with various register numbers.
+        cases:
+          - values:
+              - "v255"
+          - values:
+              - "v256"
+            runner-options: ['compile-failure']
+
+      - file-name: "type"
+        bugid: ["964", "966"]
+        tags: ["verifier"]
+        isa:
+          instructions:
+            - sig: or2.64 v:in:i64
+              acc: inout:i64
+              prefix: bit
+              format: [pref_op_v_8]
+          verification:
+            - acc_type
+            - v1_type
+        runner-options: ['verifier-failure', 'verifier-debug-config']
+        code-template: |
+          #
+              %s
+              %s
+              or2.64 v0
+              ldai.64 0
+        check-type: no-check
+        description: Check or2.64 with incorrect accumulator and register types.
+        cases:
+          - values:
+              - "lda.null"
+              - "movi.64 v0, 0"
+          - values:
+              - "ldai.64 0 "
+              - "mov.null v0"
+          - values:
+              - "lda.null"
+              - "mov.null v0"

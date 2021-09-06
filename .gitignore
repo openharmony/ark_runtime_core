@@ -1,0 +1,16 @@
+/ark-third-party
+**/compile_commands.json
+/build**
+build_*
+/out/
+.vscode
+.idea
+*cmake-build-*
+cts-generated
+.dir-locals.el
+artifacts/
+cscope*
+tags
+.byebug_history
+.cache
+*.swp

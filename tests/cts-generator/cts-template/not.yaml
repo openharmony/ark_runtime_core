@@ -1,0 +1,181 @@
+# Copyright (c) 2021 Huawei Device Co., Ltd.
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+definitions: []
+tests:
+  - file-name: "not"
+    isa:
+      title: Unary
+      description: >
+        Perform specified operation on accumulator
+      exceptions:
+      - x_none
+
+    commands:
+      - file-name: "op_none"
+        isa:
+          instructions:
+            - sig: not
+              acc: inout:i32
+              prefix: bit
+              format: [pref_op_none]
+        code-template: |
+            #
+                ldai %s
+                not
+                movi v0, %s
+                jne v0, set_failure
+                ldai 0
+                jmp fall_through
+            set_failure:
+                ldai 1
+            fall_through:
+        description: Check `not` with various values.
+        tags: ['tsan']
+        cases:
+          - values: ["0", "0xFFFFFFFF"]
+          - values: ["1", "0xFFFFFFFE"]
+          - values: ["-1", "0x0"]
+          - values: ["0xF", "0xFFFFFFF0"]
+          - values: ["-0xF", "0xE"]
+          - values: ["0x7F", "0xFFFFFF80"]
+          - values: ["-0x7F", "0x7E"]
+          - values: ["0x80", "0xFFFFFF7F"]
+          - values: ["-0x80", "0x7F"]
+          - values: ["0xFF", "0xFFFFFF00"]
+          - values: ["-0xFF", "0xFE"]
+          - values: ["0xFFF", "0xFFFFF000"]
+          - values: ["-0xFFF", "0xFFE"]
+          - values: ["0xFFFF", "0xFFFF0000"]
+          - values: ["-0xFFFF", "0xFFFE"]
+          - values: ["0xFFFFF", "0xFFF00000"]
+          - values: ["-0xFFFFF", "0xFFFFE"]
+          - values: ["0xFFFFFF", "0xFF000000"]
+          - values: ["-0xFFFFFF", "0xFFFFFE"]
+          - values: ["0xFFFFFFF", "0xF0000000"]
+          - values: ["-0xFFFFFFF", "0xFFFFFFE"]
+          - values: ["0x7FFFFFFF", "0x80000000"]
+          - values: ["-0x7FFFFFFF", "0x7FFFFFFE"]
+          - values: ["0x80000000", "0x7FFFFFFF"]
+          - values: ["-0x80000000", "0x7FFFFFFF"]
+          - values: ["0xFFFFFFFF", "0x0"]
+          - values: ["-0xFFFFFFFF", "0xFFFFFFFE"]
+
+      - file-name: "vals"
+        isa:
+          instructions:
+            - sig: not
+              acc: inout:i32
+              prefix: bit
+              format: [pref_op_none]
+        code-template: |
+          #
+              ldai %s
+              not
+              movi v0, %s
+              jne v0, set_failure
+              ldai 0
+              jmp fall_through
+          set_failure:
+              ldai 1
+          fall_through:
+        description: Check `not` with various values.
+        cases:
+          - values: ["0x3F1E2404", "0xC0E1DBFB"]
+          - values: ["0x8E119A05", "0x71EE65FA"]
+          - values: ["0x8408A74", "0xF7BF758B"]
+          - values: ["0xEF517B96", "0x10AE8469"]
+          - values: ["0x3D39D8B1", "0xC2C6274E"]
+          - values: ["0x80AD01AA", "0x7F52FE55"]
+          - values: ["0xB563F333", "0x4A9C0CCC"]
+          - values: ["0xEBB8A558", "0x14475AA7"]
+          - values: ["0x8C648714", "0x739B78EB"]
+          - values: ["0xFDC5CD51", "0x23A32AE"]
+          - values: ["0x2D459E9E", "0xD2BA6161"]
+          - values: ["0x33D4670E", "0xCC2B98F1"]
+          - values: ["0x798A4886", "0x8675B779"]
+          - values: ["0xF49E5BB9", "0xB61A446"]
+          - values: ["0x540A6EEF", "0xABF59110"]
+          - values: ["0x4C0CA0DD", "0xB3F35F22"]
+          - values: ["0x4FD745F", "0xFB028BA0"]
+          - values: ["0xCFC655A7", "0x3039AA58"]
+          - values: ["0x4F8D850D", "0xB0727AF2"]
+          - values: ["0x2F71A383", "0xD08E5C7C"]
+
+      - file-name: type
+        bugid: ["964", "966"]
+        tags: ["verifier"]
+        isa:
+          instructions:
+            - sig: not
+              acc: inout:i32
+              prefix: bit
+              format: [pref_op_none]
+          verification:
+            - acc_type
+        runner-options: ['verifier-failure', 'verifier-debug-config']
+        header-template: []
+        code-template: |
+            .record T {}
+            .record panda.String <external>
+            .record panda.Object <external>
+            #
+            .function i32 main() {
+                %s
+                not
+        check-type: exit-positive
+        description: Check `not` with incorrect accumulator type.
+        cases:
+          - values:
+            - fldai.64 1.0
+          - values:
+            - lda.type T
+          - values:
+            - lda.type T[]
+          - values:
+            - lda.type panda.Object
+          - values:
+            - lda.type panda.String
+          - values:
+            - lda.str "x"
+          - values:
+            - |
+              newobj v0, T
+              lda.obj v0
+          - values:
+            - lda.null
+          - values:
+            - |
+              #
+                  movi v0, 10
+                  newarr v0, v0, i32[]
+                  lda.obj v0
+
+      - file-name: uninitialized_regs
+        bugid: ["2787"]
+        tags: ["verifier"]
+        isa:
+          instructions:
+            - sig: not
+              acc: inout:i32
+              prefix: bit
+              format: [pref_op_none]
+        description: Check 'not' with uninitialized accumulator.
+        runner-options: ['verifier-failure', 'verifier-debug-config']
+        header-template: []
+        code-template: |
+          #
+          .function i32 main() {
+              # acc is undefined
+              not
+        check-type: exit-positive

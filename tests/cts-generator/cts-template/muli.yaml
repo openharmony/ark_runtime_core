@@ -1,0 +1,315 @@
+# Copyright (c) 2021 Huawei Device Co., Ltd.
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+---
+definitions: []
+tests:
+  - file-name: muli
+    isa:
+      title: Two address binary operation with immediate on accumulator
+      description: >
+        Perform specified binary operation on accumulator and immediate and store result into accumulator.
+        Immediate is sign extended to operand size.
+      exceptions:
+        - x_none
+    commands:
+      - file-name: op_imm_8_zero
+        isa:
+          instructions:
+            - sig: muli imm:i32
+              acc: inout:i32
+              format: [op_imm_8]
+        code-template: |
+          #
+              ldai 0
+              muli %s
+              movi v0, 0
+              jne v0, set_failure
+              ldai 0
+              jmp fall_through
+          set_failure:
+              ldai 1
+          fall_through:
+        description: Check `muli` with zero and various values.
+        tags: ['tsan']
+        cases:
+          - values: ["0"]
+          - values: ["1"]
+          - values: ["-1"]
+          - values: ["0xF"]
+          - values: ["-0xF"]
+          - values: ["0x7F"]
+          - values: ["-0x7F"]
+          - values: ["0x80"]
+          - values: ["-0x80"]
+          - values: ["0xFF"]
+          - values: ["-0xFF"]
+          - values: ["0x7FFFFFFF"]
+          - values: ["-0x7FFFFFFF"]
+          - values: ["0x80000000"]
+          - values: ["-0x80000000"]
+          - values: ["0xFFFFFFFF"]
+          - values: ["-0xFFFFFFFF"]
+      - file-name: op_imm_8_pone
+        isa:
+          instructions:
+            - sig: muli imm:i32
+              acc: inout:i32
+              format: [op_imm_8]
+        code-template: |
+          #
+              ldai 1
+              muli %s
+              movi v0, %s
+              jne v0, set_failure
+              ldai 0
+              jmp fall_through
+          set_failure:
+              ldai 1
+          fall_through:
+        description: Check `muli` with +1 and various values.
+        cases:
+          - values: ["0", "0x0"]
+          - values: ["1", "0x1"]
+          - values: ["-1", "0xFFFFFFFF"]
+          - values: ["0xF", "0xF"]
+          - values: ["-0xF", "0xFFFFFFF1"]
+          - values: ["0x7F", "0x7F"]
+          - values: ["-0x7F", "0xFFFFFF81"]
+          - values: ["0x80", "0xFFFFFF80"]
+          - values: ["-0x80", "0xFFFFFF80"]
+          - values: ["0xFF", "0xFFFFFFFF"]
+          - values: ["-0xFF", "0x1"]
+          - values: ["0x7FFFFFFF", "0xFFFFFFFF"]
+          - values: ["-0x7FFFFFFF", "0x1"]
+          - values: ["0x80000000", "0x0"]
+          - values: ["-0x80000000", "0x0"]
+          - values: ["0xFFFFFFFF", "0xFFFFFFFF"]
+          - values: ["-0xFFFFFFFF", "0x1"]
+      - file-name: op_imm_8_none
+        isa:
+          instructions:
+            - sig: muli imm:i32
+              acc: inout:i32
+              format: [op_imm_8]
+        code-template: |
+          #
+              ldai -1
+              muli %s
+              movi v0, %s
+              jne v0, set_failure
+              ldai 0
+              jmp fall_through
+          set_failure:
+              ldai 1
+          fall_through:
+        description: Check `muli` with -1 and various values.
+        cases:
+          - values: ["0", "0x0"]
+          - values: ["1", "0xFFFFFFFF"]
+          - values: ["-1", "0x1"]
+          - values: ["0xF", "0xFFFFFFF1"]
+          - values: ["-0xF", "0xF"]
+          - values: ["0x7F", "0xFFFFFF81"]
+          - values: ["-0x7F", "0x7F"]
+          - values: ["0x80", "0x80"]
+          - values: ["-0x80", "0x80"]
+          - values: ["0xFF", "0x1"]
+          - values: ["-0xFF", "0xFFFFFFFF"]
+          - values: ["0x7FFFFFFF", "0x1"]
+          - values: ["-0x7FFFFFFF", "0xFFFFFFFF"]
+          - values: ["0x80000000", "0x0"]
+          - values: ["-0x80000000", "0x0"]
+          - values: ["0xFFFFFFFF", "0x1"]
+          - values: ["-0xFFFFFFFF", "0xFFFFFFFF"]
+      - file-name: op_imm_8_pmax
+        isa:
+          instructions:
+            - sig: muli imm:i32
+              acc: inout:i32
+              format: [op_imm_8]
+        code-template: |
+          #
+              ldai 0x7FFFFFFF
+              muli %s
+              movi v0, %s
+              jne v0, set_failure
+              ldai 0
+              jmp fall_through
+          set_failure:
+              ldai 1
+          fall_through:
+        description: Check `muli` with +max and various values.
+        cases:
+          - values: ["0", "0x0"]
+          - values: ["1", "0x7FFFFFFF"]
+          - values: ["-1", "0x80000001"]
+          - values: ["0xF", "0x7FFFFFF1"]
+          - values: ["-0xF", "0x8000000F"]
+          - values: ["0x7F", "0x7FFFFF81"]
+          - values: ["-0x7F", "0x8000007F"]
+          - values: ["0x80", "0x80"]
+          - values: ["-0x80", "0x80"]
+          - values: ["0xFF", "0x80000001"]
+          - values: ["-0xFF", "0x7FFFFFFF"]
+          - values: ["0x7FFFFFFF", "0x80000001"]
+          - values: ["-0x7FFFFFFF", "0x7FFFFFFF"]
+          - values: ["0x80000000", "0x0"]
+          - values: ["-0x80000000", "0x0"]
+          - values: ["0xFFFFFFFF", "0x80000001"]
+          - values: ["-0xFFFFFFFF", "0x7FFFFFFF"]
+      - file-name: op_imm_8_nmax
+        isa:
+          instructions:
+            - sig: muli imm:i32
+              acc: inout:i32
+              format: [op_imm_8]
+        code-template: |
+          #
+              ldai -0x80000000
+              muli %s
+              movi v0, %s
+              jne v0, set_failure
+              ldai 0
+              jmp fall_through
+          set_failure:
+              ldai 1
+          fall_through:
+        description: Check `muli` with -max and various values.
+        cases:
+          - values: ["0", "0x0"]
+          - values: ["1", "0x80000000"]
+          - values: ["-1", "0x80000000"]
+          - values: ["0xF", "0x80000000"]
+          - values: ["-0xF", "0x80000000"]
+          - values: ["0x7F", "0x80000000"]
+          - values: ["-0x7F", "0x80000000"]
+          - values: ["0x80", "0x0"]
+          - values: ["-0x80", "0x0"]
+          - values: ["0xFF", "0x80000000"]
+          - values: ["-0xFF", "0x80000000"]
+          - values: ["0x7FFFFFFF", "0x80000000"]
+          - values: ["-0x7FFFFFFF", "0x80000000"]
+          - values: ["0x80000000", "0x0"]
+          - values: ["-0x80000000", "0x0"]
+          - values: ["0xFFFFFFFF", "0x80000000"]
+          - values: ["-0xFFFFFFFF", "0x80000000"]
+      - file-name: vals
+        isa:
+          instructions:
+            - sig: muli imm:i32
+              acc: inout:i32
+              format: [op_imm_8]
+        code-template: |
+          #
+              ldai %s
+              muli %s
+              movi v0, %s
+              jne v0, set_failure
+              ldai 0
+              jmp fall_through
+          set_failure:
+              ldai 1
+          fall_through:
+        description: Check `muli` with various values.
+        cases:
+          - values: ["0xD6FE0B32", "0x52C2D788", "0x38EAC090"]
+          - values: ["0x13484A42", "0x8CF4E79A", "0x513269B4"]
+          - values: ["0x7D62F544", "0x8A43C6DE", "0x58DB6CF8"]
+          - values: ["0xAEBE9BAC", "0xABAFF53B", "0x45EDE0A4"]
+          - values: ["0xBE2A4011", "0x214B3746", "0xFF8D84A6"]
+          - values: ["0x1853EB07", "0x847B8C3E", "0xE452EBB2"]
+          - values: ["0x756756C8", "0xA71CE01F", "0x37838238"]
+          - values: ["0x84F26D1", "0xFFF46D8A", "0x2B841BAA"]
+          - values: ["0x87224E03", "0x2950EF94", "0xFD8716BC"]
+          - values: ["0x379F75A8", "0x86F93610", "0x79F75A80"]
+      - file-name: type
+        bugid: ["964", "966"]
+        tags: ["verifier"]
+        isa:
+          instructions:
+            - sig: muli imm:i32
+              acc: inout:i32
+              format: [op_imm_8]
+          verification:
+            - acc_type
+        runner-options: ['verifier-failure', 'verifier-debug-config']
+        code-template: |
+          #
+              %s
+              muli 1
+              ldai 0
+        check-type: no-check
+        description: Check `muli` with incorrect accumulator type.
+        cases:
+          - values: [fldai.64 0.0]
+          - values: [fldai.64 -0.0]
+          - values: [fldai.64 1.0]
+          - values: [fldai.64 -1.0]
+          - values: [fldai.64 0x7FF8000000000000]
+          - values: [fldai.64 0xFFFFFFFFFFFFFFFF]
+          - values: [fldai.64 0x7FF0000000000000]
+          - values: [fldai.64 0xFFF0000000000000]
+          - values: [fldai.64 0xFFEFFFFFFFFFFFFF]
+          - values: [fldai.64 0x7FEFFFFFFFFFFFFF]
+          - values: [fldai.64 0x0000000000000001]
+          - values: [fldai.64 0x8000000000000001]
+          - values: [fldai.64 3.14159265358979323846]
+          - values: [lda.str ""]
+          - values: [lda.str "some string"]
+          - values: [lda.null]
+          - values: [ldai.64 0]
+          - values: [ldai.64 1]
+          - values: [ldai.64 -1]
+          - values: [ldai.64 0x0000000100000000]
+          - values: [ldai.64 -0x0000000100000000]
+          - values: [ldai.64 0x0000000080000000]
+          - values: [ldai.64 -0x0000000080000000]
+          - values: [ldai.64 0x1000000000000000]
+          - values: [ldai.64 0x8000000000000000]
+          - values: [ldai.64 0xF000000000000000]
+          - values: [ldai.64 0xFFFFFFFF00000000]
+          - values: [ldai.64 0xFFFFFFFFFFFFFFFF]
+          - values: [ldai.64 -0x1000000000000000]
+          - values: [ldai.64 -0x8000000000000000]
+          - values: [ldai.64 -0xF000000000000000]
+          - values: [ldai.64 -0xFFFFFFFF00000000]
+          - values: [ldai.64 -0xFFFFFFFFFFFFFFFF]
+      - file-name: type_obj
+        bugid: ["964", "966"]
+        tags: ["verifier"]
+        isa:
+          instructions:
+            - sig: muli imm:i32
+              acc: inout:i32
+              format: [op_imm_8]
+          verification:
+            - acc_type
+        runner-options: ['verifier-failure', 'verifier-debug-config']
+        description: Check `muli` with incorrect accumulator type.
+        code-template: |
+          #
+          .record Object {}
+          .function i32 main() {
+              %s
+              muli 1
+              ldai 0
+              return
+        check-type: none
+        header-template: []
+        cases:
+          - values: [lda.type Object]
+          - values:
+            - |
+              newobj v0, Object
+              lda.obj v0

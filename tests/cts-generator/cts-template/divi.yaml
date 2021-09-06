@@ -1,0 +1,351 @@
+# Copyright (c) 2021 Huawei Device Co., Ltd.
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+---
+definitions: []
+tests:
+  - file-name: divi
+    isa:
+      title: Two address integer division or modulo with immediate on accumulator
+      description: >
+        Perform two address integer division or modulo on accumulator and immediate and store result into accumulator.
+        Immediate is sign extended to operand size.
+      exceptions:
+        - x_arith
+    commands:
+      - file-name: op_imm_8_zero
+        isa:
+          instructions:
+            - sig: divi imm:i32
+              acc: inout:i32
+              format: [op_imm_8]
+        code-template: |
+          #
+              ldai 0
+              divi %s
+              movi v0, 0
+              jne v0, set_failure
+              ldai 0
+              jmp fall_through
+          set_failure:
+              ldai 1
+          fall_through:
+        description: Check `divi` with zero and various values.
+        cases:
+          - values: ["1"]
+          - values: ["-1"]
+          - values: ["0xF"]
+          - values: ["-0xF"]
+          - values: ["0x7F"]
+          - values: ["-0x7F"]
+          - values: ["0x80"]
+          - values: ["-0x80"]
+          - values: ["0xFF"]
+          - values: ["-0xFF"]
+          - values: ["0x7FFFFFFF"]
+          - values: ["-0x7FFFFFFF"]
+          - values: ["0xFFFFFFFF"]
+          - values: ["-0xFFFFFFFF"]
+      - file-name: op_imm_8_pone
+        isa:
+          instructions:
+            - sig: divi imm:i32
+              acc: inout:i32
+              format: [op_imm_8]
+        code-template: |
+          #
+              ldai 1
+              divi %s
+              movi v0, %s
+              jne v0, set_failure
+              ldai 0
+              jmp fall_through
+          set_failure:
+              ldai 1
+          fall_through:
+        description: Check `divi` with +1 and various values.
+        cases:
+          - values: ["1", "0x1"]
+          - values: ["-1", "0xFFFFFFFF"]
+          - values: ["0xF", "0x0"]
+          - values: ["-0xF", "0x0"]
+          - values: ["0x7F", "0x0"]
+          - values: ["-0x7F", "0x0"]
+          - values: ["0x80", "0x0"]
+          - values: ["-0x80", "0x0"]
+          - values: ["0xFF", "0xFFFFFFFF"]
+          - values: ["-0xFF", "0x1"]
+          - values: ["0x7FFFFFFF", "0xFFFFFFFF"]
+          - values: ["-0x7FFFFFFF", "0x1"]
+          - values: ["0xFFFFFFFF", "0xFFFFFFFF"]
+          - values: ["-0xFFFFFFFF", "0x1"]
+      - file-name: op_imm_8_none
+        isa:
+          instructions:
+            - sig: divi imm:i32
+              acc: inout:i32
+              format: [op_imm_8]
+        code-template: |
+          #
+              ldai -1
+              divi %s
+              movi v0, %s
+              jne v0, set_failure
+              ldai 0
+              jmp fall_through
+          set_failure:
+              ldai 1
+          fall_through:
+        description: Check `divi` with -1 and various values.
+        cases:
+          - values: ["1", "0xFFFFFFFF"]
+          - values: ["-1", "0x1"]
+          - values: ["0xF", "0x0"]
+          - values: ["-0xF", "0x0"]
+          - values: ["0x7F", "0x0"]
+          - values: ["-0x7F", "0x0"]
+          - values: ["0x80", "0x0"]
+          - values: ["-0x80", "0x0"]
+          - values: ["0xFF", "0x1"]
+          - values: ["-0xFF", "0xFFFFFFFF"]
+          - values: ["0x7FFFFFFF", "0x1"]
+          - values: ["-0x7FFFFFFF", "0xFFFFFFFF"]
+          - values: ["0xFFFFFFFF", "0x1"]
+          - values: ["-0xFFFFFFFF", "0xFFFFFFFF"]
+      - file-name: op_imm_8_pmax
+        isa:
+          instructions:
+            - sig: divi imm:i32
+              acc: inout:i32
+              format: [op_imm_8]
+        code-template: |
+          #
+              ldai 0x7FFFFFFF
+              divi %s
+              movi v0, %s
+              jne v0, set_failure
+              ldai 0
+              jmp fall_through
+          set_failure:
+              ldai 1
+          fall_through:
+        description: Check `divi` with +max and various values.
+        cases:
+          - values: ["1", "0x7FFFFFFF"]
+          - values: ["-1", "0x80000001"]
+          - values: ["0xF", "0x8888888"]
+          - values: ["-0xF", "0xF7777778"]
+          - values: ["0x7F", "0x1020408"]
+          - values: ["-0x7F", "0xFEFDFBF8"]
+          - values: ["0x80", "0xFF000001"]
+          - values: ["-0x80", "0xFF000001"]
+          - values: ["0xFF", "0x80000001"]
+          - values: ["-0xFF", "0x7FFFFFFF"]
+          - values: ["0x7FFFFFFF", "0x80000001"]
+          - values: ["-0x7FFFFFFF", "0x7FFFFFFF"]
+          - values: ["0xFFFFFFFF", "0x80000001"]
+          - values: ["-0xFFFFFFFF", "0x7FFFFFFF"]
+      - file-name: op_imm_8_nmax
+        isa:
+          instructions:
+            - sig: divi imm:i32
+              acc: inout:i32
+              format: [op_imm_8]
+        code-template: |
+          #
+              ldai -0x80000000
+              divi %s
+              movi v0, %s
+              jne v0, set_failure
+              ldai 0
+              jmp fall_through
+          set_failure:
+              ldai 1
+          fall_through:
+        description: Check `divi` with -max and various values.
+        cases:
+          - values: ["1", "0x80000000"]
+          - values: ["-1", "0x80000000"]
+          - values: ["0xF", "0xF7777778"]
+          - values: ["-0xF", "0x8888888"]
+          - values: ["0x7F", "0xFEFDFBF8"]
+          - values: ["-0x7F", "0x1020408"]
+          - values: ["0x80", "0x1000000"]
+          - values: ["-0x80", "0x1000000"]
+          - values: ["0xFF", "0x80000000"]
+          - values: ["-0xFF", "0x80000000"]
+          - values: ["0x7FFFFFFF", "0x80000000"]
+          - values: ["-0x7FFFFFFF", "0x80000000"]
+          - values: ["0xFFFFFFFF", "0x80000000"]
+          - values: ["-0xFFFFFFFF", "0x80000000"]
+
+      - file-name: op_imm_8_exception
+        isa:
+          instructions:
+            - sig: divi imm:i32
+              acc: inout:i32
+              format: [op_imm_8]
+        header-template: [ArithmeticException, main]
+
+        code-template: |
+          #
+              ldai %s
+          begin:
+              divi %s
+          end:
+              ldai 1 # Should not reach this line
+              return
+
+          catch_AE:
+              ldai 0 # Expected panda.ArithmeticException
+              return
+
+          catch_all:
+              ldai 1 # Unexpected exception, test failed
+              return
+
+          .catch panda.ArithmeticException, begin, end, catch_AE
+          .catchall begin, end, catch_all
+        check-type: none
+        description: Check `divi` throws ArithmeticException when divides by zero.
+        cases:
+          - values: ["0", "0"]
+          - values: ["1", "0"]
+          - values: ["-1", "0"]
+          - values: ["0x7FFFFFFF", "0"]
+          - values: ["0x80000000", "0"]
+          - values: ["-0x7FFFFFFF", "0"]
+          - values: ["-0x80000000", "0"]
+          - values: ["0xFFFFFFFF", "0"]
+          - values: ["-0xFFFFFFFF", "0"]
+          - values: ["1", "0x100"]
+          - values: ["1", "0x200"]
+          - values: ["1", "0xFFFFFF00"]
+          - values: ["1", "0x12345600"]
+          - values: ["1", "0xFEDCBA00"]
+
+      - file-name: vals
+        isa:
+          instructions:
+            - sig: divi imm:i32
+              acc: inout:i32
+              format: [op_imm_8]
+        code-template: |
+          #
+              ldai %s
+              divi %s
+              movi v0, %s
+              jne v0, set_failure
+              ldai 0
+              jmp fall_through
+          set_failure:
+              ldai 1
+          fall_through:
+        description: Check `divi` with various values.
+        tags: ['tsan']
+        cases:
+          - values: ["0x881A7B01", "0xBBBC58C", "0x108996C"]
+          - values: ["0xB915B8BD", "0xB5977802", "0xDC8ADC5F"]
+          - values: ["0x336458D6", "0xD358B202", "0x19B22C6B"]
+          - values: ["0x91958F96", "0xFF3E070A", "0xF4F55B29"]
+          - values: ["0x239216BB", "0xFEEF4239", "0x9FC185"]
+          - values: ["0x91E75821", "0x4C3DAF74", "0xFF0D0762"]
+          - values: ["0x46CC7483", "0x2491642A", "0x1AF88DE"]
+          - values: ["0xEFC0B1E8", "0x4A8736FE", "0x81FA70C"]
+          - values: ["0x83BF5338", "0x7994102F", "0xFD5B383E"]
+          - values: ["0x9D9E74AF", "0xADBE6B1A", "0xFC375342"]
+          - values: ["0x80000000", "-1", "0x80000000"]
+          - values: ["-2147483648", "-1", "-2147483648"]
+
+      - file-name: type
+        bugid: ["964", "966"]
+        tags: ["verifier"]
+        isa:
+          instructions:
+            - sig: divi imm:i32
+              acc: inout:i32
+              format: [op_imm_8]
+          verification:
+            - acc_type
+        runner-options: ['verifier-failure', 'verifier-debug-config']
+        code-template: |
+          #
+              %s
+              divi 1
+              ldai 0
+              return
+        check-type: no-check
+        description: Check `divi` with incorrect accumulator type.
+        cases:
+          - values: [fldai.64 0.0]
+          - values: [fldai.64 -0.0]
+          - values: [fldai.64 1.0]
+          - values: [fldai.64 -1.0]
+          - values: [fldai.64 0x7FF8000000000000]
+          - values: [fldai.64 0xFFFFFFFFFFFFFFFF]
+          - values: [fldai.64 0x7FF0000000000000]
+          - values: [fldai.64 0xFFF0000000000000]
+          - values: [fldai.64 0xFFEFFFFFFFFFFFFF]
+          - values: [fldai.64 0x7FEFFFFFFFFFFFFF]
+          - values: [fldai.64 0x0000000000000001]
+          - values: [fldai.64 0x8000000000000001]
+          - values: [fldai.64 3.14159265358979323846]
+          - values: [lda.str ""]
+          - values: [lda.str "some string"]
+          - values: [lda.null]
+          - values: [ldai.64 0]
+          - values: [ldai.64 1]
+          - values: [ldai.64 -1]
+          - values: [ldai.64 0x0000000100000000]
+          - values: [ldai.64 -0x0000000100000000]
+          - values: [ldai.64 0x0000000080000000]
+          - values: [ldai.64 -0x0000000080000000]
+          - values: [ldai.64 0x1000000000000000]
+          - values: [ldai.64 0x8000000000000000]
+          - values: [ldai.64 0xF000000000000000]
+          - values: [ldai.64 0xFFFFFFFF00000000]
+          - values: [ldai.64 0xFFFFFFFFFFFFFFFF]
+          - values: [ldai.64 -0x1000000000000000]
+          - values: [ldai.64 -0x8000000000000000]
+          - values: [ldai.64 -0xF000000000000000]
+          - values: [ldai.64 -0xFFFFFFFF00000000]
+          - values: [ldai.64 -0xFFFFFFFFFFFFFFFF]
+      - file-name: type_obj
+        bugid: ["964", "966"]
+        tags: ["verifier"]
+        isa:
+          instructions:
+            - sig: divi imm:i32
+              acc: inout:i32
+              format: [op_imm_8]
+          verification:
+            - acc_type
+        runner-options: ['verifier-failure', 'verifier-debug-config']
+        description: Check `divi` with incorrect accumulator type.
+        code-template: |
+          #
+          .record Object {}
+          .function i32 main() {
+              %s
+              divi 1
+              ldai 0
+              return
+        check-type: none
+        header-template: []
+        cases:
+          - values: [lda.type Object]
+          - values:
+            - |
+              newobj v0, Object
+              lda.obj v0
+

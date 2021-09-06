@@ -1,0 +1,323 @@
+# Copyright (c) 2021 Huawei Device Co., Ltd.
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+definitions:
+  - name: main
+    template: |
+        # header
+        .function i32 main() {
+  - name: none
+    template: |
+      }
+  - name: empty
+    template: ""
+  - name: exit-positive
+    template: |
+      #
+          ldai 0
+          return
+      }
+  - name: no-check
+    template: |
+      #
+          return
+      }
+  - name: check-positive
+    template: |
+        #   check positive
+            movi v0, 0 # expected result
+            jne v0, exit_failure
+            ldai 0 # passed
+            return
+        exit_failure:
+            ldai 1 # failed
+            return
+        }
+  - name: check-negative
+    template: |
+      #   check negative
+          movi v0, 0 # unexpected result
+          jeq v0, exit_failure
+          ldai 0 # passed
+          return
+      exit_failure:
+          ldai 1 # failed
+          return
+      }
+  - name: check-acc-nan
+    template: |
+        #   check acc contains NaN
+            sta.64 v0
+            fcmpg.64 v0
+            jeqz exit_failure
+        # NaN != NaN
+            ldai 0 # passed
+            return
+        exit_failure:
+            ldai 1 # failed
+            return
+        }
+  - name: check-acc-minus-1
+    template: |
+      #   check acc = -1
+          movi v0, -1 # unexpected result
+          jne v0, exit_failure
+          ldai 0 # passed
+          return
+      exit_failure:
+          ldai 1 # failed
+          return
+      }
+  - name: check-acc-1
+    template: |
+      #   check positive
+          movi v0, 1 # expected result
+          jne v0, exit_failure
+          ldai 0 # passed
+          return
+      exit_failure:
+          ldai 1 # failed
+          return
+      }
+
+  - name: ArithmeticException
+    template: |
+      # header
+      .record panda.ArithmeticException <external>
+
+  - name: main-exitcode-wrapper
+    # This is the wrapper for _GLOBAL::main function to avoid false-positive cases.
+    # Please, do not use this wrapper in test definition directly
+    template: |
+      #
+      .function i32 main_exitcode_wrapper() {
+          call main
+          jeqz wrapper_exit_positive
+          ldai 81
+          return
+      wrapper_exit_positive:
+          ldai 80
+          return
+      }
+
+  - name: obj_ctor
+    template: |
+      .record Obj {}
+
+      .function void Obj.ctor(Obj a0) {
+          return.void
+      }
+
+  - name: panda_string
+    template: |
+      .record panda.String <external>
+
+  - name: xorshift32
+    template: |
+      #
+      # Next random number
+      # x ^= x << 13;
+      # x ^= x >> 17;
+      # x ^= x << 5;
+      .function i32 nextRand(i32 a0) {
+          mov v0, a0
+          lda v0
+          shli 13
+          xor2 v0
+          sta v0 # v-: v0 ^= v0 << 13;
+          shri 17
+          xor2 v0
+          sta v0 # v0: v0 ^= v0>> 17;
+          shli 5
+          xor2 v0 #  acc: v0 ^= v0 << 5;
+          return
+      }
+
+tests:
+  - include: "add.yaml"
+  - include: "add2.64.yaml"
+  - include: "add2.yaml"
+  - include: "addi.yaml"
+  - include: "and.yaml"
+  - include: "and2.64.yaml"
+  - include: "and2.yaml"
+  - include: "andi.yaml"
+  - include: "ashr.yaml"
+  - include: "ashr2.64.yaml"
+  - include: "ashr2.yaml"
+  - include: "ashri.yaml"
+  - include: "call.range.yaml"
+  - include: "call.short.yaml"
+  - include: "call.virt.negative.yaml"
+  - include: "call.virt.range.negative.yaml"
+  - include: "call.virt.range.yaml"
+  - include: "call.virt.range_base.yaml"
+  - include: "call.virt.short.negative.yaml"
+  - include: "call.virt.short.yaml"
+  - include: "call.virt.yaml"
+  - include: "call.yaml"
+  - include: "checkcast.yaml"
+  - include: "cmp.64.yaml"
+  - include: "div.yaml"
+  - include: "div2.64.yaml"
+  - include: "div2.yaml"
+  - include: "divi.yaml"
+  - include: "divu2.64.yaml"
+  - include: "divu2.yaml"
+  - include: "f64toi32.yaml"
+  - include: "f64toi64.yaml"
+  - include: "f64tou32.yaml"
+  - include: "f64tou64.yaml"
+  - include: "fadd2.yaml"
+  - include: "fcmpg.yaml"
+  - include: "fcmpl.yaml"
+  - include: "fdiv2.yaml"
+  - include: "fldarr.32.yaml"
+  - include: "fldarr.64.yaml"
+  - include: "fldai.yaml"
+  - include: "fmod2.yaml"
+  - include: "fmovi.64.yaml"
+  - include: "fmul2.yaml"
+  - include: "fneg.yaml"
+  - include: "fp.yaml"
+  - include: "fstarr.32.yaml"
+  - include: "fstarr.64.yaml"
+  - include: "fsub2.yaml"
+  - include: "i32toi64.yaml"
+  - include: "i32toi16.yaml"
+  - include: "i32tou16.yaml"
+  - include: "i32tou8.yaml"
+  - include: "i32toi8.yaml"
+  - include: "i32tou1.yaml"
+  - include: "i32tof64.yaml"
+  - include: "i64toi32.yaml"
+  - include: "i64tou1.yaml"
+  - include: "i64tof64.yaml"
+  - include: "inci.yaml"
+  - include: "initobj.range.yaml"
+  - include: "initobj.short.yaml"
+  - include: "initobj.yaml"
+  - include: "isinstance.yaml"
+  - include: "jeq.obj.yaml"
+  - include: "jeqz.obj.yaml"
+  - include: "jeqz.yaml"
+  - include: "jgez.yaml"
+  - include: "jgtz.yaml"
+  - include: "jlez.yaml"
+  - include: "jltz.yaml"
+  - include: "jmp.yaml"
+  - include: "jne.obj.yaml"
+  - include: "jnez.obj.yaml"
+  - include: "jnez.yaml"
+  - include: "jeq.yaml"
+  - include: "jge.yaml"
+  - include: "jgt.yaml"
+  - include: "jle.yaml"
+  - include: "jlt.yaml"
+  - include: "jne.yaml"
+  - include: "lda.64.yaml"
+  - include: "lda.null.yaml"
+  - include: "lda.obj.yaml"
+  - include: "lda.str.yaml"
+  - include: "lda.type.yaml"
+  - include: "lda.yaml"
+  - include: "ldai.64.yaml"
+  - include: "ldai.yaml"
+  - include: "ldarr.yaml"
+  - include: "ldarr.16.yaml"
+  - include: "ldarr.64.yaml"
+  - include: "ldarr.8.yaml"
+  - include: "ldarr.obj.yaml"
+  - include: "ldarru.16.yaml"
+  - include: "ldarru.8.yaml"
+  - include: "ldobj.64.yaml"
+  - include: "ldobj.obj.yaml"
+  - include: "ldobj.yaml"
+  - include: "ldstatic.64.yaml"
+  - include: "ldstatic.obj.yaml"
+  - include: "ldstatic.yaml"
+  - include: "lenarr.yaml"
+  - include: "mod.yaml"
+  - include: "mod2.64.yaml"
+  - include: "mod2.yaml"
+  - include: "modi.yaml"
+  - include: "modu2.64.yaml"
+  - include: "modu2.yaml"
+  - include: "mov.64.yaml"
+  - include: "mov.null.yaml"
+  - include: "mov.obj.yaml"
+  - include: "mov.yaml"
+  - include: "movi.64.yaml"
+  - include: "movi.yaml"
+  - include: "mul.yaml"
+  - include: "mul2.64.yaml"
+  - include: "mul2.yaml"
+  - include: "muli.yaml"
+  - include: "neg.64.yaml"
+  - include: "neg.yaml"
+  - include: "newarr.yaml"
+  - include: "newobj.yaml"
+  - include: "not.64.yaml"
+  - include: "not.yaml"
+  - include: "or.yaml"
+  - include: "or2.64.yaml"
+  - include: "or2.yaml"
+  - include: "ori.yaml"
+  - include: "return.64.yaml"
+  - include: "return.obj.yaml"
+  - include: "return.void.yaml"
+  - include: "return.yaml"
+  - include: "shl.yaml"
+  - include: "shl2.64.yaml"
+  - include: "shl2.yaml"
+  - include: "shli.yaml"
+  - include: "shr.yaml"
+  - include: "shr2.64.yaml"
+  - include: "shr2.yaml"
+  - include: "shri.yaml"
+  - include: "sta.64.yaml"
+  - include: "sta.obj.yaml"
+  - include: "sta.yaml"
+  - include: "starr.yaml"
+  - include: "starr.16.yaml"
+  - include: "starr.64.yaml"
+  - include: "starr.8.yaml"
+  - include: "starr.obj.yaml"
+  - include: "stobj.64.yaml"
+  - include: "stobj.obj.yaml"
+  - include: "stobj.yaml"
+  - include: "ststatic.64.yaml"
+  - include: "ststatic.obj.yaml"
+  - include: "ststatic.yaml"
+  - include: "sub.yaml"
+  - include: "sub2.64.yaml"
+  - include: "sub2.yaml"
+  - include: "subi.yaml"
+  - include: "throw.yaml"
+  - include: "u32tof64.yaml"
+  - include: "u32toi16.yaml"
+  - include: "u32toi8.yaml"
+  - include: "u32toi64.yaml"
+  - include: "u32tou1.yaml"
+  - include: "u32tou16.yaml"
+  - include: "u32tou8.yaml"
+  - include: "u64tof64.yaml"
+  - include: "u64toi32.yaml"
+  - include: "u64tou1.yaml"
+  - include: "u64tou32.yaml"
+  - include: "ucmp.64.yaml"
+  - include: "ucmp.yaml"
+  - include: "xor.yaml"
+  - include: "xor2.64.yaml"
+  - include: "xor2.yaml"
+  - include: "xori.yaml"

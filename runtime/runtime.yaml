@@ -1,0 +1,524 @@
+# Copyright (c) 2021 Huawei Device Co., Ltd.
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+# Mapping beetween managed core types and C++ mirror classes
+coretypes:
+- managed_class: panda.Object
+  mirror_class: ObjectHeader
+
+- managed_class: panda.String
+  mirror_class: coretypes::String
+
+- managed_class: panda.Class
+  mirror_class: Class
+
+# Namespace that contains intrinsics implementation. For functions from
+# this namespace declaration in intrinsics.h will be generated
+intrinsics_namespace: panda::intrinsics
+
+# NB! The `space` property allows to group intrinsics and control
+# which intrinsics are loaded during startup. By default only "core"
+# space is loaded. See --boot-intrinsic-spaces for more details.
+#
+# The `signature` for instance intrinsics (`static` is false) doesn't include
+# `this` argument.
+intrinsics:
+- name: MathAbsI32
+  space: core
+  class_name: Math
+  method_name: absI32
+  static: true
+  signature:
+    ret: i32
+    args:
+      - i32
+  impl: panda::intrinsics::AbsI32
+
+- name: MathAbsI64
+  space: core
+  class_name: Math
+  method_name: absI64
+  static: true
+  signature:
+    ret: i64
+    args:
+      - i64
+  impl: panda::intrinsics::AbsI64
+
+- name: MathAbsF32
+  space: core
+  class_name: Math
+  method_name: absF32
+  static: true
+  signature:
+    ret: f32
+    args:
+      - f32
+  impl: panda::intrinsics::AbsF32
+
+- name: MathAbsF64
+  space: core
+  class_name: Math
+  method_name: absF64
+  static: true
+  signature:
+    ret: f64
+    args:
+      - f64
+  impl: panda::intrinsics::AbsF64
+
+- name: MathMinI32
+  space: core
+  class_name: Math
+  method_name: minI32
+  static: true
+  signature:
+    ret: i32
+    args: [i32, i32]
+  impl: panda::intrinsics::MinI32
+
+- name: MathMinI64
+  space: core
+  class_name: Math
+  method_name: minI64
+  static: true
+  signature:
+    ret: i64
+    args: [i64, i64]
+  impl: panda::intrinsics::MinI64
+
+- name: MathMinF32
+  space: core
+  class_name: Math
+  method_name: minF32
+  static: true
+  signature:
+    ret: f32
+    args: [f32, f32]
+  impl: panda::intrinsics::MinF32
+
+- name: MathMinF64
+  space: core
+  class_name: Math
+  method_name: minF64
+  static: true
+  signature:
+    ret: f64
+    args: [f64, f64]
+  impl: panda::intrinsics::MinF64
+
+- name: MathMaxI32
+  space: core
+  class_name: Math
+  method_name: maxI32
+  static: true
+  signature:
+    ret: i32
+    args: [i32, i32]
+  impl: panda::intrinsics::MaxI32
+
+- name: MathMaxI64
+  space: core
+  class_name: Math
+  method_name: maxI64
+  static: true
+  signature:
+    ret: i64
+    args: [i64, i64]
+  impl: panda::intrinsics::MaxI64
+
+- name: MathMaxF32
+  space: core
+  class_name: Math
+  method_name: maxF32
+  static: true
+  signature:
+    ret: f32
+    args: [f32, f32]
+  impl: panda::intrinsics::MaxF32
+
+- name: MathMaxF64
+  space: core
+  class_name: Math
+  method_name: maxF64
+  static: true
+  signature:
+    ret: f64
+    args: [f64, f64]
+  impl: panda::intrinsics::MaxF64
+
+- name: DoubleIsInf
+  space: core
+  class_name: Double
+  method_name: isInfinite
+  static: true
+  builtin: true
+  signature:
+    ret: u1
+    args:
+      - f64
+  impl: panda::intrinsics::IsInfF64
+
+- name: FloatIsInf
+  space: core
+  class_name: Float
+  method_name: isInfinite
+  static: true
+  builtin: true
+  signature:
+    ret: u1
+    args:
+      - f32
+  impl: panda::intrinsics::IsInfF32
+
+- name: MathSinF32
+  space: core
+  class_name: Math
+  method_name: fsin
+  static: true
+  signature:
+    ret: f32
+    args:
+      - f32
+  impl: panda::intrinsics::SinF32
+
+- name: MathSinF64
+  space: core
+  class_name: Math
+  method_name: sin
+  static: true
+  signature:
+    ret: f64
+    args:
+      - f64
+  impl: panda::intrinsics::SinF64
+
+- name: MathCosF32
+  space: core
+  class_name: Math
+  method_name: fcos
+  static: true
+  signature:
+    ret: f32
+    args:
+      - f32
+  impl: panda::intrinsics::CosF32
+
+- name: MathCosF64
+  space: core
+  class_name: Math
+  method_name: cos
+  static: true
+  signature:
+    ret: f64
+    args:
+      - f64
+  impl: panda::intrinsics::CosF64
+
+- name: MathPowF32
+  space: core
+  class_name: Math
+  method_name: fpow
+  static: true
+  signature:
+    ret: f32
+    args:
+      - f32
+      - f32
+  impl: panda::intrinsics::PowF32
+
+- name: MathPowF64
+  space: core
+  class_name: Math
+  method_name: pow
+  static: true
+  signature:
+    ret: f64
+    args:
+      - f64
+      - f64
+  impl: panda::intrinsics::PowF64
+
+- name: MathSqrtF32
+  space: core
+  class_name: Math
+  method_name: fsqrt
+  static: true
+  signature:
+    ret: f32
+    args:
+      - f32
+  impl: panda::intrinsics::SqrtF32
+
+- name: MathSqrtF64
+  space: core
+  class_name: Math
+  method_name: sqrt
+  static: true
+  signature:
+    ret: f64
+    args:
+      - f64
+  impl: panda::intrinsics::SqrtF64
+
+- name: IOPrintString
+  space: core
+  class_name: IO
+  method_name: printString
+  static: true
+  signature:
+    ret: void
+    args:
+      - panda.String
+  impl: panda::intrinsics::PrintString
+
+- name: IOPrintF32
+  space: core
+  class_name: IO
+  method_name: printF32
+  static: true
+  signature:
+    ret: void
+    args:
+      - f32
+  impl: panda::intrinsics::PrintF32
+
+- name: IOPrintF64
+  space: core
+  class_name: IO
+  method_name: printF64
+  static: true
+  signature:
+    ret: void
+    args:
+      - f64
+  impl: panda::intrinsics::PrintF64
+
+- name: IOPrintI32
+  space: core
+  class_name: IO
+  method_name: printI32
+  static: true
+  signature:
+    ret: void
+    args:
+      - i32
+  impl: panda::intrinsics::PrintI32
+
+- name: IOPrintU32
+  space: core
+  class_name: IO
+  method_name: printU32
+  static: true
+  signature:
+    ret: void
+    args:
+      - u32
+  impl: panda::intrinsics::PrintU32
+
+- name: IOPrintI64
+  space: core
+  class_name: IO
+  method_name: printI64
+  static: true
+  signature:
+    ret: void
+    args:
+      - i64
+  impl: panda::intrinsics::PrintI64
+
+- name: IOPrintU64
+  space: core
+  class_name: IO
+  method_name: printU64
+  static: true
+  signature:
+    ret: void
+    args:
+      - u64
+  impl: panda::intrinsics::PrintU64
+
+- name: SystemExit
+  space: core
+  class_name: System
+  method_name: exit
+  static: true
+  signature:
+    ret: void
+    args:
+      - i32
+  impl: panda::intrinsics::SystemExit
+
+- name: SystemNanoTime
+  space: core
+  class_name: System
+  method_name: nanoTime
+  static: true
+  signature:
+    ret: i64
+    args: []
+  impl: panda::intrinsics::NanoTime
+
+- name: SystemAssert
+  space: core
+  class_name: System
+  method_name: assert
+  static: true
+  signature:
+    ret: void
+    args: [u1]
+  impl: panda::intrinsics::Assert
+
+- name: SystemAssertPrint
+  space: core
+  class_name: System
+  method_name: assertPrint
+  static: true
+  signature:
+    ret: void
+    args: [u1, panda.String]
+  impl: panda::intrinsics::AssertPrint
+
+- name: ConvertStringToI32
+  space: core
+  class_name: Convert
+  method_name: stringToI32
+  static: true
+  signature:
+    ret: i32
+    args: [panda.String]
+  impl: panda::intrinsics::ConvertStringToI32
+
+- name: ConvertStringToU32
+  space: core
+  class_name: Convert
+  method_name: stringToU32
+  static: true
+  signature:
+    ret: u32
+    args: [panda.String]
+  impl: panda::intrinsics::ConvertStringToU32
+
+- name: ConvertStringToI64
+  space: core
+  class_name: Convert
+  method_name: stringToI64
+  static: true
+  signature:
+    ret: i64
+    args: [panda.String]
+  impl: panda::intrinsics::ConvertStringToI64
+
+- name: ConvertStringToU64
+  space: core
+  class_name: Convert
+  method_name: stringToU64
+  static: true
+  signature:
+    ret: u64
+    args: [panda.String]
+  impl: panda::intrinsics::ConvertStringToU64
+
+- name: ConvertStringToF32
+  space: core
+  class_name: Convert
+  method_name: stringToF32
+  static: true
+  signature:
+    ret: f32
+    args: [panda.String]
+  impl: panda::intrinsics::ConvertStringToF32
+
+- name: ConvertStringToF64
+  space: core
+  class_name: Convert
+  method_name: stringToF64
+  static: true
+  signature:
+    ret: f64
+    args: [panda.String]
+  impl: panda::intrinsics::ConvertStringToF64
+
+- name: ObjectMonitorEnter
+  space: core
+  class_name: Object
+  method_name: monitorEnter
+  static: true
+  safepoint: true
+  signature:
+    ret: void
+    args: [panda.Object]
+  impl: panda::intrinsics::ObjectMonitorEnter
+
+- name: ObjectMonitorExit
+  space: core
+  class_name: Object
+  method_name: monitorExit
+  static: true
+  safepoint: true
+  signature:
+    ret: void
+    args: [panda.Object]
+  impl: panda::intrinsics::ObjectMonitorExit
+
+- name: ObjectWait
+  space: core
+  class_name: Object
+  method_name: Wait
+  static: true
+  safepoint: true
+  signature:
+    ret: void
+    args: [panda.Object]
+  impl: panda::intrinsics::ObjectWait
+- name: ObjectTimedWait
+  space: core
+  class_name: Object
+  method_name: TimedWait
+  static: true
+  safepoint: true
+  signature:
+    ret: void
+    args: [panda.Object, u64]
+  impl: panda::intrinsics::ObjectTimedWait
+
+- name: ObjectTimedWaitNanos
+  space: core
+  class_name: Object
+  method_name: TimedWaitNanos
+  static: true
+  safepoint: true
+  signature:
+    ret: void
+    args: [panda.Object, u64, u64]
+  impl: panda::intrinsics::ObjectTimedWaitNanos
+
+- name: ObjectNotify
+  space: core
+  class_name: Object
+  method_name: Notify
+  static: true
+  signature:
+    ret: void
+    args: [panda.Object]
+  impl: panda::intrinsics::ObjectNotify
+
+- name: ObjectNotifyAll
+  space: core
+  class_name: Object
+  method_name: NotifyAll
+  static: true
+  signature:
+    ret: void
+    args: [panda.Object]
+  impl: panda::intrinsics::ObjectNotifyAll

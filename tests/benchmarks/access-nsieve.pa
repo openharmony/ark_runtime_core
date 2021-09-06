@@ -1,0 +1,105 @@
+# Copyright (c) 2021 Huawei Device Co., Ltd.
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+.function u1 main(){
+    movi v0, 3
+    movi v1, 2000000
+    movi v2, 1854053
+    call test, v0, v1, v2, v0
+    return
+}
+
+.function u1 test(i32 a0, i32 a1, i32 a2){
+    call.short sieve, a0, a1
+    jne a2, exit_failure
+    ldai 0
+    return
+exit_failure:
+    ldai 1
+    return
+}
+
+.function i32 sieve(i32 a0, i32 a1){
+    movi v2, 0              #sum
+    movi v3, 1              #loop_counter
+    ldai 1
+loop:
+    jgt a0, loop_exit
+    ldai 1
+    shl2 v3
+    mul2 a1
+    addi 1
+    sta v4                  #m+1
+    newarr v5, v4, u1[]                  #flags
+    inci v4, -1
+    call.short nsieve, v4, v5
+    add2 v2
+    sta v2
+    inci v3, 1
+    lda v3
+    jmp loop
+loop_exit:
+    lda v2
+    return
+}
+
+.function i32 nsieve(i32 a0, u1[] a1){
+    call.short init, a1, a1
+    movi v2, 0              #count
+    movi v3, 2              #loop_counter
+    ldai 2
+loop:
+    jgt a0, loop_exit
+    ldarr.8 a1
+    jnez if
+endif:
+    inci v3, 1
+    lda v3
+    jmp loop
+loop_exit:
+    lda v2
+    return
+if:
+    lda v3
+    add2 v3
+    sta v4                  #loop2_counter
+loop2:
+    jgt a0, loop2_exit
+    ldai 0
+    starr.8 a1, v4
+    lda v4
+    add2 v3
+    sta v4
+    jmp loop2
+loop2_exit:
+    inci v2, 1
+    lda v2
+    jmp endif
+}
+
+.function void init(u1[] a0){
+    lenarr a0
+    sta v0      #sizeof(a0)
+    movi v1, 2       #loop_counter
+    ldai 2
+loop:
+    jeq v0, loop_exit
+    ldai 1
+    starr.8 a0, v1
+    inci v1, 1
+    lda v1
+    jmp loop
+loop_exit:
+    lda.obj a0
+    return.void
+}

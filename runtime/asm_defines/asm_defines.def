@@ -1,0 +1,91 @@
+/*
+ * Copyright (c) 2021 Huawei Device Co., Ltd.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+DEFINE_VALUE(METHOD_ACCESS_FLAGS_OFFSET, Method::GetAccessFlagsOffset())
+DEFINE_VALUE(METHOD_NUM_ARGS_OFFSET, Method::GetNumArgsOffset())
+DEFINE_VALUE(METHOD_COMPILED_ENTRY_POINT_OFFSET, Method::GetCompilerEntryPointOffset(RUNTIME_ARCH))
+DEFINE_VALUE(METHOD_NATIVE_POINTER_OFFSET, Method::GetNativePointerOffset(RUNTIME_ARCH))
+DEFINE_VALUE(METHOD_SHORTY_OFFSET, Method::GetShortyOffset())
+
+DEFINE_VALUE(FRAME_METHOD_OFFSET, Frame::GetMethodOffset())
+DEFINE_VALUE(FRAME_PREV_FRAME_OFFSET, Frame::GetPrevFrameOffset())
+DEFINE_VALUE(FRAME_NUM_VREGS_OFFSET, Frame::GetNumVregsOffset())
+DEFINE_VALUE(FRAME_ACC_OFFSET, Frame::GetAccOffset())
+
+DEFINE_VALUE(FRAME_VREGS_OFFSET, Frame::GetVregsOffset())
+DEFINE_VALUE(FRAME_VREGISTER_SIZE, sizeof(Frame::VRegister))
+DEFINE_VALUE(FRAME_VREGISTER_VALUE_OFFSET, Frame::VRegister::GetValueOffset())
+DEFINE_VALUE(FRAME_VREGISTER_TAG_OFFSET, Frame::VRegister::GetTagOffset())
+DEFINE_VALUE(FRAME_VREGISTER_PRIMITIVE_TAG, 0)  DEFINE_VALUE(FRAME_VREGISTER_OBJECT_TAG, 1)     DEFINE_VALUE(FRAME_SLOT_OFFSET, panda::Frame::GetVregsOffset() + Frame::VRegister::GetValueOffset())
+DEFINE_VALUE(FRAME_TAG_OFFSET, panda::Frame::GetVregsOffset() + panda::Frame::VRegister::GetTagOffset())
+
+DEFINE_VALUE(CFRAME_LR_SLOT, CFrameReturnAddr::Start())
+DEFINE_VALUE(CFRAME_STACK_START_SLOT, CFrameSlots::Start())
+DEFINE_VALUE(CFRAME_CALLEE_REGS_START_SLOT, CFrameLayout::RegsRegion::Start())
+DEFINE_VALUE(CFRAME_LOCALS_COUNT, (CFrameSlots::Start() - CFrameData::Start()))
+DEFINE_VALUE(CFRAME_HEADER_SIZE, (CFrameFlags::End() - CFrameReturnAddr::Start()))
+DEFINE_VALUE(CFRAME_FLAGS_SLOT, (CFrameFlags::Start()))
+DEFINE_VALUE(CFRAME_LOCALS_START_SLOT, (CFrameLocals::Start()))
+DEFINE_VALUE(CFRAME_KIND_OSR, (CFrame::FrameKind::OSR << CFrame::FrameKindField::START_BIT))
+DEFINE_VALUE(CFRAME_KIND_JNI, (CFrame::FrameKind::JNI << CFrame::FrameKindField::START_BIT))
+
+DEFINE_VALUE(THREAD_CURRENT_FRAME, ManagedThread::GetFrameOffset(RUNTIME_ARCH))
+DEFINE_VALUE(THREAD_FRAME_KIND, ManagedThread::GetFrameKindOffset())
+DEFINE_VALUE(THREAD_NATIVE_PC, ManagedThread::GetNativePcOffset(RUNTIME_ARCH))
+DEFINE_VALUE(THREAD_TLAB, ManagedThread::GetTLABOffset(RUNTIME_ARCH))
+
+DEFINE_VALUE(ACCESS_STATIC, ACC_STATIC)
+DEFINE_VALUE(CALLEE_SAVED_SIZE, (GetCalleeRegsCount(RUNTIME_ARCH, false) + GetCalleeRegsCount(RUNTIME_ARCH, true)) *
+                                       PointerSize(RUNTIME_ARCH))
+
+DEFINE_VALUE(BRIDGE_FRAME_SIZE, AlignUp(
+    (CFrameFlags::End() + GetCalleeRegsCount(RUNTIME_ARCH, false) + GetCalleeRegsCount(RUNTIME_ARCH, true)) *
+    PointerSize(RUNTIME_ARCH),
+    16))
+
+DEFINE_VALUE(CALLER_REG0_OFFSET, (CFrameLayout(RUNTIME_ARCH, 0).GetCallerRegsStartSlot() +
+                                  GetCallerRegsCount(RUNTIME_ARCH, false) - 1) * CFrameLayout(RUNTIME_ARCH, 0).GetSlotSize())
+DEFINE_VALUE(CALLER_VREG0_OFFSET, (CFrameLayout(RUNTIME_ARCH, 0).GetCallerRegsStartSlot() +
+                                  GetCallerRegsCount(RUNTIME_ARCH, false) + GetCallerRegsCount(RUNTIME_ARCH, true) - 1) * CFrameLayout(RUNTIME_ARCH, 0).GetSlotSize())
+DEFINE_VALUE(CALLEE_REG0_OFFSET, ((CFrameLayout::HEADER_SIZE + GetCalleeRegsCount(RUNTIME_ARCH, false)) * CFrameLayout(RUNTIME_ARCH, 0).GetSlotSize()))
+DEFINE_VALUE(CALLEE_VREG0_OFFSET, ((CFrameLayout::HEADER_SIZE + GetCalleeRegsCount(RUNTIME_ARCH, false) + GetCalleeRegsCount(RUNTIME_ARCH, true)) * CFrameLayout(RUNTIME_ARCH, 0).GetSlotSize()))
+
+DEFINE_VALUE(INTERPRETER_TO_COMPILED_CODE_BRIDGE, FrameBridgeKind::INTERPRETER_TO_COMPILED_CODE)
+DEFINE_VALUE(COMPILED_CODE_TO_INTERPRETER_BRIDGE, FrameBridgeKind::COMPILED_CODE_TO_INTERPRETER)
+DEFINE_VALUE(BYPASS_BRIDGE, FrameBridgeKind::BYPASS)
+
+// Interpreter to compiler bridge consts
+DEFINE_VALUE(INT_METHOD_OFFSET, BoundaryFrame<FrameKind::INTERPRETER>::METHOD_OFFSET)
+DEFINE_VALUE(INT_FP_OFFSET, BoundaryFrame<FrameKind::INTERPRETER>::FP_OFFSET)
+DEFINE_VALUE(INT_RETURN_OFFSET, BoundaryFrame<FrameKind::INTERPRETER>::RETURN_OFFSET)
+DEFINE_VALUE(INT_CALLEES_OFFSET, BoundaryFrame<FrameKind::INTERPRETER>::CALLEES_OFFSET)
+
+// Compiler to interpreter bridge consts
+DEFINE_VALUE(COMP_METHOD_OFFSET, BoundaryFrame<FrameKind::COMPILER>::METHOD_OFFSET)
+DEFINE_VALUE(COMP_FP_OFFSET, BoundaryFrame<FrameKind::COMPILER>::FP_OFFSET)
+DEFINE_VALUE(COMP_RETURN_OFFSET, BoundaryFrame<FrameKind::COMPILER>::RETURN_OFFSET)
+DEFINE_VALUE(COMP_CALLEES_OFFSET, BoundaryFrame<FrameKind::COMPILER>::CALLEES_OFFSET)
+
+DEFINE_VALUE(TLAB_END_OFFSET, mem::TLAB::TLABEndAddrOffset())
+DEFINE_VALUE(TLAB_START_OFFSET, mem::TLAB::TLABFreePointerOffset())
+DEFINE_VALUE(TLAB_ALIGNMENT, DEFAULT_ALIGNMENT_IN_BYTES)
+
+DEFINE_VALUE(CORETYPES_ARRAY_DATA_OFFSET, coretypes::Array::GetDataOffset())
+DEFINE_VALUE(CORETYPES_STRING_DATA_OFFSET, coretypes::String::GetDataOffset())
+DEFINE_VALUE(CORETYPES_STRING_LENGTH_OFFSET, coretypes::String::GetLengthOffset())
+DEFINE_VALUE(CORETYPES_STRING_CLASS_SIZE, sizeof(coretypes::String))
+DEFINE_VALUE(CORETYPES_STRING_MUTF8_1B_MAX, utf::MUTF8_1B_MAX)
+
+DEFINE_VALUE(OBJECT_HEADER_CLASS_POINTER_OFFSET, panda::ObjectHeader::GetClassOffset())

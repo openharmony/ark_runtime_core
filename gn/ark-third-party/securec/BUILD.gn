@@ -1,0 +1,91 @@
+# Copyright (c) 2021 Huawei Device Co., Ltd.
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+import("//ark/runtime/ark_config.gni")
+import("//build/ohos.gni")
+
+config("libsec_public_config") {
+  include_dirs = [ "$ark_third_party_root/securec/include" ]
+}
+
+libsec_sources = [
+  "$ark_third_party_root/securec/src/fscanf_s.c",
+  "$ark_third_party_root/securec/src/fwscanf_s.c",
+  "$ark_third_party_root/securec/src/gets_s.c",
+  "$ark_third_party_root/securec/src/memcpy_s.c",
+  "$ark_third_party_root/securec/src/memmove_s.c",
+  "$ark_third_party_root/securec/src/memset_s.c",
+  "$ark_third_party_root/securec/src/scanf_s.c",
+  "$ark_third_party_root/securec/src/securecutil.c",
+  "$ark_third_party_root/securec/src/secureinput_a.c",
+  "$ark_third_party_root/securec/src/secureinput_w.c",
+  "$ark_third_party_root/securec/src/secureprintoutput_a.c",
+  "$ark_third_party_root/securec/src/secureprintoutput_w.c",
+  "$ark_third_party_root/securec/src/snprintf_s.c",
+  "$ark_third_party_root/securec/src/sprintf_s.c",
+  "$ark_third_party_root/securec/src/sscanf_s.c",
+  "$ark_third_party_root/securec/src/strcat_s.c",
+  "$ark_third_party_root/securec/src/strcpy_s.c",
+  "$ark_third_party_root/securec/src/strncat_s.c",
+  "$ark_third_party_root/securec/src/strncpy_s.c",
+  "$ark_third_party_root/securec/src/strtok_s.c",
+  "$ark_third_party_root/securec/src/swprintf_s.c",
+  "$ark_third_party_root/securec/src/swscanf_s.c",
+  "$ark_third_party_root/securec/src/vfscanf_s.c",
+  "$ark_third_party_root/securec/src/vfwscanf_s.c",
+  "$ark_third_party_root/securec/src/vscanf_s.c",
+  "$ark_third_party_root/securec/src/vsnprintf_s.c",
+  "$ark_third_party_root/securec/src/vsprintf_s.c",
+  "$ark_third_party_root/securec/src/vsscanf_s.c",
+  "$ark_third_party_root/securec/src/vswprintf_s.c",
+  "$ark_third_party_root/securec/src/vswscanf_s.c",
+  "$ark_third_party_root/securec/src/vwscanf_s.c",
+  "$ark_third_party_root/securec/src/wcscat_s.c",
+  "$ark_third_party_root/securec/src/wcscpy_s.c",
+  "$ark_third_party_root/securec/src/wcsncat_s.c",
+  "$ark_third_party_root/securec/src/wcsncpy_s.c",
+  "$ark_third_party_root/securec/src/wcstok_s.c",
+  "$ark_third_party_root/securec/src/wmemcpy_s.c",
+  "$ark_third_party_root/securec/src/wmemmove_s.c",
+  "$ark_third_party_root/securec/src/wscanf_s.c",
+]
+
+ohos_static_library("libc_secstatic") {
+  sources = libsec_sources
+  public_configs = [ ":libsec_public_config" ]
+  cflags = [
+    "-D_INC_STRING_S",
+    "-D_INC_WCHAR_S",
+    "-D_SECIMP=//",
+    "-D_STDIO_S_DEFINED",
+    "-D_INC_STDIO_S",
+    "-D_INC_STDLIB_S",
+    "-D_INC_MEMORY_S",
+  ]
+}
+
+ohos_shared_library("libc_secshared") {
+  sources = libsec_sources
+  public_configs = [ ":libsec_public_config" ]
+  cflags = [
+    "-D_INC_STRING_S",
+    "-D_INC_WCHAR_S",
+    "-D_SECIMP=//",
+    "-D_STDIO_S_DEFINED",
+    "-D_INC_STDIO_S",
+    "-D_INC_STDLIB_S",
+    "-D_INC_MEMORY_S",
+  ]
+
+  output_extension = "so"
+}

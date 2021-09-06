@@ -1,0 +1,315 @@
+# Copyright (c) 2021 Huawei Device Co., Ltd.
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+---
+definitions: []
+tests:
+  - file-name: shli
+    isa:
+      title: Two address binary operation with immediate on accumulator
+      description: >
+        Perform specified binary operation on accumulator and immediate and store result into accumulator.
+        Immediate is sign extended to operand size.
+      exceptions:
+        - x_none
+    commands:
+      - file-name: op_imm_8_zero
+        isa:
+          instructions:
+            - sig: shli imm:i32
+              acc: inout:i32
+              format: [op_imm_8]
+        code-template: |
+          #
+              ldai 0
+              shli %s
+              movi v0, 0
+              jne v0, set_failure
+              ldai 0
+              jmp fall_through
+          set_failure:
+              ldai 1
+          fall_through:
+        description: Check `shli` with zero and various values.
+        cases:
+          - values: ["0"]
+          - values: ["1"]
+          - values: ["-1"]
+          - values: ["0xF"]
+          - values: ["-0xF"]
+          - values: ["0x7F"]
+          - values: ["-0x7F"]
+          - values: ["0x80"]
+          - values: ["-0x80"]
+          - values: ["0xFF"]
+          - values: ["-0xFF"]
+          - values: ["0x7FFFFFFF"]
+          - values: ["-0x7FFFFFFF"]
+          - values: ["0x80000000"]
+          - values: ["-0x80000000"]
+          - values: ["0xFFFFFFFF"]
+          - values: ["-0xFFFFFFFF"]
+      - file-name: op_imm_8_pone
+        isa:
+          instructions:
+            - sig: shli imm:i32
+              acc: inout:i32
+              format: [op_imm_8]
+        code-template: |
+          #
+              ldai 1
+              shli %s
+              movi v0, %s
+              jne v0, set_failure
+              ldai 0
+              jmp fall_through
+          set_failure:
+              ldai 1
+          fall_through:
+        description: Check `shli` with +1 and various values.
+        cases:
+          - values: ["0", "0x1"]
+          - values: ["1", "0x2"]
+          - values: ["-1", "0x80000000"]
+          - values: ["0xF", "0x8000"]
+          - values: ["-0xF", "0x20000"]
+          - values: ["0x7F", "0x80000000"]
+          - values: ["-0x7F", "0x2"]
+          - values: ["0x80", "0x1"]
+          - values: ["-0x80", "0x1"]
+          - values: ["0xFF", "0x80000000"]
+          - values: ["-0xFF", "0x2"]
+          - values: ["0x7FFFFFFF", "0x80000000"]
+          - values: ["-0x7FFFFFFF", "0x2"]
+          - values: ["0x80000000", "0x1"]
+          - values: ["-0x80000000", "0x1"]
+          - values: ["0xFFFFFFFF", "0x80000000"]
+          - values: ["-0xFFFFFFFF", "0x2"]
+      - file-name: op_imm_8_none
+        isa:
+          instructions:
+            - sig: shli imm:i32
+              acc: inout:i32
+              format: [op_imm_8]
+        code-template: |
+          #
+              ldai -1
+              shli %s
+              movi v0, %s
+              jne v0, set_failure
+              ldai 0
+              jmp fall_through
+          set_failure:
+              ldai 1
+          fall_through:
+        description: Check `shli` with -1 and various values.
+        cases:
+          - values: ["0", "0xFFFFFFFF"]
+          - values: ["1", "0xFFFFFFFE"]
+          - values: ["-1", "0x80000000"]
+          - values: ["0xF", "0xFFFF8000"]
+          - values: ["-0xF", "0xFFFE0000"]
+          - values: ["0x7F", "0x80000000"]
+          - values: ["-0x7F", "0xFFFFFFFE"]
+          - values: ["0x80", "0xFFFFFFFF"]
+          - values: ["-0x80", "0xFFFFFFFF"]
+          - values: ["0xFF", "0x80000000"]
+          - values: ["-0xFF", "0xFFFFFFFE"]
+          - values: ["0x7FFFFFFF", "0x80000000"]
+          - values: ["-0x7FFFFFFF", "0xFFFFFFFE"]
+          - values: ["0x80000000", "0xFFFFFFFF"]
+          - values: ["-0x80000000", "0xFFFFFFFF"]
+          - values: ["0xFFFFFFFF", "0x80000000"]
+          - values: ["-0xFFFFFFFF", "0xFFFFFFFE"]
+      - file-name: op_imm_8_pmax
+        isa:
+          instructions:
+            - sig: shli imm:i32
+              acc: inout:i32
+              format: [op_imm_8]
+        code-template: |
+          #
+              ldai 0x7FFFFFFF
+              shli %s
+              movi v0, %s
+              jne v0, set_failure
+              ldai 0
+              jmp fall_through
+          set_failure:
+              ldai 1
+          fall_through:
+        description: Check `shli` with +max and various values.
+        cases:
+          - values: ["0", "0x7FFFFFFF"]
+          - values: ["1", "0xFFFFFFFE"]
+          - values: ["-1", "0x80000000"]
+          - values: ["0xF", "0xFFFF8000"]
+          - values: ["-0xF", "0xFFFE0000"]
+          - values: ["0x7F", "0x80000000"]
+          - values: ["-0x7F", "0xFFFFFFFE"]
+          - values: ["0x80", "0x7FFFFFFF"]
+          - values: ["-0x80", "0x7FFFFFFF"]
+          - values: ["0xFF", "0x80000000"]
+          - values: ["-0xFF", "0xFFFFFFFE"]
+          - values: ["0x7FFFFFFF", "0x80000000"]
+          - values: ["-0x7FFFFFFF", "0xFFFFFFFE"]
+          - values: ["0x80000000", "0x7FFFFFFF"]
+          - values: ["-0x80000000", "0x7FFFFFFF"]
+          - values: ["0xFFFFFFFF", "0x80000000"]
+          - values: ["-0xFFFFFFFF", "0xFFFFFFFE"]
+      - file-name: op_imm_8_nmax
+        isa:
+          instructions:
+            - sig: shli imm:i32
+              acc: inout:i32
+              format: [op_imm_8]
+        code-template: |
+          #
+              ldai -0x80000000
+              shli %s
+              movi v0, %s
+              jne v0, set_failure
+              ldai 0
+              jmp fall_through
+          set_failure:
+              ldai 1
+          fall_through:
+        description: Check `shli` with -max and various values.
+        cases:
+          - values: ["0", "0x80000000"]
+          - values: ["1", "0x0"]
+          - values: ["-1", "0x0"]
+          - values: ["0xF", "0x0"]
+          - values: ["-0xF", "0x0"]
+          - values: ["0x7F", "0x0"]
+          - values: ["-0x7F", "0x0"]
+          - values: ["0x80", "0x80000000"]
+          - values: ["-0x80", "0x80000000"]
+          - values: ["0xFF", "0x0"]
+          - values: ["-0xFF", "0x0"]
+          - values: ["0x7FFFFFFF", "0x0"]
+          - values: ["-0x7FFFFFFF", "0x0"]
+          - values: ["0x80000000", "0x80000000"]
+          - values: ["-0x80000000", "0x80000000"]
+          - values: ["0xFFFFFFFF", "0x0"]
+          - values: ["-0xFFFFFFFF", "0x0"]
+      - file-name: vals
+        isa:
+          instructions:
+            - sig: shli imm:i32
+              acc: inout:i32
+              format: [op_imm_8]
+        code-template: |
+          #
+              ldai %s
+              shli %s
+              movi v0, %s
+              jne v0, set_failure
+              ldai 0
+              jmp fall_through
+          set_failure:
+              ldai 1
+          fall_through:
+        description: Check `shli` with various values.
+        tags: ['tsan']
+        cases:
+          - values: ["0x2C93A6B2", "0xA4EC9BB3", "0x35900000"]
+          - values: ["0xC2E37E55", "0x72ACE61A", "0x54000000"]
+          - values: ["0xF160074A", "0x7F0BF682", "0xC5801D28"]
+          - values: ["0xF0C59994", "0x241EA91F", "0x0"]
+          - values: ["0x4933372E", "0x302335FE", "0x80000000"]
+          - values: ["0x69442799", "0x39CAB340", "0x69442799"]
+          - values: ["0x8B39052E", "0x93035FD7", "0x97000000"]
+          - values: ["0x9F3D0C48", "0x4E6E9301", "0x3E7A1890"]
+          - values: ["0x1779CAE0", "0x40C738FF", "0x0"]
+          - values: ["0x4E97C4A6", "0x5574D79", "0x4C000000"]
+      - file-name: type
+        bugid: ["964", "966"]
+        tags: ["verifier"]
+        isa:
+          instructions:
+            - sig: shli imm:i32
+              acc: inout:i32
+              format: [op_imm_8]
+          verification:
+            - acc_type
+        runner-options: ['verifier-failure', 'verifier-debug-config']
+        code-template: |
+          #
+              %s
+              shli 1
+              ldai 0
+        check-type: no-check
+        description: Check `shli` with incorrect accumulator type.
+        cases:
+          - values: [fldai.64 0.0]
+          - values: [fldai.64 -0.0]
+          - values: [fldai.64 1.0]
+          - values: [fldai.64 -1.0]
+          - values: [fldai.64 0x7FF8000000000000]
+          - values: [fldai.64 0xFFFFFFFFFFFFFFFF]
+          - values: [fldai.64 0x7FF0000000000000]
+          - values: [fldai.64 0xFFF0000000000000]
+          - values: [fldai.64 0xFFEFFFFFFFFFFFFF]
+          - values: [fldai.64 0x7FEFFFFFFFFFFFFF]
+          - values: [fldai.64 0x0000000000000001]
+          - values: [fldai.64 0x8000000000000001]
+          - values: [fldai.64 3.14159265358979323846]
+          - values: [lda.str ""]
+          - values: [lda.str "some string"]
+          - values: [lda.null]
+          - values: [ldai.64 0]
+          - values: [ldai.64 1]
+          - values: [ldai.64 -1]
+          - values: [ldai.64 0x0000000100000000]
+          - values: [ldai.64 -0x0000000100000000]
+          - values: [ldai.64 0x0000000080000000]
+          - values: [ldai.64 -0x0000000080000000]
+          - values: [ldai.64 0x1000000000000000]
+          - values: [ldai.64 0x8000000000000000]
+          - values: [ldai.64 0xF000000000000000]
+          - values: [ldai.64 0xFFFFFFFF00000000]
+          - values: [ldai.64 0xFFFFFFFFFFFFFFFF]
+          - values: [ldai.64 -0x1000000000000000]
+          - values: [ldai.64 -0x8000000000000000]
+          - values: [ldai.64 -0xF000000000000000]
+          - values: [ldai.64 -0xFFFFFFFF00000000]
+          - values: [ldai.64 -0xFFFFFFFFFFFFFFFF]
+      - file-name: type_obj
+        bugid: ["964", "966"]
+        tags: ["verifier"]
+        isa:
+          instructions:
+            - sig: shli imm:i32
+              acc: inout:i32
+              format: [op_imm_8]
+          verification:
+            - acc_type
+        runner-options: ['verifier-failure', 'verifier-debug-config']
+        description: Check `shli` with incorrect accumulator type.
+        code-template: |
+          #
+          .record Object {}
+          .function i32 main() {
+              %s
+              shli 1
+              ldai 0
+              return
+        check-type: none
+        header-template: []
+        cases:
+          - values: [lda.type Object]
+          - values:
+            - |
+              newobj v0, Object
+              lda.obj v0

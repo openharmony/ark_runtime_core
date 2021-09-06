@@ -1,0 +1,394 @@
+# Copyright (c) 2021 Huawei Device Co., Ltd.
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+definitions: []
+tests:
+  - file-name: "mod2.64"
+    isa:
+      title: Two address integer division and modulo on accumulator
+      description: >
+        Perform integer division or modulo on accumulator and register and store result into accumulator
+      exceptions:
+        - x_arith
+    commands:
+      - file-name: "op_vs_8_zero"
+        isa:
+          instructions:
+            - sig: mod2.64 v:in:i64
+              acc: inout:i64
+              format: [op_v_8]
+        code-template: |
+          #
+              ldai.64 0
+              movi.64 v0, %s
+              mod2.64 v0
+              movi.64 v0, 0
+              cmp.64 v0
+        description: Check mod2.64 with zero and various values.
+        cases:
+          - values:
+              - "0"
+            runner-options: ['run-failure']
+            description: Division by zero causes to exception.
+          - values:
+              - "1"
+          - values:
+              - "-1"
+          - values:
+              - "0x7FFFFFFFFFFFFFFF"
+          - values:
+              - "0x8000000000000000"
+          - values:
+              - "-0x7FFFFFFFFFFFFFFF"
+          - values:
+              - "-0x8000000000000000"
+          - values:
+              - "0xFFFFFFFFFFFFFFFF"
+          - values:
+              - "-0xFFFFFFFFFFFFFFFF"
+
+      - file-name: "op_vs_8_pone"
+        isa:
+          instructions:
+            - sig: mod2.64 v:in:i64
+              acc: inout:i64
+              format: [op_v_8]
+        code-template: |
+          #
+              ldai.64 1
+              movi.64 v0, %s
+              mod2.64 v0
+              movi.64 v0, %s
+              cmp.64 v0
+        description: Check mod2.64 with +1 and various values.
+        cases:
+          - values:
+              - "0"
+              - "0x0"
+            runner-options: ['run-failure']
+            description: Division by zero causes to exception.
+          - values:
+              - "1"
+              - "0"
+          - values:
+              - "-1"
+              - "0"
+          - values:
+              - "0x7FFFFFFFFFFFFFFF"
+              - "1"
+          - values:
+              - "0x8000000000000000"
+              - "1"
+          - values:
+              - "-0x7FFFFFFFFFFFFFFF"
+              - "1"
+          - values:
+              - "-0x8000000000000000"
+              - "1"
+          - values:
+              - "0xFFFFFFFFFFFFFFFF"
+              - "0"
+          - values:
+              - "-0xFFFFFFFFFFFFFFFF"
+              - "0"
+
+      - file-name: "op_vs_8_none"
+        isa:
+          instructions:
+            - sig: mod2.64 v:in:i64
+              acc: inout:i64
+              format: [op_v_8]
+        code-template: |
+          #
+              ldai.64 -1
+              movi.64 v0, %s
+              mod2.64 v0
+              movi.64 v0, %s
+              cmp.64 v0
+        description: Check mod2.64 with -1 and various values.
+        cases:
+          - values:
+              - "0"
+              - "0x0"
+            runner-options: ['run-failure']
+            description: Division by zero causes to exception.
+          - values:
+              - "1"
+              - "0"
+          - values:
+              - "-1"
+              - "0"
+          - values:
+              - "0x7FFFFFFFFFFFFFFF"
+              - "-1"
+          - values:
+              - "0x8000000000000000"
+              - "-1"
+          - values:
+              - "-0x7FFFFFFFFFFFFFFF"
+              - "-1"
+          - values:
+              - "-0x8000000000000000"
+              - "-1"
+          - values:
+              - "0xFFFFFFFFFFFFFFFF"
+              - "0"
+          - values:
+              - "-0xFFFFFFFFFFFFFFFF"
+              - "0"
+
+      - file-name: "op_vs_8_pmax"
+        isa:
+          instructions:
+            - sig: mod2.64 v:in:i64
+              acc: inout:i64
+              format: [op_v_8]
+        code-template: |
+          #
+              ldai.64 0x7FFFFFFFFFFFFFFF
+              movi.64 v0, %s
+              mod2.64 v0
+              movi.64 v0, %s
+              cmp.64 v0
+        description: Check mod2.64 with +max and various values.
+        cases:
+          - values:
+              - "0"
+              - "0x0"
+            runner-options: ['run-failure']
+            description: Division by zero causes to exception.
+          - values:
+              - "1"
+              - "0"
+          - values:
+              - "-1"
+              - "0"
+          - values:
+              - "0x7FFFFFFFFFFFFFFF"
+              - "0"
+          - values:
+              - "0x8000000000000000"
+              - "0x7FFFFFFFFFFFFFFF"
+          - values:
+              - "-0x7FFFFFFFFFFFFFFF"
+              - "0"
+          - values:
+              - "-0x8000000000000000"
+              - "0x7FFFFFFFFFFFFFFF"
+          - values:
+              - "0xFFFFFFFFFFFFFFFF"
+              - "0"
+          - values:
+              - "-0xFFFFFFFFFFFFFFFF"
+              - "0"
+
+      - file-name: "op_vs_8_nmax"
+        isa:
+          instructions:
+            - sig: mod2.64 v:in:i64
+              acc: inout:i64
+              format: [op_v_8]
+        code-template: |
+          #
+              ldai.64 -0x8000000000000000
+              movi.64 v0, %s
+              mod2.64 v0
+              movi.64 v0, %s
+              cmp.64 v0
+        description: Check mod2.64 with -max and various values.
+        cases:
+          - values:
+              - "0"
+              - "0x0"
+            runner-options: ['run-failure']
+            description: Division by zero causes to exception.
+          - values:
+              - "1"
+              - "0"
+          - values:
+              - "-1"
+              - "0"
+          - values:
+              - "0x7FFFFFFFFFFFFFFF"
+              - "-1"
+          - values:
+              - "0x8000000000000000"
+              - "0"
+          - values:
+              - "-0x7FFFFFFFFFFFFFFF"
+              - "-1"
+          - values:
+              - "-0x8000000000000000"
+              - "0"
+          - values:
+              - "0xFFFFFFFFFFFFFFFF"
+              - "0"
+          - values:
+              - "-0xFFFFFFFFFFFFFFFF"
+              - "0"
+
+      - file-name: "vals"
+        isa:
+          instructions:
+            - sig: mod2.64 v:in:i64
+              acc: inout:i64
+              format: [op_v_8]
+        code-template: |
+          #
+              ldai.64 %s
+              movi.64 v0, %s
+              mod2.64 v0
+              movi.64 v0, %s
+              cmp.64 v0
+        description: Check mod2.64 with various values.
+        tags: ['tsan']
+        cases:
+          - values:
+              - "0xD43883A022BBA8A1"
+              - "0xAAF23F449"
+              - "0xFFFFFFF635171663"
+          - values:
+              - "0x9AA3DE04AC281F64"
+              - "0xD39CC8359"
+              - "0xFFFFFFFBD6EE97AA"
+          - values:
+              - "0x2B522F1A7030A1C6"
+              - "0x511EAB1D9"
+              - "0x2D39C657F"
+          - values:
+              - "0xAB958C2AA68F8936"
+              - "0x9677D90DB"
+              - "0xFFFFFFFFD4F86B78"
+          - values:
+              - "0xE1D1D9EF8A718155"
+              - "0x3836657CA"
+              - "0xFFFFFFFE66F0D1EB"
+          - values:
+              - "0xB31108FC26286696"
+              - "0x6EF88B052"
+              - "0xFFFFFFFE71F24134"
+              - "0x7FABC476F1977825"
+              - "0x593EF9524"
+              - "0x17BB86D21"
+          - values:
+              - "0x2F7F50068624F26A"
+              - "0x8104CA4B5"
+              - "0x715DAF714"
+          - values:
+              - "0x8FA87DA4F72ECFD8"
+              - "0x47505818D"
+              - "0xFFFFFFFEDF09E6A2"
+          - values:
+              - "0x6DBA05387BF8987D"
+              - "0x38E6E285E"
+              - "0x202BD818F"
+          - values: ["0x8000000000000000", "-1", "0"]
+          - values: ["-9223372036854775808", "-1", "0"]
+
+      - file-name: "op_v_8_exception"
+        isa:
+          instructions:
+            - sig: mod2.64 v:in:i64
+              acc: inout:i64
+              format: [op_v_8]
+        header-template: [ArithmeticException, main]
+        code-template: |
+            #
+                ldai.64 %s
+                movi.64 v0, 0
+            begin:
+                mod2.64 v0
+            end:
+                ldai 1 # Should not reach this line
+                return
+
+            catch_AE:
+                ldai 0 # Expected panda.ArithmeticException
+                return
+
+            catch_all:
+                ldai 1 # Unexpected exception, test failed
+                return
+
+            .catch panda.ArithmeticException, begin, end, catch_AE
+            .catchall begin, end, catch_all
+        check-type: none
+        description: Check `mod2.64` throws ArithmeticException when divides by zero.
+        cases:
+          - values: ["0"]
+          - values: ["1"]
+          - values: ["0x7FFFFFFF"]
+          - values: ["0x80000000"]
+          - values: ["0xFFFFFFFF"]
+          - values: ["0x100000000"]
+          - values: ["0x7FFFFFFFFFFFFFFF"]
+          - values: ["0x8000000000000000"]
+          - values: ["0xFFFFFFFFFFFFFFFF"]
+          - values: ["-1"]
+          - values: ["-0x7FFFFFFF"]
+          - values: ["-0x80000000"]
+          - values: ["-0xFFFFFFFF"]
+          - values: ["-0x100000000"]
+          - values: ["-0x7FFFFFFFFFFFFFFF"]
+          - values: ["-0x8000000000000000"]
+          - values: ["-0xFFFFFFFFFFFFFFFF"]
+
+
+      - file-name: "regs"
+        isa:
+          instructions:
+            - sig: mod2.64 v:in:i64
+              acc: inout:i64
+              format: [op_v_8]
+        runner-options: ['compile-only']
+        code-template: |
+          #
+              mod2.64 %s
+        check-type: none
+        description: Check mod2.64 with various register numbers.
+        cases:
+          - values:
+              - "v255"
+          - values:
+              - "v256"
+            runner-options: ['compile-failure']
+
+      - file-name: "type"
+        isa:
+          instructions:
+            - sig: mod2.64 v:in:i64
+              acc: inout:i64
+              format: [op_v_8]
+          verification:
+            - acc_type
+            - v1_type
+        tags: ['verifier']
+        runner-options: ['verifier-failure', 'verifier-debug-config']
+        code-template: |
+          #
+              %s
+              %s
+              mod2.64 v0
+              ldai.64 0
+        check-type: no-check
+        description: Check mod2.64 with incorrect accumulator and register type.
+        cases:
+          - values:
+              - "lda.null"
+              - "movi.64 v0, 0"
+          - values:
+              - "ldai.64 0 "
+              - "mov.null v0"
+          - values:
+              - "lda.null"
+              - "mov.null v0"

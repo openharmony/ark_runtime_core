@@ -1,0 +1,110 @@
+# Copyright (c) 2021 Huawei Device Co., Ltd.
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+.function i32 neg_shl_i32(i32 a0) {
+  movi v0, 21
+  lda a0
+  shl2 v0
+  neg
+  return
+}
+
+.function i32 neg_shr_i32(i32 a0) {
+  movi v0, 21
+  lda a0
+  shr2 v0
+  neg
+  return
+}
+
+.function i32 neg_ashr_i32(i32 a0) {
+  movi v0, 21
+  lda a0
+  ashr2 v0
+  neg
+  return
+}
+
+.function i64 neg_shl_i64(i64 a0) {
+  movi.64 v0, 42
+  lda.64 a0
+  shl2.64 v0
+  neg.64
+  return.64
+}
+
+.function i64 neg_shr_i64(i64 a0) {
+  movi.64 v0, 42
+  lda.64 a0
+  shr2.64 v0
+  neg.64
+  return.64
+}
+
+.function i64 neg_ashr_i64(i64 a0) {
+  movi.64 v0, 42
+  lda.64 a0
+  ashr2.64 v0
+  neg.64
+  return.64
+}
+
+.function u1 main() {
+  movi v0, -1
+  call.short neg_shl_i32, v0, v0
+  movi v0, 0x200000
+  jne v0, exit_error_0
+  movi v0, 0x200000
+  call.short neg_shr_i32, v0, v0
+  movi v0, -1
+  jne v0, exit_error_1
+  movi v0, -2
+  call.short neg_ashr_i32, v0, v0
+  movi v0, 1
+  jne v0, exit_error_2
+  movi.64 v0, -1
+  call.short neg_shl_i64, v0, v0
+  movi.64 v0, 0x40000000000
+  cmp.64 v0
+  jnez exit_error_3
+  movi.64 v0, 0x40000000000
+  call.short neg_shr_i64, v0, v0
+  movi.64 v0, -1
+  cmp.64 v0
+  jnez exit_error_4
+  movi.64 v0, -2
+  call.short neg_ashr_i64, v0, v0
+  movi.64 v0, 1
+  cmp.64 v0
+  jnez exit_error_5
+  ldai 0
+  return
+exit_error_0:
+  ldai 1
+  return
+exit_error_1:
+  ldai 2
+  return
+exit_error_2:
+  ldai 3
+  return
+exit_error_3:
+  ldai 4
+  return
+exit_error_4:
+  ldai 5
+  return
+exit_error_5:
+  ldai 6
+  return
+}

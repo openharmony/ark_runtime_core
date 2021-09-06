@@ -1,0 +1,64 @@
+# Copyright (c) 2021 Huawei Device Co., Ltd.
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+# Assert that operation initobj works fine
+
+.record R {
+    i32 field1
+    i32 field2
+    i32 field3
+    i32 field4
+}
+
+.function void R.ctor(R a0, i32 a1, i32 a2, i32 a3, i32 a4) <ctor> {
+    lda a1
+    stobj a0, R.field1
+    lda a2
+    stobj a0, R.field2
+    lda a3
+    stobj a0, R.field3
+    lda a4
+    stobj a0, R.field4
+    return.void
+}
+
+.function u1 main() {
+    movi v0, 10
+    movi v1, 20
+    movi v2, 30
+    movi v3, 40
+    initobj R.ctor, v0, v1, v2, v3
+    sta.obj v4
+    ldobj v4, R.field1
+    jne v0, error1
+    ldobj v4, R.field2
+    jne v1, error2
+    ldobj v4, R.field3
+    jne v2, error3
+    ldobj v4, R.field4
+    jne v3, error4
+    ldai 0
+    return
+error1:
+    ldai 1
+    return
+error2:
+    ldai 2
+    return
+error3:
+    ldai 3
+    return
+error4:
+    ldai 4
+    return
+}

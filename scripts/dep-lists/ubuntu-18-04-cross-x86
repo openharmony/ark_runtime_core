@@ -1,0 +1,4 @@
+# Dependency list for cross-compiling
+# Panda for x86 under Ubuntu 18.04 x86-64
+g++-8-multilib=8.4.0-*
+g++-multilib=4:7.4.0-*

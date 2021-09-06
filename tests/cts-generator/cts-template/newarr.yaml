@@ -1,0 +1,650 @@
+# Copyright (c) 2021 Huawei Device Co., Ltd.
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+definitions:
+  - name: pandasm_header
+    template: |
+      .language PandaAssembly
+
+      .record panda.Class <external>
+      .record panda.Object <external>
+      .record panda.String <external>
+      .record panda.ClassCastException <external>
+      .record R {}
+  - name: java
+    template: |
+      .language Java
+  - name: java_header
+    template: |
+      .language Java
+
+      .record java.lang.Class <external>
+      .record java.lang.Object <external>
+      .record java.lang.String <external>
+      .record java.io.Serializable <external>
+      .record java.lang.NullPointerException <external>
+
+      .record R <> {}
+      .record I <java.interface> {}
+      .record Q <java.extends=R, java.implements=I> {}
+      .record A <java.annotation, java.annotation.type=runtime> {}
+      .record J <java.interface, java.implements=I> {}
+
+  - name: NegativeArraySize_p
+    template: |
+      .record panda.NegativeArraySizeException <external>
+  - name: NegativeArraySize_j
+    template: |
+      .language Java
+      .record java.lang.NegativeArraySizeException <external>
+
+  - name: oome_p
+    template: |
+      .record panda.OutOfMemoryError <external>
+  - name: oome_j
+    template: |
+      .record java.lang.OutOfMemoryError <external>
+
+tests:
+  - file-name: 'newarr'
+    isa:
+      title: Create new array
+      description: >
+        Create a new single-dimensional array of given type and size and put a reference to it into register.
+        Elements of array are initialized to a default value, i.e. 0 for primitive types and null for objects.
+      verification:
+        - type_id_array
+        - v2_i32
+
+    commands:
+      - file-name: 'of_prim'
+        isa:
+          instructions:
+            - sig: newarr v1:out:ref, v2:in:i32, type_id
+              acc: none
+              format: [op_v1_4_v2_4_id_16]
+          description: >
+            Create a new single-dimensional array of given type and size and put a reference to it into register.
+        bugid: ['1805', '2678']
+        header-template: ['main']
+        code-template: |
+            #
+                movi v0, *s
+                mov v1, v0
+                newarr v0, v0, %s
+            # Check array length
+                lenarr v0
+                jeq v1, length_is_correct
+                ldai 1
+                return
+            length_is_correct:
+                ##- Check array type
+                lda.obj v0
+                isinstance %s
+                jnez type_is_correct
+                ldai 2
+                return
+            type_is_correct:
+
+        description: Check `newarr` creates array of specified size and primitive type.
+        check-type: exit-positive
+        tags: ['tsan']
+        template-cases:
+          - values: ['u1[]', 'u1[]']
+          - values: ['i8[]', 'i8[]']
+          - values: ['u8[]', 'u8[]']
+          - values: ['i16[]', 'i16[]']
+          - values: ['u16[]', 'u16[]']
+          - values: ['i32[]', 'i32[]']
+          - values: ['u32[]', 'u32[]']
+          - values: ['i64[]', 'i64[]']
+          - values: ['u64[]', 'u64[]']
+          - values: ['f32[]', 'f32[]']
+          - values: ['f64[]', 'f64[]']
+        cases:
+          - values: [0]
+          - values: [1]
+          - values: [16]
+          - values: [0x8000]
+          - values: [0x100000]
+
+      - file-name: "acceptable_primitive_types_p"
+        isa:
+          instructions:
+            - sig: newarr v1:out:ref, v2:in:i32, type_id
+              acc: none
+              format: [op_v1_4_v2_4_id_16]
+        tags: ['tsan', 'verifier']
+        description: Check acceptable array of primitive types for newarr instruction in Panda Assembly context.
+        code-template: |
+          #
+              movi v0, 1
+              newarr v0, v0, %s
+        check-type: exit-positive
+        runner-options: ['verifier-only', 'verifier-debug-config']
+        cases:
+          - values: ['u1[]']
+          - values: ['i8[]']
+          - values: ['u8[]']
+          - values: ['i16[]']
+          - values: ['u16[]']
+          - values: ['i32[]']
+          - values: ['u32[]']
+          - values: ['i64[]']
+          - values: ['u64[]']
+          - values: ['f32[]']
+          - values: ['f64[]']
+
+      - file-name: "acceptable_ref_primitive_types_p"
+        isa:
+          instructions:
+            - sig: newarr v1:out:ref, v2:in:i32, type_id
+              acc: none
+              format: [op_v1_4_v2_4_id_16]
+        tags: ['tsan', 'verifier']
+        description: Check acceptable array of references to primitive types for newarr instruction in Panda Assembly context.
+        code-template: |
+          #
+              movi v0, 1
+              newarr v0, v0, %s
+        check-type: exit-positive
+        runner-options: ['verifier-only', 'verifier-debug-config']
+        cases:
+          - values: ['u1[][]']
+          - values: ['i8[][][]']
+          - values: ['u8[][][][]']
+          - values: ['i16[][][][][]']
+          - values: ['u16[][][][][][]']
+          - values: ['i32[][][][][][][]']
+          - values: ['u32[][][][][][][][]']
+          - values: ['i64[][][][][][][][][]']
+          - values: ['u64[][][][][][][][][][]']
+          - values: ['f32[][][][][][][][][][][]']
+          - values: ['f64[][][][][][][][][][][][]']
+
+      - file-name: 'of_obj_p'
+        isa:
+          instructions:
+            - sig: newarr v1:out:ref, v2:in:i32, type_id
+              acc: none
+              format: [op_v1_4_v2_4_id_16]
+          description: >
+            Create a new single-dimensional array of given type and size and put a reference to it into register.
+        bugid: ['1805', '2678']
+        header-template: ['pandasm_header', 'main']
+        code-template: |
+            #
+                movi v0, *s
+                mov v1, v0
+                newarr v0, v0, %s
+            # Check array length
+                lenarr v0
+                jeq v1, length_is_correct
+                ldai 1
+                return
+            length_is_correct:
+                ##- Check array type
+                lda.obj v0
+                isinstance %s
+                jnez type_is_correct
+                ldai 2
+                return
+            type_is_correct:
+
+        description: Check `newarr` creates array of specified size and object type in Panda Assembly context.
+        check-type: exit-positive
+        tags: ['tsan']
+        template-cases:
+          - values: ['panda.Class[]', 'panda.Class[]']
+          - values: ['panda.Object[]', 'panda.Object[]']
+          - values: ['panda.String[]', 'panda.String[]']
+          - values: ['panda.ClassCastException[]', 'panda.ClassCastException[]']
+          - values: ['R[]', 'R[]']
+          - values: ['panda.Class[][]', 'panda.Class[][]']
+          - values: ['panda.Object[][][]', 'panda.Object[][][]']
+          - values: ['panda.String[][][][]', 'panda.String[][][][]']
+          - values: ['panda.ClassCastException[][][][][]', 'panda.ClassCastException[][][][][]']
+          - values: ['R[][][][][][]', 'R[][][][][][]']
+          - values: ['u1[][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][]', 'u1[][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][]']
+          - values: ['u16[][][][]', 'u16[][][][]']
+          - values: ['i32[][][]', 'i32[][][]']
+          - values: ['f32[][][][][][][][][][][][][][][][]', 'f32[][][][][][][][][][][][][][][][]']
+          - values: ['f64[][][][]', 'f64[][][][]']
+
+        cases:
+          - values: [0]
+          - values: [1]
+          - values: [0x10000]
+          - values: [0x100000]
+
+      - file-name: 'type_v2'
+        isa:
+          instructions:
+            - sig: newarr v1:out:ref, v2:in:i32, type_id
+              acc: none
+              format: [op_v1_4_v2_4_id_16]
+          verification:
+            - v2_i32
+        tags: ['verifier']
+        runner-options: ['verifier-failure', 'verifier-debug-config']
+        header-template: []
+        code-template: |
+          #
+          .record B {}
+          .record panda.String <external>
+          .record panda.Object <external>
+          .function i32 main() {
+              %s
+              newarr v0, v0, *s
+        check-type: no-check
+        description: Check 'newarr' with incorrect register type.
+        template-cases:
+          - values:
+              - movi.64 v0, 0
+          - values:
+              - fmovi.64 v0, 0
+          - values:
+              - |
+                #
+                    lda.type B
+                    sta.obj v0
+          - values:
+              - |
+                #
+                    lda.type B[]
+                    sta.obj v0
+          - values:
+              - |
+                #
+                    lda.type panda.String
+                    sta.obj v0
+          - values:
+              - |
+                #
+                    lda.str "string"
+                    sta.obj v0
+          - values:
+              - |
+                #
+                    lda.type panda.Object
+                    sta.obj v0
+          - values:
+              - |
+                #
+                    movi v0, 10
+                    newarr v0, v0, i32[]
+          - values:
+              - mov.null v0
+        cases:
+          - values: ['i32[]']
+          - values: ['f64[][]']
+          - values: ['panda.String[][][]']
+          - values: ['panda.Object[][][][]']
+
+      - file-name: 'type_id_array'
+        isa:
+          instructions:
+            - sig: newarr v1:out:ref, v2:in:i32, type_id
+              acc: none
+              format: [op_v1_4_v2_4_id_16]
+          verification:
+            - type_id_array
+        runner-options: [compile-failure]
+        header-template: []
+        code-template: |
+          #
+          .record B {
+            field: i32
+          }
+          .record panda.String <external>
+          .record panda.Object <external>
+          .function i32 main() {
+              movi v0, 1
+              newarr v0, v0, %s
+        check-type: no-check
+        description: Check 'newarr' with incorrect array type.
+        cases:
+          - values: ['u1']
+          - values: ['i8']
+          - values: ['u8']
+          - values: ['i16']
+          - values: ['u16']
+          - values: ['i32']
+          - values: ['u32']
+          - values: ['i64']
+          - values: ['u64']
+          - values: ['f32']
+          - values: ['f64']
+          - values: ['panda.Object']
+          - values: ['panda.String']
+          - values: ['void']
+          - values: ['null']
+          - values: ['"string"']
+          - values: ['unknown_type[]']
+          - values: ['B.field']
+          - values: ['B.field[]']
+          - values: ['main']
+          - values: ['main[]']
+
+      - file-name: 'with_invalid_reg_v1'
+        isa:
+          instructions:
+            - sig: newarr v1:out:ref, v2:in:i32, type_id
+              acc: none
+              format: [op_v1_4_v2_4_id_16]
+        description: Check newarr with different register numbers, uninitialized registers, incorrect registers.
+        runner-options: ['compile-failure']
+        header-template: []
+        code-template: |
+            #
+            .function i32 main() {
+                movi v0, 1
+                newarr %s, v0, i32[]
+        check-type: exit-positive
+        cases:
+          - values: ['v16']
+          - values: ['v128']
+          - values: ['v255']
+          - values: ['v256']
+          - values: ['v65535']
+          - values: ['"a"']
+          - values: ['a0']
+          - values: ['void']
+          - values: ['null']
+          - values: ['vv0']
+
+      - file-name: 'with_invalid_reg_v2'
+        isa:
+          instructions:
+            - sig: newarr v1:out:ref, v2:in:i32, type_id
+              acc: none
+              format: [op_v1_4_v2_4_id_16]
+        description: Check newarr with different register numbers, uninitialized registers, incorrect registers.
+        tags: ['verifier']
+        runner-options: ['verifier-failure', 'verifier-debug-config']
+        header-template: []
+        code-template: |
+            #
+            .function i32 main() {
+                newarr v0, %s, i32[]
+        check-type: exit-positive
+        cases:
+          - values: ['v0']
+          - values: ['v15']
+          - values: ['v16']
+            runner-options: [compile-failure]
+          - values: ['v128']
+            runner-options: [compile-failure]
+          - values: ['v255']
+            runner-options: [compile-failure]
+          - values: ['v256']
+            runner-options: [compile-failure]
+          - values: ['v65535']
+            runner-options: [compile-failure]
+          - values: ['"a"']
+            runner-options: [compile-failure]
+          - values: ['a0']
+            runner-options: [compile-failure]
+          - values: ['void']
+            runner-options: [compile-failure]
+          - values: ['null']
+            runner-options: [compile-failure]
+
+      - file-name: 'negative_size_p'
+        isa:
+          exceptions:
+            - x_negsize
+        description: Check newarr with negative array size.
+        header-template: [NegativeArraySize_p]
+        code-template: |
+          *s
+          .function i32 main() {
+          #
+              movi v0, %s
+          begin:
+              newarr v0, v0, *s
+          end:
+              ldai 1 # Should not reach this line
+              return
+
+          catch_NAS:
+              ldai 0 # Expected panda.NegativeArraySizeException
+              return
+
+          catch_all:
+              ldai 2 # Unexpected exception, test failed
+              return
+
+          .catch panda.NegativeArraySizeException, begin, end, catch_NAS
+          .catchall begin, end, catch_all
+        check-type: none
+        template-cases:
+          - values: [-1]
+          - values: [-10]
+          - values: [-10000]
+          - values: [0x80000000]
+        cases:
+          - values: ['##-', 'i32[]']
+          - values: ['##-', 'i8[]']
+          - values: ['.record panda.Object<external>', 'panda.Object[]']
+
+      - file-name: 'prim_is_0_p'
+        isa:
+          instructions:
+            - sig: newarr v1:out:ref, v2:in:i32, type_id
+              acc: none
+              format: [op_v1_4_v2_4_id_16]
+          description: >
+            Elements of array are initialized to a default value, i.e. 0 for primitive types and null for objects.
+        header-template: ['main']
+        code-template: |
+            #
+                movi v0, 256
+                mov v1, v0
+                newarr v0, v0, %s
+                movi v2, 0 # index
+            loop:
+                lda v2
+                %s
+                jeqz next_item
+                ldai 1
+                return
+            next_item:
+                inci v2, 1
+                lda v2
+                jne v1, loop
+        description: Check `newarr` creates array of primitives which is filled by 0 in Panda context.
+        check-type: exit-positive
+        tags: ['tsan']
+        cases:
+          - values:
+            - 'u1[]'
+            - |
+              #
+                  ldarru.8 v0
+            bugid: ['2702']
+          - values:
+            - 'i8[]'
+            - |
+              #
+                  ldarr.8 v0
+          - values:
+            - 'u8[]'
+            - |
+              #
+                  ldarru.8 v0
+            bugid: ['2702']
+          - values:
+            - 'i16[]'
+            - |
+              #
+                  ldarr.16 v0
+          - values:
+            - 'u16[]'
+            - |
+              #
+                  ldarru.16 v0
+            bugid: ['2702']
+          - values:
+            - 'i32[]'
+            - |
+              #
+                  ldarr v0
+          - values:
+            - 'u32[]'
+            - |
+              #
+                  ldarr v0
+            bugid: ['2702']
+          - values:
+            - 'i64[]'
+            - |
+              #
+                  ldarr.64 v0
+                  movi.64 v3, 0
+                  cmp.64 v3
+          - values:
+            - 'u64[]'
+            - |
+              #
+                  ldarr.64 v0
+                  movi.64 v3, 0
+                  ucmp.64 v3
+          - values:
+            - 'f32[]'
+            - |
+              #
+                  fldarr.32 v0
+                  fmovi.64 v3, 0
+                  fcmpg.64 v3
+          - values:
+            - 'f64[]'
+            - |
+              #
+                  fldarr.64 v0
+                  fmovi.64 v3, 0
+                  fcmpg.64 v3
+
+      - file-name: 'obj_is_null_p'
+        isa:
+          instructions:
+            - sig: newarr v1:out:ref, v2:in:i32, type_id
+              acc: none
+              format: [op_v1_4_v2_4_id_16]
+          description: >
+            Elements of array are initialized to a default value, i.e. 0 for primitive types and null for objects.
+        header-template: ['pandasm_header', 'main']
+        code-template: |
+            #
+                movi v0, 256
+                mov v1, v0
+                newarr v0, v0, %s
+                movi v2, 0 # index
+            loop:
+                lda v2
+                ldarr.obj v0
+                jeqz.obj next_item
+                ldai 1
+                return
+            next_item:
+                inci v2, 1
+                lda v2
+                jne v1, loop
+        description: Check `newarr` creates array of objects which is filled by null.
+        check-type: exit-positive
+        tags: ['tsan']
+        cases:
+          - values:
+            - 'u1[][]'
+          - values:
+            - 'i8[][][]'
+            tags: ['tsan']
+          - values:
+            - 'u8[][][][]'
+          - values:
+            - 'i16[][][][]'
+          - values:
+            - 'u16[][][][][]'
+          - values:
+            - 'i32[][][][][][]'
+            tags: ['tsan']
+          - values:
+            - 'u32[][][][][][][]'
+          - values:
+            - 'f32[][][][][][][][]'
+          - values:
+            - 'f64[][][][][][][][][]'
+          - values:
+            - 'panda.Class[]'
+            tags: ['tsan']
+          - values:
+            - 'panda.Object[]'
+          - values:
+            - 'panda.String[]'
+          - values:
+            - 'panda.ClassCastException[]'
+          - values:
+            - 'R[]'
+            tags: ['tsan']
+
+      - file-name: 'oome_p'
+        isa:
+          exceptions:
+            - x_oom
+        header-template: ['pandasm_header', 'oome_p', 'main']
+        code-template: |
+          #
+              movi v0, 0x7FFFFFFF
+          begin:
+              newarr v0, v0, %s
+          end:
+              ldai 1 # Should not reach this line
+              return
+          catch_OOME:
+              ldai 0 # Expected panda.OutOfMemoryError
+              return
+
+          catch_all:
+              ldai 2 # Unexpected exception, test failed
+              return
+
+          .catch panda.OutOfMemoryError, begin, end, catch_OOME
+          .catchall begin, end, catch_all
+        check-type: none
+
+        description: |
+          Check `newarr` throws OutOfMemoryError in Panda Assembly context.
+          Test assumes that available memory for panda is default limited value.
+
+        cases:
+          - values: ['u1[]']
+          - values: ['i8[]']
+          - values: ['u8[]']
+          - values: ['i16[]']
+            tags: ['tsan']
+          - values: ['u16[]']
+          - values: ['i32[]']
+          - values: ['u32[][]']
+          - values: ['i64[][][]']
+            tags: ['tsan']
+          - values: ['u64[][][][]']
+          - values: ['f32[][][][][]']
+          - values: ['f64[][][][][][]']
+          - values: ['panda.Object[]']
+            tags: ['tsan']
+          - values: ['panda.Class[][]']
+          - values: ['panda.String[][][]']
+          - values: ['panda.ClassCastException[][][][]']
+            tags: ['tsan']
+          - values: ['R[][][][][]']
+

@@ -1,0 +1,513 @@
+# Copyright (c) 2021 Huawei Device Co., Ltd.
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+definitions: []
+tests:
+  - file-name: "and2"
+    isa:
+      title: Two address binary operation on accumulator
+      description: >
+        Perform specified binary operation on accumulator and register and store result into accumulator
+      exceptions:
+        - x_none
+    commands:
+      - file-name: "op_vs_8_zero"
+        isa:
+          instructions:
+            - sig: and2 v:in:i32
+              acc: inout:i32
+              prefix: bit
+              format: [pref_op_v_8]
+        code-template: |
+          #
+              ldai 0
+              movi v0, %s
+              and2 v0
+              movi v0, 0
+              jne v0, set_failure
+              ldai 0
+              jmp fall_through
+          set_failure:
+              ldai 1
+          fall_through:
+        description: Check 'and2' with 0 and various values.
+        cases:
+          - values:
+              - "0"
+          - values:
+              - "1"
+          - values:
+              - "-1"
+          - values:
+              - "0x7FFFFFFF"
+          - values:
+              - "0x80000000"
+          - values:
+              - "-0x7FFFFFFF"
+          - values:
+              - "-0x80000000"
+          - values:
+              - "0xFFFFFFFF"
+          - values:
+              - "-0xFFFFFFFF"
+
+      - file-name: "op_vs_8_pone"
+        isa:
+          instructions:
+            - sig: and2 v:in:i32
+              acc: inout:i32
+              prefix: bit
+              format: [pref_op_v_8]
+        code-template: |
+          #
+              ldai 1
+              movi v0, %s
+              and2 v0
+              movi v0, %s
+              jne v0, set_failure
+              ldai 0
+              jmp fall_through
+          set_failure:
+              ldai 1
+          fall_through:
+        description: Check 'and2' with +1 and various values.
+        cases:
+          - values:
+              - "0"
+              - "0"
+          - values:
+              - "1"
+              - "1"
+          - values:
+              - "-1"
+              - "1"
+          - values:
+              - "0x7FFFFFFF"
+              - "1"
+          - values:
+              - "0x80000000"
+              - "0"
+          - values:
+              - "-0x7FFFFFFF"
+              - "1"
+          - values:
+              - "-0x80000000"
+              - "0"
+          - values:
+              - "0xFFFFFFFF"
+              - "1"
+          - values:
+              - "-0xFFFFFFFF"
+              - "1"
+      - file-name: "op_vs_8_none"
+        isa:
+          instructions:
+            - sig: and2 v:in:i32
+              acc: inout:i32
+              prefix: bit
+              format: [pref_op_v_8]
+        code-template: |
+          #
+              ldai -1
+              movi v0, %s
+              and2 v0
+              movi v0, %s
+              jne v0, set_failure
+              ldai 0
+              jmp fall_through
+          set_failure:
+              ldai 1
+          fall_through:
+        description: Check 'and2' with -1 and various values.
+        cases:
+          - values:
+              - "0"
+              - "0"
+          - values:
+              - "1"
+              - "1"
+          - values:
+              - "-1"
+              - "-1"
+          - values:
+              - "0x7FFFFFFF"
+              - "0x7FFFFFFF"
+          - values:
+              - "0x80000000"
+              - "0x80000000"
+          - values:
+              - "-0x7FFFFFFF"
+              - "-0x7FFFFFFF"
+          - values:
+              - "-0x80000000"
+              - "-0x80000000"
+          - values:
+              - "0xFFFFFFFF"
+              - "0xFFFFFFFF"
+          - values:
+              - "-0xFFFFFFFF"
+              - "-0xFFFFFFFF"
+      - file-name: "op_vs_8_pmax"
+        isa:
+          instructions:
+            - sig: and2 v:in:i32
+              acc: inout:i32
+              prefix: bit
+              format: [pref_op_v_8]
+        code-template: |
+          #
+              ldai 0x7FFFFFFF
+              movi v0, %s
+              and2 v0
+              movi v0, %s
+              jne v0, set_failure
+              ldai 0
+              jmp fall_through
+          set_failure:
+              ldai 1
+          fall_through:
+        description: Check 'and2' with +max and various values.
+        cases:
+          - values:
+              - "0"
+              - "0"
+          - values:
+              - "1"
+              - "1"
+          - values:
+              - "-1"
+              - "0x7FFFFFFF"
+          - values:
+              - "0x7FFFFFFF"
+              - "0x7FFFFFFF"
+          - values:
+              - "0x80000000"
+              - "0"
+          - values:
+              - "-0x7FFFFFFF"
+              - "1"
+          - values:
+              - "-0x80000000"
+              - "0"
+          - values:
+              - "0xFFFFFFFF"
+              - "0x7FFFFFFF"
+          - values:
+              - "-0xFFFFFFFF"
+              - "1"
+
+      - file-name: "op_vs_8_nmax"
+        isa:
+          instructions:
+            - sig: and2 v:in:i32
+              acc: inout:i32
+              prefix: bit
+              format: [pref_op_v_8]
+        code-template: |
+          #
+              ldai -0x80000000
+              movi v0, %s
+              and2 v0
+              movi v0, %s
+              jne v0, set_failure
+              ldai 0
+              jmp fall_through
+          set_failure:
+              ldai 1
+          fall_through:
+        description: Check 'and2' with -max and various values.
+        cases:
+          - values:
+              - "0"
+              - "0"
+          - values:
+              - "1"
+              - "0"
+          - values:
+              - "-1"
+              - "0x80000000"
+          - values:
+              - "0x7FFFFFFF"
+              - "0"
+          - values:
+              - "0x80000000"
+              - "0x80000000"
+          - values:
+              - "-0x7FFFFFFF"
+              - "0x80000000"
+          - values:
+              - "-0x80000000"
+              - "0x80000000"
+          - values:
+              - "0xFFFFFFFF"
+              - "0x80000000"
+          - values:
+              - "-0xFFFFFFFF"
+              - "0"
+
+      - file-name: "vals"
+        isa:
+          instructions:
+            - sig: and2 v:in:i32
+              acc: inout:i32
+              prefix: bit
+              format: [pref_op_v_8]
+        code-template: |
+          #
+              ldai %s
+              movi v0, %s
+              and2 v0
+              movi v0, %s
+              jne v0, set_failure
+              ldai 0
+              jmp fall_through
+          set_failure:
+              ldai 1
+          fall_through:
+        description: Check 'and2' with various values.
+        tags: ['tsan']
+        cases:
+          - values:
+              - "0xA51B315E"
+              - "0x87C8F582"
+              - "0x85083102"
+          - values:
+              - "0x38A75ED8"
+              - "0x7D32F542"
+              - "0x38225440"
+          - values:
+              - "0xBE9510AB"
+              - "0x43500AD6"
+              - "0x2100082"
+          - values:
+              - "0x6B3EBCF0"
+              - "0xDE8EC51C"
+              - "0x4A0E8410"
+          - values:
+              - "0xD0A1860"
+              - "0x5EB6DAA"
+              - "0x50A0820"
+          - values:
+              - "0xD9B646CB"
+              - "0xF6F2454C"
+              - "0xD0B24448"
+          - values:
+              - "0xB3BC65C4"
+              - "0xE8F33B3E"
+              - "0xA0B02104"
+          - values:
+              - "0xD9962D72"
+              - "0xC661F3D4"
+              - "0xC0002150"
+          - values:
+              - "0xC39C6250"
+              - "0x97BB08D2"
+              - "0x83980050"
+          - values:
+              - "0xECFD3116"
+              - "0x59D1C953"
+              - "0x48D10112"
+
+      - file-name: "vals_mod32_1"
+        bugid: ['1324']
+        tags: ['verifier']
+        runner-options: ['verifier-failure', 'verifier-debug-config']
+        isa:
+          instructions:
+            - sig: and2 v:in:i32
+              acc: inout:i32
+              prefix: bit
+              format: [pref_op_v_8]
+        code-template: |
+          #
+              ldai.64 %s
+              movi.64 v0, %s
+              and2 v0
+              movi.64 v0, %s
+              cmp.64 v0
+        description: Check 'and' with incorrect type of registers.
+        cases:
+          - values:
+              - "0x17FFFFFFF"
+              - "0x17FFFFFFF"
+              - "0x7FFFFFFF"
+          - values:
+              - "0x77777777FFFFFFFF"
+              - "0x1111111180000000"
+              - "0xFFFFFFFF80000000"
+          - values:
+              - "0x180000000"
+              - "0x180000000"
+              - "0xFFFFFFFF80000000"
+
+      - file-name: "regs"
+        isa:
+          instructions:
+            - sig: and2 v:in:i32
+              acc: inout:i32
+              prefix: bit
+              format: [pref_op_v_8]
+        runner-options: ['compile-only']
+        code-template: |
+          #
+              and2 %s
+        check-type: none
+        description: Check 'and' with various register numbers.
+        cases:
+          - values:
+              - "v255"
+          - values:
+              - "v256"
+            runner-options: ['compile-failure']
+
+      - file-name: "type"
+        bugid: ["964", "966"]
+        tags: ['verifier']
+        isa:
+          instructions:
+            - sig: and2 v:in:i32
+              acc: inout:i32
+              prefix: bit
+              format: [pref_op_v_8]
+          verification:
+            - acc_type
+            - v1_type
+        runner-options: ['verifier-failure', 'verifier-debug-config']
+        header-template: []
+        code-template: |
+            #
+            .record A {}
+            .record B {}
+            .record panda.String <external>
+            .record panda.Object <external>
+            .function i32 main() {
+                %s
+                *s
+                and2 v0
+                ldai 0
+        check-type: no-check
+        description: Check and2 with incorrect register and accumulator type.
+        template-cases:
+          - values:
+              - ldai.64 0
+          - values:
+              - fldai.64 0
+          - values:
+              - |
+                #
+                    lda.type B
+          - values:
+              - |
+                #
+                    lda.type B[]
+          - values:
+              - |
+                #
+                    lda.type panda.String
+          - values:
+              - |
+                #
+                    lda.type panda.Object
+          - values:
+              - |
+                #
+                    movi v0, 10
+                    newarr v0, v0, i32[]
+                    lda.obj v0
+          - values:
+              - lda.null
+          - values:
+              - ldai 0
+            exclude: [val]
+        cases:
+          - values:
+              - movi.64 v1, 0
+          - values:
+              - fmovi.64 v1, 0
+          - values:
+              - |
+                #
+                    lda.type A
+                    sta.obj v1
+          - values:
+              - |
+                #
+                    lda.type A[]
+                    sta.obj v1
+
+          - values:
+              - |
+                #
+                    lda.type panda.String
+                    sta.obj v1
+          - values:
+              - |
+                #
+                    lda.type panda.Object
+                    sta.obj v1
+          - values:
+              - |
+                #
+                    movi v1, 10
+                    newarr v1, v1, f64[]
+          - values:
+              - mov.null v1
+          - values:
+              - movi v1, 0
+            id: val
+
+      - file-name: uninitialized_regs
+        bugid: ['2260']
+        isa:
+          instructions:
+            - sig: and2 v:in:i32
+              acc: inout:i32
+              prefix: bit
+              format: [pref_op_v_8]
+        description: Check and2 with uninitialized registers.
+        tags: ['verifier']
+        runner-options: ['verifier-failure', 'verifier-debug-config']
+        header-template: []
+        code-template: |
+          #
+          .function i32 main() {
+              %s
+              *s
+              and2 *s
+              ldai 0
+        check-type: no-check
+        template-cases:
+          - values:
+              - ''
+          - values:
+              - ldai 0
+            exclude: [init]
+
+        cases:
+          - values:
+              - ''
+              - v0
+          - values:
+              - movi v1, 0
+              - v1
+            id: init
+          - values:
+              - ''
+              - v8
+          - values:
+              - ''
+              - v15
+          - values:
+              - movi v15, 0
+              - v15
+            id: init

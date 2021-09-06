@@ -1,0 +1,149 @@
+# Copyright (c) 2021 Huawei Device Co., Ltd.
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+# testing of call instructions with different arguments
+
+.record B {}
+
+.function u8 B.Bhandler_unspec(B a0) {
+    return
+}
+
+.function u8 B.Bhandler_short(B a0, u1 a1) {
+    return
+}
+
+.function u8 B.Bhandler_short2(B a0, u1 a1, i64 a2) {
+    return
+}
+
+.function u16 B.Bhandler_long(B a0, i8 a1, i16 a2, i32 a3) {
+    return
+}
+
+.function u16 B.Bhandler_long2(B a0, i8 a1, i16 a2, i32 a3, i64 a4) {
+    return
+}
+
+.function u16 B.Bhandler_range(B a0, i8 a1, i16 a2, i32 a3, i8 a4, i16 a5, i32 a6) {
+    return
+}
+
+.function u16 long_function(i8 a0, i16 a1, i32 a2, i8 a3, i16 a4, i32 a5, i64 a6, f32 a7) {
+    return
+}
+
+# ====================
+
+.function u8 handler_unspec() {
+    return
+}
+
+.function u8 handler_short(u1 a0) {
+    return
+}
+
+.function u8 handler_short2(u1 a0, i64 a1) {
+    return
+}
+
+.function u16 handler_long(i8 a0, i16 a1, i32 a2) {
+    return
+}
+
+.function u16 handler_long2(i8 a0, i16 a1, i32 a2, f64 a3) {
+    return
+}
+
+.function u16 handler_range(i8 a0, i16 a1, i32 a2, i8 a3, i16 a4, i32 a5) {
+    return
+}
+
+# ====================
+
+.function u8 handler_unspec_ext() <external>
+
+.function u8 handler_short_ext(u1 a0) <external>
+
+.function u8 handler_short2_ext(u1 a0, i64 a1) <external>
+
+.function u16 handler_long_ext(i8 a0, i16 a1, i32 a2) <external>
+
+.function u16 handler_long2_ext(i8 a0, i16 a1, i32 a2, f64 a3) <external>
+
+.function u16 handler_range_ext(i8 a0, i16 a1, i32 a2, i8 a3, i16 a4, i32 a5) <external>
+
+.function u1 g(u1 a0) {
+    call.virt B.Bhandler_unspec, v4
+
+    call.virt B.Bhandler_short, v4, v1
+
+    call.virt B.Bhandler_short2, v4, v1, v2
+
+    call.virt B.Bhandler_long, v4, v0, v1, v2
+
+    call.virt.range B.Bhandler_range, v4
+
+    # ====================
+
+    call handler_unspec
+
+    call.short handler_short, v1
+
+    call.short handler_short2, v1, v2
+
+    call handler_long, v0, v1, v2
+
+    call handler_long2, v0, v1, v2, v3
+
+    call.range handler_range, v0
+
+    # ====================
+
+    initobj B.Bhandler_unspec
+
+    initobj.short B.Bhandler_short, v1
+
+    initobj.short B.Bhandler_short2, v1, v2
+
+    initobj B.Bhandler_long, v0, v1, v2
+
+    initobj B.Bhandler_long2, v0, v1, v2, v3
+
+    initobj.range B.Bhandler_range, v0
+
+    # ====================
+
+    call handler_unspec_ext
+
+    call.short handler_short_ext, v1
+
+    call.short handler_short2_ext, v1, v2
+
+    call handler_long_ext, v0, v1, v2
+
+    call handler_long2_ext, v0, v1, v2, v3
+
+    call.range handler_range_ext, v0
+
+    calli.dyn.short 1, v0
+
+    # ====================
+
+    call.acc.short handler_short, v0, 0
+
+    call.acc.short handler_short2, a0, 1
+
+    return
+}
+

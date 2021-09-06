@@ -1,0 +1,223 @@
+# Copyright (c) 2021 Huawei Device Co., Ltd.
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+definitions: []
+tests:
+  - file-name: "movi"
+    isa:
+      title: Move immediate-to-register
+      description: >
+        Move integer immediate into a register. For short formats immediate is sign extended to operand size.
+      exceptions:
+        - x_none
+      verification:
+        - none
+    commands:
+      - file-name: "imm_4_8_16_32"
+        isa:
+          instructions:
+            - sig: movi v:out:i32, imm:i32
+              acc: none
+              format: [op_v_4_imm_4, op_v_8_imm_8, op_v_8_imm_16]
+            - sig: movi v:out:i32, imm:i32
+              acc: none
+              format: [op_v_8_imm_32]
+        description: Check movi with various values.
+        tags: ['tsan']
+        code-template: |
+          #
+              ldai %s
+              movi v0, %s
+              jne v0, set_failure
+              ldai 0
+              jmp fall_through
+          set_failure:
+              ldai 1
+          fall_through:
+        cases:
+          - values:
+              - 0
+              - 0
+          - values:
+              - 1
+              - 1
+          - values:
+              - -1
+              - -1
+          - values:
+              - 0xF
+              - 0xF
+          - values:
+              - -0xF
+              - -0xF
+          - values:
+              - 0x7F
+              - 0x7F
+          - values:
+              - -0x7F
+              - -0x7F
+          - values:
+              - 0xFF
+              - 0xFF
+          - values:
+              - -0xFF
+              - -0xFF
+          - values:
+              - 0x7FFF
+              - 0x7FFF
+          - values:
+              - -0x7FFF
+              - -0x7FFF
+          - values:
+              - 0xFFFF
+              - 0xFFFF
+          - values:
+              - -0xFFFF
+              - -0xFFFF
+          - values:
+              - 0x7FFFFFFF
+              - 0x7FFFFFFF
+          - values:
+              - -0x7FFFFFFF
+              - -0x7FFFFFFF
+          - values:
+              - 0xFFFFFFFF
+              - 0xFFFFFFFF
+          - values:
+              - -0xFFFFFFFF
+              - -0xFFFFFFFF
+          - values:
+              - 0x12345678
+              - 0x12345678
+          - values:
+              - -0x12345678
+              - -0x12345678
+          - values:
+              - 0xFEDCBA98
+              - 0xFEDCBA98
+          - values:
+              - -0xFEDCBA98
+              - -0xFEDCBA98
+          - values:
+              - 0
+              - 0x100000000
+          - values:
+              - 0
+              - -0x100000000
+          - values:
+              - 1
+              - 0x100000001
+          - values:
+              - -1
+              - -0x100000001
+          - values:
+              - 0
+              - 0.1
+            runner-options: [compile-failure]
+            case-check-type: no-check
+            description: Check movi with incorrect value (f64 value).
+          - values:
+              - 0
+              - 1e1
+            runner-options: [compile-failure]
+            case-check-type: no-check
+            description: Check movi with incorrect value (f64 value).
+          - values:
+              - 0
+              - e1
+            runner-options: [compile-failure]
+            case-check-type: no-check
+            description: Check movi with incorrect value (incorrect literal).
+
+      - file-name: "vals"
+        isa:
+          instructions:
+            - sig: movi v:out:i32, imm:i32
+              acc: none
+              format: [op_v_4_imm_4, op_v_8_imm_8, op_v_8_imm_16]
+            - sig: movi v:out:i32, imm:i32
+              acc: none
+              format: [op_v_8_imm_32]
+        code-template: |
+          #
+              ldai %s
+              movi v0, %s
+              jne v0, set_failure
+              ldai 0
+              jmp fall_through
+          set_failure:
+              ldai 1
+          fall_through:
+        description: Check compiler shrinks value to 32 bit.
+        cases:
+          - values:
+              - 0
+              - 0x100000000
+          - values:
+              - 1
+              - 0xFFFFFFFF00000001
+          - values:
+              - 1
+              - 0x100000001
+          - values:
+              - -1
+              - -0x100000001
+          - values:
+              - 0xFFFFFFFFFFFFFFFF
+              - 0xFFFFFFFF
+          - values:
+              - 0xFFFFFFFFFFFFFFFF
+              - 0x12345678FFFFFFFF
+
+      - file-name: "vd_4_8"
+        isa:
+          instructions:
+            - sig: movi v:out:i32, imm:i32
+              acc: none
+              format: [op_v_4_imm_4, op_v_8_imm_8, op_v_8_imm_16]
+            - sig: movi v:out:i32, imm:i32
+              acc: none
+              format: [op_v_8_imm_32]
+        code-template: |
+          #
+              ldai 1
+              movi %s, 1
+              jne %s, set_failure
+              ldai 0
+              jmp fall_through
+          set_failure:
+              ldai 1
+          fall_through:
+        description: Check movi instruction with different register numbers (8 bit).
+        cases:
+          - values:
+              - v0
+              - v0
+          - values:
+              - v1
+              - v1
+          - values:
+              - v15
+              - v15
+          - values:
+              - v16
+              - v16
+          - values:
+              - v255
+              - v255
+          - values:
+              - v256
+              - v0
+            runner-options: [compile-failure]
+            case-check-type: no-check
+            description: Check movi instruction with out-of-range register number.

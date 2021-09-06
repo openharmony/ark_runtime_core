@@ -1,0 +1,151 @@
+# Copyright (c) 2021 Huawei Device Co., Ltd.
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+import("//ark/runtime_core/ark_config.gni")
+import("//build/ohos.gni")
+
+group("ark_packages") {
+  if (host_os != "mac") {
+    deps = [
+      "$ark_root/libpandabase:libarkbase",
+      "$ark_root/libpandafile:libarkfile",
+      "$ark_root/libziparchive:libarkziparchive",
+    ]
+  }
+}
+
+group("ark_host_linux_tools_packages") {
+  if (host_os != "mac") {
+    deps = [
+      "$ark_root/assembler:ark_asm(${host_toolchain})",
+      "$ark_root/disassembler:ark_disasm(${host_toolchain})",
+      "$ark_root/libpandabase:libarkbase(${host_toolchain})",
+      "$ark_root/libpandafile:libarkfile(${host_toolchain})",
+      "$ark_root/libziparchive:libarkziparchive(${host_toolchain})",
+    ]
+  }
+}
+
+group("ark_host_windows_tools_packages") {
+  if (host_os != "mac" && !ark_standalone_build) {
+    deps = [
+      "$ark_root/assembler:ark_asm(//build/toolchain/mingw:mingw_x86_64)",
+      "$ark_root/disassembler:ark_disasm(//build/toolchain/mingw:mingw_x86_64)",
+    ]
+  }
+}
+
+group("ark_host_mac_tools_packages") {
+  if (host_os == "mac") {
+    deps = [
+      "$ark_root/assembler:ark_asm(//build/toolchain/mac:clang_x64)",
+      "$ark_root/disassembler:ark_disasm(//build/toolchain/mac:clang_x64)",
+    ]
+  }
+}
+
+# Common config for ark source
+config("ark_config") {
+  if (!ark_standalone_build) {
+    visibility = [ ":*" ]
+  }
+
+  include_dirs = [ "$ark_root" ]
+  defines = [ "PANDA_ENABLE_LTO" ]
+
+  if (is_linux) {
+    defines += [
+      "PANDA_TARGET_UNIX",
+      "PANDA_TARGET_LINUX",
+      "PANDA_USE_FUTEX",
+    ]
+  } else if (is_mingw) {
+    defines += [
+      "PANDA_TARGET_WINDOWS",
+      "_CRTBLD",
+      "__LIBMSVCRT__",
+    ]
+  } else if (is_mac) {
+    defines += [
+      "PANDA_TARGET_UNIX",
+      "PANDA_TARGET_MACOS",
+      "PANDA_USE_FUTEX",
+    ]
+  } else {
+    defines += [
+      "PANDA_TARGET_UNIX",
+      "PANDA_USE_FUTEX",
+    ]
+    if (!is_standard_system && (current_cpu != "arm" || is_wearable_product)) {
+      defines += [ "PANDA_TARGET_MOBILE" ]
+    }
+  }
+
+  if (!is_debug) {
+    defines += [ "NDEBUG" ]
+  }
+
+  cflags_cc = [
+    "-std=c++17",
+    "-pedantic",
+    "-Wall",
+    "-Wextra",
+    "-Werror",
+    "-Wshadow",
+    "-fno-rtti",
+    "-fno-exceptions",
+    "-Wno-invalid-offsetof",
+
+    "-Wno-gnu-statement-expression",
+    "-Wno-unused-parameter",
+    "-Wno-unused-result",
+  ]
+
+  if (!is_mac && use_pbqp) {
+    cflags_cc += [
+      # PBQP regalloc
+      "-mllvm",
+      "-regalloc=pbqp",
+    ]
+  }
+
+  if (is_debug) {
+    cflags_cc += [
+      "-Og",
+      "-ggdb3",
+    ]
+  }
+
+  if (current_cpu == "arm") {
+    defines += [
+      "PANDA_TARGET_ARM32_ABI_SOFT=1",
+      "PANDA_TARGET_ARM32",
+    ]
+  } else if (current_cpu == "arm64") {
+    defines += [
+      "PANDA_TARGET_ARM64",
+      "PANDA_TARGET_64",
+      "PANDA_ENABLE_GLOBAL_REGISTER_VARIABLES",
+      "PANDA_USE_32_BIT_POINTER",
+    ]
+  } else if (current_cpu == "x86") {
+    defines += [ "PANDA_TARGET_X86" ]
+  } else if (current_cpu == "amd64" || current_cpu == "x64" ||
+             current_cpu == "x86_64") {
+    defines += [
+      "PANDA_TARGET_64",
+      "PANDA_TARGET_AMD64",
+      "PANDA_USE_32_BIT_POINTER",
+    ]
+  }
+}

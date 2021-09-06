@@ -1,0 +1,280 @@
+# Copyright (c) 2021 Huawei Device Co., Ltd.
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+definitions: []
+tests:
+  - file-name: "f64tou64"
+    isa:
+      title: Conversions between integer and floating point types
+      description: >
+        Perform specified primitive type conversion of accumulator.
+      exceptions:
+        - x_none
+    commands:
+      - file-name: "op_none_vals"
+        isa:
+          instructions:
+            - sig: f64tou64
+              acc: inout:f64->u64
+              prefix: cast
+              format: [pref_op_none]
+        code-template: |
+          #
+              fldai.64 %s
+              f64tou64
+              movi.64 v0, %s
+              ucmp.64 v0
+        description: Check f64tou64 with various values.
+        tags: ['tsan']
+        cases:
+          - values:
+              - "0.0"
+              - "0"
+          - values:
+              - "1.0"
+              - "1"
+          - values:
+              - "2.147483647e9"
+              - "0x7fffffff"
+          - values:
+              - "9.223372036854776e18"
+              - "-9223372036854775808"
+          - values:
+            - "18446744073709551615.0"
+            - "-1"
+          - values:
+              - "-0.0"
+              - "0"
+          - values:
+              - "-1.0"
+              - "0"
+          - values:
+              - "-2.147483647e9"
+              - "0"
+          - values:
+              - "-9.223372036854776e18"
+              - "0"
+      - file-name: "op_none_round"
+        isa:
+          instructions:
+            - sig: f64tou64
+              acc: inout:f64->u64
+              prefix: cast
+              format: [pref_op_none]
+          description: It is rounding toward zero.
+        description: Check f64tou64 rounding with various values.
+        code-template: |
+          #
+              fldai.64 %s
+              f64tou64
+              movi.64 v0, %s
+              ucmp.64 v0
+        cases:
+          - values:
+              - "0.1"
+              - "0"
+          - values:
+              - "0.9"
+              - "0"
+          - values:
+              - "0.9999999999"
+              - "0"
+          - values:
+              - "1.1"
+              - "1"
+          - values:
+              - "2.14748364699999e9"
+              - "0x7ffffffe"
+          - values:
+              - "2.14748364799999e9"
+              - "0x7fffffff"
+          - values:
+              - "-0.1"
+              - "0"
+          - values:
+              - "-0.9"
+              - "0"
+
+      - file-name: "op_none_min"
+        isa:
+          instructions:
+            - sig: f64tou64
+              acc: inout:f64->u64
+              prefix: cast
+              format: [pref_op_none]
+          description: If converted integer is less than minimal value for destination type, the result is minimal value for that type.
+        code-template: |
+          #
+              fldai.64 %s
+              f64tou64
+              movi.64 v0, %s
+              ucmp.64 v0
+        description: Check f64tou64 conversion to 0.
+        cases:
+          - values:
+              - "-9.2233720368554776e18"
+              - "0"
+          - values:
+              - "-18446744073709551615.0"
+              - "0"
+          - values:
+              - "-6e100"
+              - "0"
+
+      - file-name: "op_none_max"
+        isa:
+          instructions:
+            - sig: f64tou64
+              acc: inout:f64->u64
+              prefix: cast
+              format: [pref_op_none]
+          description: If converted integer is greater than maximum value for destination type, the result is maximum value for that type.
+        description: Check f64tou64 conversion to 0xFFFFFFFFFFFFFFFF.
+        code-template: |
+          #
+              fldai.64 %s
+              f64tou64
+              movi.64 v0, %s
+              ucmp.64 v0
+        cases:
+          - values:
+              - "18446744073709551615.0"
+              - "-1"
+          - values:
+              - "18446744073709551616.0"
+              - "-1"
+          - values:
+              - "6e100"
+              - "-1"
+
+      - file-name: "op_none_pinf"
+        isa:
+          instructions:
+            - sig: f64tou64
+              acc: inout:f64->u64
+              prefix: cast
+              format: [pref_op_none]
+          description: If source is positive infinity, the result is maximum value for destination type.
+        description: Check f64tou64 conversion +inf to 0xFFFFFFFFFFFFFFFF.
+        code-template: |
+          #
+              fldai.64 0x7ff0000000000000 # +Inf
+              f64tou64
+              movi.64 v0, 0xffffffffffffffff
+              ucmp.64 v0
+
+      - file-name: "op_none_ninf"
+        isa:
+          instructions:
+            - sig: f64tou64
+              acc: inout:f64->u64
+              prefix: cast
+              format: [pref_op_none]
+          description: If source is negative infinity, the result is minimal value for destination type.
+        description: Check f64tou64 conversion -inf to 0.
+        code-template: |
+          #
+              fldai.64 0xfff0000000000000 # -Inf
+              f64tou64
+              movi.64 v0, 0
+              ucmp.64 v0
+
+      - file-name: "op_none_nan"
+        isa:
+          instructions:
+            - sig: f64tou64
+              acc: inout:f64->u64
+              prefix: cast
+              format: [pref_op_none]
+          description: If source is NaN, the result is equal to 0.
+        code-template: |
+          #
+              fldai.64 %s
+              f64tou64
+              movi.64 v0, 0
+              ucmp.64 v0
+        description: Check f64tou64 conversion of NaN to 0.
+        cases:
+          - values:
+              # NaN
+              - "0x7ff8000000000000"
+          - values:
+              # Other NaN representation
+              - "0xFFFFFFFFFFFFFFFF"
+
+      - file-name: "type"
+        isa:
+          instructions:
+            - sig: f64tou64
+              acc: inout:f64->u64
+              prefix: cast
+              format: [pref_op_none]
+          verification:
+              - acc_type
+        description: |
+          Check `f64tou64` with incorrect accumulator type.
+          Load different values (objects, strings, types, 32-bit values, 64-bit integer values) and invokes `f64tou64`.
+          Return 0 to indicate that negative test failed, because this line is unreachable and code will not be executed after verification error.
+        runner-options: ['verifier-failure', 'verifier-debug-config']
+        bugid: ["964", "1653"]
+        tags: ["verifier"]
+        header-template: []
+        code-template: |
+            #
+            .record B {}
+            .record panda.String <external>
+            .record panda.Object <external>
+            .function i32 main() {
+                %s
+                f64tou64
+        check-type: exit-positive
+        cases:
+            - values:
+                - ldai 0
+            - values:
+                - ldai.64 0
+            - values:
+                - lda.type B
+            - values:
+                - lda.type B[]
+            - values:
+                - lda.type panda.String
+            - values:
+                - lda.str "string"
+            - values:
+                - lda.type panda.Object
+            - values:
+                - |
+                  #
+                      movi v0, 10
+                      newarr v0, v0, i32[]
+                      lda.obj v0
+            - values:
+                - lda.null
+
+      - file-name: uninitialized_regs
+        isa:
+          instructions:
+            - sig: f64tou64
+              acc: inout:f64->u64
+              prefix: cast
+              format: [pref_op_none]
+        description: Check i32tof64 with uninitialized accumulator.
+        tags: ['verifier']
+        runner-options: ['verifier-failure', 'verifier-debug-config']
+        header-template: []
+        code-template: |
+            #
+            .function i32 main() {
+                f64tou64
+        check-type: exit-positive

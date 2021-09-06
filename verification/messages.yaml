@@ -1,0 +1,687 @@
+# Copyright (c) 2021 Huawei Device Co., Ltd.
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+namespace: panda::verifier
+component: verifier
+enum_name: VerifierMessage
+default_level: error
+messages:
+  DebugType:
+    number: 300
+    level: debug
+    args: type
+    message: ( type is '${type}' )
+
+  DebugConstructor:
+    number: 301
+    level: debug
+    args: constructor
+    message: ( constructor is '${constructor}' )
+
+  DebugArrayConstructor:
+    number: 302
+    level: debug
+    message: ( constructor is array constructor )
+
+  DebugField:
+    number: 303
+    level: debug
+    args: field
+    message: ( field is '${field}' )
+
+  DebugField2:
+    number: 304
+    level: debug
+    args: field
+    message: Field is '${field}'.
+
+  DebugMethod:
+    number: 305
+    level: debug
+    args: method
+    message: ( method is '${method}' )
+
+  DebugBuiltin:
+    number: 306
+    level: debug
+    args: name
+    message: "builtin: ${name}"
+
+  DebugResult:
+    number: 307
+    level: debug
+    args: result
+    message: result = '${result}'
+
+  DebugRegisters:
+    number: 308
+    level: debug
+    args: prefix, registers
+    message: ${prefix} { ${registers} }
+
+  DebugStoreField:
+    number: 309
+    level: debug
+    args: field, field_type, acc_type, subtypes, field_subtypes
+    message: >
+      Field is '${field}'. Field type is '${field_type}'. Accumulator type is '${acc_type}'.
+      Compatible subtypes are: ${subtypes}. Types that can be stored without data loss are: ${field_subtypes}.
+
+  DebugMethodVerification:
+    number: 310
+    level: debug
+    args: method
+    message: Verification of method '${method}'.
+
+  DebugCodeBlockVerification:
+    number: 311
+    level: debug
+    args: address, entry_type
+    message: >
+      Verification of code block at address:
+      ${std::hex << std::setw(sizeof(uint32_t) * 2) << std::setfill('0') << address << std::dec << std::setw(0)}
+      (${entry_type}).
+
+  DebugExceptionHandlerCommonContextComputation:
+    number: 312
+    level: debug
+    args: address, maybe_exception, try_block_start, try_block_end
+    message: >
+      ${std::hex << std::setw(sizeof(uint32_t) * 2) << std::setfill('0')}
+      Computing common context for exception handler at address: ${address}${maybe_exception}
+      (try block scope is [${try_block_start}, ${try_block_end}]).${std::dec << std::setw(0)}
+
+  DebugFunctionReturnAndAccumulatorTypes:
+    number: 313
+    level: debug
+    args: return_type, acc_type
+    message: >
+      Function return type: '${return_type}'. Value type in accumulator: '${acc_type}'.
+
+  DebugFunctionReturnAndAccumulatorTypesWithCompatibleTypes:
+    number: 314
+    level: debug
+    args: return_type, acc_type, compatible_acc_types
+    message: >
+      Function return type: '${return_type}'. Value type in accumulator: '${acc_type}'.
+      Compatible accumulator types are: ${compatible_acc_types}.
+
+  DebugCallParameterTypes:
+    number: 315
+    level: debug
+    args: name, maybe_reg, actual_type, formal_type
+    message: >
+      In a call to '${name}'. ${maybe_reg}Actual type: '${actual_type}'. Formal type: '${formal_type}'.
+
+  DebugCallFromTo:
+    number: 316
+    level: debug
+    args: name_from, name_to
+    message: >
+      Call from '${name_from}' to '${name_to}'.
+
+  DebugRegisterChanged:
+    number: 317
+    level: debug
+    args: register, prev_atv_image, new_atv_image
+    message: " reg changed: ${register}    ${prev_atv_image} => ${new_atv_image}"
+
+  DebugAbsIntLogInstruction:
+    number: 318
+    level: debug
+    args: instruction
+    message: >
+      ABSINT: ${std::hex << std::setw(sizeof(uint32_t) * 2) << std::setfill('0') << instruction.GetOffset() << std::dec << ": " << instruction}
+
+  InvalidInstruction:
+    number: 64
+    level: error
+    message: >
+      Abstract interpretation stuck at invalid instruction.
+
+  BadId:
+    number: 1
+    args: kind, id
+    short_message: Bad ${#kind} id
+    message: Cannot resolve ${#kind} with id=${std::hex << id << std::dec}.
+
+  BadRegisterType:
+    number: 2
+    args: reg, reg_type, target_types, subtypes
+    message: >
+      ${reg} is of wrong type: '${reg_type}'. Expected a subtype of one from ${target_types}. Compatible subtypes are:
+      ${subtypes}.
+
+  LdaTypeBadLanguage:
+    number: 3
+    short_message: lda.type may be used only in Panda or Java methods
+
+  AlwaysNpe:
+    number: 4
+    level: warning
+    args: reg
+    short_message: always NPE in register
+    message: constant null in register v${reg}. NPE exception will always be thrown here. Accumulator type is not known.
+
+  AlwaysNpeAccumulator:
+    number: 5
+    level: warning
+    short_message: always NPE in accumulator
+    message: constant null in accumulator. NPE exception will always be thrown here.
+
+  BadArrayElementType:
+    number: 6
+    args: type, expected_type, subtypes
+    message: >
+      Wrong array element type '${type}'. Expected a subtype of '${expected_type}'. Compatible subtypes are: ${subtypes}.
+
+  BadArrayElementType2:
+    number: 7
+    args: type, expected_type
+    message: >
+      Wrong type of array elements '${type}'. Expected '${expected_type}'.
+
+  BadArrayElementType3:
+    number: 8
+    args: type, expected_types
+    message: >
+      Wrong type of array elements '${type}'. Expected one of ${expected_types}.
+
+  ArrayOfNonArrayType:
+    number: 9
+    args: type, array_types
+    message: >
+      Cannot create array of non-array type '${type}'. Possible types are ${array_types}.
+
+  ObjectOfNonObjectType:
+    number: 10
+    args: type, object_types
+    message: >
+      Cannot create object of non-object type '${type}'. Possible types are ${object_types}.
+
+  CannotResolveFieldType:
+    number: 11
+    args: field
+    message: >
+      Cannot resolve field type. Field is '%{field}'
+
+  ExpectedStaticOrInstanceField:
+    number: 12
+    args: is_static
+    short_message: >
+      Expected ${(is_static ? "static" : "instance")} field.
+
+  InconsistentRegisterAndFieldTypes:
+    number: 13
+    args: field, reg_idx, obj_type, field_obj_type, field_obj_subtypes
+    message: >
+      Inconsistency between type in register and field class type. Field is '${field}'.
+      Type in register v${reg_idx} is '${obj_type}'.
+      But expected type is '${field_obj_type}'.
+      Compatible subtypes are ${field_obj_subtypes}.
+
+  UnexpectedFieldType:
+    number: 14
+    args: field, field_type, field_obj_type, expected_subtypes
+    message: >
+      Field type is not expected one. Field is '${field}'.
+      Field type is '${field_type}'.
+      Expected a subtype of '${field_obj_type}'.
+      Compatible subtypes are ${expected_subtypes}.
+
+  BadAccumulatorReturnValueType:
+    number: 15
+    args: acc_type, expected_types
+    message: >
+      Wrong return value type (in accumulator): '${acc_type}'. Compatible types are: ${expected_types}.
+
+  BadAccumulatorReturnValueTypeWithSubtype:
+    number: 16
+    args: acc_type, expected_type, expected_types
+    message: >
+      Wrong return value type (in accumulator): '${acc_type}'. Expected a subtype of '${expected_type}'.
+      Compatible subtypes are: ${expected_types}.
+
+  BadReturnInstructionType:
+    number: 17
+    args: suffix, return_type, expected_type, subtypes
+    message: >
+      Incorrect 'return${suffix}' instruction. The type of method return value '${return_type}' is not a subtype of
+      '${expected_type}'. Compatible types are: ${subtypes}.
+
+  BadReturnVoidInstructionType:
+    number: 18
+    args: return_type
+    message: >
+      Incorrect 'return.void' instruction. The type of method return value '${return_type}' is not 'void'.
+
+  CheckCastToNonObjectType:
+    number: 19
+    args: type, possible_types
+    message: >
+      Wrong type for 'checkcast'. It is a non-object type '${type}'. Possible types are ${possible_types}.
+
+  NonObjectAccumulatorType:
+    number: 20
+    message: Accumulator is not a reference to an object.
+
+  AccumulatorAlwaysNull:
+    number: 21
+    level: warning
+    message: Accumulator constantly holds 'null' value. It may be a sign of possible error here.
+
+  RedundantCheckCast:
+    number: 22
+    level: warning
+    args: acc_type, type
+    message: >
+      Accumulator type '${acc_type}' is always a subtype of '${type}'. Checkcast is redundant here. It may be a sign of
+      possible error here.
+
+  ImpossibleCheckCast:
+    number: 23
+    level: warning
+    args: acc_type, possible_types
+    message: >
+      Accumulator is of incompatible type '${acc_type}'. Possible types are ${possible_types}.
+      Instruction 'checkcast' will always throw an exception here. It may be a sign of possible error here.
+
+  ImpossibleArrayCheckCast:
+    number: 24
+    level: warning
+    args: acc_elt_type, possible_types
+    message: >
+      Element type in array in accumulator is of incompatible type '${acc_elt_type}'. Possible types are
+      ${possible_types}. Instruction 'checkcast' will always throw an exception here. It may be a sign of
+      possible error here.
+
+  PossiblyIncompatibleAccumulatorType:
+    number: 25
+    level: warning
+    args: acc_type, possible_types
+    message: >
+      Accumulator seems to be of incompatible type '${acc_type}'. Possible types are ${possible_types}.
+      It may be a sign of possible error here.
+
+  BadIsInstanceInstruction:
+    number: 26
+    args: type, possible_types
+    message: >
+      Wrong type for 'isinstance'. It is a non-object/non-array type '${type}'. Possible types are ${possible_types}.
+
+  RedundantIsInstance:
+    number: 27
+    level: warning
+    args: acc_type, type
+    message: >
+      Accumulator type '${acc_type}' is always a subtype of '${type}'. Result of 'isinstance' is always one.
+      It may be a sign of possible error here.
+
+  ImpossibleIsInstance:
+    number: 28
+    level: warning
+    args: acc_type, possible_types
+    message: >
+      Accumulator is of incompatible type '${acc_type}'. Possible types are ${possible_types}.
+      Result of 'isinstance' is always zero. It may be a sign of possible error here.
+
+  ImpossibleArrayIsInstance:
+    number: 29
+    level: warning
+    args: acc_elt_type, possible_types
+    message: >
+      Element type in array in accumulator is of incompatible type '${acc_elt_type}'. Possible types are
+      ${possible_types}. It may be a sign of possible error here.
+
+  BadCallUndefinedRegister:
+    number: 30
+    args: name, reg_idx
+    message: >
+      Cannot make a call to '${name}' because of undefined register ${reg_idx}.
+
+  BadCallIncompatibleParameter:
+    number: 31
+    args: name, register, actual_type, expected_type
+    message: >
+      Cannot make a call to '${name}'. ${register} is physically incompatible with formal parameter.
+      ${register} physical type is '${actual_type}'. But the expected physical type is '${expected_type}'.
+
+  BadCallFormalIsBot:
+    number: 32
+    args: name, actual_type
+    message: >
+      Cannot make a call to '${name}'. Formal parameter is of type 'Bot', but actual parameter is of type ${actual_type}.
+
+  CallFormalActualBothBotOrTop:
+    number: 33
+    level: warning
+    args: type
+    message: >
+      Warning: formal and actual parameters are of type '${type}'.
+
+  CallFormalTop:
+    number: 34
+    level: warning
+    message: "Warning: formal parameter is of type 'Top'. Accepted any type of actual parameter."
+
+  CallFormalActualDifferent:
+    number: 35
+    level: warning
+    args: formal_type, actual_type, subtypes
+    message: >
+      Warning: formal type is '${formal_type}' but actual is '${actual_type}'. Actual type is inexact one, it may be one
+      of ${subtypes}. It may be so because of different paths through this code carrying different primitive type in
+      register, like in one path type is u16, in another - i32. It is not an error, but there may be potential problems
+      with rounding/precision/signedness/overflow etc.
+
+  BadCallIncompatibleLambdaType:
+    number: 36
+    args: name, reg, actual_type, physical_actual_type, formal_type, physical_formal_type
+    message: >
+      Cannot make a call to '${name}'. Actual lambda type ${reg}'${actual_type}' (physical type '${physical_actual_type}')
+      is not compatible with formal lambda type '${formal_type}' (physical type '${physical_formal_type}').
+
+  BadCallWrongRegister:
+    number: 37
+    args: name, reg_idx
+    message: >
+      Cannot make a call to '${name}' because of wrong type in register v${reg_idx}.
+
+  BadCallWrongParameter:
+    number: 38
+    args: name, actual_type, formal_type
+    message: >
+      Cannot make a call to '${name}' because of wrong type in actual parameter. Actual type: '${actual_type}'.
+      Formal type: '${formal_type}'.
+
+  BadCallTooFewParameters:
+    number: 39
+    args: name
+    message: >
+      Cannot make a call to '${name}' because of insufficient actual parameters.
+
+  BadCallStaticMethodAsVirtual:
+    number: 40
+    args: name
+    message: >
+      Attempt to call static method '${name}' as virtual.
+
+  BadAccumulatorType:
+    number: 41
+    args: acc_type, expected_type, subtypes
+    message: >
+      Wrong type of accumulator '${acc_type}'. Expected a subtype of '${expected_type}'. Compatible subtypes are ${subtypes}.
+
+  BadAccumulatorType2:
+    number: 42
+    args: acc_type, expected_types
+    message: >
+      Wrong type of accumulator '${acc_type}'. Expected one of ${expected_types}.
+
+  BadAccumulatorType3:
+    number: 43
+    level: warning
+    args: acc_type, expected_types
+    message: >
+      Accumulator type '${acc_type}' does not exactly match array element type. Expected one of ${expected_types}.
+
+  IncorrectJump:
+    number: 44
+    message: Incorrect jump. Should be ruled out on Cflow check, but was not. Internal error.
+
+  RegisterConflictHeader:
+    number: 45
+    level: warning
+    message: >
+      Warning: source and destination context are incompatible. Conflicting regs are:
+
+  RegisterConflict:
+    number: 46
+    level: debug
+    args: register, src_type, dst_type
+    message: >
+      ${register}: '${src_type}' (source) vs. '${dst_type}' (destination).
+
+  BadArrayConstructorName:
+    number: 47
+    args: name
+    message: Unexpected array ctor name '${name}', expected '<init>'.
+
+  TooFewArrayConstructorArgs:
+    number: 48
+    args: args_num
+    message: Insufficient arguments to array ctor. Expected ${args_num} more args.
+
+  UndefinedRegister:
+    number: 49
+    args: register
+    message: ${register} is undefined.
+
+  RegisterTypeConflict:
+    number: 50
+    args: register
+    message: There was a type conflict on ${register}. It cannot be used.
+
+  CommonContextInconsistentRegisterHeader:
+    number: 51
+    level: debug
+    message: >
+      Common context for try block scope has following inconsistent registers:
+
+  CannotFindClassDefinitionForMethodParameter:
+    number: 52
+    args: class_name, method_name, class_id
+    message: >
+      Cannot find class definition for method parameter. Method '${class_name}.${method_name}'.
+      Class id: ${std::hex << class_id << std::dec}.
+
+  CacheMissForClassAtOffset:
+    number: 53
+    args: offset
+    message: Class is not found in cache for offset 0x${std::hex << offset}
+
+  CannotResolveClassId:
+    number: 63
+    args: class_id
+    message: >
+      Cannot resolve class id 0x${class_id}
+
+  CacheMissForMethodAtOffset:
+    number: 54
+    args: offset
+    message: Method is not found in cache for offset 0x${std::hex << offset}
+
+  CannotResolveMethodId:
+    number: 62
+    args: method_id
+    message: >
+      Cannot resolve method id 0x${method_id}
+
+  CacheMissForFieldAtOffset:
+    number: 55
+    args: offset
+    message: Field is not found in cache for offset 0x${std::hex << offset}
+
+  CannotResolveFieldId:
+    number: 61
+    args: field_id
+    message: >
+      Cannot resolve field id 0x${field_id}
+
+  JavaTypesMethodArgWasNotResolved:
+    number: 56
+    args: method_name
+    message: Argument of method '${method_name}' was not resolved at caching stage (class was not found)
+
+  JavaTypesMethodArgCannotBeProcessed:
+    number: 57
+    args: method_name
+    message: Internal error. Cannot process argument of method '${method_name}'
+
+  JavaTypesMethodArgCannotBeConvertedToType:
+    number: 58
+    args: method_name
+    message: Internal error. Cannot convert argument of method '${method_name}' to type
+
+  JavaTypesArrayComponentTypeIsUndefined:
+    number: 59
+    message: Array component type is undefined
+
+  JavaTypesCannotConvertTypeIdToType:
+    number: 60
+    args: type_id
+    message: Cannot get type for TypeId 0x${std::hex << static_cast<size_t>(id)}. Unknown primitive type
+
+  CflowInvalidJumpTarget:
+    number: 1000
+    args: method_name, jump_target_offset, jump_instruction_offset, details
+    message: >
+      Invalid jump target.
+      Method: '${method_name}'.
+      Jump target offset: ${jump_target_offset}.
+      Jump instruction offset: ${jump_instruction_offset}.
+      Details: '${msg}'.
+
+  CflowBodyFallIntoExcHandler:
+    number: 1001
+    args: method_name, instruction_offset
+    message: >
+      Invalid instruction in the method body, execution may go into exception handler.
+      Method: '${method_name}'.
+      Instruction offset: ${instruction_offset}.
+
+  CflowInvalidLastInstOfExcHandlerFallIntoOtherExcHandler:
+    number: 1002
+    args: method_name, handler_start_offset, handler_end_offset
+    message: >
+      Invalid last instruction of exception handler.
+      Control flow may go into other exception handler.
+      Method: '${method_name}'.
+      Handler offsets: [ ${handler_start_offset}, ${handler_end_offset} ].
+
+  CflowInternalError:
+    number: 1003
+    message: Internal error. Sorry.
+
+  CflowInvalidInstruction:
+    number: 1004
+    args: offset
+    message: >
+      Invalid instruction.
+      Instruction offset: ${offset}.
+
+  CflowInvalidJumpIntoMiddleOfInstruction:
+    number: 1005
+    args: jump_target_offset, jump_instruction_offset
+    message: >
+      Invalid jump. Jump into middle of instruction.
+      Jump instruction offset: ${jump_instruction_offset}.
+      Jump target offset: ${jump_target_offset}.
+
+  CflowInvalidJump:
+    number: 1006
+    args: jump_target_offset, jump_instruction_offset
+    message: >
+      Invalid jump.
+      Jump instruction offset: ${jump_instruction_offset}.
+      Jump target offset: ${jump_target_offset}.
+
+  CflowCannotFillInstructionsMap:
+    number: 1008
+    message: Cannot fill instructions map of the method.
+
+  CflowCannotFillJumpsMap:
+    number: 1009
+    message: Cannot fill jumps map of the method.
+
+  CflowExcHandlerInfo:
+    number: 1010
+    level: debug
+    args: address, try_block_scope, exception_class
+    message: >
+      Exception handler at address: ${address}.
+      Try block scope: ${try_block_scope}.
+      Exception class: '${exception_class}'.
+
+  CflowCannotCacheExcClass:
+    number: 1011
+    args: exc_class_name
+    message: Cannot cache exception class '${exc_class_name}'.
+
+  CflowCannotCheckExcHandlerDueToSize:
+    number: 1012
+    level: debug
+    message: Exception handler cannot be checked for cflow due to unknown size.
+
+  CflowCannotClearMarksOfExcHandlerBlock:
+    number: 1013
+    message: Cannot clear marks of exception handler code block.
+
+  CflowCannotFillJumpsOfExcHandlerBlock:
+    number: 1014
+    message: Cannot fill jumps map of the exception handler code block.
+
+  CflowCannotFillJumpsOfCodeBlock:
+    number: 1015
+    args: offset_start, offset_end
+    message: >
+      Cannot fill jumps map of the code block in the method body.
+      Code block: [ ${offset_start}, ${offset_end} ].
+
+  DebugBreakpointSetInfo:
+    number: 2000
+    level: debug
+    args: hash, id, offset
+    message: >
+      Breakpoint set for method name hash 0x${std::hex << hash}, id 0x${id}, offset 0x${offset}.
+
+  DebugBreakpointWrongCfgLine:
+    number: 2001
+    args: line
+    message: >
+      Wrong breakpoint line: '${line}'
+
+  DebugBreakpointAddedInfo:
+    number: 2002
+    level: debug
+    args: method_name, hash, offset
+    message: >
+      Added config for managed breakpoint for '${method_name}' (hash 0x${std::hex << hash}), offset 0x${offset}.
+
+  DebugBreakpointWrongSection:
+    number: 2003
+    args: section_name
+    message: Wrong debug breakpoints section '${section_name}'.
+
+  DebugConfigWrongOptionsSection:
+    number: 2004
+    args: section_name, expected_sections
+    message: >
+      Wrong debug verifier options section '${section_name}', expected [${expected_sections}].
+
+  DebugConfigWrongOptionsLine:
+    number: 2005
+    args: line
+    message: Wrong options line '${line}'.
+
+  DebugConfigWrongOptionForSection:
+    number: 2006
+    args: option, section_name, expected_options
+    message: >
+      Wrong option '${option}' for section '${section_name}', expected [${expected_options}].
+
+  DebugConfigOptionIsActiveInfo:
+    number: 2007
+    level: debug
+    args: section, option
+    message: Option '${section}:${option}' is active.

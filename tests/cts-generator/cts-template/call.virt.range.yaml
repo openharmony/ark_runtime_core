@@ -1,0 +1,815 @@
+# Copyright (c) 2021 Huawei Device Co., Ltd.
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+---
+definitions:
+  - name: java
+    template: >
+      .language Java
+  - name: R_xorshift32
+    template: |
+      #
+      # Next random number
+      # x = R.currentValue
+      # x ^= x << 13;
+      # x ^= x >> 17;
+      # x ^= x << 5;
+      # R.currentValue = x
+      # return x
+      .function i32 R.nextRand(R a0) {
+          ldobj a0, R.currentValue
+          sta v0
+          sta v1
+          movi v2, 0xd
+          shl v1, v2
+          sta v1
+          xor v0, v1
+          sta v0
+          sta v1
+          movi v2, 0x11
+          ashr v1, v2
+          sta v1
+          xor v0, v1
+          sta v0
+          sta v1
+          movi v2, 0x5
+          shl v1, v2
+          sta v1
+          xor v0, v1
+          stobj a0, R.currentValue
+          return
+      }
+tests:
+  - file-name: call.virt.range
+    isa:
+      instructions:
+        - sig: call.virt.range method_id, v:in:top
+          acc: out:top
+          format: [op_v_8_id_16]
+      title: Object calls
+      description: >
+        Call indicated object method, i.e. create new frame, pass values of arguments and
+        continue execution from the first instruction of a method.
+        Callee should treat accumulator value as undefined and cannot use it until accumulator
+        definition in the new frame.
+        Result (if any) is returned in accumulator (see 'Calling sequence' chapter for more details).
+        Method, its class and the number of argument is resolved by given method_id in runtime
+        constant-pool based on object reference using language-specific semantics (currently only Java
+        virtual methods are supported, further extensions are TBD).
+        Object reference is passed in the first source register, arguments are passed starting from
+        the second source register in the same order as in method signature.
+        Non-range instructions can be used to pass up to 4 arguments (including object reference).
+        Unused register slot values will be discarded and corresponding registers will not be
+        passed to the callee).
+        For methods with more arguments range kinds of instruction are to be used, which takes
+        the needed number of arguments starting from 'vs' register (including object reference).
+      verification:
+        - method_id_non_static
+        - compatible_arguments
+        - method_id_accessible
+      exceptions:
+        - x_null
+        - x_abstract
+    commands:
+      - file-name: incorrect_type
+        isa:
+          instructions:
+            - sig: call.virt.range method_id, v:in:top
+              acc: out:top
+              format: [op_v_8_id_16]
+          description: >
+            Call indicated object method, i.e. create new frame, pass values of arguments and
+            continue execution from the first instruction of a method.
+        header-template: []
+        description: >
+          Compiler test for call.virt.range that check virtual or static method with incorrect type of object in register.
+        code-template: |
+          %s
+
+          .record A {}
+
+          .function void A.constructor(A a0) <ctor> {
+              return.void
+          }
+
+          *s
+          .function void A.foo(A a0*s) %s {
+              return.void
+          }
+
+          .function i32 main() {
+              initobj.short A.constructor
+              *s
+              call.virt.range A.foo*s
+        check-type: none
+        runner-options: [compile-only]
+        template-cases:
+          - values: ['', '']
+            exclude: ['jobj']
+          - values: ['', '<static>']
+            exclude: ['jstr']
+
+        cases:
+          - values:
+            - ''
+            - ', i32 a1'
+            - movi v0, 0
+            - ', v0'
+          - values: ['','','','']
+            runner-options: [compile-failure]
+          - values:
+            - ''
+            - ', f64 a1'
+            - fmovi.64 v0, 0
+            - ', v0'
+          - values:
+            - ''
+            - ', i64 a1'
+            - movi.64 v0, 0
+            - ', v0'
+          - values:
+            - '.record java.lang.Object <external>'
+            - ', java.lang.Object a1'
+            - |
+              #
+                  newobj v0, java.lang.Object
+            - ', v0'
+            id: jobj
+          - values:
+            - '.record java.lang.String <external>'
+            - ', java.lang.String a1'
+            - 'lda.str "some string"'
+            - ', v0'
+            id: jstr
+          - values:
+            - '.record panda.Object <external>'
+            - ', panda.Object a1'
+            - |
+              #
+                  newobj v0, panda.Object
+            - ', v0'
+            id: pobj
+          - values:
+            - '.record panda.String <external>'
+            - ', panda.String a1'
+            - 'lda.str "some string"'
+            - ', v0'
+            id: pstr
+
+      - file-name: p_method_call_args_many
+        isa:
+          instructions:
+            - sig: call.virt.range method_id, v:in:top
+              acc: out:top
+              format: [op_v_8_id_16]
+        header-template: [R_xorshift32]
+        description: >
+            Invoke virtual method with different pseudo-random values and check if correct value is stored in object field. Check i32, i64, f64 and reference types.
+            Use PandaAssembly language context.
+        tags: ['tsan']
+        code-template: |
+            ##- Object definition
+            .record R {
+                i32            currentValue
+            %s
+            }
+
+            .function void R.constructor(R a0) <ctor> {
+                return.void
+            }
+
+            ##- Template of function that get several arguments and stores to Object
+            .function void R.storeValues(R a0, %s) {
+                %s
+                return.void
+            }
+
+            .function u32 R.test(R a0) {
+                ##- Test - generate pseudo-random values, store to registers as primitive/objects and invoke R.storeValue
+                %s
+            }
+
+            .function u32 main() {
+                # Create R object
+                initobj.short R.constructor
+                # Keep it in v0
+                sta.obj v0
+                # Iterations
+                movi v1, 10
+                ##- First value of pseudorandom generator - store to R.currentValue
+                ldai *s
+                stobj v0, R.currentValue
+            loop:
+                call.virt.range R.test, v0
+                jnez exit_err
+                inci v1, -1
+                lda v1
+                jnez loop
+                ldai 0
+                return
+            exit_err:
+                ldai 1
+                return
+        check-type: none
+        template-cases:
+            - values:
+              - |
+                #
+                    i32 f1
+                    i32 f2
+                    i32 f3
+              - i32 a1, i32 a2, i32 a3
+              - |
+                #
+                    lda a1
+                    stobj a0, R.f1
+                    lda a2
+                    stobj a0, R.f2
+                    lda a3
+                    stobj a0, R.f3
+              - |
+                # Get next random number
+                    mov.obj v0, a0
+                    call.virt.range R.nextRand, v0
+                    sta v0
+                    mov v4, v0
+                    mov.obj v0, a0
+                    call.virt.range R.nextRand, v0
+                    sta v0
+                    mov v5, v0
+                    mov.obj v0, a0
+                    call.virt.range R.nextRand, v0
+                    sta v0
+                    mov v6, v0
+                    mov.obj v0, a0
+                    mov v1, v4
+                    mov v2, v5
+                    mov v3, v6
+                    call.virt.range R.storeValues, v0
+                    mov v0, v4
+                    mov.obj v1, a0
+                    ldobj v1, R.f1
+                    sta v1
+                    lda v0
+                    jeq v1, jump_label_0
+                    movi v0, 0x1
+                    lda v0
+                    return
+                    jump_label_0: mov v0, v5
+                    mov.obj v1, a0
+                    ldobj v1, R.f2
+                    sta v1
+                    lda v0
+                    jeq v1, jump_label_1
+                    movi v0, 0x1
+                    lda v0
+                    return
+                    jump_label_1: mov v0, v6
+                    mov.obj v1, a0
+                    ldobj v1, R.f3
+                    sta v1
+                    lda v0
+                    jeq v1, jump_label_2
+                    movi v0, 0x1
+                    lda v0
+                    return
+                    jump_label_2: movi v0, 0x0
+                    lda v0
+                    return
+            - values:
+              - |
+                #
+                    i32 f1
+                    i32 f2
+                    i32[] f3
+                    f64[] f4
+                    i32[] f5
+                    f64 f6
+                    f64[] f7
+              - i32 a1, i32 a2, i32[] a3, f64[] a4, i32[] a5, f64 a6, f64[] a7
+              - |
+                #
+                   lda a1
+                   stobj a0, R.f1
+                   lda a2
+                   stobj a0, R.f2
+                   lda.obj a3
+                   stobj.obj a0, R.f3
+                   lda.obj a4
+                   stobj.obj a0, R.f4
+                   lda.obj a5
+                   stobj.obj a0, R.f5
+                   lda.64 a6
+                   stobj.64 a0, R.f6
+                   lda.obj a7
+                   stobj.obj a0, R.f7
+              - |
+                # Get next random number
+                    mov.obj v0, a0
+                    call.virt.range R.nextRand, a0
+                    sta v0
+                    mov v9, v0
+                    mov.obj v0, a0
+                    call.virt.range R.nextRand, a0
+                    sta v0
+                    mov v10, v0
+                    mov.obj v0, a0
+                    call.virt.range R.nextRand, a0
+                    sta v0
+                    movi v1, 0xff
+                    and v1, v0
+                    sta v0
+                    newarr v0, v0, i32[]
+                    mov.obj v11, v0
+                    mov.obj v0, a0
+                    call.virt.range R.nextRand, a0
+                    sta v0
+                    movi v1, 0xff
+                    and v1, v0
+                    sta v0
+                    newarr v0, v0, f64[]
+                    mov.obj v12, v0
+                    mov.obj v0, a0
+                    call.virt.range R.nextRand, a0
+                    sta v0
+                    movi v1, 0xff
+                    and v1, v0
+                    sta v0
+                    newarr v0, v0, i32[]
+                    mov.obj v13, v0
+                    mov.obj v0, a0
+                    call.virt.range R.nextRand, a0
+                    sta v0
+                    lda v0
+                    i32tof64
+                    sta.64 v0
+                    sta.64 v1
+                    mov.64 v14, v0
+                    mov.obj v0, a0
+                    call.virt.range R.nextRand, a0
+                    sta v0
+                    movi v1, 0xff
+                    and v1, v0
+                    sta v0
+                    newarr v0, v0, f64[]
+                    mov.obj v16, v0
+                    mov.obj v0, a0
+                    mov v1, v9
+                    mov v2, v10
+                    mov.obj v3, v11
+                    mov.obj v4, v12
+                    mov.obj v5, v13
+                    mov.64 v6, v14
+                    mov.64 v7, v14
+                    mov.obj v8, v16
+                    mov.obj v7, v8
+                    call.virt.range R.storeValues, v0
+                    mov v0, v9
+                    mov.obj v1, a0
+                    ldobj v1, R.f1
+                    sta v1
+                    lda v0
+                    jeq v1, jump_label_0
+                    ldai 1
+                    return
+                jump_label_0:
+                    mov v0, v10
+                    mov.obj v1, a0
+                    ldobj v1, R.f2
+                    sta v1
+                    lda v0
+                    jeq v1, jump_label_1
+                    ldai 1
+                    return
+                jump_label_1:
+                    mov.obj v0, v11
+                    mov.obj v1, a0
+                    ldobj.obj v1, R.f3
+                    sta.obj v1
+                    lda.obj v0
+                    jeq.obj v1, jump_label_2
+                    ldai 1
+                    return
+                jump_label_2:
+                    mov.obj v0, v12
+                    mov.obj v1, a0
+                    ldobj.obj v1, R.f4
+                    sta.obj v1
+                    lda.obj v0
+                    jeq.obj v1, jump_label_3
+                    ldai 1
+                    return
+                jump_label_3:
+                    mov.obj v0, v13
+                    mov.obj v1, a0
+                    ldobj.obj v1, R.f5
+                    sta.obj v1
+                    lda.obj v0
+                    jeq.obj v1, jump_label_4
+                    ldai 1
+                    return
+                jump_label_4:
+                    mov.64 v0, v14
+                    mov.64 v1, v14
+                    mov.obj v2, a0
+                    ldobj.64 v2, R.f6
+                    sta.64 v2
+                    mov.64 v3, v2
+                    lda.64 v0
+                    fcmpl.64 v2
+                    sta v0
+                    lda v0
+                    jeqz jump_label_5
+                    ldai 1
+                    return
+                jump_label_5:
+                    mov.obj v0, v16
+                    mov.obj v1, a0
+                    ldobj.obj v1, R.f7
+                    sta.obj v1
+                    lda.obj v0
+                    jeq.obj v1, jump_label_6
+                    ldai 1
+                    return
+                jump_label_6:
+                    ldai 0
+                    return
+            - values:
+                - |
+                  #
+                      f64 f1
+                      f64 f2
+                      i64 f3
+                      f64 f4
+                      f64 f5
+                      i64 f6
+                      f64 f7
+                      f64 f8
+                      i64 f9
+                - f64 a1, f64 a2, i64 a3, f64 a4, f64 a5, i64 a6, f64 a7, f64 a8, i64 a9
+                - |
+                  #
+                      mov.obj v0, a0
+                      mov.64 v1, a1
+                      lda.64 v1
+                      stobj.64 v0, R.f1
+                      mov.obj v0, a0
+                      mov.64 v1, a2
+                      mov.64 v2, a2
+                      lda.64 v1
+                      stobj.64 v0, R.f2
+                      mov.obj v0, a0
+                      mov.64 v1, a3
+                      mov.64 v2, a3
+                      lda.64 v1
+                      stobj.64 v0, R.f3
+                      mov.obj v0, a0
+                      mov.64 v1, a4
+                      lda.64 v1
+                      stobj.64 v0, R.f4
+                      mov.obj v0, a0
+                      mov.64 v1, a5
+                      mov.64 v2, a5
+                      lda.64 v1
+                      stobj.64 v0, R.f5
+                      mov.obj v0, a0
+                      mov.64 v1, a6
+                      mov.64 v2, a6
+                      lda.64 v1
+                      stobj.64 v0, R.f6
+                      mov.obj v0, a0
+                      mov.64 v1, a7
+                      lda.64 v1
+                      stobj.64 v0, R.f7
+                      mov.obj v0, a0
+                      mov.64 v1, a8
+                      mov.64 v2, a8
+                      lda.64 v1
+                      stobj.64 v0, R.f8
+                      mov.obj v0, a0
+                      mov.64 v1, a9
+                      mov.64 v2, a9
+                      lda.64 v1
+                      stobj.64 v0, R.f9
+
+                - |
+                  #
+                      mov.obj v0, a0
+                      call.virt.range R.nextRand, v0
+                      sta v0
+                      lda v0
+                      i32tof64
+                      sta.64 v0
+                      sta.64 v1
+                      mov.64 v19, v0
+                      mov.obj v0, a0
+                      call.virt.range R.nextRand, v0
+                      sta v0
+                      lda v0
+                      i32tof64
+                      sta.64 v0
+                      sta.64 v1
+                      mov.64 v21, v0
+                      mov.obj v0, a0
+                      call.virt.range R.nextRand, v0
+                      sta v0
+                      lda v0
+                      i32toi64
+                      sta.64 v0
+                      sta.64 v1
+                      mov.64 v23, v0
+                      mov.obj v0, a0
+                      call.virt.range R.nextRand, v0
+                      sta v0
+                      lda v0
+                      i32tof64
+                      sta.64 v0
+                      sta.64 v1
+                      mov.64 v25, v0
+                      mov.obj v0, a0
+                      call.virt.range R.nextRand, v0
+                      sta v0
+                      lda v0
+                      i32tof64
+                      sta.64 v0
+                      sta.64 v1
+                      mov.64 v27, v0
+                      mov.obj v0, a0
+                      call.virt.range R.nextRand, v0
+                      sta v0
+                      lda v0
+                      i32toi64
+                      sta.64 v0
+                      sta.64 v1
+                      mov.64 v29, v0
+                      mov.obj v0, a0
+                      call.virt.range R.nextRand, v0
+                      sta v0
+                      lda v0
+                      i32tof64
+                      sta.64 v0
+                      sta.64 v1
+                      mov.64 v31, v0
+                      mov.obj v0, a0
+                      call.virt.range R.nextRand, v0
+                      sta v0
+                      lda v0
+                      i32tof64
+                      sta.64 v0
+                      sta.64 v1
+                      mov.64 v33, v0
+                      mov.obj v0, a0
+                      call.virt.range R.nextRand, v0
+                      sta v0
+                      lda v0
+                      i32toi64
+                      sta.64 v0
+                      sta.64 v1
+                      mov.64 v35, v0
+                      mov.obj v0, a0
+                  # Don't panic, this is c2p + pandadisasm generated sources
+                      mov.64 v1, v19
+                      mov.64 v2, v19
+                      mov.64 v3, v21
+                      mov.64 v4, v21
+                      mov.64 v5, v23
+                      mov.64 v6, v23
+                      mov.64 v7, v25
+                      mov.64 v8, v25
+                      mov.64 v9, v27
+                      mov.64 v10, v27
+                      mov.64 v11, v29
+                      mov.64 v12, v29
+                      mov.64 v13, v31
+                      mov.64 v14, v31
+                      mov.64 v15, v33
+                      mov.64 v16, v33
+                      mov.64 v17, v35
+                      mov.64 v18, v35
+                      mov.64 v2, v3
+                      mov.64 v3, v4
+                      mov.64 v4, v5
+                      mov.64 v5, v6
+                      mov.64 v6, v7
+                      mov.64 v7, v8
+                      mov.64 v8, v9
+                      mov.64 v9, v10
+                      mov.64 v10, v11
+                      mov.64 v11, v12
+                      mov.64 v12, v13
+                      mov.64 v13, v14
+                      mov.64 v14, v15
+                      mov.64 v15, v16
+                      mov.64 v16, v17
+                      mov.64 v17, v18
+                      mov.64 v3, v4
+                      mov.64 v4, v5
+                      mov.64 v5, v6
+                      mov.64 v6, v7
+                      mov.64 v7, v8
+                      mov.64 v8, v9
+                      mov.64 v9, v10
+                      mov.64 v10, v11
+                      mov.64 v11, v12
+                      mov.64 v12, v13
+                      mov.64 v13, v14
+                      mov.64 v14, v15
+                      mov.64 v15, v16
+                      mov.64 v16, v17
+                      mov.64 v4, v5
+                      mov.64 v5, v6
+                      mov.64 v6, v7
+                      mov.64 v7, v8
+                      mov.64 v8, v9
+                      mov.64 v9, v10
+                      mov.64 v10, v11
+                      mov.64 v11, v12
+                      mov.64 v12, v13
+                      mov.64 v13, v14
+                      mov.64 v14, v15
+                      mov.64 v15, v16
+                      mov.64 v5, v6
+                      mov.64 v6, v7
+                      mov.64 v7, v8
+                      mov.64 v8, v9
+                      mov.64 v9, v10
+                      mov.64 v10, v11
+                      mov.64 v11, v12
+                      mov.64 v12, v13
+                      mov.64 v13, v14
+                      mov.64 v14, v15
+                      mov.64 v6, v7
+                      mov.64 v7, v8
+                      mov.64 v8, v9
+                      mov.64 v9, v10
+                      mov.64 v10, v11
+                      mov.64 v11, v12
+                      mov.64 v12, v13
+                      mov.64 v13, v14
+                      mov.64 v7, v8
+                      mov.64 v8, v9
+                      mov.64 v9, v10
+                      mov.64 v10, v11
+                      mov.64 v11, v12
+                      mov.64 v12, v13
+                      mov.64 v8, v9
+                      mov.64 v9, v10
+                      mov.64 v10, v11
+                      mov.64 v11, v12
+                      mov.64 v9, v10
+                      mov.64 v10, v11
+                      call.virt.range R.storeValues, v0
+                      mov.64 v0, v19
+                      mov.64 v1, v19
+                      mov.obj v2, a0
+                      ldobj.64 v2, R.f1
+                      sta.64 v2
+                      mov.64 v3, v2
+                      lda.64 v0
+                      fcmpl.64 v2
+                      sta v0
+                      lda v0
+                      jeqz jump_label_0
+                      movi v0, 0x1
+                      lda v0
+                      return
+                      jump_label_0: mov.64 v0, v21
+                      mov.64 v1, v21
+                      mov.obj v2, a0
+                      ldobj.64 v2, R.f2
+                      sta.64 v2
+                      mov.64 v3, v2
+                      lda.64 v0
+                      fcmpl.64 v2
+                      sta v0
+                      lda v0
+                      jeqz jump_label_1
+                      movi v0, 0x1
+                      lda v0
+                      return
+                      jump_label_1: mov.64 v0, v23
+                      mov.64 v1, v23
+                      mov.obj v2, a0
+                      ldobj.64 v2, R.f3
+                      sta.64 v2
+                      mov.64 v3, v2
+                      lda.64 v0
+                      cmp.64 v3
+                      sta v0
+                      lda v0
+                      jeqz jump_label_2
+                      movi v0, 0x1
+                      lda v0
+                      return
+                      jump_label_2: mov.64 v0, v25
+                      mov.64 v1, v25
+                      mov.obj v2, a0
+                      ldobj.64 v2, R.f4
+                      sta.64 v2
+                      mov.64 v3, v2
+                      lda.64 v0
+                      fcmpl.64 v2
+                      sta v0
+                      lda v0
+                      jeqz jump_label_3
+                      movi v0, 0x1
+                      lda v0
+                      return
+                      jump_label_3: mov.64 v0, v27
+                      mov.64 v1, v27
+                      mov.obj v2, a0
+                      ldobj.64 v2, R.f5
+                      sta.64 v2
+                      mov.64 v3, v2
+                      lda.64 v0
+                      fcmpl.64 v2
+                      sta v0
+                      lda v0
+                      jeqz jump_label_4
+                      movi v0, 0x1
+                      lda v0
+                      return
+                      jump_label_4: mov.64 v0, v29
+                      mov.64 v1, v29
+                      mov.obj v2, a0
+                      ldobj.64 v2, R.f6
+                      sta.64 v2
+                      mov.64 v3, v2
+                      lda.64 v0
+                      cmp.64 v3
+                      sta v0
+                      lda v0
+                      jeqz jump_label_5
+                      movi v0, 0x1
+                      lda v0
+                      return
+                      jump_label_5: mov.64 v0, v31
+                      mov.64 v1, v31
+                      mov.obj v2, a0
+                      ldobj.64 v2, R.f7
+                      sta.64 v2
+                      mov.64 v3, v2
+                      lda.64 v0
+                      fcmpl.64 v2
+                      sta v0
+                      lda v0
+                      jeqz jump_label_6
+                      movi v0, 0x1
+                      lda v0
+                      return
+                      jump_label_6: mov.64 v0, v33
+                      mov.64 v1, v33
+                      mov.obj v2, a0
+                      ldobj.64 v2, R.f8
+                      sta.64 v2
+                      mov.64 v3, v2
+                      lda.64 v0
+                      fcmpl.64 v2
+                      sta v0
+                      lda v0
+                      jeqz jump_label_7
+                      movi v0, 0x1
+                      lda v0
+                      return
+                      jump_label_7: mov.64 v0, v35
+                      mov.64 v1, v35
+                      mov.obj v2, a0
+                      ldobj.64 v2, R.f9
+                      sta.64 v2
+                      mov.64 v3, v2
+                      lda.64 v0
+                      cmp.64 v3
+                      sta v0
+                      lda v0
+                      jeqz jump_label_8
+                      movi v0, 0x1
+                      lda v0
+                      return
+                      jump_label_8: movi v0, 0x0
+                      lda v0
+                      return
+        cases:
+          - values:
+              - "0xBADC0FFE"
+          - values:
+              - "0x12345678"
+          - values:
+              - "0xFEDCBA98"
+          - values:
+              - "1"
+          - values:
+              - "0xFFFFFFFF"
+          - values:
+              - "0x80000000"
+          - values:
+              - "0x7FFFFFFF"
+

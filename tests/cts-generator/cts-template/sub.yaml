@@ -1,0 +1,487 @@
+# Copyright (c) 2021 Huawei Device Co., Ltd.
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+definitions: []
+tests:
+  - file-name: "sub"
+    isa:
+      title: Three address binary operation
+      description: Perform specified binary operation on two registers and store result
+          into accumulator
+      exceptions:
+          - x_none
+    commands:
+      - file-name: "op_vs1_4_vs2_4_zero"
+        isa:
+          instructions:
+            - sig: sub v1:in:i32, v2:in:i32
+              acc: out:i32
+              format: [op_v1_4_v2_4]
+        code-template: |
+          #
+              movi v0, 0
+              movi v1, %s
+              sub v0, v1
+              movi v0, %s
+              jne v0, set_failure
+              ldai 0
+              jmp fall_through
+          set_failure:
+              ldai 1
+          fall_through:
+        description: Check sub with zero and various values.
+        cases:
+          - values:
+              - "0"
+              - "0"
+          - values:
+              - "1"
+              - "0xffffffff"
+          - values:
+              - "-1"
+              - "1"
+          - values:
+              - "0x7fffffff"
+              - "0x80000001"
+          - values:
+              - "-0x7fffffff"
+              - "0x7fffffff"
+          - values:
+              - "0x80000000"
+              - "0x80000000"
+            tags: ["clang_release_sanitizer"]
+            bugid: ['966']
+          - values:
+              - "-0x80000000"
+              - "0x80000000"
+            tags: ["clang_release_sanitizer"]
+            bugid: ['966']
+          - values:
+              - "0xFFFFFFFF"
+              - "1"
+          - values:
+              - "-0xFFFFFFFF"
+              - "0xFFFFFFFF"
+
+      - file-name: "op_vs1_4_vs2_4_pone"
+        isa:
+          instructions:
+            - sig: sub v1:in:i32, v2:in:i32
+              acc: out:i32
+              format: [op_v1_4_v2_4]
+        code-template: |
+          #
+              movi v0, 1
+              movi v1, %s
+              sub v0, v1
+              movi v0, %s
+              jne v0, set_failure
+              ldai 0
+              jmp fall_through
+          set_failure:
+              ldai 1
+          fall_through:
+        description: Check sub with +1 and various values.
+        cases:
+          - values:
+              - "0"
+              - "1"
+          - values:
+              - "1"
+              - "0"
+          - values:
+              - "-1"
+              - "2"
+          - values:
+              - "0x7FFFFFFF"
+              - "0x80000002"
+          - values:
+              - "-0x7FFFFFFF"
+              - "0x80000000"
+            tags: ["clang_release_sanitizer"]
+            bugid: ['966']
+          - values:
+              - "0x80000000"
+              - "0x80000001"
+            tags: ["clang_release_sanitizer"]
+            bugid: ['966']
+          - values:
+              - "-0x80000000"
+              - "0x80000001"
+            tags: ["clang_release_sanitizer"]
+            bugid: ['966']
+          - values:
+              - "0xFFFFFFFF"
+              - "2"
+          - values:
+              - "-0xFFFFFFFF"
+              - "0"
+      - file-name: "op_vs1_4_vs2_4_none"
+        isa:
+          instructions:
+            - sig: sub v1:in:i32, v2:in:i32
+              acc: out:i32
+              format: [op_v1_4_v2_4]
+        code-template: |
+          #
+              movi v0, -1
+              movi v1, %s
+              sub v0, v1
+              movi v0, %s
+              jne v0, set_failure
+              ldai 0
+              jmp fall_through
+          set_failure:
+              ldai 1
+          fall_through:
+        description: Check sub with -1 and various values.
+        cases:
+          - values:
+              - "0"
+              - "-1"
+          - values:
+              - "1"
+              - "-2"
+          - values:
+              - "-1"
+              - "0"
+          - values:
+              - "0x7FFFFFFF"
+              - "0x80000000"
+          - values:
+              - "-0x7FFFFFFF"
+              - "0x7FFFFFFE"
+          - values:
+              - "0x80000000"
+              - "0x7FFFFFFF"
+          - values:
+              - "-0x80000000"
+              - "0x7FFFFFFF"
+          - values:
+              - "0xFFFFFFFF"
+              - "0"
+          - values:
+              - "-0xFFFFFFFF"
+              - "0xFFFFFFFE"
+      - file-name: "op_vs1_4_vs2_4_pmax"
+        isa:
+          instructions:
+            - sig: sub v1:in:i32, v2:in:i32
+              acc: out:i32
+              format: [op_v1_4_v2_4]
+        code-template: |
+          #
+              movi v0, 0x7FFFFFFF
+              movi v1, %s
+              sub v0, v1
+              movi v0, %s
+              jne v0, set_failure
+              ldai 0
+              jmp fall_through
+          set_failure:
+              ldai 1
+          fall_through:
+        description: Check sub with -max and various values.
+        cases:
+          - values:
+              - "0"
+              - "0x7fffffff"
+          - values:
+              - "1"
+              - "0x7ffffffe"
+          - values:
+              - "-1"
+              - "0x80000000"
+            tags: ["clang_release_sanitizer"]
+            bugid: ['966']
+          - values:
+              - "0x7fffffff"
+              - "0"
+          - values:
+              - "-0x7fffffff"
+              - "0xfffffffe"
+            tags: ["clang_release_sanitizer"]
+            bugid: ['966']
+          - values:
+              - "0x80000000"
+              - "0xffffffff"
+            tags: ["clang_release_sanitizer"]
+            bugid: ['966']
+          - values:
+              - "-0x80000000"
+              - "0xffffffff"
+            tags: ["clang_release_sanitizer"]
+            bugid: ['966']
+          - values:
+              - "0xffffffff"
+              - "0x80000000"
+            tags: ["clang_release_sanitizer"]
+            bugid: ['966']
+          - values:
+              - "-0xffffffff"
+              - "0x7ffffffe"
+
+      - file-name: "op_vs1_4_vs2_4_nmax"
+        isa:
+          instructions:
+            - sig: sub v1:in:i32, v2:in:i32
+              acc: out:i32
+              format: [op_v1_4_v2_4]
+        code-template: |
+          #
+              movi v0, -0x80000000
+              movi v1, %s
+              sub v0, v1
+              movi v0, %s
+              jne v0, set_failure
+              ldai 0
+              jmp fall_through
+          set_failure:
+              ldai 1
+          fall_through:
+        description: Check sub with -max and various values.
+        cases:
+          - values:
+              - "0"
+              - "0x80000000"
+          - values:
+              - "1"
+              - "0x7fffffff"
+            tags: ["clang_release_sanitizer"]
+            bugid: ['966']
+          - values:
+              - "-1"
+              - "0x80000001"
+          - values:
+              - "0x7fffffff"
+              - "1"
+            tags: ["clang_release_sanitizer"]
+            bugid: ['966']
+          - values:
+              - "-0x7fffffff"
+              - "0xffffffff"
+          - values:
+              - "0x80000000"
+              - "0"
+          - values:
+              - "-0x80000000"
+              - "0"
+          - values:
+              - "0xffffffff"
+              - "0x80000001"
+          - values:
+              - "-0xffffffff"
+              - "0x7fffffff"
+            tags: ["clang_release_sanitizer"]
+            bugid: ['966']
+
+      - file-name: "vals"
+        isa:
+          instructions:
+            - sig: sub v1:in:i32, v2:in:i32
+              acc: out:i32
+              format: [op_v1_4_v2_4]
+        code-template: |
+          #
+              movi v0, %s
+              movi v1, %s
+              sub v0, v1
+              movi v0, %s
+              jne v0, set_failure
+              ldai 0
+              jmp fall_through
+          set_failure:
+              ldai 1
+          fall_through:
+        description: Check sub with various values.
+        tags: ['tsan']
+        cases:
+          - values:
+              - "0x41c75e07"
+              - "0x42e816eb"
+              - "0xfedf471c"
+          - values:
+              - "0x45624f8b"
+              - "0xfc29cfb6"
+              - "0x49387fd5"
+          - values:
+              - "0x5811aa60"
+              - "0xf22cf148"
+              - "0x65e4b918"
+          - values:
+              - "0x5aac44d7"
+              - "0xbe450a68"
+              - "0x9c673a6f"
+            tags: ["clang_release_sanitizer"]
+            bugid: ['966']
+          - values:
+              - "0xa9a2ee6d"
+              - "0x6e000ede"
+              - "0x3ba2df8f"
+            tags: ["clang_release_sanitizer"]
+            bugid: ['966']
+          - values:
+              - "0xd9ec934b"
+              - "0xe4a6266a"
+              - "0xf5466ce1"
+          - values:
+              - "0xc5c7ee89"
+              - "0x600e6f58"
+              - "0x65b97f31"
+            tags: ["clang_release_sanitizer"]
+            bugid: ['966']
+          - values:
+              - "0x76016f79"
+              - "0x589dee2d"
+              - "0x1d63814c"
+          - values:
+              - "0xec966b67"
+              - "0xf366e464"
+              - "0xf92f8703"
+          - values:
+              - "0x82250785"
+              - "0xac94f78"
+              - "0x775bb80d"
+            tags: ["clang_release_sanitizer"]
+            bugid: ['966']
+
+      - file-name: "vals_mod32_1"
+        bugid: ['1324', '2072']
+        tags: ['verifier']
+        runner-options: ['verifier-failure', 'verifier-debug-config']
+        isa:
+          instructions:
+            - sig: sub v1:in:i32, v2:in:i32
+              acc: out:i32
+              format: [op_v1_4_v2_4]
+        code-template: |
+          #
+              movi v0, %s
+              movi v1, %s
+              sub v0, v1
+              movi.64 v0, %s
+              cmp.64 v0
+        description: Check sub with incorrect register types.
+        cases:
+          - values:
+              - "0"
+              - "0x80000000"
+              - "0xFFFFFFFF80000000"
+            tags: ["clang_release_sanitizer"]
+            bugid: ['966']
+          - values:
+              - "0x80000000"
+              - "1"
+              - "0x7FFFFFFF"
+            tags: ["clang_release_sanitizer"]
+            bugid: ['966']
+          - values:
+              - "0x80000000"
+              - "-0x80000000"
+              - "0"
+
+      - file-name: "vals_mod32_2"
+        bugid: ['1324']
+        tags: ['verifier']
+        runner-options: ['verifier-failure', 'verifier-debug-config']
+        isa:
+          instructions:
+            - sig: sub v1:in:i32, v2:in:i32
+              acc: out:i32
+              format: [op_v1_4_v2_4]
+        code-template: |
+            #
+                movi.64 v0, %s
+                movi.64 v1, %s
+                sub v0, v1
+                movi.64 v0, %s
+                cmp.64 v0
+        description: Check sub with incorrect register types.
+        cases:
+            - values:
+                - "0"
+                - "0x180000000"
+                - "0xFFFFFFFF80000000"
+              tags: ["clang_release_sanitizer"]
+              bugid: ['966']
+            - values:
+                - "0x1234567680000000"
+                - "1"
+                - "0x7FFFFFFF"
+              tags: ["clang_release_sanitizer"]
+              bugid: ['966']
+            - values:
+                - "0x7654321080000000"
+                - "-0x1234567680000000"
+                - "0"
+
+      - file-name: "regs"
+        isa:
+          instructions:
+            - sig: sub v1:in:i32, v2:in:i32
+              acc: out:i32
+              format: [op_v1_4_v2_4]
+        runner-options: ['compile-only']
+        code-template: |
+          #
+              sub %s, %s
+        check-type: none
+        description: Check sub with various register numbers.
+        cases:
+          - values:
+              - v0
+              - v15
+          - values:
+              - v0
+              - v16
+            runner-options:
+              - compile-failure
+          - values:
+              - v15
+              - v0
+          - values:
+              - v16
+              - v0
+            runner-options:
+              - compile-failure
+
+      - file-name: "type"
+        tags: ["verifier"]
+        bugid: ['966', '964']
+        isa:
+          instructions:
+            - sig: sub v1:in:i32, v2:in:i32
+              acc: out:i32
+              format: [op_v1_4_v2_4]
+          verification:
+            - v1_type
+            - v2_type
+        runner-options: ['verifier-failure', 'verifier-debug-config']
+        code-template: |
+          #
+              %s
+              %s
+              sub v0, v1
+              ldai 0
+        check-type: no-check
+        description: Check sub with incorrect register types.
+        cases:
+          - values:
+              - "movi v0, 0"
+              - "mov.null v1"
+          - values:
+              - "mov.null v0"
+              - "movi v1, 0"
+          - values:
+              - "mov.null v0"
+              - "mov.null v1"

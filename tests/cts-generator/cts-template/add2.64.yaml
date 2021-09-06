@@ -1,0 +1,474 @@
+# Copyright (c) 2021 Huawei Device Co., Ltd.
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+definitions: []
+tests:
+  - file-name: "add2.64"
+    isa:
+      title: Two address binary operation on accumulator
+      description: >
+        Perform specified binary operation on accumulator and register and store result into accumulator
+      exceptions:
+        - x_none
+    commands:
+      - file-name: "op_vs_8_zero"
+        isa:
+          instructions:
+            - sig: add2.64 v:in:i64
+              acc: inout:i64
+              format: [op_v_8]
+        code-template: |
+          #
+              ldai.64 0
+              movi.64 v0, %s
+              add2.64 v0
+              movi.64 v0, %s
+              cmp.64 v0
+        description: Check add2.64 with zero and various values.
+        cases:
+          - values:
+              - "0"
+              - "0"
+          - values:
+              - "1"
+              - "1"
+          - values:
+              - "-1"
+              - "-1"
+          - values:
+              - "0x7FFFFFFFFFFFFFFF"
+              - "0x7FFFFFFFFFFFFFFF"
+          - values:
+              - "0x8000000000000000"
+              - "0x8000000000000000"
+          - values:
+              - "-0x7FFFFFFFFFFFFFFF"
+              - "-0x7FFFFFFFFFFFFFFF"
+          - values:
+              - "-0x8000000000000000"
+              - "-0x8000000000000000"
+          - values:
+              - "0xFFFFFFFFFFFFFFFF"
+              - "0xFFFFFFFFFFFFFFFF"
+          - values:
+              - "-0xFFFFFFFFFFFFFFFF"
+              - "-0xFFFFFFFFFFFFFFFF"
+
+      - file-name: "op_vs_8_pone"
+        isa:
+          instructions:
+            - sig: add2.64 v:in:i64
+              acc: inout:i64
+              format: [op_v_8]
+        code-template: |
+          #
+              ldai.64 1
+              movi.64 v0, %s
+              add2.64 v0
+              movi.64 v0, %s
+              cmp.64 v0
+        description: Check add2.64 with +1 and various values.
+        cases:
+          - values:
+              - "0"
+              - "1"
+          - values:
+              - "1"
+              - "2"
+          - values:
+              - "-1"
+              - "0"
+          - values:
+              - "0x7FFFFFFFFFFFFFFF"
+              - "0x8000000000000000"
+            tags: ["clang_release_sanitizer"]
+            bugid: ["966"]
+          - values:
+              - "0x8000000000000000"
+              - "0x8000000000000001"
+          - values:
+              - "-0x7FFFFFFFFFFFFFFF"
+              - "-0x7FFFFFFFFFFFFFFE"
+          - values:
+              - "-0x8000000000000000"
+              - "-0x7FFFFFFFFFFFFFFF"
+          - values:
+              - "0xFFFFFFFFFFFFFFFF"
+              - "0"
+          - values:
+              - "-0xFFFFFFFFFFFFFFFF"
+              - "-0xFFFFFFFFFFFFFFFE"
+      - file-name: "op_vs_8_none"
+        isa:
+          instructions:
+            - sig: add2.64 v:in:i64
+              acc: inout:i64
+              format: [op_v_8]
+        code-template: |
+          #
+              ldai.64 -1
+              movi.64 v0, %s
+              add2.64 v0
+              movi.64 v0, %s
+              cmp.64 v0
+        description: Check add2.64 with -1 and various values.
+        cases:
+          - values:
+              - "0"
+              - "-1"
+          - values:
+              - "1"
+              - "0"
+          - values:
+              - "-1"
+              - "-2"
+          - values:
+              - "0x7FFFFFFFFFFFFFFF"
+              - "0x7FFFFFFFFFFFFFFE"
+          - values:
+              - "0x8000000000000000"
+              - "0x7FFFFFFFFFFFFFFF"
+            tags: ["clang_release_sanitizer"]
+            bugid: ["966"]
+          - values:
+              - "-0x7FFFFFFFFFFFFFFF"
+              - "-0x8000000000000000"
+          - values:
+              - "-0x8000000000000000"
+              - "-0x8000000000000001"
+            tags: ["clang_release_sanitizer"]
+            bugid: ["966"]
+          - values:
+              - "0xFFFFFFFFFFFFFFFF"
+              - "-2"
+          - values:
+              - "-0xFFFFFFFFFFFFFFFF"
+              - "0"
+      - file-name: "op_vs_8_pmax"
+        isa:
+          instructions:
+            - sig: add2.64 v:in:i64
+              acc: inout:i64
+              format: [op_v_8]
+        code-template: |
+          #
+              ldai.64 0x7FFFFFFFFFFFFFFF
+              movi.64 v0, %s
+              add2.64 v0
+              movi.64 v0, %s
+              cmp.64 v0
+        description: Check add2.64 with +max and various values.
+        cases:
+          - values:
+              - "0"
+              - "0x7FFFFFFFFFFFFFFF"
+          - values:
+              - "1"
+              - "0x8000000000000000"
+            tags: ["clang_release_sanitizer"]
+            bugid: ["966"]
+          - values:
+              - "-1"
+              - "0x7FFFFFFFFFFFFFFE"
+          - values:
+              - "0x7FFFFFFFFFFFFFFF"
+              - "0xFFFFFFFFFFFFFFFE"
+            tags: ["clang_release_sanitizer"]
+            bugid: ["966"]
+          - values:
+              - "0x8000000000000000"
+              - "0xFFFFFFFFFFFFFFFF"
+          - values:
+              - "-0x7FFFFFFFFFFFFFFF"
+              - "0"
+          - values:
+              - "-0x8000000000000000"
+              - "0xFFFFFFFFFFFFFFFF"
+          - values:
+              - "0xFFFFFFFFFFFFFFFF"
+              - "0x7FFFFFFFFFFFFFFE"
+          - values:
+              - "-0xFFFFFFFFFFFFFFFF"
+              - "0x8000000000000000"
+            tags: ["clang_release_sanitizer"]
+            bugid: ["966"]
+
+      - file-name: "op_vs_8_nmax"
+        isa:
+          instructions:
+            - sig: add2.64 v:in:i64
+              acc: inout:i64
+              format: [op_v_8]
+        code-template: |
+          #
+              ldai.64 -0x8000000000000000
+              movi.64 v0, %s
+              add2.64 v0
+              movi.64 v0, %s
+              cmp.64 v0
+        description: Check add2.64 with -max and various values.
+        cases:
+          - values:
+              - "0"
+              - "0x8000000000000000"
+          - values:
+              - "1"
+              - "0x8000000000000001"
+          - values:
+              - "-1"
+              - "0x7FFFFFFFFFFFFFFF"
+            tags: ["clang_release_sanitizer"]
+            bugid: ["966"]
+          - values:
+              - "0x7FFFFFFFFFFFFFFF"
+              - "-1"
+          - values:
+              - "0x8000000000000000"
+              - "0"
+            tags: ["clang_release_sanitizer"]
+            bugid: ["966"]
+          - values:
+              - "-0x7FFFFFFFFFFFFFFF"
+              - "1"
+            tags: ["clang_release_sanitizer"]
+            bugid: ["966"]
+          - values:
+              - "-0x8000000000000000"
+              - "0"
+            tags: ["clang_release_sanitizer"]
+            bugid: ["966"]
+          - values:
+              - "0xFFFFFFFFFFFFFFFF"
+              - "0x7FFFFFFFFFFFFFFF"
+            tags: ["clang_release_sanitizer"]
+            bugid: ["966"]
+          - values:
+              - "-0xFFFFFFFFFFFFFFFF"
+              - "-0x7FFFFFFFFFFFFFFF"
+
+      - file-name: "vals"
+        isa:
+          instructions:
+            - sig: add2.64 v:in:i64
+              acc: inout:i64
+              format: [op_v_8]
+        code-template: |
+          #
+              ldai.64 %s
+              movi.64 v0, %s
+              add2.64 v0
+              movi.64 v0, %s
+              cmp.64 v0
+        description: Check add2.64 with various values.
+        tags: ["tsan"]
+        cases:
+          - values:
+              - "0x767c66b4775e89ab"
+              - "0xc2019955c2ef94bc"
+              - "0x387e000a3a4e1e67"
+          - values:
+              - "0xac6a086f0862a513"
+              - "0x2c0941e95ed5c79e"
+              - "0xd8734a5867386cb1"
+          - values:
+              - "0x92d20f25a81a20b4"
+              - "0x3b3a2ba0ea110801"
+              - "0xce0c3ac6922b28b5"
+          - values:
+              - "0xf454f3ceb91b30b"
+              - "0x460e9d1b06784a4d"
+              - "0x5553ec57f209fd58"
+          - values:
+              - "0xaa32bec0787f5b10"
+              - "0x23f3327c2c2518b2"
+              - "0xce25f13ca4a473c2"
+          - values:
+              - "0x1523129b49959007"
+              - "0x5458a639cc7c3688"
+              - "0x697bb8d51611c68f"
+          - values:
+              - "0x420f5bbdd367e8b4"
+              - "0xad250d24c5927c76"
+              - "0xef3468e298fa652a"
+          - values:
+              - "0x59756fb5b426cffa"
+              - "0xcdaf254f915f19c5"
+              - "0x272495054585e9bf"
+          - values:
+              - "0x64fae3293c3b3472"
+              - "0xcf198631f73277a5"
+              - "0x3414695b336dac17"
+          - values:
+              - "0xee9d771049e29300"
+              - "0x288f7917848c4828"
+              - "0x172cf027ce6edb28"
+
+      - file-name: "regs"
+        isa:
+          instructions:
+            - sig: add2.64 v:in:i64
+              acc: inout:i64
+              format: [op_v_8]
+        runner-options: ["compile-only"]
+        code-template: |
+          #
+              add2.64 %s
+        check-type: none
+        description: Check add2.64 with various register numbers.
+        cases:
+          - values:
+              - "v255"
+          - values:
+              - "v256"
+            runner-options: ["compile-failure"]
+
+      - file-name: "type"
+        bugid: ["964", "966"]
+        isa:
+          instructions:
+            - sig: add2.64 v:in:i64
+              acc: inout:i64
+              format: [op_v_8]
+          verification:
+            - acc_type
+            - v1_type
+        tags: ["verifier"]
+        runner-options: ['verifier-failure', 'verifier-debug-config']
+        header-template: []
+        code-template: |
+          #
+          .record A {}
+          .record B {}
+          .record panda.String <external>
+          .record panda.Object <external>
+          .function i32 main() {
+              %s
+              *s
+              add2.64 v1
+              ldai 0
+        check-type: no-check
+        description: Check add2.64 with incorrect register type.
+        template-cases:
+          - values:
+              - ldai 0
+            bugid: ['2090']
+          - values:
+              - fldai.64 0
+          - values:
+              - |
+                #
+                    lda.type B
+          - values:
+              - |
+                #
+                    lda.type B[]
+          - values:
+              - |
+                #
+                    lda.type panda.String
+          - values:
+              - |
+                #
+                    lda.type panda.Object
+          - values:
+              - |
+                #
+                    movi v0, 10
+                    newarr v0, v0, i32[]
+                    lda.obj v0
+          - values:
+              - lda.null
+          - values:
+              - ldai.64 0
+            bugid: ['2090']
+            exclude: [val]
+        cases:
+          - values:
+              - movi v1, 0
+          - values:
+              - fmovi.64 v1, 0
+          - values:
+              - |
+                #
+                    lda.type A
+                    sta.obj v1
+          - values:
+              - |
+                #
+                    lda.type A[]
+                    sta.obj v1
+
+          - values:
+              - |
+                #
+                    lda.type panda.String
+                    sta.obj v1
+          - values:
+              - |
+                #
+                    lda.type panda.Object
+                    sta.obj v1
+          - values:
+              - |
+                #
+                    movi v1, 10
+                    newarr v1, v1, f64[]
+          - values:
+              - mov.null v1
+          - values:
+              - movi.64 v1, 0
+            id: val
+
+      - file-name: uninitialized_regs
+        isa:
+          instructions:
+            - sig: add2.64 v:in:i64
+              acc: inout:i64
+              format: [op_v_8]
+        description: Check add2.64 with uninitialized registers.
+        tags: ["verifier"]
+        runner-options: ['verifier-failure', 'verifier-debug-config']
+        header-template: []
+        code-template: |
+          #
+          .function i32 main() {
+              %s
+              *s
+              add2.64 *s
+              ldai 0
+        check-type: no-check
+        template-cases:
+          - values:
+              - ""
+          - values:
+              - ldai.64 0
+            exclude: [init]
+
+        cases:
+          - values:
+              - ""
+              - v0
+          - values:
+              - movi.64 v1, 0
+              - v1
+            id: init
+          - values:
+              - ""
+              - v8
+          - values:
+              - ""
+              - v15
+          - values:
+              - movi.64 v15, 0
+              - v15
+            id: init

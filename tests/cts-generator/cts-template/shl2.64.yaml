@@ -1,0 +1,404 @@
+# Copyright (c) 2021 Huawei Device Co., Ltd.
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+definitions: []
+tests:
+  - file-name: "shl2.64"
+    isa:
+      title: Two address binary operation on accumulator
+      description: >
+        Perform specified binary operation on accumulator and register and store result into accumulator
+      exceptions:
+        - x_none
+    commands:
+      - file-name: "op_vs_8_zero"
+        isa:
+          instructions:
+            - sig: shl2.64 v:in:i64
+              acc: inout:i64
+              prefix: bit
+              format: [pref_op_v_8]
+        code-template: |
+          #
+              ldai.64 0
+              movi.64 v0, %s
+              mov.64 v1, v0
+              shl2.64 v0
+              movi.64 v0, 0
+              cmp.64 v0
+        description: Check shl2.64 with zero and various values.
+        cases:
+          - values:
+              - "0"
+          - values:
+              - "1"
+          - values:
+              - "-1"
+            bugid: ['1387']
+            tags: ["clang_release_sanitizer_jit"]
+          - values:
+              - "0x7FFFFFFFFFFFFFFF"
+            bugid: ['1387']
+            tags: ["clang_release_sanitizer_jit"]
+          - values:
+              - "0x8000000000000000"
+            bugid: ['1387']
+            tags: ["clang_release_sanitizer_jit"]
+          - values:
+              - "-0x7FFFFFFFFFFFFFFF"
+            bugid: ['1387']
+            tags: ["clang_release_sanitizer_jit"]
+          - values:
+              - "-0x8000000000000000"
+            bugid: ['1387']
+            tags: ["clang_release_sanitizer_jit"]
+          - values:
+              - "0xFFFFFFFFFFFFFFFF"
+            bugid: ['1387']
+            tags: ["clang_release_sanitizer_jit"]
+          - values:
+              - "-0xFFFFFFFFFFFFFFFF"
+
+      - file-name: "op_vs_8_pone"
+        isa:
+          instructions:
+            - sig: shl2.64 v:in:i64
+              acc: inout:i64
+              prefix: bit
+              format: [pref_op_v_8]
+        code-template: |
+          #
+              ldai.64 1
+              movi.64 v0, %s
+              shl2.64 v0
+              movi.64 v0, %s
+              cmp.64 v0
+        description: Check shl2.64 with +1 and various values.
+        cases:
+          - values:
+              - "0"
+              - "1"
+          - values:
+              - "1"
+              - "2"
+          - values:
+              - "-1"
+              - "0x8000000000000000"
+            bugid: ['1387']
+            tags: ["clang_release_sanitizer_jit"]
+          - values:
+              - "0x7FFFFFFFFFFFFFFF"
+              - "0x8000000000000000"
+            bugid: ['1387']
+            tags: ["clang_release_sanitizer_jit"]
+          - values:
+              - "0x8000000000000000"
+              - "1"
+            bugid: ['1387']
+            tags: ["clang_release_sanitizer_jit"]
+          - values:
+              - "-0x7FFFFFFFFFFFFFFF"
+              - "2"
+            bugid: ['1387']
+            tags: ["clang_release_sanitizer_jit"]
+          - values:
+              - "-0x8000000000000000"
+              - "1"
+            bugid: ['1387']
+            tags: ["clang_release_sanitizer_jit"]
+          - values:
+              - "0xFFFFFFFFFFFFFFFF"
+              - "0x8000000000000000"
+            bugid: ['1387']
+            tags: ["clang_release_sanitizer_jit"]
+          - values:
+              - "-0xFFFFFFFFFFFFFFFF"
+              - "2"
+      - file-name: "op_vs_8_none"
+        isa:
+          instructions:
+            - sig: shl2.64 v:in:i64
+              acc: inout:i64
+              prefix: bit
+              format: [pref_op_v_8]
+        code-template: |
+          #
+              ldai.64 -1
+              movi.64 v0, %s
+              shl2.64 v0
+              movi.64 v0, %s
+              cmp.64 v0
+        description: Check shl2.64 with -1 and various values.
+        cases:
+          - values:
+              - "0"
+              - "0xFFFFFFFFFFFFFFFF"
+          - values:
+              - "1"
+              - "0xFFFFFFFFFFFFFFFE"
+          - values:
+              - "-1"
+              - "0x8000000000000000"
+            bugid: ['1387']
+            tags: ["clang_release_sanitizer_jit"]
+          - values:
+              - "0x7FFFFFFFFFFFFFFF"
+              - "0x8000000000000000"
+            bugid: ['1387']
+            tags: ["clang_release_sanitizer_jit"]
+          - values:
+              - "0x8000000000000000"
+              - "0xFFFFFFFFFFFFFFFF"
+            bugid: ['1387']
+            tags: ["clang_release_sanitizer_jit"]
+          - values:
+              - "-0x7FFFFFFFFFFFFFFF"
+              - "0xFFFFFFFFFFFFFFFE"
+            bugid: ['1387']
+            tags: ["clang_release_sanitizer_jit"]
+          - values:
+              - "-0x8000000000000000"
+              - "0xFFFFFFFFFFFFFFFF"
+            bugid: ['1387']
+            tags: ["clang_release_sanitizer_jit"]
+          - values:
+              - "0xFFFFFFFFFFFFFFFF"
+              - "0x8000000000000000"
+            bugid: ['1387']
+            tags: ["clang_release_sanitizer_jit"]
+          - values:
+              - "-0xFFFFFFFFFFFFFFFF"
+              - "0xFFFFFFFFFFFFFFFE"
+
+      - file-name: "op_vs_8_pmax"
+        isa:
+          instructions:
+            - sig: shl2.64 v:in:i64
+              acc: inout:i64
+              prefix: bit
+              format: [pref_op_v_8]
+        code-template: |
+          #
+              ldai.64 0x7FFFFFFFFFFFFFFF
+              movi.64 v0, %s
+              shl2.64 v0
+              movi.64 v0, %s
+              cmp.64 v0
+        description: Check shl2.64 with +max and various values.
+        cases:
+          - values:
+              - "0"
+              - "0x7FFFFFFFFFFFFFFF"
+          - values:
+              - "1"
+              - "0xFFFFFFFFFFFFFFFE"
+          - values:
+              - "-1"
+              - "0x8000000000000000"
+            bugid: ['1387']
+            tags: ["clang_release_sanitizer_jit"]
+          - values:
+              - "0x7FFFFFFFFFFFFFFF"
+              - "0x8000000000000000"
+            bugid: ['1387']
+            tags: ["clang_release_sanitizer_jit"]
+          - values:
+              - "0x8000000000000000"
+              - "0x7FFFFFFFFFFFFFFF"
+            bugid: ['1387']
+            tags: ["clang_release_sanitizer_jit"]
+          - values:
+              - "-0x7FFFFFFFFFFFFFFF"
+              - "0xFFFFFFFFFFFFFFFE"
+            bugid: ['1387']
+            tags: ["clang_release_sanitizer_jit"]
+          - values:
+              - "-0x8000000000000000"
+              - "0x7FFFFFFFFFFFFFFF"
+            bugid: ['1387']
+            tags: ["clang_release_sanitizer_jit"]
+          - values:
+              - "0xFFFFFFFFFFFFFFFF"
+              - "0x8000000000000000"
+            bugid: ['1387']
+            tags: ["clang_release_sanitizer_jit"]
+          - values:
+              - "-0xFFFFFFFFFFFFFFFF"
+              - "0xFFFFFFFFFFFFFFFE"
+
+      - file-name: "op_vs_8_nmax"
+        isa:
+          instructions:
+            - sig: shl2.64 v:in:i64
+              acc: inout:i64
+              prefix: bit
+              format: [pref_op_v_8]
+        code-template: |
+          #
+              ldai.64 -0x8000000000000000
+              movi.64 v0, %s
+              shl2.64 v0
+              movi.64 v0, %s
+              cmp.64 v0
+        description: Check shl2.64 with -max and various values.
+        cases:
+          - values:
+              - "0"
+              - "0x8000000000000000"
+          - values:
+              - "1"
+              - "0"
+          - values:
+              - "-1"
+              - "0"
+            bugid: ['1387']
+            tags: ["clang_release_sanitizer_jit"]
+          - values:
+              - "0x7FFFFFFFFFFFFFFF"
+              - "0x0"
+            bugid: ['1387']
+            tags: ["clang_release_sanitizer_jit"]
+          - values:
+              - "0x8000000000000000"
+              - "0x8000000000000000"
+            bugid: ['1387']
+            tags: ["clang_release_sanitizer_jit"]
+          - values:
+              - "-0x7FFFFFFFFFFFFFFF"
+              - "0"
+            bugid: ['1387']
+            tags: ["clang_release_sanitizer_jit"]
+          - values:
+              - "-0x8000000000000000"
+              - "0x8000000000000000"
+            bugid: ['1387']
+            tags: ["clang_release_sanitizer_jit"]
+          - values:
+              - "0xFFFFFFFFFFFFFFFF"
+              - "0"
+            bugid: ['1387']
+            tags: ["clang_release_sanitizer_jit"]
+          - values:
+              - "-0xFFFFFFFFFFFFFFFF"
+              - "0"
+
+      - file-name: "vals"
+        bugid: ['1387']
+        tags: ["clang_release_sanitizer_jit", 'tsan']
+        isa:
+          instructions:
+            - sig: shl2.64 v:in:i64
+              acc: inout:i64
+              prefix: bit
+              format: [pref_op_v_8]
+        code-template: |
+          #
+              ldai.64 %s
+              movi.64 v0, %s
+              shl2.64 v0
+              movi.64 v0, %s
+              cmp.64 v0
+        description: Check shl2.64 with various values.
+        cases:
+          - values:
+              - "0x909D078BC1802D11"
+              - "0x3CF069C089440376"
+              - "0x4440000000000000"
+          - values:
+              - "0x56FD0D313D987D81"
+              - "0xC4ED2DCC568C4D51"
+              - "0x1A627B30FB020000"
+          - values:
+              - "0x921DB78A744A870A"
+              - "0x5D1BCD75637D2D0"
+              - "0xB78A744A870A0000"
+          - values:
+              - "0xC81A9CDAB313C62E"
+              - "0xCBF1E38A69AE2485"
+              - "0x3539B566278C5C0"
+          - values:
+              - "0x6E6B999C47399E98"
+              - "0xBE4E18F98146253B"
+              - "0xC000000000000000"
+          - values:
+              - "0xD9020CE500F6672E"
+              - "0x10025C5183770ED3"
+              - "0x672807B339700000"
+          - values:
+              - "0x272F55E050FE5DA9"
+              - "0xAC62C2429BD9D1B4"
+              - "0xDA90000000000000"
+          - values:
+              - "0x26D9934D469195C2"
+              - "0x89594AFB8577CA66"
+              - "0xA465708000000000"
+          - values:
+              - "0x7465153CF3023766"
+              - "0x7FF6D7F89184F0AF"
+              - "0x1BB3000000000000"
+          - values:
+              - "0x9179FC5269D19418"
+              - "0x7F3DE6693C80EC85"
+              - "0x2F3F8A4D3A328300"
+
+      - file-name: "regs"
+        isa:
+          instructions:
+            - sig: shl2.64 v:in:i64
+              acc: inout:i64
+              prefix: bit
+              format: [pref_op_v_8]
+        runner-options: ['compile-only']
+        code-template: |
+          #
+              shl2.64 %s
+        check-type: none
+        description: Check shl2.64 with various register numbers.
+        cases:
+          - values:
+              - "v255"
+          - values:
+              - "v256"
+            runner-options: ['compile-failure']
+
+      - file-name: "type"
+        bugid: ["964", "966"]
+        tags: ["verifier"]
+        isa:
+          instructions:
+            - sig: shl2.64 v:in:i64
+              acc: inout:i64
+              prefix: bit
+              format: [pref_op_v_8]
+          verification:
+            - acc_type
+            - v1_type
+        runner-options: ['verifier-failure', 'verifier-debug-config']
+        code-template: |
+          #
+              %s
+              %s
+              shl2.64 v0
+              ldai.64 0
+        check-type: no-check
+        description: Check shl2.64 with incorrect accumulator and register types.
+        cases:
+          - values:
+              - "lda.null"
+              - "movi.64 v0, 0"
+          - values:
+              - "ldai.64 0 "
+              - "mov.null v0"
+          - values:
+              - "lda.null"
+              - "mov.null v0"

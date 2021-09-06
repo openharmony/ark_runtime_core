@@ -1,0 +1,370 @@
+# Copyright (c) 2021 Huawei Device Co., Ltd.
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+definitions: []
+tests:
+  - file-name: "cmp"
+    isa:
+      title: Integer comparison
+      description: Perform specified signed or unsigned integer comparison between register and accumulator.
+      exceptions:
+        - x_none
+    commands:
+      - file-name: "op_vs_8_eq"
+        isa:
+          instructions:
+            - sig: cmp v:in:i32
+              acc: inout:i32
+              format: [op_v_8]
+        check-type: check-positive
+        code-template: |
+            # test - compare equal values
+                ldai %s
+                movi v0, %s
+                cmp v0
+        description: Check cmp with equal values.
+        tags: ['tsan']
+        cases:
+          - values:
+            - "0"
+            - "0x00000000"
+          - values:
+            - "-0"
+            - "-0"
+          - values:
+            - "-0"
+            - "0"
+          - values:
+            - "0x00000000"
+            - "-0"
+          - values:
+            - "1"
+            - "0x00000001"
+          - values:
+            - "-1"
+            - "0xffffffff"
+          - values:
+            - "0x7fffffff"
+            - "2147483647"
+          - values:
+            - "-2147483648"
+            - "0x80000000"
+
+      - file-name: "op_vs_8_lt"
+        isa:
+          instructions:
+            - sig: cmp v:in:i32
+              acc: inout:i32
+              format: [op_v_8]
+        check-type: check-positive
+        code-template: |
+          # test - check less than
+                ldai %s
+                movi v0, %s
+                cmp v0
+                addi 1
+        description: Check cmp with different values.
+        tags: ['tsan']
+        cases:
+          - values:
+            - "0"
+            - "0x00000001"
+          - values:
+            - "-1"
+            - "0"
+          - values:
+            - "2147483646"
+            - "2147483647"
+          - values:
+            - "0x80000000"
+            - "0x7fffffff"
+          - values:
+            - "0x80000000"
+            - "0x80000001"
+          - values:
+            - "-2"
+            - "0xffffffff"
+          - values:
+            - "0x7ffffffe"
+            - "2147483647"
+          - values:
+            - "65535"
+            - "0x00010000"
+
+      - file-name: "op_vs_8_gt"
+        isa:
+          instructions:
+            - sig: cmp v:in:i32
+              acc: inout:i32
+              format: [op_v_8]
+        check-type: check-positive
+        description: Check cmp with different values.
+        tags: ['tsan']
+        code-template: |
+          #   test - check greater than
+                ldai %s
+                movi v0, %s
+                cmp v0
+                subi 1
+        cases:
+          - values:
+            - "0x00000001"
+            - "0"
+          - values:
+            - "0"
+            - "-1"
+          - values:
+            - "2147483647"
+            - "2147483646"
+          - values:
+            - "0x7fffffff"
+            - "0x80000000"
+          - values:
+            - "0x80000001"
+            - "0x80000000"
+          - values:
+            - "0xffffffff"
+            - "-2"
+          - values:
+            - "2147483647"
+            - "0x7ffffffe"
+          - values:
+            - "0x00010000"
+            - "65535"
+
+      - file-name: "op_vs_8_reg256"
+        isa:
+          instructions:
+            - sig: cmp v:in:i32
+              acc: inout:i32
+              format: [op_v_8]
+        check-type: none
+        runner-options: [compile-failure]
+        description: Check cmp with incorrect register numbers.
+        code-template: |
+          #
+              cmp v256
+
+      - file-name: "op_vs_8_reg255"
+        isa:
+          instructions:
+            - sig: cmp v:in:i32
+              acc: inout:i32
+              format: [op_v_8]
+        check-type: none
+        runner-options: [compile-only]
+        description: Check cmp with correct register numbers.
+        code-template: |
+          #
+              cmp v255
+
+      - file-name: type
+        isa:
+          instructions:
+            - sig: cmp v:in:i32
+              acc: inout:i32
+              format: [op_v_8]
+          verification:
+            - v1_type
+            - acc_type
+        tags: ['verifier']
+        runner-options: ['verifier-failure', 'verifier-debug-config']
+        header-template: []
+        code-template: |
+          #
+          .record A {}
+          .record B {}
+          .record panda.String <external>
+          .record panda.Object <external>
+          .function i32 main() {
+              %s
+              *s
+              cmp v0
+        check-type: exit-positive
+        description: Check 'cmp' with incorrect register type.
+        template-cases:
+          - values:
+              - movi v0, 0
+            exclude: [val]
+          - values:
+              - movi.64 v0, 0
+          - values:
+              - fmovi.64 v0, 0
+          - values:
+              - |
+                #
+                    lda.type B
+                    sta.obj v0
+          - values:
+              - |
+                #
+                    lda.type B[]
+                    sta.obj v0
+          - values:
+              - |
+                #
+                    lda.type panda.String
+                    sta.obj v0
+          - values:
+              - |
+                #
+                    lda.str "string"
+                    sta.obj v0
+          - values:
+              - |
+                #
+                    movi v0, 10
+                    newarr v0, v0, i32[]
+                    lda.obj v0
+          - values:
+              - mov.null v0
+
+        cases:
+          - values:
+              - ldai 0
+            id: val
+          - values:
+              - ldai.64 0
+          - values:
+              - fldai.64 0
+          - values:
+              - |
+                #
+                    lda.type A
+          - values:
+              - |
+                #
+                    lda.type A[]
+          - values:
+              - |
+                #
+                    lda.type panda.String
+          - values:
+              - |
+                #
+                    lda.str "string"
+          - values:
+              - |
+                #
+                    movi v1, 10
+                    newarr v1, v1, f64[]
+                    lda.obj v1
+
+          - values:
+              - lda.null
+
+      - file-name: uninitialized_regs
+        isa:
+          instructions:
+            - sig: cmp v:in:i32
+              acc: inout:i32
+              format: [op_v_8]
+        description: Check 'cmp' with uninitialized registers.
+        tags: ['verifier']
+        runner-options: ['verifier-failure', 'verifier-debug-config']
+        header-template: []
+        code-template: |
+            #
+            .function i32 main() {
+                %s
+                *s
+                cmp %s
+        check-type: exit-positive
+        template-cases:
+          - values:
+              - ''
+              - v0
+          - values:
+              - movi v0, 0
+              - v0
+            exclude: [init]
+          - values:
+              - ''
+              - v7
+          - values:
+              - ''
+              - v15
+          - values:
+              - 'movi v15, 0'
+              - v15
+            exclude: [init]
+          - values:
+              - ''
+              - v128
+          - values:
+              - 'movi v128, 0'
+              - v128
+            exclude: [init]
+          - values:
+              - ''
+              - v255
+          - values:
+              - 'movi v255, 0'
+              - v255
+            exclude: [init]
+        cases:
+          - values:
+              - ''
+          - values:
+              - ldai 0
+            id: init
+
+      - file-name: "diff_length_values"
+        isa:
+          instructions:
+            - sig: cmp v:in:i32
+              acc: inout:i32
+              format: [op_v_8]
+        check-type: no-check
+        code-template: |
+            # test - compare equal values
+                movi v0, 1
+                newarr v0, v0, %s      # array ref -> v0
+
+                movi v1, 0      # index
+                ldai %s         # content
+                %s v0, v1       # starr  v0[v1] = acc with truncation
+
+                ldai 0          # index
+                %s v0           # ldarr  acc = v0[acc]
+
+                movi v10, %s
+                cmp v10
+        description: Check cmp with different length values.
+        cases:
+          - values: ["u1[]", "1", "starr.8", "ldarru.8", "1"]
+          - values: ["u1[]", "2", "starr.8", "ldarru.8", "0"]
+            bugid: ['4019']
+            ignore: true
+          - values: ["u1[]", "-1", "starr.8", "ldarru.8", "1"]
+            bugid: ['4019']
+            ignore: true
+          - values: ["u1[]", "1", "starr.8", "ldarr.8", "1"]
+          - values: ["u1[]", "2", "starr.8", "ldarr.8", "0"]
+            bugid: ['4019']
+            ignore: true
+          - values: ["u1[]", "-1", "starr.8", "ldarr.8", "1"]
+            bugid: ['4019']
+            ignore: true
+          - values: ["u8[]", "1", "starr.8", "ldarru.8", "1"]
+          - values: ["u8[]", "255", "starr.8", "ldarru.8", "255"]
+          - values: ["u8[]", "-1", "starr.8", "ldarru.8", "255"]
+          - values: ["i8[]", "1", "starr.8", "ldarr.8", "1"]
+          - values: ["i8[]", "255", "starr.8", "ldarr.8", "-1"]
+          - values: ["i8[]", "-1", "starr.8", "ldarr.8", "-1"]
+          - values: ["u16[]", "1", "starr.16", "ldarru.16", "1"]
+          - values: ["u16[]", "0x0000ffff", "starr.16", "ldarru.16", "0x0000ffff"]
+          - values: ["u16[]", "-1", "starr.16", "ldarru.16", "0x0000ffff"]
+          - values: ["i16[]", "1", "starr.16", "ldarr.16", "1"]
+          - values: ["i16[]", "0x0000ffff", "starr.16", "ldarr.16", "-1"]
+          - values: ["i16[]", "-1", "starr.16", "ldarr.16", "-1"]

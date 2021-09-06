@@ -1,0 +1,346 @@
+# Copyright (c) 2021 Huawei Device Co., Ltd.
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+definitions: []
+
+tests:
+  - file-name: "sta.obj"
+    isa:
+      title: Store accumulator
+      description: Moves accumulator content into a register.
+      exceptions:
+        - x_none
+    commands:
+      - file-name: "op"
+        isa:
+          instructions:
+            - sig: sta.obj v:out:ref
+              acc: in:ref
+              format: [op_v_8]
+        code-template: |
+          %s
+          # header
+          .function i32 main() {
+          #
+              newobj v0, Object
+              lda.obj v0
+              sta.obj v1
+              jne.obj v1, return_ne_num
+              ldai 0
+              return
+          return_ne_num:
+              ldai 1
+              return
+        header-template: []
+        check-type: none
+        description: Check sta.obj with different type of arguments (empty object, with fields, statics, string, type).
+        tags: ['tsan']
+        cases:
+          - values:
+              - |
+                .record Object {
+                }
+          - values:
+              - |
+                .record Object {
+                    i32 fld2
+                }
+          - values:
+              - |
+                .record Object {
+                    i64 fld2
+                }
+          - values:
+              - |
+                .record Object {
+                    u64 fld2
+                }
+          - values:
+              - |
+                .record Object {
+                    i32 fld2 <static>
+                }
+          - values:
+              - |
+                .record Object {
+                    i32 fld1
+                    i32 fld2 <static>
+                }
+
+          - values:
+              - |
+                .record Object {
+                    i64 fld1
+                    i64 fld2 <static>
+                }
+          - values:
+              - |
+                .record Object {
+                    f64 fld1
+                    f64 fld2 <static>
+                }
+          - values:
+              - |
+                .record Object {
+                    f32 fld1
+                    f32 fld2 <static>
+                    f64 fld3
+                    f64 fld4 <static>
+                    i32 fld5
+                    i32 fld6 <static>
+                    i64 fld7
+                    i64 fld8 <static>
+                }
+          - case-template: |
+              #
+              .function i32 main() {
+              # Check sta.obj for string
+                  lda.str ""
+                  sta.obj v0
+                  jne.obj v0, return_ne_num
+                  ldai 0
+                  return
+              return_ne_num:
+                  ldai 1
+                  return
+          - case-template: |
+              #
+              .record Object {}
+              .function i32 main() {
+              # Check sta.obj for type
+                  lda.type Object
+                  sta.obj v0
+                  jne.obj v0, return_ne_num
+                  ldai 0
+                  return
+              return_ne_num:
+                  ldai 1
+                  return
+
+      - file-name: "null"
+        isa:
+          instructions:
+            - sig: sta.obj v:out:ref
+              acc: in:ref
+              format: [op_v_8]
+        description: Check sta.obj with null.
+        check-type: none
+        code-template: |
+          # header
+          .function i32 main() {
+          # Check sta.obj for null
+              lda.null
+              sta.obj v0
+              jne.obj v0, return_ne_num
+              ldai 0
+              return
+          return_ne_num:
+              ldai 1
+              return
+        header-template: []
+
+      - file-name: "op_v8"
+        isa:
+          instructions:
+            - sig: sta.obj v:out:ref
+              acc: in:ref
+              format: [op_v_8]
+        code-template: |
+            .record Object {}
+            # header
+            .function i32 main() {
+            #
+                newobj v0, Object
+                lda.obj v0
+                sta.obj %s
+                jne.obj %s, return_ne_num
+                ldai 0
+                return
+            return_ne_num:
+                ldai 1
+                return
+        header-template: []
+        check-type: none
+        description: Check sta.obj with various register numbers.
+        cases:
+            - values: [v0, v0]
+            - values: [v7, v7]
+            - values: [v8, v8]
+            - values: [v15, v15]
+            - values: [v16, v16]
+            - values: [v127, v127]
+            - values: [v128, v128]
+            - values: [v255, v255]
+            - values: [v256, v256]
+              runner-options: [compile-failure]
+              description: Check sta.obj with incorrect register numbers.
+
+      - file-name: "op_v8_null"
+        isa:
+            instructions:
+              - sig: sta.obj v:out:ref
+                acc: in:ref
+                format: [op_v_8]
+        code-template: |
+            # Check sta.obj with different registers number and null
+                lda.null
+                sta.obj %s
+                jne.obj %s, return_ne_num
+                ldai 0
+                return
+            return_ne_num:
+                ldai 1
+                return
+        description: Check sta.obj with various register numbers.
+        check-type: none
+        cases:
+            - values: [v0, v0]
+            - values: [v7, v7]
+            - values: [v8, v8]
+            - values: [v15, v15]
+            - values: [v16, v16]
+            - values: [v127, v127]
+            - values: [v128, v128]
+            - values: [v255, v255]
+            - values: [v256, v256]
+              runner-options: [compile-failure]
+              description: Check sta.obj with incorrect register numbers.
+
+      - file-name: 'type'
+        isa:
+          instructions:
+              - sig: sta.obj v:out:ref
+                acc: in:ref
+                format: [op_v_8]
+          verification:
+            - acc_type
+        tags: ['verifier']
+        runner-options: ['verifier-failure', 'verifier-debug-config']
+        header-template: []
+        code-template: |
+          #
+          .record A {}
+          .record panda.String <external>
+          .function i32 main() {
+              ##- v1 initialization with different types
+              *s
+              ##- Accumulator initialization with incorrect types
+              %s
+              sta.obj v1
+        check-type: exit-positive
+        description: Check 'sta.obj' with incorrect accumulator type. Register type is not checked.
+        template-cases:
+          - values:
+              - ldai 0
+          - values:
+              - ldai.64 0
+          - values:
+              - fldai.64 0
+
+        cases:
+          - values:
+              - movi v1, 0
+          - values:
+              - movi.64 v1, 0
+          - values:
+              - fmovi.64 v1, 0
+          - values:
+              - |
+                #
+                    lda.type A
+                    sta.obj v1
+          - values:
+              - |
+                #
+                    lda.type A[]
+                    sta.obj v1
+
+          - values:
+              - |
+                #
+                    lda.type panda.String
+                    sta.obj v1
+          - values:
+              - |
+                #
+                    lda.str "string"
+                    sta.obj v1
+          - values:
+              - |
+                #
+                    movi v1, 10
+                    newarr v1, v1, f64[]
+          - values:
+              - mov.null v1
+
+      - file-name: uninitialized_acc
+        isa:
+          verification:
+            - acc_type
+        description: Check 'sta.obj' with uninitialized accumulator. Destination register is not checked.
+        tags: ['verifier']
+        runner-options: ['verifier-failure', 'verifier-debug-config']
+        header-template: []
+        code-template: |
+            #
+            .function i32 main() {
+                %s
+                sta.obj %s
+        check-type: exit-positive
+        cases:
+          - values:
+              - ''
+              - v0
+          - values:
+              - movi v0, 0
+              - v0
+          - values:
+              - ''
+              - v15
+          - values:
+              - 'movi.64 v15, 0'
+              - v15
+          - values:
+              - ''
+              - v128
+          - values:
+              - 'fmovi.64 v128, 0'
+              - v128
+          - values:
+              - ''
+              - v255
+          - values:
+              - 'mov.null v255'
+              - v255
+
+      - file-name: "err"
+        isa:
+          instructions:
+            - sig: sta.obj v:out:ref
+              acc: in:ref
+              format: [op_v_8]
+        code-template: |
+            # Check sta.obj with wrong arguments
+                %s
+        check-type: none
+        runner-options: [compile-failure]
+        description: Check sta.obj with incorrect value.
+        cases:
+            - values:
+                - sta.obj 1
+            - values:
+                - sta.obj 1.1
+            - values:
+                - sta.obj a0
+            - values:
+                - sta.obj ""

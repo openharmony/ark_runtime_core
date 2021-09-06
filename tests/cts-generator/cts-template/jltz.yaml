@@ -1,0 +1,427 @@
+# Copyright (c) 2021 Huawei Device Co., Ltd.
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+definitions: []
+tests:
+  - file-name: "jltz"
+    isa:
+      title: Conditional compared to zero jump
+      description: >
+        Transfer execution to an instruction at offset bytes
+        from the beginning of the current instruction
+        if signed 32-bit integer in accumulator compares with 0 as specified.
+        Offset is sign extended to the size of instruction address.
+      exceptions:
+        - x_none
+    commands:
+
+      - file-name: "op"
+        isa:
+          instructions:
+            - sig: jltz imm:i32
+              acc: in:i32
+              format: [op_imm_8, op_imm_16]
+        description: >
+          Check jump occurs or not occurs, depending on `acc < 0` condition
+          for forward, backward, or current cases.
+        code-template: |
+          #
+              %s
+        check-type: exit-positive
+        cases:
+          - values:
+            - |
+              # Check forward jump
+                  ldai 0xFFFFFFFF
+                  jltz label
+                  ldai 255 ##*65536
+                  return  # should be jumped over
+              label:
+          - values:
+            - |
+              # Check backward jump
+                  jmp label2
+              label1:
+                  jmp label3
+                  ldai 255 ##*65536
+              label2:
+                  ldai -1
+                  jltz label1
+                  ldai 255
+                  return  # should be jumped over
+              label3:
+          - values:
+              - |
+                # Check jump to itself
+                    ldai 0
+                loop:
+                    jltz loop
+            bugid: ['3468']
+          - values:
+              - |
+                # Check jump to itself
+                    ldai -1
+                loop:
+                    jltz loop
+            runner-options: [compile-only]
+
+      - file-name: "op_bounds"
+        isa:
+          instructions:
+            - sig: jltz imm:i32
+              acc: in:i32
+              format: [op_imm_8, op_imm_16]
+        description: >
+          Check jump occurs or not occurs, depending on `acc < 0` condition
+          for forward and backward cases.
+        code-template: |
+          #
+              %s
+        check-type: none
+        cases:
+          - values:
+            - |
+              # Max forward jump for imm8, 2 + 124 + 1 = 127 bytes
+                  ldai -1
+                  jltz label    # 2-byte instruction
+                  ldai 1 ##*62
+                  return
+              label:
+                  ldai 0
+                  return
+          - values:
+            - |
+              # Max backward jump for imm8, 1 + 2 + 61*2 + 1 + 2 = 128 bytes
+                  jmp label2
+              label:
+                  neg
+                  ldai 61
+                  subi 1 ##*61
+                  return
+              label2:
+                  ldai -1
+                  jltz label
+                  ldai 1
+                  return
+          - values:
+            - |
+              # Max forward jump for imm16, 3 + 32760 + 4 = 32767 bytes
+                  ldai -1
+                  jltz label    # 3-byte instruction
+                  movi.64 v0, 0 ##*3276
+                  neg
+                  ldai 2
+                  return
+              label:
+                  ldai 0
+                  return
+          - values:
+            - |
+              # Max backward jump for imm16, 1 + 4 + 32760 + 1 + 2 = 32768 bytes
+                  jmp label2
+              label:
+                  ldai 0
+                  return
+                  ldai 1
+                  movi.64 v0, 0 ##*3276
+                  return
+              label2:
+                  ldai -1
+                  jltz label
+                  ldai 1
+                  return
+
+      - file-name: "vals"
+        isa:
+          instructions:
+            - sig: jltz imm:i32
+              acc: in:i32
+              format: [op_imm_8, op_imm_16]
+        description: >
+          Check jump not occurs if `acc >= 0`
+          for different values in acc.
+        code-template: |
+          #
+              ldai *s
+              jltz label_bad
+              ldai %s
+              jltz label_good
+          label_bad:
+              ldai 255
+              return  # should be jumped over
+          label_good:
+        check-type: exit-positive
+        template-cases:
+          - values:
+              - "-1"
+            exclude: [zero, max]
+          - values:
+              - "0x80000000"
+            exclude: [zero, one]
+          - values:
+              - "0xFFFFFFFF"
+            exclude: [one, max]
+        cases:
+          - values:
+              - "0"
+            id: zero
+          - values:
+              - "1"
+            id: one
+          - values:
+              - "0x7FFFFFFF"
+            id: max
+
+      - file-name: "type"
+        isa:
+          instructions:
+            - sig: jltz imm:i32
+              acc: in:i32
+              format: [op_imm_8, op_imm_16]
+          verification:
+              - acc_type
+        description: >
+          Check `jltz` with invalid types in acc.
+        tags: ['verifier']
+        runner-options: ['verifier-failure', 'verifier-debug-config']
+        header-template: []
+        code-template: |
+          #
+          .record A {}
+          .record panda.String <external>
+          .record panda.Object <external>
+          .function i32 main() {
+              %s
+              jltz label
+              ldai 255
+          label:
+        check-type: exit-positive
+        cases:
+          - values:
+              - lda.null
+          - values:
+              - ldai.64 0
+          - values:
+              - fldai.64 0
+          - values:
+              - lda.type A
+          - values:
+              - lda.type A[]
+          - values:
+              - lda.type panda.String
+          - values:
+              - |
+                newobj v0, A
+                lda.obj v0
+          - values:
+              - |
+                newobj v0, panda.Object
+                lda.obj v0
+          - values:
+              - lda.str "0"
+          - values:
+              - |
+                #
+                    movi v0, 10
+                    newarr v0, v0, i32[]
+                    lda.obj v0
+
+      - file-name: "outside_function"
+        isa:
+          instructions:
+            - sig: jltz imm:i32
+              acc: in:i32
+              format: [op_imm_8, op_imm_16]
+          verification:
+            - branch_target
+        description: >
+          Branch target should point to a beginning
+          of an instruction of the same method.
+        runner-options: ['compile-failure']
+        header-template: []
+        code-template: |
+          #
+          .function i32 f() {
+          label:
+              ldai 255
+              return
+          }
+          .function i32 main() {
+              ldai -1
+              jltz label
+        check-type: exit-positive
+
+      - file-name: "outside_try_catch_p"
+        isa:
+          instructions:
+            - sig: jltz imm:i32
+              acc: in:i32
+              format: [op_imm_8, op_imm_16]
+        description: Jump outside try/catch block.
+        bugid: ['3425']
+        header-template: []
+        code-template: |
+          .record panda.ArithmeticException <external>
+          .function i32 main() {
+          begin:
+              ldai -1
+              jltz outside
+              newobj v0, panda.ArithmeticException
+              throw v0
+          end:
+              ldai 1
+              return
+          catch_ae:
+              ldai 2
+              return
+          .catch panda.ArithmeticException, begin, end, catch_ae
+              ldai 3
+              return
+          outside:
+        check-type: exit-positive
+
+      - file-name: uninitialized_regs
+        isa:
+          instructions:
+            - sig: jltz imm:i32
+              acc: in:i32
+              format: [op_imm_8, op_imm_16]
+        description: Check `jltz` with uninitialized acc.
+        tags: ['verifier']
+        runner-options: ['verifier-failure', 'verifier-debug-config']
+        code-template: |
+          #
+          label:
+              jltz label
+        check-type: exit-positive
+
+      - file-name: "invalid_branch_target"
+        isa:
+          verification:
+            - branch_target
+        runner-options: [compile-failure]
+        description: Check 'jltz' instruction with invalid branch target.
+        header-template: []
+        code-template: |
+            .record R {}
+
+            .function void R.ctor(R a0) <ctor> {
+            lbl_ctor:
+                return.void
+            }
+
+            .function void R.cctor() <cctor> {
+            lbl_cctor:
+                return.void
+            }
+
+            .function i32 foo(i32 a0, i32 a1) <static> {
+                lda a0
+                jltz %s
+                return
+            }
+
+            .function i32 bar() <static> {
+            lbl_bar:
+                ldai 1
+                return
+            }
+
+            .function i32 main() {
+                movi v0, 0
+                movi v1, 1
+                call.short foo, v0, v1
+            lbl_main:
+        check-type: exit-positive
+        cases:
+          - values: ["main"]
+          - values: ["foo"]
+          - values: ["bar"]
+          - values: ["baz"]
+          - values: ["R"]
+          - values: ["lbl_main"]
+          - values: ["lbl_bar"]
+          - values: ["lbl_ctor"]
+          - values: ["lbl_cctor"]
+
+
+      - file-name: "prohibited_branch_target"
+        isa:
+          verification:
+            - branch_target
+        runner-options: ['verifier-failure', 'verifier-debug-config']
+        tags: [verifier]
+        description: Check 'jltz' instruction with prohibited branch target.
+        header-template: []
+        code-template: |
+            .record E1 {}
+            .record E2 {}
+
+            .function i32 main() {
+                ldai -1
+                jltz %s
+
+            begin:
+                ldai 0
+                return
+            mid:
+                ldai 1
+                return
+            end:
+                ldai 2
+                return
+
+            catch_E1_begin:
+                ldai 3
+                return
+            catch_E1_mid:
+                ldai 4
+                return
+            catch_E1_end:
+                ldai 5
+                return
+
+            catch_E2_begin:
+                ldai 6
+                return
+            catch_E2_mid:
+                ldai 7
+                return
+            catch_E2_end:
+
+            quit:
+                ldai 8
+                return
+
+            .catch E1, begin, end, catch_E1_begin, catch_E1_end
+            .catch E2, catch_E1_begin, catch_E1_end, catch_E2_begin, catch_E2_end
+            outside:
+        check-type: none
+        cases:
+          - values: ["begin"]
+            runner-options: ['verifier-only', 'verifier-debug-config']
+          - values: ["mid"]
+            runner-options: ['verifier-only', 'verifier-debug-config']
+          - values: ["end"]
+            runner-options: ['verifier-only', 'verifier-debug-config']
+          - values: ["quit"]
+            runner-options: ['verifier-only', 'verifier-debug-config']
+          - values: ["catch_E1_begin"]
+          - values: ["catch_E1_mid"]
+          - values: ["catch_E1_end"]
+            runner-options: ['verifier-only', 'verifier-debug-config']
+          - values: ["catch_E2_begin"]
+          - values: ["catch_E2_mid"]
+          - values: ["catch_E2_end"]
+            runner-options: ['verifier-only', 'verifier-debug-config']
+          - values: ["outside"]

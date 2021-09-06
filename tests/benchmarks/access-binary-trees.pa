@@ -1,0 +1,171 @@
+# Copyright (c) 2021 Huawei Device Co., Ltd.
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+.record TreeNode {
+    TreeNode left
+    TreeNode right
+    i32 item
+}
+
+.function void TreeNode.Construct(TreeNode a0, TreeNode a1, TreeNode a2, i32 a3) {
+    lda.obj a1
+    stobj.obj a0, TreeNode.left
+    lda.obj a2
+    stobj.obj a0, TreeNode.right
+    lda a3
+    stobj a0, TreeNode.item
+    return.void
+}
+
+.function i32 TreeNode.itemCheck(TreeNode a0) <static> {
+    mov.null v0
+    ldobj.obj a0, TreeNode.left
+    jeq.obj v0, if
+    ldobj.obj a0, TreeNode.left
+    sta.obj v1
+    call.short TreeNode.itemCheck, v1
+    sta v2
+    ldobj.obj a0, TreeNode.right
+    sta.obj v1
+    call.short TreeNode.itemCheck, v1
+    neg
+    add2 v2
+    sta v2
+    ldobj a0, TreeNode.item
+    add2 v2
+    return
+if:
+    ldobj a0, TreeNode.item
+    return
+}
+
+.function TreeNode bottomUpTree(i32 a0, i32 a1){
+    lda a1
+    jgtz if
+    newobj v0, TreeNode
+    lda a0
+    stobj v0, TreeNode.item
+    lda.obj v0
+    return.obj
+if:
+    lda a0
+    muli 2
+    subi 1
+    sta v2
+    lda a1
+    subi 1
+    sta v3
+    call.short bottomUpTree, v2, v3
+    sta.obj v4
+    lda a0
+    muli 2
+    sta v2
+    lda a1
+    subi 1
+    sta v3
+    call.short bottomUpTree, v2, v3
+    sta.obj v5
+    newobj v6, TreeNode
+    call TreeNode.Construct, v6, v4, v5, a0
+    lda.obj v6
+    return.obj
+}
+
+.function i32 max(i32 a0, i32 a1){
+    lda a0
+    jlt a1, label
+    return
+label:
+    lda a1
+    return
+}
+
+.function u1 test(i32 a0, i32 a1, i32 a2){
+    movi v25, 0          #ret
+    mov v1, a0          #loop_counter
+    movi v5, 0
+loop:
+    lda v1
+    jgt a1, loop_exit
+    mov v2, a0          #minDepth
+    lda v2
+    addi 2
+    sta v0
+    call.short max, v0, v1
+    sta v3              #maxDepth
+    addi 1
+    sta v4              #stretchDepth
+    call.short bottomUpTree, v5, v4
+    sta.obj v6
+    call.short TreeNode.itemCheck, v6
+    sta v7              #check
+    call.short bottomUpTree, v5, v3
+    sta.obj v11             #LongLivedTree
+    mov v8, v2          #depth
+loop2:
+    lda v8
+    jgt v3, loop2_exit
+    lda v3
+    sub2 v8
+    add2 v2
+    sta v9
+    ldai 1
+    shl2 v9
+    sta v9                #iterations
+    movi v7, 0
+    movi v10, 1
+loop3:
+    lda v10
+    jgt v9, loop3_exit
+    call.short bottomUpTree, v10, v8
+    sta.obj v12
+    call.short TreeNode.itemCheck, v12
+    add2 v7
+    sta v7
+    lda v10
+    neg
+    sta v0
+    call.short bottomUpTree, v0, v8
+    sta.obj v12
+    call.short TreeNode.itemCheck, v12
+    add2 v7
+    sta v7
+    inci v10, 1
+    jmp loop3
+loop3_exit:
+    inci v8, 2
+    jmp loop2
+loop2_exit:
+    lda.obj v11
+    call.short TreeNode.itemCheck, v11
+    add2 v25
+    sta v25
+    inci v1, 1
+    jmp loop
+loop_exit:
+    lda v25
+    jne a2, exit_failure
+    ldai 0
+    return
+exit_failure:
+    ldai 1
+    return
+}
+
+.function u1 main(){
+    movi v0, 4
+    movi v1, 15
+    movi v2, -12
+    call test, v0, v1, v2
+    return
+}

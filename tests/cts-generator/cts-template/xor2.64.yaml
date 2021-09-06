@@ -1,0 +1,343 @@
+# Copyright (c) 2021 Huawei Device Co., Ltd.
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+definitions: []
+tests:
+  - file-name: "xor2.64"
+    isa:
+      title: Two address binary operation on accumulator
+      description: >
+        Perform specified binary operation on accumulator and register and store result into accumulator
+      exceptions:
+        - x_none
+    commands:
+      - file-name: "op_vs_8_zero"
+        isa:
+          instructions:
+            - sig: xor2.64 v:in:i64
+              acc: inout:i64
+              prefix: bit
+              format: [pref_op_v_8]
+        code-template: |
+          #
+              ldai.64 0
+              movi.64 v0, %s
+              mov.64 v1, v0
+              xor2.64 v0
+              mov.64 v0, v1
+              cmp.64 v0
+        description: Check xor2.64 with zero and various values.
+        cases:
+          - values:
+              - "0"
+          - values:
+              - "1"
+          - values:
+              - "-1"
+          - values:
+              - "0x7FFFFFFFFFFFFFFF"
+          - values:
+              - "0x8000000000000000"
+          - values:
+              - "-0x7FFFFFFFFFFFFFFF"
+          - values:
+              - "-0x8000000000000000"
+          - values:
+              - "0xFFFFFFFFFFFFFFFF"
+          - values:
+              - "-0xFFFFFFFFFFFFFFFF"
+
+      - file-name: "op_vs_8_pone"
+        isa:
+          instructions:
+            - sig: xor2.64 v:in:i64
+              acc: inout:i64
+              prefix: bit
+              format: [pref_op_v_8]
+        code-template: |
+          #
+              ldai.64 1
+              movi.64 v0, %s
+              xor2.64 v0
+              movi.64 v0, %s
+              cmp.64 v0
+        description: Check xor2.64 with +1 and various values.
+        cases:
+          - values:
+              - "0"
+              - "1"
+          - values:
+              - "1"
+              - "0"
+          - values:
+              - "-1"
+              - "-2"
+          - values:
+              - "0x7FFFFFFFFFFFFFFF"
+              - "0x7FFFFFFFFFFFFFFE"
+          - values:
+              - "0x8000000000000000"
+              - "0x8000000000000001"
+          - values:
+              - "-0x7FFFFFFFFFFFFFFF"
+              - "0x8000000000000000"
+          - values:
+              - "-0x8000000000000000"
+              - "0x8000000000000001"
+          - values:
+              - "0xFFFFFFFFFFFFFFFF"
+              - "0xFFFFFFFFFFFFFFFE"
+          - values:
+              - "-0xFFFFFFFFFFFFFFFF"
+              - "0"
+      - file-name: "op_vs_8_none"
+        isa:
+          instructions:
+            - sig: xor2.64 v:in:i64
+              acc: inout:i64
+              prefix: bit
+              format: [pref_op_v_8]
+        code-template: |
+          #
+              ldai.64 -1
+              movi.64 v0, %s
+              xor2.64 v0
+              movi.64 v0, %s
+              cmp.64 v0
+        description: Check xor2.64 with -1 and various values.
+        cases:
+          - values:
+              - "0"
+              - "0xFFFFFFFFFFFFFFFF"
+          - values:
+              - "1"
+              - "0xFFFFFFFFFFFFFFFE"
+          - values:
+              - "-1"
+              - "0"
+          - values:
+              - "0x7FFFFFFFFFFFFFFF"
+              - "0x8000000000000000"
+          - values:
+              - "0x8000000000000000"
+              - "0x7FFFFFFFFFFFFFFF"
+          - values:
+              - "-0x7FFFFFFFFFFFFFFF"
+              - "0x7FFFFFFFFFFFFFFE"
+          - values:
+              - "-0x8000000000000000"
+              - "0x7FFFFFFFFFFFFFFF"
+          - values:
+              - "0xFFFFFFFFFFFFFFFF"
+              - "0"
+          - values:
+              - "-0xFFFFFFFFFFFFFFFF"
+              - "0xFFFFFFFFFFFFFFFE"
+
+      - file-name: "op_vs_8_pmax"
+        isa:
+          instructions:
+            - sig: xor2.64 v:in:i64
+              acc: inout:i64
+              prefix: bit
+              format: [pref_op_v_8]
+        code-template: |
+          #
+              ldai.64 0x7FFFFFFFFFFFFFFF
+              movi.64 v0, %s
+              xor2.64 v0
+              movi.64 v0, %s
+              cmp.64 v0
+        description: Check xor2.64 with +max and various values.
+        cases:
+          - values:
+              - "0"
+              - "0x7FFFFFFFFFFFFFFF"
+          - values:
+              - "1"
+              - "0x7FFFFFFFFFFFFFFE"
+          - values:
+              - "-1"
+              - "0x8000000000000000"
+          - values:
+              - "0x7FFFFFFFFFFFFFFF"
+              - "0"
+          - values:
+              - "0x8000000000000000"
+              - "0xFFFFFFFFFFFFFFFF"
+          - values:
+              - "-0x7FFFFFFFFFFFFFFF"
+              - "0xFFFFFFFFFFFFFFFE"
+          - values:
+              - "-0x8000000000000000"
+              - "0xFFFFFFFFFFFFFFFF"
+          - values:
+              - "0xFFFFFFFFFFFFFFFF"
+              - "0x8000000000000000"
+          - values:
+              - "-0xFFFFFFFFFFFFFFFF"
+              - "0x7FFFFFFFFFFFFFFE"
+
+      - file-name: "op_vs_8_nmax"
+        isa:
+          instructions:
+            - sig: xor2.64 v:in:i64
+              acc: inout:i64
+              prefix: bit
+              format: [pref_op_v_8]
+        code-template: |
+          #
+              ldai.64 -0x8000000000000000
+              movi.64 v0, %s
+              xor2.64 v0
+              movi.64 v0, %s
+              cmp.64 v0
+        description: Check xor2.64 with -max and various values.
+        cases:
+          - values:
+              - "0"
+              - "0x8000000000000000"
+          - values:
+              - "1"
+              - "0x8000000000000001"
+          - values:
+              - "-1"
+              - "0x7FFFFFFFFFFFFFFF"
+          - values:
+              - "0x7FFFFFFFFFFFFFFF"
+              - "0xFFFFFFFFFFFFFFFF"
+          - values:
+              - "0x8000000000000000"
+              - "0"
+          - values:
+              - "-0x7FFFFFFFFFFFFFFF"
+              - "1"
+          - values:
+              - "-0x8000000000000000"
+              - "0"
+          - values:
+              - "0xFFFFFFFFFFFFFFFF"
+              - "0x7FFFFFFFFFFFFFFF"
+          - values:
+              - "-0xFFFFFFFFFFFFFFFF"
+              - "0x8000000000000001"
+
+      - file-name: "vals"
+        isa:
+          instructions:
+            - sig: xor2.64 v:in:i64
+              acc: inout:i64
+              prefix: bit
+              format: [pref_op_v_8]
+        code-template: |
+          #
+              ldai.64 %s
+              movi.64 v0, %s
+              xor2.64 v0
+              movi.64 v0, %s
+              cmp.64 v0
+        description: Check xor2.64 with various values.
+        tags: ['tsan']
+        cases:
+          - values:
+              - "0x890DF3616155A02B"
+              - "0x4C0D923B34DBE96A"
+              - "0xC500615A558E4941"
+          - values:
+              - "0xA29939020BB9A059"
+              - "0xF61FB8F1E80F8EE8"
+              - "0x548681F3E3B62EB1"
+          - values:
+              - "0xD4361E836F3300A"
+              - "0xC24FD1D8D92407DC"
+              - "0xCF0CB030EFD737D6"
+          - values:
+              - "0x3F5B728F2D655D07"
+              - "0x6F704452D1531FEF"
+              - "0x502B36DDFC3642E8"
+          - values:
+              - "0xF65CA4461CEAB7AC"
+              - "0x61AD179F8BB9A95A"
+              - "0x97F1B3D997531EF6"
+          - values:
+              - "0xF22D5E456CF272C6"
+              - "0x96C58D3D88105ADB"
+              - "0x64E8D378E4E2281D"
+          - values:
+              - "0x13A09CB58EA0D202"
+              - "0xA42129CCAEB1B12"
+              - "0x19E28E29444BC910"
+          - values:
+              - "0x8D1549075512985B"
+              - "0xE307DDBE79DCA6FC"
+              - "0x6E1294B92CCE3EA7"
+          - values:
+              - "0x314D058D96CDA52F"
+              - "0x81B64F5B737E5415"
+              - "0xB0FB4AD6E5B3F13A"
+          - values:
+              - "0x2395A0EAF5658856"
+              - "0xAC18E1DA22E4F6C"
+              - "0x29542EF7574BC73A"
+
+      - file-name: "regs"
+        isa:
+          instructions:
+            - sig: xor2.64 v:in:i64
+              acc: inout:i64
+              prefix: bit
+              format: [pref_op_v_8]
+        runner-options: ['compile-only']
+        code-template: |
+          #
+              xor2.64 %s
+        check-type: none
+        description: Check xor2.64 with various register numbers.
+        cases:
+          - values:
+              - "v255"
+          - values:
+              - "v256"
+            runner-options: ['compile-failure']
+
+      - file-name: "type"
+        bugid: ["964", "966"]
+        tags: ["verifier"]
+        isa:
+          instructions:
+            - sig: xor2.64 v:in:i64
+              acc: inout:i64
+              prefix: bit
+              format: [pref_op_v_8]
+          verification:
+            - acc_type
+            - v1_type
+        runner-options: ['verifier-failure', 'verifier-debug-config']
+        code-template: |
+          #
+              %s
+              %s
+              xor2.64 v0
+              ldai.64 0
+        check-type: no-check
+        description: Check xor2.64 with incorrect accumulator and register types.
+        cases:
+          - values:
+              - "lda.null"
+              - "movi.64 v0, 0"
+          - values:
+              - "ldai.64 0 "
+              - "mov.null v0"
+          - values:
+              - "lda.null"
+              - "mov.null v0"

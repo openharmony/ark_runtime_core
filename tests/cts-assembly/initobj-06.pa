@@ -1,0 +1,50 @@
+# Copyright (c) 2021 Huawei Device Co., Ltd.
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+# Assert that initobj.range triggers cctor
+
+.record R {
+    i32 field0 <static>
+}
+
+.function void R.cctor() <cctor> {
+    ldai 10
+    ststatic R.field0
+    return.void
+}
+
+.function void R.ctor(R a0, i32 a1, i32 a2, i32 a3, i32 a4, i32 a5) {
+    return.void
+}
+
+.function u1 main() {
+    movi v0, 10
+    movi v1, 0
+    movi v2, 0
+    movi v3, 0
+    movi v4, 0
+    movi v5, 0
+
+    initobj.range R.ctor, v1
+
+    ldstatic R.field0
+    jne v0, error0
+
+    ldai 0
+    return
+
+error0:
+    ldai 1
+    return
+}
+

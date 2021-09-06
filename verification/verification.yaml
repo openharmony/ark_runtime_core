@@ -1,0 +1,355 @@
+# Copyright (c) 2021 Huawei Device Co., Ltd.
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+compatibility_checks:
+  results:
+    ok:
+      ok: ""
+    errors:
+      private_field: Access to private object field is prohibited.
+      protected_field: Access to protected object field from non-descendants of object class is prohibited.
+      private_method: Call to a private method is prohibited.
+      protected_method: Call to protected methods from non-descendants of object class is prohibited.
+      unknown: Internal error.
+      wrong_acc: Wrong accumulator type.
+      wrong_formal_param: Wrong formal parameter type.
+      wrong_actual_param: Wrong actual parameter type.
+    warnings:
+      sign: Sign mismatch. Possible overflow/underflow issues and other quirks in data-flow.
+      size: Size mismatch. Possible value truncation issues.
+      sign_size: Sign and size mismatch. Possible overflow/underflow and truncation issues.
+      precision: Precision mismatch. Possible overflow/underflow issues and other quirks in data-flow.
+
+  domains:
+    type_relationship:
+      new_enum: TypeRelationship
+      values:
+        - same
+        - descendant
+        - other
+
+    access:
+      new_enum: AccessModifier
+      values:
+        - public
+        - protected
+        - private
+
+    type:
+      existing_enum: PandaTypes::TypeId
+      values:
+        - invalid
+        - void
+        - u1
+        - i8
+        - u8
+        - i16
+        - u16
+        - i32
+        - u32
+        - f32
+        - f64
+        - i64
+        - u64
+        - reference
+
+  checks:
+    FieldAccess:
+      _domains:
+        - type_relationship
+        - access
+      _default: ok
+      descendant:
+        private_field: private
+      other:
+        private_field: private
+        protected_field: protected
+
+    Call:
+      _domains:
+        - type_relationship
+        - access
+      _default: ok
+      descendant:
+        private_method: private
+      other:
+        private_method: private
+        protected_method: protected
+
+    Stobj:
+      _domains:
+        - type
+        - type
+      _default: unknown
+      u1:
+        _default: ok
+        unknown:
+          - reference
+        wrong_acc:
+          - void
+          - f32
+          - f64
+      i8:
+        _default: ok
+        unknown:
+          - invalid
+          - reference
+        wrong_acc:
+          - void
+          - f32
+          - f64
+        sign: u8
+        size:
+          - i16
+          - i32
+          - i64
+        sign_size:
+          - u16
+          - u32
+          - u64
+      u8:
+        _default: ok
+        unknown:
+          - invalid
+          - reference
+        wrong_acc:
+          - void
+          - f32
+          - f64
+        sign: i8
+        sign_size:
+          - i16
+          - i32
+          - i64
+        size:
+          - u16
+          - u32
+          - u64
+      i16:
+        _default: ok
+        unknown:
+          - invalid
+          - reference
+        wrong_acc:
+          - void
+          - f32
+          - f64
+        sign: u16
+        size:
+          - i32
+          - i64
+        sign_size:
+          - u32
+          - u64
+      u16:
+        _default: ok
+        unknown:
+          - invalid
+          - reference
+        wrong_acc:
+          - void
+          - f32
+          - f64
+        sign: i16
+        sign_size:
+          - i32
+          - i64
+        size:
+          - u32
+          - u64
+      i32:
+        _default: ok
+        unknown:
+          - invalid
+          - reference
+        wrong_acc:
+          - void
+          - f32
+          - f64
+        sign: u32
+        size:
+          - i64
+        sign_size:
+          - u64
+      u32:
+        _default: ok
+        unknown:
+          - invalid
+          - reference
+        wrong_acc:
+          - void
+          - f32
+          - f64
+        sign: i32
+        sign_size:
+          - i64
+        size:
+          - u64
+
+    StobjWide:
+      _domains:
+        - type
+        - type
+      _default: unknown
+      f32:
+        _default: wrong_acc
+        unknown:
+          - invalid
+          - void
+          - reference
+        ok: f32
+        precision: f64
+      f64:
+        _default: wrong_acc
+        unknown:
+          - invalid
+          - void
+          - reference
+        ok:
+          - f32
+          - f64
+      i64:
+        _default: wrong_acc
+        unknown:
+          - invalid
+          - void
+          - reference
+        ok: i64
+        sign: u64
+      u64:
+        _default: wrong_acc
+        unknown:
+          - invalid
+          - void
+          - reference
+        ok: u64
+        sign: i64
+
+    MethodArgs:
+      _default: wrong_actual_param
+      _domains:
+        - type
+        - type
+      void:
+        _default: wrong_formal_param
+        unknown: invalid
+      u1:
+        unknown: invalid
+        ok:
+          - u1
+          - i8
+          - u8
+          - i16
+          - u16
+          - i32
+          - u32
+      i8:
+        unknown: invalid
+        ok:
+          - u1
+          - i8
+        sign:
+          - u8
+        size:
+          - i16
+          - i32
+        sign_size:
+          - u16
+          - u32
+      u8:
+        unknown: invalid
+        ok:
+          - u1
+          - u8
+        sign:
+          - i8
+        sign_size:
+          - i16
+          - i32
+        size:
+          - u16
+          - u32
+      i16:
+        unknown: invalid
+        ok:
+          - u1
+          - i8
+          - u8
+          - i16
+        sign:
+          - u16
+        size:
+          - i32
+        sign_size:
+          - u32
+      u16:
+        unknown: invalid
+        ok:
+          - u1
+          - u8
+          - u16
+        sign:
+          - i8
+          - i16
+        sign_size:
+          - i32
+        size:
+          - u32
+      i32:
+        unknown: invalid
+        ok:
+          - u1
+          - i8
+          - u8
+          - i16
+          - u16
+          - i32
+        sign:
+          - u32
+      u32:
+        unknown: invalid
+        ok:
+          - u1
+          - u8
+          - u16
+          - u32
+        sign:
+          - i8
+          - i16
+          - i32
+      f32:
+        unknown: invalid
+        ok:
+          - f32
+        size:
+          - f64
+      f64:
+        unknown: invalid
+        ok:
+          - f32
+          - f64
+      i64:
+        unknown: invalid
+        ok:
+          - i64
+        sign:
+          - u64
+      u64:
+        unknown: invalid
+        ok:
+          - u64
+        sign:
+          - i64
+      reference:
+        _default: wrong_formal_param
+        unknown: invalid
