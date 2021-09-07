@@ -138,7 +138,7 @@ Output file: ARK bytecodes in text format
 
 ## Repositories Involved<a name="section1371113476307"></a>
 
-[ARK Runtime Subsystem](https://gitee.com/wanyanglan/ark_js_runtime/blob/master/docs/ARK-Runtime-Subsystem.md)
+[ARK Runtime Subsystem](https://gitee.com/openharmony/ark_js_runtime/blob/master/docs/ARK-Runtime-Subsystem.md)
 
 **[ark/runtime\_core](README_zh.md)**
 
