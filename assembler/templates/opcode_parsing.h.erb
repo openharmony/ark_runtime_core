@@ -83,9 +83,7 @@ bool Parser::ParseOperands()
 
                 ParseOperandVreg();
 %    elsif op.imm?
-%      if (insn.builtin? && j == 0)
-                    ParseOperandBuiltinMnemonic();
-%      elsif properties.include?("jump")
+%      if properties.include?("jump")
                 ParseOperandLabel();
 %      else
 %         if properties.include?("float")

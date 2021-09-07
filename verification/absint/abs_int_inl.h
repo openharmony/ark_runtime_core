@@ -3800,65 +3800,6 @@ public:
         return inst_;
     }
 
-    template <BytecodeInstructionSafe::Format format>
-    bool HandleBuiltinCall_polymorphic_short()
-    {
-        LOG_INST();
-        DBGBRK();
-        Sync();
-        return true;
-    }
-
-    template <BytecodeInstructionSafe::Format format>
-    bool HandleBuiltinMonitorenter()
-    {
-        LOG_VERIFIER_DEBUG_BUILTIN("monitorenter");
-        DBGBRK();
-        Sync();
-        auto &&acc_type = GetAccType();
-        if (acc_type.ForAllTypes([&](Type acc_type1) { return acc_type1 == Types().NullRefType(); })) {
-            // treat it as always throw NPE
-            SHOW_MSG(AlwaysNpeAccumulator)
-            LOG_VERIFIER_ALWAYS_NPE_ACCUMULATOR();
-            END_SHOW_MSG();
-            SET_STATUS_FOR_MSG(AlwaysNpeAccumulator);
-            return false;
-        }
-        if (!CheckTypes(acc_type, {Types().RefType()})) {
-            SET_STATUS_FOR_MSG(BadRegisterType);
-            SET_STATUS_FOR_MSG(UndefinedRegister);
-            return false;
-        }
-        MoveToNextInst<format>();
-        return true;
-    }
-
-    template <BytecodeInstructionSafe::Format format>
-    bool HandleBuiltinMonitorexit()
-    {
-        LOG_VERIFIER_DEBUG_BUILTIN("monitorexit");
-        DBGBRK();
-        Sync();
-        auto &&acc_type = GetAccType();
-        if (acc_type.ForAllTypes([&](Type acc_type1) { return acc_type1 == Types().NullRefType(); })) {
-            // treat it as always throw NPE
-            SHOW_MSG(AlwaysNpeAccumulator)
-            LOG_VERIFIER_ALWAYS_NPE_ACCUMULATOR();
-            END_SHOW_MSG();
-            SET_STATUS_FOR_MSG(AlwaysNpeAccumulator);
-            return false;
-        }
-        if (!CheckTypes(acc_type, {Types().RefType()})) {
-            SET_STATUS_FOR_MSG(BadRegisterType);
-            SET_STATUS_FOR_MSG(UndefinedRegister);
-            return false;
-        }
-        MoveToNextInst<format>();
-        return true;
-    }
-
-#include "abs_int_builtin_handlers.h"
-
     static PandaString RegisterName(int reg_idx, bool capitalize = false)
     {
         if (reg_idx == ACC) {

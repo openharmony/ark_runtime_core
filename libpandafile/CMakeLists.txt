@@ -28,14 +28,6 @@ set(TEMPLATES
     tests/bytecode_emitter_tests_gen.h.erb
 )
 
-set(output "${CMAKE_CURRENT_BINARY_DIR}/include/bytecode_builtin_enum_gen.h")
-panda_gen_file(
-    DATAFILE "${PANDA_ROOT}/isa/builtins.yaml"
-    REQUIRES "${PANDA_ROOT}/isa/builtinsapi.rb"
-    TEMPLATE "${CMAKE_CURRENT_SOURCE_DIR}/templates/bytecode_builtin_enum_gen.h.erb"
-    OUTPUTFILE ${output}
-)
-
 panda_isa_gen(TEMPLATES ${TEMPLATES}
     SOURCE ${CMAKE_CURRENT_LIST_DIR}/templates
     DESTINATION ${GEN_INCLUDE_DIR}

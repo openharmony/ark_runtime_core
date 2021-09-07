@@ -209,8 +209,6 @@ class BytecodeInst : public BytecodeInstBase<Mode> {
 public:
 #include <bytecode_instruction_enum_gen.h>
 
-#include <bytecode_builtin_enum_gen.h>
-
     BytecodeInst() = default;
 
     ~BytecodeInst() = default;
@@ -348,8 +346,6 @@ public:
     bool HasFlag(Flags flag) const;
 
     bool CanThrow() const;
-
-    bool IsBuiltin() const;
 
     bool IsTerminator() const
     {

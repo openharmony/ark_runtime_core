@@ -16,32 +16,8 @@ project(assembler CXX)
 
 panda_add_executable(ark_asm pandasm.cpp)
 
-set(INS_CREATE_BUILTINS_API_H ${CMAKE_CURRENT_BINARY_DIR}/ins_create_builtins_api.h)
-panda_gen_file(
-    DATAFILE ${PANDA_ROOT}/isa/builtins.yaml
-    TEMPLATE ${CMAKE_CURRENT_SOURCE_DIR}/templates/ins_create_builtins_api.h.erb
-    REQUIRES ${PANDA_ROOT}/isa/builtinsapi.rb
-    OUTPUTFILE ${INS_CREATE_BUILTINS_API_H}
-)
-
-set(BUILTIN_PARSING_CPP ${CMAKE_CURRENT_BINARY_DIR}/builtin_parsing.cpp)
-panda_gen_file(
-    DATAFILE ${PANDA_ROOT}/isa/builtins.yaml
-    TEMPLATE ${CMAKE_CURRENT_SOURCE_DIR}/templates/builtin_parsing.cpp.erb
-    REQUIRES ${PANDA_ROOT}/isa/builtinsapi.rb
-    OUTPUTFILE ${BUILTIN_PARSING_CPP}
-)
-
 set(PANDASM_BIN_TESTS ${CMAKE_CURRENT_BINARY_DIR}/tests)
 file(MAKE_DIRECTORY "${PANDASM_BIN_TESTS}")
-
-set(BUILTIN_PARSING_TESTS_CPP ${PANDASM_BIN_TESTS}/builtin_parsing_tests.cpp)
-panda_gen_file(
-    DATAFILE ${PANDA_ROOT}/isa/builtins.yaml
-    TEMPLATE ${CMAKE_CURRENT_SOURCE_DIR}/templates/builtin_parsing_tests.cpp.erb
-    REQUIRES ${PANDA_ROOT}/isa/builtinsapi.rb
-    OUTPUTFILE ${BUILTIN_PARSING_TESTS_CPP}
-)
 
 panda_isa_gen(
     TEMPLATES
@@ -54,10 +30,6 @@ panda_isa_gen(
     REQUIRES
         "${CMAKE_CURRENT_SOURCE_DIR}/asm_isapi.rb"
         "${PANDA_ROOT}/libpandafile/pandafile_isapi.rb"
-    EXTRA_DEPENDENCIES
-        ${INS_CREATE_BUILTINS_API_H}
-        ${BUILTIN_PARSING_CPP}
-        ${BUILTIN_PARSING_TESTS_CPP}
 )
 
 add_library(arkassembler ${PANDA_DEFAULT_LIB_TYPE}
@@ -73,7 +45,6 @@ add_library(arkassembler ${PANDA_DEFAULT_LIB_TYPE}
     ins_to_string.cpp
     extensions/extensions.cpp
     extensions/ecmascript/ecmascript_meta.cpp
-    builtin_parsing.cpp
 )
 
 add_dependencies(arkassembler isa_gen_assembler arkfile)
@@ -122,7 +93,6 @@ panda_add_gtest(
         tests/parser_test.cpp
         tests/emitter_test.cpp
         tests/mangling_tests.cpp
-        ${PANDASM_BIN_TESTS}/builtin_parsing_tests.cpp
     LIBRARIES
         arkbase arkassembler
     SANITIZERS

@@ -179,25 +179,6 @@ set(INTERPRETER_IMPL_SOURCES
 add_library(arkruntime_interpreter_impl OBJECT ${INTERPRETER_IMPL_SOURCES})
 panda_set_lib_32bit_property(arkruntime_interpreter_impl)
 
-set(builtin_templates
-    builtin_count
-    builtin_dispatch
-    builtin_handlers
-    builtin_insn_handlers
-)
-
-set(builtin_headers)
-foreach(template ${builtin_templates})
-    set(output "${CMAKE_CURRENT_BINARY_DIR}/include/${template}.h")
-    panda_gen_file(
-        DATAFILE "${PANDA_ROOT}/isa/builtins.yaml"
-        REQUIRES "${PANDA_ROOT}/isa/builtinsapi.rb"
-        TEMPLATE "${CMAKE_CURRENT_SOURCE_DIR}/interpreter/templates/${template}.h.erb"
-        OUTPUTFILE ${output}
-    )
-    list(APPEND builtin_headers ${output})
-endforeach()
-
 set(ISA_TEMPLATES
     interpreter-inl_gen.h.erb
     isa_constants_gen.h.erb
@@ -209,7 +190,6 @@ panda_isa_gen(
     TEMPLATES ${ISA_TEMPLATES}
     SOURCE ${CMAKE_CURRENT_LIST_DIR}/interpreter/templates
     DESTINATION ${GEN_INCLUDE_DIR}
-    EXTRA_DEPENDENCIES ${builtin_headers}
 )
 
 set(ISA "${CMAKE_BINARY_DIR}/isa/isa.yaml")

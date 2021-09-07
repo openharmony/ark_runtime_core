@@ -34,7 +34,6 @@ void ExecuteImpl(ManagedThread* thread, const uint8_t *pc, Frame* frame) {
 #define INSTRUMENT_FRAME() do { if (enable_instrumentation && (handler.GetFrame()->IsForcePop() || handler.GetFrame()->IsRetryInstruction())) { goto INSTRUMENT_FRAME_HANDLER; } } while (0)
 
     ASSERT(!thread->IsCurrentFrameCompiled());
-#include <builtin_count.h>
 
     EVENT_METHOD_ENTER(frame->GetMethod()->GetFullName(), events::MethodEnterKind::INTERP, thread->RecordMethodEnter());
 
@@ -45,12 +44,11 @@ void ExecuteImpl(ManagedThread* thread, const uint8_t *pc, Frame* frame) {
     PandaUniquePtr<void, decltype(method_exit_event)> method_exit(&method_exit_event, method_exit_event);
 #endif
 
-    static std::array<const void*, 256 + NUM_PREFIXED + 1 + NUM_BUILTINS> dispatch_table{
+    static std::array<const void*, 256 + NUM_PREFIXED + 1> dispatch_table{
 % Panda::dispatch_table.handler_names.each do |name|
         &&HANDLE_<%= name %>,
 % end
         &&EXCEPTION_HANDLER,
-#include <builtin_dispatch.h>
     };
 
     SetDispatchTable(dispatch_table);
@@ -64,7 +62,7 @@ void ExecuteImpl(ManagedThread* thread, const uint8_t *pc, Frame* frame) {
     const void *label;
     DISPATCH(GetDispatchTable(dispatch_table), state.GetPrimaryOpcode(), label);
 
-% Panda::instructions.reject(&:builtin?).each do |i|
+% Panda::instructions.each do |i|
 %   mnemonic = i.mnemonic.split('.').map { |p| p == '64' ? 'Wide' : p.capitalize }.join
 HANDLE_<%= i.handler_name %>: {
 % namespace = i.namespace == 'core' ? '' : "#{i.namespace}::"
@@ -116,10 +114,6 @@ HANDLE_<%= p.handler_name %>: {
     DISPATCH(GetDispatchTable(dispatch_table), dispatch_idx, label);
 }
 % end
-
-#include <builtin_insn_handlers.h>
-
-#include <builtin_handlers.h>
 
 INSTRUMENT_FRAME_HANDLER: {
     InstructionHandler<RuntimeIfaceT, enable_instrumentation> handler(&state);

@@ -28,14 +28,6 @@ panda_isa_gen(
         ${GET_INSTRUCTIONS_CPP}
 )
 
-set(GET_INSTRUCTIONS_CPP ${CMAKE_CURRENT_BINARY_DIR}/get_instructions.cpp)
-panda_gen_file(
-    DATAFILE ${PANDA_ROOT}/isa/builtins.yaml
-    TEMPLATE ${CMAKE_CURRENT_SOURCE_DIR}/templates/get_instructions.cpp.erb
-    REQUIRES ${PANDA_ROOT}/isa/builtinsapi.rb
-    OUTPUTFILE ${GET_INSTRUCTIONS_CPP}
-)
-
 set(GENERATOR ${PANDA_ROOT}/libpandafile/types.rb)
 set(TEMPLATE ${CMAKE_CURRENT_LIST_DIR}/templates/type_to_pandasm_type.cpp.erb)
 set(DATAFILE ${PANDA_ROOT}/libpandafile/types.yaml)
@@ -53,7 +45,6 @@ add_library(arkdisassembler ${PANDA_DEFAULT_LIB_TYPE}
     bc_ins_to_pandasm_ins.cpp
     get_ins_info.cpp
     type_to_pandasm_type.cpp
-    get_instructions.cpp
 )
 
 target_include_directories(arkdisassembler

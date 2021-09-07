@@ -360,21 +360,6 @@ std::ostream& operator<<(std::ostream& os, const typename BytecodeInst<Mode>::Op
 }
 
 template <const BytecodeInstMode Mode>
-inline bool BytecodeInst<Mode>::IsBuiltin() const
-{
-    switch (GetOpcode()) {
-% Panda::instructions.each do |inst|
-%   if inst["sig"].include? "builtin"
-        case BytecodeInst<Mode>::Opcode::<%= inst.opcode.upcase %>:
-%   end
-% end
-            return true;
-        default:
-            return false;
-    }
-}
-
-template <const BytecodeInstMode Mode>
 inline bool BytecodeInst<Mode>::IsPrimaryOpcodeValid() const
 {
     auto opcode = GetPrimaryOpcode();
