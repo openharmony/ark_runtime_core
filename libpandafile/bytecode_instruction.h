@@ -248,16 +248,13 @@ public:
         return static_cast<unsigned>(GetOpcode()) & std::numeric_limits<uint8_t>::max();
     }
 
+    bool IsPrimaryOpcodeValid() const;
+
     uint8_t GetSecondaryOpcode() const
     {
         // NOLINTNEXTLINE(hicpp-signed-bitwise)
         return (static_cast<unsigned>(GetOpcode()) >> std::numeric_limits<uint8_t>::digits) &
                std::numeric_limits<uint8_t>::max();
-    }
-
-    bool IsOpcodeEqual(Opcode opcode) const
-    {
-        return GetOpcode() == opcode;
     }
 
     template <const BytecodeInstMode M = Mode>
@@ -356,16 +353,7 @@ public:
 
     bool IsTerminator() const
     {
-        return HasFlag(Flags::RETURN) || HasFlag(Flags::JUMP) || IsOpcodeEqual(Opcode::THROW_V8);
-    }
-
-    bool IsMonitor() const
-    {
-        if (!IsOpcodeEqual(Opcode::BUILTIN_ACC_IMM8)) {
-            return false;
-        }
-        auto sub_opcode = static_cast<BUILTIN_ACC>(GetImm<Format::IMM8>());
-        return BUILTIN_ACC::MONITORENTER_IMM8 == sub_opcode || BUILTIN_ACC::MONITOREXIT_IMM8 == sub_opcode;
+        return HasFlag(Flags::RETURN) || HasFlag(Flags::JUMP) || (GetOpcode() == Opcode::THROW_V8);
     }
 
     static constexpr bool HasId(Format format, size_t idx);

@@ -17,7 +17,6 @@
 #include "libpandafile/file.h"
 #include "os/file.h"
 #include "os/mem.h"
-#include "isa_checksum.h"
 
 #include "assembly-emitter.h"
 #include "assembly-parser.h"
@@ -996,8 +995,6 @@ TEST(LIBZIPARCHIVE, OpenUncompressedArchiveFILE)
     // Delete the test archive, so it doesn't keep growing as we run this test
     remove(s_Test_archive_filename);
 
-    uint32_t *isa_checksum = reinterpret_cast<uint32_t *>(&pf_data[offsetof(panda_file::File::Header, isa_checksum)]);
-    *isa_checksum = ISA_CHECKSUM;
     // ************* Create Zip file *************
     // Append a bunch of text files to the test archive
     for (i = (N - 1); i >= 0; --i) {

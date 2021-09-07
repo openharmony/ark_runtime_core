@@ -1,0 +1,451 @@
+# Copyright (c) 2021 Huawei Device Co., Ltd.
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+definitions:
+  - name: pandasm_header
+    template: |
+      .language PandaAssembly
+
+      .record panda.Object <external>
+
+      .record Q {}
+      .function void Q.ctor(Q a0) <ctor> {
+        return.void
+      }
+
+      .record R {
+        u1             fu1
+        u8             fu8
+        i8             fi8
+        u16            fu16
+        i16            fi16
+        u32            fu32
+        i32            fi32
+        u64            fu64
+        i64            fi64
+        f32            ff32
+        f64            ff64
+        # objects:
+        i32[]          fi32Array
+        Q              fQ
+        Q[]            fQArray
+        panda.Object   fObj
+        panda.Object[] fObjArray
+      }
+      .function void R.ctor(R a0) <ctor> {
+        return.void
+      }
+
+  - name: java_header
+    template: |
+      .language Java
+
+      .record java.lang.Object <external>
+
+      .record Q {}
+      .function void Q.ctor(Q a0) <ctor> {
+        return.void
+      }
+
+      .record R {
+        u1             fu1
+        i8             fi8
+        u16            fu16
+        i16            fi16
+        i32            fi32
+        i64            fi64
+        f32            ff32
+        f64            ff64
+        # objects:
+        i32[]          fi32Array
+        Q              fQ
+        Q[]            fQArray
+        java.lang.Object   fObj
+        java.lang.Object[] fObjArray
+      }
+      .function void R.ctor(R a0) <ctor> {
+        return.void
+      }
+  - name: get_null_R
+    template: |
+      .function R get_null_R() {
+          lda.null
+          return.obj
+      }
+
+tests:
+  - file-name: "ldobj.v"
+    isa:
+      title: Get field from object to register
+      description: >
+        Get field value from an object by field id and put it into register.
+      instructions:
+        - sig: ldobj.v v1:out:i32, v2:in:ref, field_id
+          acc: none
+          format: [op_v1_4_v2_4_id_16]
+    commands:
+
+      - file-name: "check_if_v2_initialized"
+        description: Check that verifier reports error if source registers are not initialized
+        isa:
+          instructions:
+            - sig: ldobj.v v1:out:i32, v2:in:ref, field_id
+              acc: none
+              format: [op_v1_4_v2_4_id_16]
+        header-template: ['pandasm_header']
+        check-type: exit-positive
+        tags: ['verifier']
+        bugid: ['1324', '2084']
+        runner-options: ['verifier-failure', 'verifier-debug-config']
+        code-template: |
+
+          .function i32 main() {
+            %s  # verifier error expected, because v2 is not initialized
+        cases:
+          - values:
+            - 'ldobj.v v0, v0, R.fu1'
+          - values:
+            - 'ldobj.v v0, v1, R.fu8'
+          - values:
+            - 'ldobj.v v0, v15, R.fi8'
+
+
+      - file-name: "with_null_ref_p"
+        description: Check that NullPointerException is thrown if object ref is null in Panda context.
+        isa:
+          exceptions:
+            - x_null
+        header-template: ['pandasm_header', 'get_null_R']
+        check-type: empty
+        tags: ['tsan']
+        code-template: |
+          .record panda.NullPointerException <external>
+
+          .function i32 main() {
+            call.short get_null_R
+            sta.obj v0
+          try_begin:
+            ldobj.v v1, v0, %s
+            ldai 1
+            return
+          try_end:
+            ldai 0
+            return
+          .catch panda.NullPointerException, try_begin, try_end, try_end
+          }
+        cases:
+          - values:
+            - R.fu1
+          - values:
+            - R.fu8
+          - values:
+            - R.fi8
+          - values:
+            - R.fu16
+          - values:
+            - R.fi16
+          - values:
+            - R.fu32
+          - values:
+            - R.fi32
+
+
+      - file-name: "with_non_object_ref"
+        description: Check that verifier reports an error when the 2nd operand is not a ref to an object (other than array)
+        isa:
+          verification:
+            - v2_object
+        header-template: ['pandasm_header']
+        check-type: empty
+        tags: ['verifier']
+        bugid: ['2085']
+        runner-options: ['verifier-failure', 'verifier-debug-config']
+        code-template: |
+
+          .function i32 main() {
+            %s
+          try_begin:
+            ldobj.v v1, v0, R.fu1
+          try_end:
+            ldai 0
+            return
+          .catchall try_begin, try_end, try_end
+          }
+        cases:
+          - values:
+            - movi v0, 0
+            tags: ['release', 'clang_release_sanitizer']
+            bugid: ['1324', '1826']
+          - values:
+            - movi v0, 1
+          - values:
+            - movi.64 v0, 0x00
+            tags: ['release', 'clang_release_sanitizer']
+            bugid: ['1324', '1826']
+          - values:
+            - movi.64 v0, 0xCAFECAFECAFECAFE
+          - values:
+            - fmovi.64 v0, 0.0
+            tags: ['release', 'clang_release_sanitizer']
+            bugid: ['1324', '1826']
+          - values:
+            - fmovi.64 v0, 6.62607015
+          - values:
+            - |
+              #
+                movi v1, 10
+                newarr v0, v1, R[]
+            bugid: ['1827']
+
+
+      - file-name: "with_static_field_id"
+        description: Check that verifier reports an error if the field doesn't resolve to a non-static valid object field
+        isa:
+          verification:
+            - field_id_non_static
+        header-template: []
+        check-type: exit-positive
+        code-template: |
+          .record W {
+            i32   static_field  <static>
+          }
+          .function void W.ctor(W a0) <ctor> {
+            return.void
+          }
+          .record random_record_name {
+            i32 random_field_name
+          }
+          .function void random_function_name() {
+            return.void
+          }
+
+          .function i32 main() {
+            initobj W.ctor
+            sta.obj v0
+            ldobj.v v1, v0, %s
+        cases:
+          - values:
+            - W.static_field
+            tags: ['verifier']
+            runner-options: ['verifier-failure', 'verifier-debug-config']
+            bugid: ['1324', '1828', '2086']
+          - values:
+            - random_record_name
+            runner-options: ['compile-failure']
+          - values:
+            - random_function_name
+            runner-options: ['compile-failure']
+          - values:
+            - W.field_not_exists
+            runner-options: ['compile-failure']
+          - values:
+            - random_record_name.random_field_name
+            tags: ['verifier']
+            runner-options: ['verifier-failure', 'verifier-debug-config']
+            bugid: ['1833', '2086', '3536']
+          - values:
+            - 0
+            runner-options: ['compile-failure']
+          - values:
+            - -1.1
+            runner-options: ['compile-failure']
+          - values:
+            - "null"
+            runner-options: ['compile-failure']
+          - values:
+            - "\"abc\""
+            runner-options: ['compile-failure']
+
+
+      - file-name: "with_wrong_field_size_or_type"
+        description: Check that verifier reports an error when the field resolves to a field with size or type that is not corresponding to bytecode
+        isa:
+          verification:
+            - field_id_size
+        header-template: ['pandasm_header']
+        check-type: exit-positive
+        tags: ['verifier']
+        runner-options: ['verifier-failure', 'verifier-debug-config']
+        bugid: ['1834', '2088']
+        code-template: |
+
+          .function i32 main() {
+            initobj R.ctor
+            sta.obj v0
+            ldobj.v v1, v0, %s
+        cases:
+          - values:
+            - R.fi64
+          - values:
+            - R.fu64
+          - values:
+            - R.ff64
+          - values:
+            - R.ff32
+          - values:
+            - R.fObj
+          - values:
+            - R.fObjArray
+          - values:
+            - R.fi32Array
+
+
+      - file-name: "op_v1_4_v2_4_id_16"
+        description: Check that compiler reports an error when the register number is out of 4 bit size
+        isa:
+          instructions:
+            - sig: ldobj.v v1:out:i32, v2:in:ref, field_id
+              acc: none
+              format: [op_v1_4_v2_4_id_16]
+        header-template: ['pandasm_header']
+        runner-options: ['compile-failure']
+        check-type: exit-positive
+        code-template: |
+
+          .function i32 main() {
+            ldobj.v %s, R.fi32
+        cases:
+          - values: ['v15, v15']
+            runner-options: ['compile-only']
+          - values: ['v0, v16']
+          - values: ['v16, v0']
+          - values: ['v256, v0']
+          - values: ['v1, v256']
+          - values: ['v32567, v32567']
+          - values: ['a0, v1']
+          - values: ['v0, a1']
+          - values: ['v0']
+          - values: ['1']
+          - values: ['"0"']
+
+
+      - file-name: "from_all_field_types"
+        description: Check that field value is loaded into accumulator. More tests on ldobj.v can be found in stobj.v tests
+        isa:
+          description: >
+            For non-object variant, the size of the field is determined by the field_id,
+            most significant bits are sign or unsigned extended based on the field type to fit register size.
+            If field type is less than 32, then loaded value is sign or zero extended to i32 depending on field type.
+        header-template: ['pandasm_header']
+        check-type: exit-positive
+        tags: ['tsan']
+        code-template: |
+
+          .function i32 main() {
+            initobj.short R.ctor
+            sta.obj v0
+            ldai %s
+            stobj v0, R.f%s
+            lda.null
+            movi v15, %s
+            ldobj.v v1, v0, R.f%s
+            lda v1
+            %s v15
+            jeqz success
+            ldai 1
+            return
+          success:
+        cases:
+          # u1
+          - values: [0, 'u1', 0, 'u1', 'ucmp']
+          - values: [1, 'u1', 1, 'u1', 'ucmp']
+          # u8
+          - values: [0, 'u8', 0, 'u8', 'ucmp']
+          - values: [0x000000ff, 'u8', 0x000000ff, 'u8', 'ucmp']
+          - values: [0x000000a5, 'u8', 0x000000a5, 'u8', 'ucmp']
+          # u16
+          - values: [0, 'u16', 0, 'u16', 'ucmp']
+          - values: [0x0000ffff, 'u16', 0x0000ffff, 'u16', 'ucmp']
+          - values: [0x0000a5a5, 'u16', 0x0000a5a5, 'u16', 'ucmp']
+          # u32
+          - values: [0, 'u32', 0, 'u32', 'ucmp']
+          - values: [0xffffffff, 'u32', 0xffffffff, 'u32', 'ucmp']
+          - values: [0xa5a5a5a5, 'u32', 0xa5a5a5a5, 'u32', 'ucmp']
+
+
+      - file-name: "from_all_field_types_int"
+        description: Check that field value is loaded into accumulator. Version for signed integer types. More tests on ldobj.v can be found in stobj.v tests.
+        isa:
+          description: >
+            For non-object variant, the size of the field is determined by the field_id,
+            most significant bits are sign or unsigned extended based on the field type to fit register size.
+            If field type is less than 32, then loaded value is sign or zero extended to i32 depending on field type.
+        header-template: ['pandasm_header']
+        check-type: exit-positive
+        tags: ['tsan']
+        code-template: |
+
+          .function i32 main() {
+            initobj.short R.ctor
+            sta.obj v0
+            ldai %s
+            stobj v0, R.f%s
+            lda.null
+            movi v15, %s
+            ldobj.v v1, v0, R.f%s
+            lda v1
+            jeq v15, success
+            ldai 1
+            return
+          success:
+        cases:
+          # i8
+          - values: [0, 'i8', 0, 'i8']
+          - values: [0x000000ff, 'i8', 0xffffffff, 'i8']
+          - values: [0x000000a5, 'i8', 0xffffffa5, 'i8']
+          - values: [0x0000005a, 'i8', 0x0000005a, 'i8']
+          # i16
+          - values: [0, 'i16', 0, 'i16']
+          - values: [0x0000ffff, 'i16', 0xffffffff, 'i16']
+          - values: [0x0000a5a5, 'i16', 0xffffa5a5, 'i16']
+          - values: [0x00005a5a, 'i16', 0x00005a5a, 'i16']
+          # i32
+          - values: [0, 'i32', 0, 'i32']
+          - values: [0xffffffff, 'i32', 0xffffffff, 'i32']
+          - values: [0xa5a5a5a5, 'i32', 0xa5a5a5a5, 'i32']
+          - values: [0x5a5a5a5a, 'i32', 0x5a5a5a5a, 'i32']
+
+      - file-name: "from_float_field_type"
+        description: Check that accumulator value is loaded from field into accumulator. More tests on ldobj.v can be found in stobj.v tests
+        isa:
+          instructions:
+            - sig: ldobj.v v1:out:b32, v2:in:ref, field_id
+              acc: none
+              format: [op_v1_4_v2_4_id_16]
+        header-template: ['pandasm_header']
+        bugid: ['3292']
+        check-type: exit-positive
+        code-template: |
+
+          .function i32 main() {
+            initobj.short R.ctor
+            sta.obj v0
+            %s
+            stobj v0, R.ff32
+            lda.null
+            %s
+            ldobj.v v1, v0, R.ff32
+            lda v1
+            fcmpg v15
+            %s
+            jeqz success
+            ldai 1
+            return
+          success:
+        cases:
+          # f32
+          - values: ['fldai 0.0', 'fmovi v15, 0.0', '']
+          - values: ['fldai -6510615.0', 'fmovi v15, -6510615.0', '']
+          - values: ['fldai 0x7FFFFFFF', 'fmovi v15, 0x7FFFFFFF', 'subi 1']    # NaN
+          - values: ['fldai 0x7f800000', 'fmovi v15, 0x7f800000', '']    # + Inf
+          - values: ['fldai 0xff800000', 'fmovi v15, 0xff800000', '']    # - Inf

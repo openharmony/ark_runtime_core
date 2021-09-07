@@ -251,17 +251,20 @@ tests:
       - file-name: "from_all_float_field_types_p"
         description: Check that accumulator value is loaded from field into accumulator in PandaAssembly context. More tests on ldstatic.64 can be found in ststatic.64 tests.
         isa:
-          description: If field type is f32, result will be implicitly converted from f32 to f64.
+          instructions:
+            - sig: ldstatic.64 field_id
+              acc: out:b64
+              format: [op_id_16]
         header-template: [pandasm_header]
         check-type: exit-positive
         code-template: |
 
           .function i32 main() {
             fldai.64 %s
-            ststatic.64 R.f%s
+            ststatic.64 R.ff64
             lda.null
             fmovi.64 v15, %s
-            ldstatic.64 R.f%s
+            ldstatic.64 R.ff64
             fcmpg.64 v15
             %s
             jeqz success
@@ -269,19 +272,12 @@ tests:
             return
           success:
         cases:
-          # f32
-          - values: ['0.0', 'f32', '0.0', 'f32', '']
-          - values: ['-6510615.0', 'f32', '-6510615.0', 'f32', '']
-          - values: ['0x7FFFFFFFFFFFFFFF', 'f32', '0x7FFFFFFFFFFFFFFF', 'f32', 'subi 1']    # NaN
-          - values: ['0x7ff0000000000000', 'f32', '0x7ff0000000000000', 'f32', '']    # + Inf
-          - values: ['0xfff0000000000000', 'f32', '0xfff0000000000000', 'f32', '']    # - Inf
           # f64
-          - values: ['0.0', 'f64', '0.0', 'f64', '']
-          - values: ['-6510615555426900571.0', 'f64', '-6510615555426900571.0', 'f64', '']
-          - values: ['0x7FFFFFFFFFFFFFFF', 'f64', '0x7FFFFFFFFFFFFFFF', 'f64', 'subi 1']    # NaN
-          - values: ['0x7ff0000000000000', 'f64', '0x7ff0000000000000', 'f64', '']    # + Inf
-          - values: ['0xfff0000000000000', 'f64', '0xfff0000000000000', 'f64', '']    # - Inf
-
+          - values: ['0.0', '0.0', '']
+          - values: ['-6510615555426900571.0', '-6510615555426900571.0', '']
+          - values: ['0x7FFFFFFFFFFFFFFF', '0x7FFFFFFFFFFFFFFF', 'subi 1']    # NaN
+          - values: ['0x7ff0000000000000', '0x7ff0000000000000', '']    # + Inf
+          - values: ['0xfff0000000000000', '0xfff0000000000000', '']    # - Inf
 
       - file-name: "x_init_p"
         description: Check that ExceptionInInitializerError is thrown if an unexpected exception occurs in static initializer.

@@ -160,7 +160,7 @@ InvokeCompiledCodeWithArgArrayDyn:
 .Linvoke_:
     // invoke the entrypoint
     blr lr
-    
+
     sub sp, fp, 32
     ldp x19, THREAD_REG, [sp], 48
     CFI_RESTORE(THREAD_REG)

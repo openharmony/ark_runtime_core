@@ -46,5 +46,4 @@ double MemStatsDefault::GetTotalGCPhaseTime([[maybe_unused]] GCPhase phase) cons
 {
     return 0;
 }
-
 }  // namespace panda::mem

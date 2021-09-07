@@ -36,7 +36,7 @@ tests:
         Store accumulator content into array slot pointed by index.
       instructions:
         - sig: fstarr.32 v1:in:f32[], v2:in:i32
-          acc: in:f64
+          acc: in:f32
           format: [op_v1_4_v2_4]
           properties: [acc_read, float]
     commands:
@@ -46,7 +46,7 @@ tests:
         isa:
           instructions:
             - sig: fstarr.32 v1:in:f32[], v2:in:i32
-              acc: in:f64
+              acc: in:f32
               format: [op_v1_4_v2_4]
               properties: [acc_read, float]
         check-type: empty
@@ -82,7 +82,7 @@ tests:
         isa:
           instructions:
             - sig: fstarr.32 v1:in:f32[], v2:in:i32
-              acc: in:f64
+              acc: in:f32
               format: [op_v1_4_v2_4]
               properties: [acc_read, float]
         runner-options: [compile-failure]
@@ -121,7 +121,7 @@ tests:
         isa:
           instructions:
             - sig: fstarr.32 v1:in:f32[], v2:in:i32
-              acc: in:f64
+              acc: in:f32
               format: [op_v1_4_v2_4]
               properties: [acc_read, float]
         runner-options: [compile-failure]
@@ -160,7 +160,7 @@ tests:
               call.short get_null
               sta.obj v0
               movi v1, %s
-              fldai.64 0
+              fldai 0
           begin:
               fstarr.32 v0, v1
           end:
@@ -204,7 +204,7 @@ tests:
               movi v0, %s
               newarr v0, v0, f32[]
               movi v1, %s
-              fldai.64 0
+              fldai 0
           begin:
               fstarr.32 v0, v1
           end:
@@ -298,7 +298,7 @@ tests:
               movi v0, 1
               newarr v1, v0, f32[]
               movi v2, 0
-              fldai.64 0
+              fldai 0
               fstarr.32 v1, v2
         check-type: exit-positive
 
@@ -316,7 +316,7 @@ tests:
               movi v0, 1
               newarr v1, v0, %s
               movi v2, 0
-              fldai.64 0
+              fldai 0
               fstarr.32 v1, v2
         check-type: exit-positive
         cases:
@@ -351,7 +351,7 @@ tests:
           .function i32 main() {
               %s
               movi v1, 0
-              fldai.64 0
+              fldai 0
               fstarr.32 v0, v1
         check-type: exit-positive
         cases:
@@ -438,7 +438,7 @@ tests:
               movi v0, 1
               newarr v1, v0, *s
               %s
-              fldai.64 0
+              fldai 0
               fstarr.32 v1, v2
         check-type: exit-positive
         cases:
@@ -638,7 +638,7 @@ tests:
         isa:
           instructions:
             - sig: fstarr.32 v1:in:f32[], v2:in:i32
-              acc: in:f64
+              acc: in:f32
               format: [op_v1_4_v2_4]
               properties: [acc_read, float]
         description: Check fstarr.32 stores items to array of different size and type in Panda Assembly context.
@@ -647,7 +647,7 @@ tests:
               movi v0, *s
               newarr v1, v0, %s
               movi v2, *s
-              fldai.64 1234567890.0
+              fldai 1234567890.0
               fstarr.32 v1, v2
         check-type: exit-positive
         template-cases:
@@ -673,7 +673,7 @@ tests:
                 movi v2, 0          # array index
             fill_array:
                 lda v2
-                i32tof64
+                i32tof32
                 fstarr.32 v1, v2      # v1[v2] = acc
                 inci v2, 1            # v2 = v2 + 1
                 lda v2
@@ -681,11 +681,11 @@ tests:
                 inci v2, -1
             check_array:
                 lda v2
-                i32tof64
-                sta.64 v3            # value to compare with
+                i32tof32
+                sta v3            # value to compare with
                 lda v2
                 fldarr.32 v1
-                fcmpg.64 v3
+                fcmpg v3
                 jeqz ok
                 ldai 2
                 return

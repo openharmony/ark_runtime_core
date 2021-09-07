@@ -55,13 +55,10 @@ chapters:
       can be loaded/stored into records and arrays with corresponding bytecodes. In that case, VM will extend/truncate
       value to match storage size with i32. Similarly, passing an 8-bit or 16-bit value to a function can be emulated by
       passing a value, which is zero or sign-extended to i32.
-      VM support operations on registers with f64 values, which corresponds to IEEE-754 double precision
-      floating-point representation. However, f32 data type (IEEE-754 single precision) can be loaded/stored
-      into records and arrays with corresponding bytecodes. In that case, VM will convert f64 to f32 on store
-      and f32 to f64 on load. Similarly, passing f32 value to a function can be emulated by passing a value, which
-      is converted from f32 to f64.
+      VM support operations on registers with f32 and f64 values, which corresponds to IEEE-754 single and double precision
+      floating-point represenation.
       Primitive data type of a register is not tracked by VM and is interpreted by separate bytecodes.
-      Integral values are not inherently signed or unsigned, and signedness is interpreted by bytecodes as well.
+      Integral values are not inherently signed or unsigned, signedness is interpreted by bytecodes as well.
       If bytecode treats register value as signed integer, it uses two's complement representation.
       To denote that bytecode treats register values as unsigned integer, u32/u64 notation is used.
       For moves, loads and stores it is not always possible to denote a type of result, because it depends on type
@@ -107,6 +104,10 @@ chapters:
       that hold 'any' value, whether they are primitive or not. Virtual registers and accumulator are wide enough
       to hold 'any' value. When VM executes code inside dynamically-typed language context, regular static instructions
       also may be used.
+
+# File format and ISA versioning
+min_version: 0.0.0.2
+version: 0.0.0.2
 
 properties:
   - tag: acc_none
@@ -183,6 +184,8 @@ verification:
     description: First operand contains a reference to an object or null.
   - tag: v2_i32
     description: Second operand contains a value of i32 type.
+  - tag: v2_object
+    description: Second operand contains a reference to an object (other than array).
   - tag: v2_type
     description: Second operand contains a value of type corresponding to bytecode.
   - tag: acc_i32
@@ -231,12 +234,36 @@ verification:
 prefixes:
   - name: bit
     description: Bit operations.
+    opcode_idx: 0xef
   - name: unsigned
     description: Unsigned operations.
+    opcode_idx: 0xee
   - name: cast
     description: Cast operations.
+    opcode_idx: 0xed
+  - name: f32
+    description: IEEE-754 single precision floating-point operations.
+    opcode_idx: 0xec
 
 groups:
+  - title: No operation
+    description: Perform an operation without behavior.
+    properties:
+      - acc_none
+    exceptions:
+      - x_none
+    verification:
+      - none
+    pseudo: |
+      skip
+    semantics: |-
+      skip
+    instructions:
+      - sig: nop
+        acc: none
+        format: [op_none]
+        opcode_idx: [0x0]
+
   - title: Move register-to-register
     description: Move values between registers.
     properties:
@@ -254,15 +281,18 @@ groups:
       raise exception(UndefinedSemantics) if true that Op not in [[ "mov", "mov.64", "mov.obj" ]];
       Vd <~ Vs
     instructions:
-      - sig: mov v1:out:i32, v2:in:i32
+      - sig: mov v1:out:b32, v2:in:b32
         acc: none
         format: [op_v1_4_v2_4, op_v1_8_v2_8, op_v1_16_v2_16]
+        opcode_idx: [0x1, 0x2, 0x3]
       - sig: mov.64 v1:out:b64, v2:in:b64
         acc: none
         format: [op_v1_4_v2_4, op_v1_16_v2_16]
+        opcode_idx: [0x4, 0x5]
       - sig: mov.obj v1:out:ref, v2:in:ref
         acc: none
         format: [op_v1_4_v2_4, op_v1_8_v2_8, op_v1_16_v2_16]
+        opcode_idx: [0x6, 0x7, 0x8]
 
   - title: Move immediate-to-register
     description: >
@@ -285,6 +315,10 @@ groups:
           raise exception(WrongImmediateValue) if undefined int_of(Imm);
           Vd <~ value_of(signed(64), int_of(Imm))
         end when;
+        when Op == "fmovi" do
+          raise exception(WrongImmediateValue) if undefined float_of(Imm);
+          Vd <~ value_of(float, float_of(Imm))
+        end when;
         when Op == "fmovi.64" do
           raise exception(WrongImmediateValue) if undefined float_of(Imm);
           Vd <~ value_of(float, float_of(Imm))
@@ -296,15 +330,25 @@ groups:
       - sig: movi v:out:i32, imm:i32
         acc: none
         format: [op_v_4_imm_4, op_v_8_imm_8, op_v_8_imm_16]
+        opcode_idx: [0x9, 0xa, 0xb]
       - sig: movi v:out:i32, imm:i32
         acc: none
         format: [op_v_8_imm_32]
+        opcode_idx: [0xc]
       - sig: movi.64 v:out:i64, imm:i64
         acc: none
         format: [op_v_8_imm_64]
+        opcode_idx: [0xd]
+      - sig: fmovi v:out:f32, imm:f32
+        acc: none
+        prefix: f32
+        format: [pref_op_v_8_imm_32]
+        opcode_idx: [0x0]
+        properties: [acc_none, float]
       - sig: fmovi.64 v:out:f64, imm:f64
         acc: none
         format: [op_v_8_imm_64]
+        opcode_idx: [0xe]
         properties: [acc_none, float]
 
   - title: Move null reference into register
@@ -323,6 +367,7 @@ groups:
       - sig: mov.null v:out:ref
         acc: none
         format: [op_v_8]
+        opcode_idx: [0xf]
 
   - title: Load accumulator from register
     description: Moves register content into an accumulator.
@@ -355,12 +400,15 @@ groups:
       - sig: lda v:in:i32
         acc: out:i32
         format: [op_v_8]
+        opcode_idx: [0x10]
       - sig: lda.64 v:in:b64
         acc: out:b64
         format: [op_v_8]
+        opcode_idx: [0x11]
       - sig: lda.obj v:in:ref
         acc: out:ref
         format: [op_v_8]
+        opcode_idx: [0x12]
 
   - title: Load accumulator from immediate
     description: >
@@ -383,6 +431,10 @@ groups:
           raise exception(WrongImmediateValue) if undefined int_of(Imm);
           acc <~ value_of(i64, int_of(Imm))
         end when;
+        when Op == "fldai" do
+          raise exception(WrongImmediateValue) if undefined float_of(Imm);
+          acc <~ value_of(float, float_of(Imm))
+        end when
         when Op == "fldai.64" do
           raise exception(WrongImmediateValue) if undefined float_of(Imm);
           acc <~ value_of(float, float_of(Imm))
@@ -394,15 +446,25 @@ groups:
       - sig: ldai imm:i32
         acc: out:i32
         format: [op_imm_8, op_imm_16]
+        opcode_idx: [0x13, 0x14]
       - sig: ldai imm:i32
         acc: out:i32
         format: [op_imm_32]
+        opcode_idx: [0x15]
       - sig: ldai.64 imm:i64
         acc: out:i64
         format: [op_imm_64]
+        opcode_idx: [0x16]
+      - sig: fldai imm:f32
+        acc: out:f32
+        prefix: f32
+        format: [pref_op_imm_32]
+        opcode_idx: [0x1]
+        properties: [acc_write, float]
       - sig: fldai.64 imm:f64
         acc: out:f64
         format: [op_imm_64]
+        opcode_idx: [0x17]
         properties: [acc_write, float]
 
   - title: Load accumulator from string constant pool
@@ -426,6 +488,7 @@ groups:
       - sig: lda.str string_id
         acc: out:ref
         format: [op_id_32]
+        opcode_idx: [0x18]
 
   - title: Create and initialize new constant array
     description: >
@@ -445,6 +508,7 @@ groups:
       - sig: lda.const v:out:ref, literalarray_id
         acc: none
         format: [op_v_8_id_32]
+        opcode_idx: [0x19]
 
   - title: Load accumulator from type constant pool
     description: Load type specified by id into accumulator.
@@ -464,6 +528,7 @@ groups:
       - sig: lda.type type_id
         acc: out:ref
         format: [op_id_16]
+        opcode_idx: [0x1a]
 
   - title: Load null reference into accumulator
     description: Load null reference into accumulator.
@@ -481,6 +546,7 @@ groups:
       - sig: lda.null
         acc: out:ref
         format: [op_none]
+        opcode_idx: [0x1b]
 
   - title: Store accumulator
     description: Moves accumulator content into a register.
@@ -503,32 +569,15 @@ groups:
       - sig: sta v:out:i32
         acc: in:i32
         format: [op_v_8]
+        opcode_idx: [0x1c]
       - sig: sta.64 v:out:b64
         acc: in:b64
         format: [op_v_8]
+        opcode_idx: [0x1d]
       - sig: sta.obj v:out:ref
         acc: in:ref
         format: [op_v_8]
-
-  - title: Unconditional jump
-    description: >
-      Unconditionally transfer execution to an instruction at offset bytes from the beginning of the current
-      instruction. Offset is sign extended to the size of instruction address.
-    properties:
-      - acc_none
-      - jump
-    exceptions:
-      - x_none
-    verification:
-      - branch_target
-    pseudo: |
-      pc += imm
-    semantics: |-
-      perform_jump(LabelId)
-    instructions:
-      - sig: jmp imm:i32
-        acc: none
-        format: [op_imm_8, op_imm_16, op_imm_32]
+        opcode_idx: [0x1e]
 
   - title: Integer comparison
     description: Perform specified signed or unsigned integer comparison between register and accumulator.
@@ -564,14 +613,17 @@ groups:
       - sig: cmp.64 v:in:i64
         acc: inout:i64->i32
         format: [op_v_8]
+        opcode_idx: [0x1f]
       - sig: ucmp v:in:u32
         acc: inout:u32->i32
         prefix: unsigned
         format: [pref_op_v_8]
+        opcode_idx: [0x0]
       - sig: ucmp.64 v:in:u64
         acc: inout:u64->i32
         prefix: unsigned
         format: [pref_op_v_8]
+        opcode_idx: [0x1]
 
   - title: Floating-point comparison
     description: Perform specified floating point comparison between register and accumulator.
@@ -587,8 +639,10 @@ groups:
     pseudo: |
       if isnan(acc) or isnan(vs) then
         switch (op)
+        case fcmpg:
         case fcmpg.64:
           acc = 1
+        case fcmpl:
         case fcmpl.64:
           acc = -1
       else
@@ -619,12 +673,45 @@ groups:
       undefined raise exception(WrongRegisterValue)
       end if
     instructions:
+      - sig: fcmpl v:in:f32
+        acc: inout:f32->i32
+        prefix: f32
+        format: [pref_op_v_8]
+        opcode_idx: [0x2]
       - sig: fcmpl.64 v:in:f64
         acc: inout:f64->i32
         format: [op_v_8]
+        opcode_idx: [0x20]
+      - sig: fcmpg v:in:f32
+        acc: inout:f32->i32
+        prefix: f32
+        format: [pref_op_v_8]
+        opcode_idx: [0x3]
       - sig: fcmpg.64 v:in:f64
         acc: inout:f64->i32
         format: [op_v_8]
+        opcode_idx: [0x21]
+
+  - title: Unconditional jump
+    description: >
+      Unconditionally transfer execution to an instruction at offset bytes from the beginning of the current
+      instruction. Offset is sign extended to the size of instruction address.
+    properties:
+      - acc_none
+      - jump
+    exceptions:
+      - x_none
+    verification:
+      - branch_target
+    pseudo: |
+      pc += imm
+    semantics: |-
+      perform_jump(LabelId)
+    instructions:
+      - sig: jmp imm:i32
+        acc: none
+        format: [op_imm_8, op_imm_16, op_imm_32]
+        opcode_idx: [0x22, 0x23, 0x24]
 
   - title: Conditional object comparison jump
     description: >
@@ -657,9 +744,11 @@ groups:
       - sig: jeq.obj v:in:ref, imm:i32
         acc: in:ref
         format: [op_v_8_imm_8, op_v_8_imm_16]
+        opcode_idx: [0x25, 0x26]
       - sig: jne.obj v:in:ref, imm:i32
         acc: in:ref
         format: [op_v_8_imm_8, op_v_8_imm_16]
+        opcode_idx: [0x27, 0x28]
 
   - title: Conditional compared to null jump
     description: >
@@ -691,9 +780,11 @@ groups:
       - sig: jeqz.obj imm:i32
         acc: in:ref
         format: [op_imm_8, op_imm_16]
+        opcode_idx: [0x29, 0x2a]
       - sig: jnez.obj imm:i32
         acc: in:ref
         format: [op_imm_8, op_imm_16]
+        opcode_idx: [0x2b, 0x2c]
 
   - title: Conditional compared to zero jump
     description: >
@@ -752,21 +843,27 @@ groups:
       - sig: jeqz imm:i32
         acc: in:i32
         format: [op_imm_8, op_imm_16]
+        opcode_idx: [0x2d, 0x2e]
       - sig: jnez imm:i32
         acc: in:i32
         format: [op_imm_8, op_imm_16]
+        opcode_idx: [0x2f, 0x30]
       - sig: jltz imm:i32
         acc: in:i32
         format: [op_imm_8, op_imm_16]
+        opcode_idx: [0x31, 0x32]
       - sig: jgtz imm:i32
         acc: in:i32
         format: [op_imm_8, op_imm_16]
+        opcode_idx: [0x33, 0x34]
       - sig: jlez imm:i32
         acc: in:i32
         format: [op_imm_8, op_imm_16]
+        opcode_idx: [0x35, 0x36]
       - sig: jgez imm:i32
         acc: in:i32
         format: [op_imm_8, op_imm_16]
+        opcode_idx: [0x37, 0x38]
 
   - title: Conditional compared to register jump
     description: >
@@ -829,39 +926,30 @@ groups:
       - sig: jeq v:in:i32, imm:i32
         acc: in:i32
         format: [op_v_8_imm_8, op_v_8_imm_16]
+        opcode_idx: [0x39, 0x3a]
       - sig: jne v:in:i32, imm:i32
         acc: in:i32
         format: [op_v_8_imm_8, op_v_8_imm_16]
+        opcode_idx: [0x3b, 0x3c]
       - sig: jlt v:in:i32, imm:i32
         acc: in:i32
         format: [op_v_8_imm_8, op_v_8_imm_16]
+        opcode_idx: [0x3d, 0x3e]
       - sig: jgt v:in:i32, imm:i32
         acc: in:i32
         format: [op_v_8_imm_8, op_v_8_imm_16]
+        opcode_idx: [0x3f, 0x40]
       - sig: jle v:in:i32, imm:i32
         acc: in:i32
         format: [op_v_8_imm_8, op_v_8_imm_16]
+        opcode_idx: [0x41, 0x42]
       - sig: jge v:in:i32, imm:i32
         acc: in:i32
         format: [op_v_8_imm_8, op_v_8_imm_16]
+        opcode_idx: [0x43, 0x44]
 
-  - title: Two address floating-point binary operation on accumulator
-    description: |
-      Perform specified floating-point binary operation on accumulator and register and store result into accumulator.
-      The results of instructions correspond IEEE-754 arithmetic rules.
-
-      - Any operation with NaN results to NaN value.
-      - The sum of opposite infinities or the difference of the same sign infinities is NaN.
-      - Division is NaN if Infinity is divided by Infinity.
-      - Division is NaN if zero is divided by zero.
-      - Multiplication is NaN if zero is multiplied by infinity.
-      - The sign of division or multiplication result is positive if both values have the same sign, negative if the values have different sign.
-      - Division is infinity if any non zero value is divided by zero.
-      - Multiplication is infinity if any non zero value is multiplied by infinity.
-      - The sum of two infinities of the same sign or the difference of two infinities of opposite sign is infinity. The sign of result matches the sign of accumulator value.
-      - The sum or the difference of infinity and any finite value is infinity. The sign of result matches the sign of infinity.
-      - The sum or the difference of zeros is zero. Exceptions are the sum of two negative zeros and the difference of negative and positive zero - the result is negative zero.
-
+  - title: Floating-point unary
+    description: Perform specified floating-point operation on accumulator
     properties:
       - acc_read
       - acc_write
@@ -870,49 +958,83 @@ groups:
       - x_none
     verification:
       - acc_type
-      - v1_type
     pseudo: |
       switch (op)
-      case fadd2.64:
-        acc = acc + vs
-      case fsub2.64:
-        acc = acc - vs
-      case fmul2.64:
-        acc = acc * vs
-      case fdiv2.64:
-        acc = acc / vs
-      case fmod2.64:
-        acc = acc % vs
+      case fneg:
+      case fneg.64:
+        acc = -acc
     semantics: |-
       raise exception(WrongRegisterValue) if false that type_of(@acc) is float;
-      raise exception(WrongRegisterValue) if false that type_of(@Vs) is float;
-      Acc := float_of(@acc);
-      Vs  := float_of(@Vs);
+      acc <~ neg(@acc)
+    instructions:
+      - sig: fneg
+        acc: inout:f32
+        prefix: f32
+        format: [pref_op_none]
+        opcode_idx: [0x4]
+      - sig: fneg.64
+        acc: inout:f64
+        format: [op_none]
+        opcode_idx: [0x45]
+
+  - title: Unary
+    description: Perform specified operation on accumulator
+    properties:
+      - acc_read
+      - acc_write
+    exceptions:
+      - x_none
+    verification:
+      - acc_type
+    pseudo: |
+      switch (op)
+      case neg:
+      case neg.64:
+        acc = -acc
+      case not:
+      case not.64:
+        acc = ~acc
+    semantics: |-
+      Acc := @acc;
       cases
-        when Op == "fadd2.64" do acc <~ Acc + Vs end when;
-        when Op == "fsub2.64" do acc <~ Acc - Vs end when;
-        when Op == "fmul2.64" do acc <~ Acc * Vs end when;
-        when Op == "fdiv2.64" do acc <~ Acc / Vs end when;
-        when Op == "fmod2.64" do acc <~ Acc % Vs end when
-        else raise exception(UndefinedSemantics)
-        undefined raise exception(InternalError)
+        when Op == "neg" do
+          raise exception(WrongRegisterValue) if false that type_of(Acc) is i32;
+          acc <~ neg(Acc)
+        end when;
+        when Op == "neg.64" do
+          raise exception(WrongRegisterValue) if false that type_of(Acc) is i64;
+          acc <~ neg(Acc)
+        end when;
+        when Op == "not" do
+          raise exception(WrongRegisterValue) if false that type_of(Acc) is i32;
+          acc <~ neg(Acc) - value(i32, 1)
+        end when;
+        when Op == "not.64" do
+          raise exception(WrongRegisterValue) if false that type_of(Acc) is i64;
+          acc <~ neg(Acc) - value(i64, 1)
+        end when;
+        else raise exception (UndefinedSemantics)
+        undefined raise exception (InternalError)
       end cases
     instructions:
-      - sig: fadd2.64 v:in:f64
-        acc: inout:f64
-        format: [op_v_8]
-      - sig: fsub2.64 v:in:f64
-        acc: inout:f64
-        format: [op_v_8]
-      - sig: fmul2.64 v:in:f64
-        acc: inout:f64
-        format: [op_v_8]
-      - sig: fdiv2.64 v:in:f64
-        acc: inout:f64
-        format: [op_v_8]
-      - sig: fmod2.64 v:in:f64
-        acc: inout:f64
-        format: [op_v_8]
+      - sig: neg
+        acc: inout:i32
+        format: [op_none]
+        opcode_idx: [0x46]
+      - sig: neg.64
+        acc: inout:i64
+        format: [op_none]
+        opcode_idx: [0x47]
+      - sig: not
+        acc: inout:i32
+        prefix: bit
+        format: [pref_op_none]
+        opcode_idx: [0x0]
+      - sig: not.64
+        acc: inout:i64
+        prefix: bit
+        format: [pref_op_none]
+        opcode_idx: [0x1]
 
   - title: Two address binary operation on accumulator
     description: Perform specified binary operation on accumulator and register and store result into accumulator
@@ -1049,69 +1171,191 @@ groups:
       - sig: add2 v:in:i32
         acc: inout:i32
         format: [op_v_8]
+        opcode_idx: [0x48]
       - sig: add2.64 v:in:i64
         acc: inout:i64
         format: [op_v_8]
+        opcode_idx: [0x49]
       - sig: sub2 v:in:i32
         acc: inout:i32
         format: [op_v_8]
+        opcode_idx: [0x4a]
       - sig: sub2.64 v:in:i64
         acc: inout:i64
         format: [op_v_8]
+        opcode_idx: [0x4b]
       - sig: mul2 v:in:i32
         acc: inout:i32
         format: [op_v_8]
+        opcode_idx: [0x4c]
       - sig: mul2.64 v:in:i64
         acc: inout:i64
         format: [op_v_8]
+        opcode_idx: [0x4d]
       - sig: and2 v:in:i32
         acc: inout:i32
         prefix: bit
         format: [pref_op_v_8]
+        opcode_idx: [0x2]
       - sig: and2.64 v:in:i64
         acc: inout:i64
         prefix: bit
         format: [pref_op_v_8]
+        opcode_idx: [0x3]
       - sig: or2 v:in:i32
         acc: inout:i32
         prefix: bit
         format: [pref_op_v_8]
+        opcode_idx: [0x4]
       - sig: or2.64 v:in:i64
         acc: inout:i64
         prefix: bit
         format: [pref_op_v_8]
+        opcode_idx: [0x5]
       - sig: xor2 v:in:i32
         acc: inout:i32
         prefix: bit
         format: [pref_op_v_8]
+        opcode_idx: [0x6]
       - sig: xor2.64 v:in:i64
         acc: inout:i64
         prefix: bit
         format: [pref_op_v_8]
+        opcode_idx: [0x7]
       - sig: shl2 v:in:i32
         acc: inout:i32
         prefix: bit
         format: [pref_op_v_8]
+        opcode_idx: [0x8]
       - sig: shl2.64 v:in:i64
         acc: inout:i64
         prefix: bit
         format: [pref_op_v_8]
+        opcode_idx: [0x9]
       - sig: shr2 v:in:i32
         acc: inout:i32
         prefix: bit
         format: [pref_op_v_8]
+        opcode_idx: [0xa]
       - sig: shr2.64 v:in:i64
         acc: inout:i64
         prefix: bit
         format: [pref_op_v_8]
+        opcode_idx: [0xb]
       - sig: ashr2 v:in:i32
         acc: inout:i32
         prefix: bit
         format: [pref_op_v_8]
+        opcode_idx: [0xc]
       - sig: ashr2.64 v:in:i64
         acc: inout:i64
         prefix: bit
         format: [pref_op_v_8]
+        opcode_idx: [0xd]
+
+  - title: Two address floating-point binary operation on accumulator
+    description: |
+      Perform specified floating-point binary operation on accumulator and register and store result into accumulator.
+      The results of instructions correspond IEEE-754 arithmetic rules.
+
+      - Any operation with NaN results to NaN value.
+      - The sum of opposite infinities or the difference of the same sign infinities is NaN.
+      - Division is NaN if Infinity is divided by Infinity.
+      - Division is NaN if zero is divided by zero.
+      - Multiplication is NaN if zero is multiplied by infinity.
+      - The sign of division or multiplication result is positive if both values have the same sign, negative if the values have different sign.
+      - Division is infinity if any non zero value is divided by zero.
+      - Multiplication is infinity if any non zero value is multiplied by infinity.
+      - The sum of two infinities of the same sign or the difference of two infinities of opposite sign is infinity. The sign of result matches the sign of accumulator value.
+      - The sum or the difference of infinity and any finite value is infinity. The sign of result matches the sign of infinity.
+      - The sum or the difference of zeros is zero. Exceptions are the sum of two negative zeros and the difference of negative and positive zero - the result is negative zero.
+
+    properties:
+      - acc_read
+      - acc_write
+      - float
+    exceptions:
+      - x_none
+    verification:
+      - acc_type
+      - v1_type
+    pseudo: |
+      switch (op)
+      case fadd2:
+      case fadd2.64:
+        acc = acc + vs
+      case fsub2:
+      case fsub2.64:
+        acc = acc - vs
+      case fmul2:
+      case fmul2.64:
+        acc = acc * vs
+      case fdiv2:
+      case fdiv2.64:
+        acc = acc / vs
+      case fmod2:
+      case fmod2.64:
+        acc = acc % vs
+    semantics: |-
+      raise exception(WrongRegisterValue) if false that type_of(@acc) is float;
+      raise exception(WrongRegisterValue) if false that type_of(@Vs) is float;
+      Acc := float_of(@acc);
+      Vs  := float_of(@Vs);
+      cases
+        when Op == "fadd2" or Op == "fadd2.64" do acc <~ Acc + Vs end when;
+        when Op == "fsub2" or Op == "fsub2.64" do acc <~ Acc - Vs end when;
+        when Op == "fmul2" or Op == "fmul2.64" do acc <~ Acc * Vs end when;
+        when Op == "fdiv2" or Op == "fdiv2.64" do acc <~ Acc / Vs end when;
+        when Op == "fmod2" or Op == "fmod2.64" do acc <~ Acc % Vs end when
+        else raise exception(UndefinedSemantics)
+        undefined raise exception(InternalError)
+      end cases
+    instructions:
+      - sig: fadd2 v:in:f32
+        acc: inout:f32
+        prefix: f32
+        format: [pref_op_v_8]
+        opcode_idx: [0x5]
+      - sig: fadd2.64 v:in:f64
+        acc: inout:f64
+        format: [op_v_8]
+        opcode_idx: [0x4e]
+      - sig: fsub2 v:in:f32
+        acc: inout:f32
+        prefix: f32
+        format: [pref_op_v_8]
+        opcode_idx: [0x6]
+      - sig: fsub2.64 v:in:f64
+        acc: inout:f64
+        format: [op_v_8]
+        opcode_idx: [0x4f]
+      - sig: fmul2 v:in:f32
+        acc: inout:f32
+        prefix: f32
+        format: [pref_op_v_8]
+        opcode_idx: [0x7]
+      - sig: fmul2.64 v:in:f64
+        acc: inout:f64
+        format: [op_v_8]
+        opcode_idx: [0x50]
+      - sig: fdiv2 v:in:f32
+        acc: inout:f32
+        prefix: f32
+        format: [pref_op_v_8]
+        opcode_idx: [0x8]
+      - sig: fdiv2.64 v:in:f64
+        acc: inout:f64
+        format: [op_v_8]
+        opcode_idx: [0x51]
+      - sig: fmod2 v:in:f32
+        acc: inout:f32
+        prefix: f32
+        format: [pref_op_v_8]
+        opcode_idx: [0x9]
+      - sig: fmod2.64 v:in:f64
+        acc: inout:f64
+        format: [op_v_8]
+        opcode_idx: [0x52]
 
   - title: Two address integer division and modulo on accumulator
     description: Perform integer division or modulo on accumulator and register and store result into accumulator
@@ -1201,177 +1445,39 @@ groups:
       - sig: div2 v:in:i32
         acc: inout:i32
         format: [op_v_8]
+        opcode_idx: [0x53]
       - sig: div2.64 v:in:i64
         acc: inout:i64
         format: [op_v_8]
+        opcode_idx: [0x54]
       - sig: mod2 v:in:i32
         acc: inout:i32
         format: [op_v_8]
+        opcode_idx: [0x55]
       - sig: mod2.64 v:in:i64
         acc: inout:i64
         format: [op_v_8]
+        opcode_idx: [0x56]
       - sig: divu2 v:in:u32
         acc: inout:u32
         prefix: unsigned
         format: [pref_op_v_8]
+        opcode_idx: [0x2]
       - sig: divu2.64 v:in:u64
         acc: inout:u64
         prefix: unsigned
         format: [pref_op_v_8]
+        opcode_idx: [0x3]
       - sig: modu2 v:in:u32
         acc: inout:u32
         prefix: unsigned
         format: [pref_op_v_8]
+        opcode_idx: [0x4]
       - sig: modu2.64 v:in:u64
         acc: inout:u64
         prefix: unsigned
         format: [pref_op_v_8]
-
-  - title: Three address binary operation
-    description: Perform specified binary operation on two registers and store result into accumulator
-    properties:
-      - acc_write
-    exceptions:
-      - x_none
-    verification:
-      - v1_type
-      - v2_type
-    pseudo: |
-      switch (op)
-      case add:
-        acc = (vs1 + vs2) % 2^32
-      case sub:
-        acc = (vs1 - vs2) % 2^32
-      case mul:
-        acc = (vs1 * vs2) % 2^32
-      case and:
-        acc = vs1 & vs2
-      case or:
-        acc = vs1 | vs2
-      case xor:
-        acc = vs1 ^ vs2
-      case shl:
-        acc = vs1 << (vs2 & 0x1f)
-      case shr:
-        acc = vs1 >> (vs2 & 0x1f)
-      case ashr:
-        acc = arith_shift_right(vs1, vs2 & 0x1f)
-    semantics: |-
-      Vs1 := @Vs1;
-      Vs2 := @Vs2;
-      raise exception(WrongRegisterValue) if false that type_of(Vs1) is i32 and type_of(Vs2) is i32;
-      cases
-        when Op == "add" do
-          acc <~ truncate_int(Vs1 + Vs2)
-        end when;
-        when Op == "sub" do
-          acc <~ truncate_int(Vs1 - Vs2)
-        end when;
-        when Op == "mul" do
-          acc <~ truncate_int(Vs1 * Vs2)
-        end when;
-        when Op == "and" do
-          acc <~ truncate_int(Vs1 & Vs2)
-        end when;
-        when Op == "or" do
-          acc <~ truncate_int(Vs1 | Vs2)
-        end when;
-        when Op == "xor" do
-          acc <~ truncate_int(Vs1 ^ Vs2)
-        end when;
-        when Op == "shl" do
-          acc <~ truncate_int(Vs1 << Vs2)
-        end when;
-        when Op == "shr" do
-          acc <~ truncate_int(Vs1 >> Vs2)
-        end when
-        // when Op == "ashr" do
-        // end when
-        else raise exception(UndefinedSemantics)
-        undefined raise exception(InternalError)
-      end cases
-    instructions:
-      - sig: add v1:in:i32, v2:in:i32
-        acc: out:i32
-        format: [op_v1_4_v2_4]
-      - sig: sub v1:in:i32, v2:in:i32
-        acc: out:i32
-        format: [op_v1_4_v2_4]
-      - sig: mul v1:in:i32, v2:in:i32
-        acc: out:i32
-        format: [op_v1_4_v2_4]
-      - sig: and v1:in:i32, v2:in:i32
-        acc: out:i32
-        prefix: bit
-        format: [pref_op_v1_4_v2_4]
-      - sig: or v1:in:i32, v2:in:i32
-        acc: out:i32
-        prefix: bit
-        format: [pref_op_v1_4_v2_4]
-      - sig: xor v1:in:i32, v2:in:i32
-        acc: out:i32
-        prefix: bit
-        format: [pref_op_v1_4_v2_4]
-      - sig: shl v1:in:i32, v2:in:i32
-        acc: out:i32
-        prefix: bit
-        format: [pref_op_v1_4_v2_4]
-      - sig: shr v1:in:i32, v2:in:i32
-        acc: out:i32
-        prefix: bit
-        format: [pref_op_v1_4_v2_4]
-      - sig: ashr v1:in:i32, v2:in:i32
-        acc: out:i32
-        prefix: bit
-        format: [pref_op_v1_4_v2_4]
-
-  - title: Three address integer division or modulo
-    description: Perform integer division or modulo on two registers and store result into accumulator
-    properties:
-      - acc_write
-    exceptions:
-      - x_arith
-    verification:
-      - v1_type
-      - v2_type
-    pseudo: |
-      if vs2 == 0 then
-        throw ArithmeticException
-      end
-      switch(op)
-      case div:
-        if vs1 == INT32_MIN and vs2 == -1 then
-          acc = INT32_MIN
-        else
-          acc = vs1 / vs2
-        end
-      case mod:
-        if vs1 == INT32_MIN and vs2 == -1 then
-          acc = 0
-        else
-          acc = vs1 % vs2
-        end
-    semantics: |-
-      Vs1 := @Vs1;
-      Vs2 := @Vs2;
-      raise exception(WrongRegisterValue) if false that type_of(Vs1) is i32 and type_of(Vs2) is i32;
-      cases
-        when Op == "div" do
-          acc <~ Vs1 / Vs2
-        end when;
-        when Op == "mod" do
-          acc <~ Vs1 % Vs2
-        end when
-        else raise exception(UndefinedSemantics)
-        undefined raise exception(InternalError)
-      end cases
-    instructions:
-      - sig: div v1:in:i32, v2:in:i32
-        acc: out:i32
-        format: [op_v1_4_v2_4]
-      - sig: mod v1:in:i32, v2:in:i32
-        acc: out:i32
-        format: [op_v1_4_v2_4]
+        opcode_idx: [0x5]
 
   - title: Two address binary operation with immediate on accumulator
     description: >
@@ -1444,31 +1550,40 @@ groups:
       - sig: addi imm:i32
         acc: inout:i32
         format: [op_imm_8]
+        opcode_idx: [0x57]
       - sig: subi imm:i32
         acc: inout:i32
         format: [op_imm_8]
+        opcode_idx: [0x58]
       - sig: muli imm:i32
         acc: inout:i32
         format: [op_imm_8]
+        opcode_idx: [0x59]
       - sig: andi imm:i32
         acc: inout:i32
         format: [op_imm_32]
+        opcode_idx: [0x5a]
       - sig: ori imm:i32
         acc: inout:i32
         format: [op_imm_32]
+        opcode_idx: [0x5b]
       - sig: xori imm:i32
         acc: inout:i32
         prefix: bit
         format: [pref_op_imm_32]
+        opcode_idx: [0xe]
       - sig: shli imm:i32
         acc: inout:i32
         format: [op_imm_8]
+        opcode_idx: [0x5c]
       - sig: shri imm:i32
         acc: inout:i32
         format: [op_imm_8]
+        opcode_idx: [0x5d]
       - sig: ashri imm:i32
         acc: inout:i32
         format: [op_imm_8]
+        opcode_idx: [0x5e]
 
   - title: Two address integer division or modulo with immediate on accumulator
     description: >
@@ -1517,86 +1632,168 @@ groups:
       - sig: divi imm:i32
         acc: inout:i32
         format: [op_imm_8]
+        opcode_idx: [0x5f]
       - sig: modi imm:i32
         acc: inout:i32
         format: [op_imm_8]
+        opcode_idx: [0x60]
 
-  - title: Floating-point unary
-    description: Perform specified floating-point operation on accumulator
+  - title: Three address binary operation
+    description: Perform specified binary operation on two registers and store result into accumulator
     properties:
-      - acc_read
-      - acc_write
-      - float
-    exceptions:
-      - x_none
-    verification:
-      - acc_type
-    pseudo: |
-      switch (op)
-      case fneg.64:
-        acc = -acc
-    semantics: |-
-      raise exception(WrongRegisterValue) if false that type_of(@acc) is float;
-      acc <~ neg(@acc)
-    instructions:
-      - sig: fneg.64
-        acc: inout:f64
-        format: [op_none]
-
-  - title: Unary
-    description: Perform specified operation on accumulator
-    properties:
-      - acc_read
       - acc_write
     exceptions:
       - x_none
     verification:
-      - acc_type
+      - v1_type
+      - v2_type
     pseudo: |
       switch (op)
-      case neg:
-      case neg.64:
-        acc = -acc
-      case not:
-      case not.64:
-        acc = ~acc
+      case add:
+        acc = (vs1 + vs2) % 2^32
+      case sub:
+        acc = (vs1 - vs2) % 2^32
+      case mul:
+        acc = (vs1 * vs2) % 2^32
+      case and:
+        acc = vs1 & vs2
+      case or:
+        acc = vs1 | vs2
+      case xor:
+        acc = vs1 ^ vs2
+      case shl:
+        acc = vs1 << (vs2 & 0x1f)
+      case shr:
+        acc = vs1 >> (vs2 & 0x1f)
+      case ashr:
+        acc = arith_shift_right(vs1, vs2 & 0x1f)
     semantics: |-
-      Acc := @acc;
+      Vs1 := @Vs1;
+      Vs2 := @Vs2;
+      raise exception(WrongRegisterValue) if false that type_of(Vs1) is i32 and type_of(Vs2) is i32;
       cases
-        when Op == "neg" do
-          raise exception(WrongRegisterValue) if false that type_of(Acc) is i32;
-          acc <~ neg(Acc)
+        when Op == "add" do
+          acc <~ truncate_int(Vs1 + Vs2)
         end when;
-        when Op == "neg.64" do
-          raise exception(WrongRegisterValue) if false that type_of(Acc) is i64;
-          acc <~ neg(Acc)
+        when Op == "sub" do
+          acc <~ truncate_int(Vs1 - Vs2)
         end when;
-        when Op == "not" do
-          raise exception(WrongRegisterValue) if false that type_of(Acc) is i32;
-          acc <~ neg(Acc) - value(i32, 1)
+        when Op == "mul" do
+          acc <~ truncate_int(Vs1 * Vs2)
         end when;
-        when Op == "not.64" do
-          raise exception(WrongRegisterValue) if false that type_of(Acc) is i64;
-          acc <~ neg(Acc) - value(i64, 1)
+        when Op == "and" do
+          acc <~ truncate_int(Vs1 & Vs2)
         end when;
-        else raise exception (UndefinedSemantics)
-        undefined raise exception (InternalError)
+        when Op == "or" do
+          acc <~ truncate_int(Vs1 | Vs2)
+        end when;
+        when Op == "xor" do
+          acc <~ truncate_int(Vs1 ^ Vs2)
+        end when;
+        when Op == "shl" do
+          acc <~ truncate_int(Vs1 << Vs2)
+        end when;
+        when Op == "shr" do
+          acc <~ truncate_int(Vs1 >> Vs2)
+        end when
+        // when Op == "ashr" do
+        // end when
+        else raise exception(UndefinedSemantics)
+        undefined raise exception(InternalError)
       end cases
     instructions:
-      - sig: neg
-        acc: inout:i32
-        format: [op_none]
-      - sig: neg.64
-        acc: inout:i64
-        format: [op_none]
-      - sig: not
-        acc: inout:i32
+      - sig: add v1:in:i32, v2:in:i32
+        acc: out:i32
+        format: [op_v1_4_v2_4]
+        opcode_idx: [0x61]
+      - sig: sub v1:in:i32, v2:in:i32
+        acc: out:i32
+        format: [op_v1_4_v2_4]
+        opcode_idx: [0x62]
+      - sig: mul v1:in:i32, v2:in:i32
+        acc: out:i32
+        format: [op_v1_4_v2_4]
+        opcode_idx: [0x63]
+      - sig: and v1:in:i32, v2:in:i32
+        acc: out:i32
         prefix: bit
-        format: [pref_op_none]
-      - sig: not.64
-        acc: inout:i64
+        format: [pref_op_v1_4_v2_4]
+        opcode_idx: [0xf]
+      - sig: or v1:in:i32, v2:in:i32
+        acc: out:i32
         prefix: bit
-        format: [pref_op_none]
+        format: [pref_op_v1_4_v2_4]
+        opcode_idx: [0x10]
+      - sig: xor v1:in:i32, v2:in:i32
+        acc: out:i32
+        prefix: bit
+        format: [pref_op_v1_4_v2_4]
+        opcode_idx: [0x11]
+      - sig: shl v1:in:i32, v2:in:i32
+        acc: out:i32
+        prefix: bit
+        format: [pref_op_v1_4_v2_4]
+        opcode_idx: [0x12]
+      - sig: shr v1:in:i32, v2:in:i32
+        acc: out:i32
+        prefix: bit
+        format: [pref_op_v1_4_v2_4]
+        opcode_idx: [0x13]
+      - sig: ashr v1:in:i32, v2:in:i32
+        acc: out:i32
+        prefix: bit
+        format: [pref_op_v1_4_v2_4]
+        opcode_idx: [0x14]
+
+  - title: Three address integer division or modulo
+    description: Perform integer division or modulo on two registers and store result into accumulator
+    properties:
+      - acc_write
+    exceptions:
+      - x_arith
+    verification:
+      - v1_type
+      - v2_type
+    pseudo: |
+      if vs2 == 0 then
+        throw ArithmeticException
+      end
+      switch(op)
+      case div:
+        if vs1 == INT32_MIN and vs2 == -1 then
+          acc = INT32_MIN
+        else
+          acc = vs1 / vs2
+        end
+      case mod:
+        if vs1 == INT32_MIN and vs2 == -1 then
+          acc = 0
+        else
+          acc = vs1 % vs2
+        end
+    semantics: |-
+      Vs1 := @Vs1;
+      Vs2 := @Vs2;
+      raise exception(WrongRegisterValue) if false that type_of(Vs1) is i32 and type_of(Vs2) is i32;
+      cases
+        when Op == "div" do
+          acc <~ Vs1 / Vs2
+        end when;
+        when Op == "mod" do
+          acc <~ Vs1 % Vs2
+        end when
+        else raise exception(UndefinedSemantics)
+        undefined raise exception(InternalError)
+      end cases
+    instructions:
+      - sig: div v1:in:i32, v2:in:i32
+        acc: out:i32
+        format: [op_v1_4_v2_4]
+        opcode_idx: [0x64]
+      - sig: mod v1:in:i32, v2:in:i32
+        acc: out:i32
+        format: [op_v1_4_v2_4]
+        opcode_idx: [0x65]
 
   - title: Increment register with immediate
     description: >
@@ -1619,6 +1816,7 @@ groups:
       - sig: inci v:inout:i32, imm:i32
         acc: none
         format: [op_v_4_imm_4]
+        opcode_idx: [0x66]
 
   - title: Conversions between integer and floating point types
     description: |
@@ -1644,74 +1842,168 @@ groups:
       (dest_type) acc = (src_type) acc
     semantics: |-
       cases
+        when Op == "i32tof32" do
+          raise exception(WrongRegisterValue) if false that type_of(@acc) is i32;
+          acc <~ i32tof32(@acc)
+        end when;
         when Op == "i32tof64" do
           raise exception(WrongRegisterValue) if false that type_of(@acc) is i32;
           acc <~ i32tof64(@acc)
+        end when;
+        when Op == "u32tof32" do
+          raise exception(WrongRegisterValue) if false that type_of(@acc) is u32;
+          acc <~ u32tof32(@acc)
         end when;
         when Op == "u32tof64" do
           raise exception(WrongRegisterValue) if false that type_of(@acc) is u32;
           acc <~ u32tof64(@acc)
         end when;
+        when Op == "i64tof32" do
+          raise exception(WrongRegisterValue) if false that type_of(@acc) is i64;
+          acc <~ i64tof32(@acc)
+        end when;
         when Op == "i64tof64" do
           raise exception(WrongRegisterValue) if false that type_of(@acc) is i64;
           acc <~ i64tof64(@acc)
+        end when;
+        when Op == "u64tof32" do
+          raise exception(WrongRegisterValue) if false that type_of(@acc) is u64;
+          acc <~ u64tof32(@acc)
         end when;
         when Op == "u64tof64" do
           raise exception(WrongRegisterValue) if false that type_of(@acc) is u64;
           acc <~ u64tof64(@acc)
         end when;
+        when Op == "f32toi32" do
+          raise exception(WrongRegisterValue) if false that type_of(@acc) is f32;
+          acc <~ f32toi32(@acc)
+        end when;
+        when Op == "f32tou32" do
+          raise exception(WrongRegisterValue) if false that type_of(@acc) is f32;
+          acc <~ f32tou32(@acc)
+        end when;
+        when Op == "f32toi64" do
+          raise exception(WrongRegisterValue) if false that type_of(@acc) is f32;
+          acc <~ f32toi64(@acc)
+        end when;
+        when Op == "f32tou64" do
+          raise exception(WrongRegisterValue) if false that type_of(@acc) is f32;
+          acc <~ f32tou64(@acc)
+        end when
         when Op == "f64toi32" do
-          raise exception(WrongRegisterValue) if false that type_of(@acc) is float;
+          raise exception(WrongRegisterValue) if false that type_of(@acc) is f64;
           acc <~ f64toi32(@acc)
         end when;
         when Op == "f64tou32" do
-          raise exception(WrongRegisterValue) if false that type_of(@acc) is float;
+          raise exception(WrongRegisterValue) if false that type_of(@acc) is f64;
           acc <~ f64tou32(@acc)
         end when;
         when Op == "f64toi64" do
-          raise exception(WrongRegisterValue) if false that type_of(@acc) is float;
+          raise exception(WrongRegisterValue) if false that type_of(@acc) is f64;
           acc <~ f64toi64(@acc)
         end when;
         when Op == "f64tou64" do
-          raise exception(WrongRegisterValue) if false that type_of(@acc) is float;
+          raise exception(WrongRegisterValue) if false that type_of(@acc) is f64;
           acc <~ f64tou64(@acc)
+        end when
+        when Op == "f64tof32" do
+          raise exception(WrongRegisterValue) if false that type_of(@acc) is f64;
+          acc <~ f64tof32(@acc)
         end when
         else raise exception(UndefinedSemantics)
         undefined raise exception(InternalError)
       end cases
     instructions:
+      - sig: i32tof32
+        acc: inout:i32->f32
+        prefix: f32
+        format: [pref_op_none]
+        opcode_idx: [0xa]
       - sig: i32tof64
         acc: inout:i32->f64
         prefix: cast
         format: [pref_op_none]
+        opcode_idx: [0x0]
+      - sig: u32tof32
+        acc: inout:u32->f32
+        prefix: f32
+        format: [pref_op_none]
+        opcode_idx: [0xb]
       - sig: u32tof64
         acc: inout:u32->f64
         prefix: cast
         format: [pref_op_none]
+        opcode_idx: [0x1]
+      - sig: i64tof32
+        acc: inout:i64->f32
+        prefix: f32
+        format: [pref_op_none]
+        opcode_idx: [0xc]
       - sig: i64tof64
         acc: inout:i64->f64
         prefix: cast
         format: [pref_op_none]
+        opcode_idx: [0x2]
+      - sig: u64tof32
+        acc: inout:u64->f32
+        prefix: f32
+        format: [pref_op_none]
+        opcode_idx: [0xd]
       - sig: u64tof64
         acc: inout:u64->f64
         prefix: cast
         format: [pref_op_none]
+        opcode_idx: [0x3]
+      - sig: f32tof64
+        acc: inout:f32->f64
+        prefix: f32
+        format: [pref_op_none]
+        opcode_idx: [0xe]
+      - sig: f32toi32
+        acc: inout:f32->i32
+        prefix: f32
+        format: [pref_op_none]
+        opcode_idx: [0xf]
+      - sig: f32toi64
+        acc: inout:f32->i64
+        prefix: f32
+        format: [pref_op_none]
+        opcode_idx: [0x10]
+      - sig: f32tou32
+        acc: inout:f32->u32
+        prefix: f32
+        format: [pref_op_none]
+        opcode_idx: [0x11]
+      - sig: f32tou64
+        acc: inout:f32->u64
+        prefix: f32
+        format: [pref_op_none]
+        opcode_idx: [0x12]
       - sig: f64toi32
         acc: inout:f64->i32
         prefix: cast
         format: [pref_op_none]
+        opcode_idx: [0x4]
       - sig: f64toi64
         acc: inout:f64->i64
         prefix: cast
         format: [pref_op_none]
+        opcode_idx: [0x5]
       - sig: f64tou32
         acc: inout:f64->u32
         prefix: cast
         format: [pref_op_none]
+        opcode_idx: [0x6]
       - sig: f64tou64
         acc: inout:f64->u64
         prefix: cast
         format: [pref_op_none]
+        opcode_idx: [0x7]
+      - sig: f64tof32
+        acc: inout:f64->f32
+        prefix: f32
+        format: [pref_op_none]
+        opcode_idx: [0x13]
 
   - title: Conversions from integer types to u1
     description: |
@@ -1755,18 +2047,22 @@ groups:
         acc: inout:i32->u1
         prefix: cast
         format: [pref_op_none]
+        opcode_idx: [0x8]
       - sig: i64tou1
         acc: inout:i64->u1
         prefix: cast
         format: [pref_op_none]
+        opcode_idx: [0x9]
       - sig: u32tou1
         acc: inout:u32->u1
         prefix: cast
         format: [pref_op_none]
+        opcode_idx: [0xa]
       - sig: u64tou1
         acc: inout:u64->u1
         prefix: cast
         format: [pref_op_none]
+        opcode_idx: [0xb]
 
   - title: Integer truncations and extensions.
     description: >
@@ -1853,59 +2149,72 @@ groups:
         acc: inout:i32->i64
         prefix: cast
         format: [pref_op_none]
+        opcode_idx: [0xc]
       - sig: i32toi16
         acc: inout:i32->i16
         prefix: cast
         format: [pref_op_none]
+        opcode_idx: [0xd]
       - sig: i32tou16
         acc: inout:i32->u16
         prefix: cast
         format: [pref_op_none]
+        opcode_idx: [0xe]
       - sig: i32toi8
         acc: inout:i32->i8
         prefix: cast
         format: [pref_op_none]
+        opcode_idx: [0xf]
       - sig: i32tou8
         acc: inout:i32->u8
         prefix: cast
         format: [pref_op_none]
+        opcode_idx: [0x10]
       - sig: i64toi32
         acc: inout:i64->i32
         prefix: cast
         format: [pref_op_none]
+        opcode_idx: [0x11]
       - sig: u32toi64
         acc: inout:u32->i64
         prefix: cast
         format: [pref_op_none]
+        opcode_idx: [0x12]
       - sig: u32toi16
         acc: inout:u32->i16
         prefix: cast
         format: [pref_op_none]
+        opcode_idx: [0x13]
       - sig: u32tou16
         acc: inout:u32->u16
         prefix: cast
         format: [pref_op_none]
+        opcode_idx: [0x14]
       - sig: u32toi8
         acc: inout:u32->i8
         prefix: cast
         format: [pref_op_none]
+        opcode_idx: [0x15]
       - sig: u32tou8
         acc: inout:u32->u8
         prefix: cast
         format: [pref_op_none]
+        opcode_idx: [0x16]
       - sig: u64toi32
         acc: inout:u64->i32
         prefix: cast
         format: [pref_op_none]
+        opcode_idx: [0x17]
       - sig: u64tou32
         acc: inout:u64->u32
         prefix: cast
         format: [pref_op_none]
+        opcode_idx: [0x18]
 
   - title: Load from array
     description: >
-      Load an element from array using accumulator as an index and put it into accumulator.
-      If element size is smaller than 32 bits, it will be zero or sign extended (depending on bytecode)
+      Load an element from array using accumulator as an index and puts it into accumulator.
+      If element size is smaller then 32 bits, it will be zero or sign extended (depending on bytecode)
       to i32.
     verification:
       - v1_array_type
@@ -1923,9 +2232,7 @@ groups:
       if acc < 0 || acc >= len(vs) then
         throw ArrayIndexOutOfBoundsException
       end
-      if op == fldarr.32 then
-        acc = f32tof64(vs[acc])
-      else if op == ldarr.8 then
+      if op == ldarr.8 then
         acc = i8toi32(vs[acc])
       else if op == ldarru.8 then
         acc = u8toi32(vs[acc])
@@ -1942,32 +2249,41 @@ groups:
       - sig: ldarr.8 v:in:i8[]
         acc: inout:i32
         format: [op_v_8]
+        opcode_idx: [0x67]
       - sig: ldarru.8 v:in:u8[]
         acc: inout:i32
         format: [op_v_8]
+        opcode_idx: [0x68]
       - sig: ldarr.16 v:in:i16[]
         acc: inout:i32
         format: [op_v_8]
+        opcode_idx: [0x69]
       - sig: ldarru.16 v:in:u16[]
         acc: inout:i32
         format: [op_v_8]
+        opcode_idx: [0x6a]
       - sig: ldarr v:in:i32[]
         acc: inout:i32
         format: [op_v_8]
+        opcode_idx: [0x6b]
       - sig: ldarr.64 v:in:i64[]
         acc: inout:i32->i64
         format: [op_v_8]
+        opcode_idx: [0x6c]
       - sig: fldarr.32 v:in:f32[]
-        acc: inout:i32->f64
+        acc: inout:i32->f32
         format: [op_v_8]
+        opcode_idx: [0x6d]
         properties: [acc_read, acc_write, float]
       - sig: fldarr.64 v:in:f64[]
         acc: inout:i32->f64
         format: [op_v_8]
+        opcode_idx: [0x6e]
         properties: [acc_read, acc_write, float]
       - sig: ldarr.obj v:in:ref[]
         acc: inout:i32->ref
         format: [op_v_8]
+        opcode_idx: [0x6f]
 
   - title: Store to array
     description: >
@@ -1994,9 +2310,7 @@ groups:
       if op == starr.obj && !has_type(acc, component_type(vs1))
         throw ArrayStoreException
       end
-      if op == fstarr.32 then
-        vs1[vs2] = f64tof32(acc)
-      else if op == starr.8 then
+      if op == starr.8 then
         vs1[vs2] = truncateto8(acc)
       else if op == starr.16 then
         vs1[vs2] = truncateto16(acc)
@@ -2009,26 +2323,33 @@ groups:
       - sig: starr.8 v1:in:i8[], v2:in:i32
         acc: in:i8
         format: [op_v1_4_v2_4]
+        opcode_idx: [0x70]
       - sig: starr.16 v1:in:i16[], v2:in:i32
         acc: in:i16
         format: [op_v1_4_v2_4]
+        opcode_idx: [0x71]
       - sig: starr v1:in:i32[], v2:in:i32
         acc: in:i32
         format: [op_v1_4_v2_4]
+        opcode_idx: [0x72]
       - sig: starr.64 v1:in:i64[], v2:in:i32
         acc: in:i64
         format: [op_v1_4_v2_4]
+        opcode_idx: [0x73]
       - sig: fstarr.32 v1:in:f32[], v2:in:i32
-        acc: in:f64
+        acc: in:f32
         format: [op_v1_4_v2_4]
+        opcode_idx: [0x74]
         properties: [acc_read, float]
       - sig: fstarr.64 v1:in:f64[], v2:in:i32
         acc: in:f64
         format: [op_v1_4_v2_4]
+        opcode_idx: [0x75]
         properties: [acc_read, float]
       - sig: starr.obj v1:in:ref[], v2:in:i32
         acc: in:ref
         format: [op_v1_4_v2_4]
+        opcode_idx: [0x76]
 
   - title: Array length
     description: Get length of an array and put it into accumulator.
@@ -2049,6 +2370,7 @@ groups:
       - sig: lenarr v:in:top[]
         acc: out:i32
         format: [op_v_8]
+        opcode_idx: [0x77]
 
   - title: Create new array
     description: >
@@ -2079,6 +2401,7 @@ groups:
       - sig: newarr v1:out:ref, v2:in:i32, type_id
         acc: none
         format: [op_v1_4_v2_4_id_16]
+        opcode_idx: [0x78]
 
   - title: Create new object
     description: |
@@ -2105,6 +2428,7 @@ groups:
       - sig: newobj v:out:ref, type_id
         acc: none
         format: [op_v_8_id_16]
+        opcode_idx: [0x79]
 
   - title: Create new object and call initializer
     description: >
@@ -2139,20 +2463,22 @@ groups:
       - sig: initobj.short method_id, v1:in:none, v2:in:none
         acc: out:ref
         format: [op_v1_4_v2_4_id_16]
+        opcode_idx: [0x7a]
       - sig: initobj method_id, v1:in:none, v2:in:none, v3:in:none, v4:in:none
         acc: out:ref
         format: [op_v1_4_v2_4_v3_4_v4_4_id_16]
+        opcode_idx: [0x7b]
       - sig: initobj.range method_id, v:in:none
         acc: out:ref
         format: [op_v_8_id_16]
+        opcode_idx: [0x7c]
 
   - title: Get field from object to accumulator
     description: >
       Get field value from an object by field id and put it into accumulator.
       For non-object variant, the size of the field is determined by the field_id,
-      most significant bits are signed or unsigned extended based on the field type to fit accumulator size.
+      most significant bits are sign or unsigned extended based on the field type to fit accumulator size.
       If field type is less than 32, then loaded value is sign or zero extended to i32 depending on field type.
-      If field type is f32, load will implicitly convert value into f64 type.
     verification:
       - v1_object
       - field_id_non_static
@@ -2169,8 +2495,6 @@ groups:
       field = resolve(field_id)
       if op == ldobj and size(field) < 32 then
         acc = extendto32(vs.get(field))
-      else if type(field) == f32 then
-        acc = f32tof64(vs.get(field))
       else
         acc = vs.get(field)
       end
@@ -2178,14 +2502,58 @@ groups:
       skip
     instructions:
       - sig: ldobj v:in:ref, field_id
-        acc: out:i32
+        acc: out:b32
         format: [op_v_8_id_16]
+        opcode_idx: [0x7d]
       - sig: ldobj.64 v:in:ref, field_id
         acc: out:b64
         format: [op_v_8_id_16]
+        opcode_idx: [0x7e]
       - sig: ldobj.obj v:in:ref, field_id
         acc: out:ref
         format: [op_v_8_id_16]
+        opcode_idx: [0x7f]
+
+  - title: Store accumulator content into object field
+    description: >
+      Store accumulator content into object field by field_id. For non-object variant the size of actually stored
+      value is determined by field_id, other accumulator bits are discarded.
+      If field type size is less than 32, accumulator content will be truncated to storage size before storing.
+    verification:
+      - v1_object
+      - field_id_non_static
+      - field_id_size
+      - acc_type
+    properties:
+      - acc_read
+      - field_id
+    exceptions:
+      - x_null
+    pseudo: |
+      if vs == null then
+        throw NullPointerException
+      end
+      field = resolve(field_id)
+      if op == stobj and size(field) < 32 then
+        vs.set(field, truncate(field, acc))
+      else
+        vs.set(field, acc)
+      end
+    semantics: |-
+      skip
+    instructions:
+      - sig: stobj v:in:ref, field_id
+        acc: in:b32
+        format: [op_v_8_id_16]
+        opcode_idx: [0x80]
+      - sig: stobj.64 v:in:ref, field_id
+        acc: in:b64
+        format: [op_v_8_id_16]
+        opcode_idx: [0x81]
+      - sig: stobj.obj v:in:ref, field_id
+        acc: in:ref
+        format: [op_v_8_id_16]
+        opcode_idx: [0x82]
 
   - title: Get field from object to register
     description: >
@@ -2195,6 +2563,7 @@ groups:
       If field type is less than 32, then loaded value is sign or zero extended to i32 depending on field type.
       If field type is f32, load will implicitly convert value into f64 type.
     verification:
+      - v2_object
       - field_id_non_static
       - field_id_size
     properties:
@@ -2220,61 +2589,24 @@ groups:
       - sig: ldobj.v v1:out:i32, v2:in:ref, field_id
         acc: none
         format: [op_v1_4_v2_4_id_16]
+        opcode_idx: [0x83]
       - sig: ldobj.v.64 v1:out:b64, v2:in:ref, field_id
         acc: none
         format: [op_v1_4_v2_4_id_16]
+        opcode_idx: [0x84]
       - sig: ldobj.v.obj v1:out:ref, v2:in:ref, field_id
         acc: none
         format: [op_v1_4_v2_4_id_16]
-
-  - title: Store accumulator content into object field
-    description: >
-      Store accumulator content into object field by field_id. For non-object variant the size of actually stored
-      value is determined by field_id, and other accumulator bits are discarded.
-      If field type size is less than 32, accumulator content will be truncated to storage size before storing.
-      If field type is f32, accumulator content will be implicitly converted from f64 to f32 before storing.
-    verification:
-      - v1_object
-      - field_id_non_static
-      - field_id_size
-      - acc_type
-    properties:
-      - acc_read
-      - field_id
-    exceptions:
-      - x_null
-    pseudo: |
-      if vs == null then
-        throw NullPointerException
-      end
-      field = resolve(field_id)
-      if op == stobj and size(field) < 32 then
-        vs.set(field, truncate(field, acc))
-      if type(field) == f32 then
-        vs.set(field, f64tof32(acc))
-      else
-        vs.set(field, acc)
-      end
-    semantics: |-
-      skip
-    instructions:
-      - sig: stobj v:in:ref, field_id
-        acc: in:i32
-        format: [op_v_8_id_16]
-      - sig: stobj.64 v:in:ref, field_id
-        acc: in:b64
-        format: [op_v_8_id_16]
-      - sig: stobj.obj v:in:ref, field_id
-        acc: in:ref
-        format: [op_v_8_id_16]
+        opcode_idx: [0x85]
 
   - title: Store register content into object field
     description: >
       Store register content into object field by field_id. For non-object variant the size of actually stored
       value is determined by field_id, other register bits are discarded.
       If field type size is less than 32, register content will be truncated to storage size before storing.
-      If field type is f32, register content will be implicitly converted from f64 to f32 before storing.
     verification:
+      - v1_type
+      - v2_object
       - field_id_non_static
       - field_id_size
     properties:
@@ -2289,31 +2621,31 @@ groups:
       field = resolve(field_id)
       if op == stobj and size(field) < 32 then
         v2.set(field, truncate(field, v1))
-      if type(field) == f32 then
-        v2.set(field, f64tof32(v1))
       else
         v2.set(field, v1)
       end
     semantics: |-
       skip
     instructions:
-      - sig: stobj.v v1:in:i32, v2:in:ref, field_id
+      - sig: stobj.v v1:in:b32, v2:in:ref, field_id
         acc: none
         format: [op_v1_4_v2_4_id_16]
+        opcode_idx: [0x86]
       - sig: stobj.v.64 v1:in:b64, v2:in:ref, field_id
         acc: none
         format: [op_v1_4_v2_4_id_16]
+        opcode_idx: [0x87]
       - sig: stobj.v.obj v1:in:ref, v2:in:ref, field_id
         acc: none
         format: [op_v1_4_v2_4_id_16]
+        opcode_idx: [0x88]
 
   - title: Get static field
     description: >
       Get static field value by field_id and put it into accumulator.
       For non-object variant, the size of the field is determined by the field_id,
       most significant bits are sign or unsigned extended based on the field type to fit accumulator size.
-      If field size is less than 32, result will be sign or unsigned extended to i32 depending on field type.
-      If field type is f32, result will be implicitly converted from f32 to f64.
+      If field size is less then 32, result will be sign or unsigned extended to i32 depedning on field type.
     verification:
       - field_id_static
       - field_id_size
@@ -2326,8 +2658,6 @@ groups:
       field = resolve(field_id)
       if op == ldstatic and size(field) < 32 then
         acc = extendto32(get_static(field))
-      else if type(field) == f32 then
-        acc = f32tof64(get_static(field))
       else
         acc = get_static(field)
       end
@@ -2335,21 +2665,23 @@ groups:
       skip
     instructions:
       - sig: ldstatic field_id
-        acc: out:i32
+        acc: out:b32
         format: [op_id_16]
+        opcode_idx: [0x89]
       - sig: ldstatic.64 field_id
         acc: out:b64
         format: [op_id_16]
+        opcode_idx: [0x8a]
       - sig: ldstatic.obj field_id
         acc: out:ref
         format: [op_id_16]
+        opcode_idx: [0x8b]
 
   - title: Store to static field
     description: >
       Store accumulator content into static field by field_id. For non-object variant the size of actually stored
       value is determined by field_id, other accumulator bits are discarded.
-      If field type size is less than 32, then accumulator content will be truncated to field size before storing.
-      If field type is f32, accumulator content will be implicitly converted from f64 to f32 before storing.
+      If field type size is less than 32, then accumulator content will be trunctated to field size before storing.
     verification:
       - field_id_static
       - field_id_size
@@ -2363,8 +2695,6 @@ groups:
       field = resolve(field_id)
       if op == ststatic and size(field) < 32 then
         set_static(field, truncate(field, acc))
-      else if type(field) == f32 then
-        set_static(field, f64tof32(acc))
       else
         set_static(field, acc)
       end
@@ -2372,14 +2702,17 @@ groups:
       skip
     instructions:
       - sig: ststatic field_id
-        acc: in:i32
+        acc: in:b32
         format: [op_id_16]
+        opcode_idx: [0x8c]
       - sig: ststatic.64 field_id
         acc: in:b64
         format: [op_id_16]
+        opcode_idx: [0x8d]
       - sig: ststatic.obj field_id
         acc: in:ref
         format: [op_id_16]
+        opcode_idx: [0x8e]
 
   - title: Return value from method
     description: >
@@ -2400,12 +2733,15 @@ groups:
       - sig: return
         acc: in:i32
         format: [op_none]
+        opcode_idx: [0x8f]
       - sig: return.64
         acc: in:b64
         format: [op_none]
+        opcode_idx: [0x90]
       - sig: return.obj
         acc: in:ref
         format: [op_none]
+        opcode_idx: [0x91]
 
   - title: Return from a void method
     description: >
@@ -2427,6 +2763,7 @@ groups:
       - sig: return.void
         acc: none
         format: [op_none]
+        opcode_idx: [0x92]
 
   - title: Throw exception
     description: >
@@ -2451,6 +2788,7 @@ groups:
       - sig: throw v:in:ref
         acc: none
         format: [op_v_8]
+        opcode_idx: [0x93]
 
   - title: Check cast
     description: >
@@ -2479,6 +2817,7 @@ groups:
       - sig: checkcast type_id
         acc: in:ref
         format: [op_id_16]
+        opcode_idx: [0x94]
 
   - title: Is instance
     description: >
@@ -2509,6 +2848,7 @@ groups:
       - sig: isinstance type_id
         acc: inout:ref->i32
         format: [op_id_16]
+        opcode_idx: [0x95]
 
   - title: Static call
     description: >
@@ -2551,12 +2891,15 @@ groups:
       - sig: call.short method_id, v1:in:top, v2:in:top
         acc: out:top
         format: [op_v1_4_v2_4_id_16]
+        opcode_idx: [0x96]
       - sig: call method_id, v1:in:top, v2:in:top, v3:in:top, v4:in:top
         acc: out:top
         format: [op_v1_4_v2_4_v3_4_v4_4_id_16]
+        opcode_idx: [0x97]
       - sig: call.range method_id, v:in:top
         acc: out:top
         format: [op_v_8_id_16]
+        opcode_idx: [0x98]
 
   - title: Static call with accumulator as input
     description: >
@@ -2603,9 +2946,11 @@ groups:
       - sig: call.acc.short method_id, v:in:top, imm:u1
         acc: inout:top
         format: [op_v_4_imm_4_id_16]
+        opcode_idx: [0x99]
       - sig: call.acc method_id, v1:in:top, v2:in:top, v3:in:top, imm:u2
         acc: inout:top
         format: [op_v1_4_v2_4_v3_4_imm_4_id_16]
+        opcode_idx: [0x9a]
 
   - title: Object calls
     description: >
@@ -2651,12 +2996,15 @@ groups:
       - sig: call.virt.short method_id, v1:in:top, v2:in:top
         acc: out:top
         format: [op_v1_4_v2_4_id_16]
+        opcode_idx: [0x9b]
       - sig: call.virt method_id, v1:in:top, v2:in:top, v3:in:top, v4:in:top
         acc: out:top
         format: [op_v1_4_v2_4_v3_4_v4_4_id_16]
+        opcode_idx: [0x9c]
       - sig: call.virt.range method_id, v:in:top
         acc: out:top
         format: [op_v_8_id_16]
+        opcode_idx: [0x9d]
 
   - title: Object calls with accumulator as input
     description: >
@@ -2712,9 +3060,11 @@ groups:
       - sig: call.virt.acc.short method_id, v:in:top, imm:u1
         acc: inout:top
         format: [op_v_4_imm_4_id_16]
+        opcode_idx: [0x9e]
       - sig: call.virt.acc method_id, v1:in:top, v2:in:top, v3:in:top, imm:u2
         acc: inout:top
         format: [op_v1_4_v2_4_v3_4_imm_4_id_16]
+        opcode_idx: [0x9f]
 
   - title: Dynamic move register-to-register
     description: >
@@ -2734,6 +3084,7 @@ groups:
       - sig: mov.dyn v1:out:any, v2:in:any
         acc: none
         format: [op_v1_8_v2_8, op_v1_16_v2_16]
+        opcode_idx: [0xa0, 0xa1]
 
   - title: Dynamic load accumulator from register
     description: >
@@ -2753,6 +3104,7 @@ groups:
       - sig: lda.dyn v:in:any
         acc: out:any
         format: [op_v_8]
+        opcode_idx: [0xa2]
 
   - title: Dynamic store accumulator
     description: >
@@ -2772,6 +3124,7 @@ groups:
       - sig: sta.dyn v:out:any
         acc: in:any
         format: [op_v_8]
+        opcode_idx: [0xa3]
 
   - title: Dynamic load accumulator from immediate
     description: >
@@ -2791,9 +3144,11 @@ groups:
       - sig: ldai.dyn imm:i32
         acc: out:any
         format: [op_imm_32]
+        opcode_idx: [0xa4]
       - sig: fldai.dyn imm:f64
         acc: out:any
         format: [op_imm_64]
+        opcode_idx: [0xa5]
         properties: [acc_write, float, dynamic]
 
   - title: Dynamic return from method
@@ -2815,6 +3170,7 @@ groups:
       - sig: return.dyn
         acc: in:any
         format: [op_none]
+        opcode_idx: [0xa6]
 
   - title: Dynamic indirect call
     description: >
@@ -2846,9 +3202,12 @@ groups:
       - sig: calli.dyn.short imm, v1:in:any, v2:in:any, v3:in:any
         acc: out:any
         format: [op_imm_4_v1_4_v2_4_v3_4]
+        opcode_idx: [0xa7]
       - sig: calli.dyn imm, v1:in:any, v2:in:any, v3:in:any, v4:in:any, v5:in:any
         acc: out:any
         format: [op_imm_4_v1_4_v2_4_v3_4_v4_4_v5_4]
+        opcode_idx: [0xa8]
       - sig: calli.dyn.range imm, v:in:any
         acc: out:any
         format: [op_imm_16_v_16]
+        opcode_idx: [0xa9]

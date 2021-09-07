@@ -86,9 +86,10 @@
     strge \tmp1, [\stack_ptr], #4
     b \next_label
 
-1:  sub r2, r2, #SHORTY_FIRST_FLOAT
-    cmp r2, #(SHORTY_NUM_FLOAT_TYPES - 1)
-    bls 2f
+1:  cmp r2, #SHORTY_F32
+    beq 21f
+    cmp r2, #SHORTY_F64
+    beq 22f
     // it is a 64bit int
     // align
     bic \gpr_ptr, \gpr_ptr, #7
@@ -104,8 +105,19 @@
     blt \next_label
     bge 3f
 
-2:  // it is a float
+21: // it is a float
     // determine whether there are free fp regs
+    sub \tmp1, \fpr_ptr, r4
+    cmp \tmp1, #64
+    ldr \tmp1, [\arg_ptr]
+    stmlt \fpr_ptr!, {\tmp1}
+    stmge \stack_ptr!, {\tmp1}
+    b \next_label
+
+22: // it is a double
+    // determine whether there are free fp regs
+    add \fpr_ptr, \fpr_ptr, #7
+    bic \fpr_ptr, \fpr_ptr, #7
     sub \tmp1, \fpr_ptr, r4
     cmp \tmp1, #64
     ldm \arg_ptr, {\tmp1, \tmp2}
@@ -261,7 +273,6 @@ PrepareArgStack:
     bicge sp, sp, #7
     subge sp, sp, #8
     b .Lloop_shorty
-    
 .Lexit:
     bic sp, sp, #7 // align sp
     sub r4, sp, r4, lsl #3
@@ -391,25 +402,26 @@ InterpreterToCompiledCodeBridge:
     bpl .LU16
     cmp r2, #SHORTY_I8
     beq .LI8
-    uxtb r0, r0 
+    uxtb r0, r0
     b .L32
-.LI8: 
+.LI8:
     sxtb r0, r0
     b .L32
-.LI16:  
-    sxth r0, r0 
+.LI16:
+    sxth r0, r0
     b .L32
-.LU16:  
-    uxth r0, r0 
+.LU16:
+    uxth r0, r0
 .L32:
     // it is a 32bit value or reference
     str r0, [r3]
     b .Lreturn
 
 .L64:
-    sub r2, #SHORTY_FIRST_FLOAT
-    cmp r2, #(SHORTY_NUM_FLOAT_TYPES - 1)
-    vmovls.f64 r0, r1, d0
+    cmp r2, #SHORTY_F64
+    vmoveq.f64 r0, r1, d0
+    cmp r2, #SHORTY_F32
+    vmoveq.f32 r0, s0
     stm r3, {r0, r1}
 
 .Lreturn:
@@ -548,19 +560,22 @@ InvokeCompiledCodeWithArgArray:
     bpl .LU16_
     cmp r2, #SHORTY_I8
     beq .LI8_
-    uxtb r0, r0 
+    uxtb r0, r0
     b .Lstore_result_
-.LI8_: 
+.LI8_:
     sxtb r0, r0
     b .Lstore_result_
-.LI16_:  
-    sxth r0, r0 
+.LI16_:
+    sxth r0, r0
     b .Lstore_result_
-.LU16_:  
-    uxth r0, r0 
+.LU16_:
+    uxth r0, r0
     b .Lstore_result_
 .LFLOAT_:
-    vmovls.f64 r0, r1, d0
+    cmp r2, #SHORTY_F64
+    vmoveq.f64 r0, r1, d0
+    cmp r2, #SHORTY_F32
+    vmoveq.f32 r0, s0
 
 .Lstore_result_:
     // store the result r0,r1 into memory [r8]

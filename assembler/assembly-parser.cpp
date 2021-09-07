@@ -59,7 +59,6 @@ bool Parser::ParseRecordFields()
     context_.ins_number = curr_record_->field_list.size();
 
     LOG(DEBUG, ASSEMBLER) << "parse line " << line_stric_ << " as field (.field name)";
-
     if (!ParseRecordField()) {
         if (context_.err.err != Error::ErrorType::ERR_NONE) {
             return false;
@@ -228,7 +227,6 @@ bool Parser::ParseFunctionCode()
 void Parser::ParseAsRecord(const std::vector<Token> &tokens)
 {
     LOG(DEBUG, ASSEMBLER) << "started parsing of record (line " << line_stric_ << "): " << tokens[0].whole_line;
-
     func_def_ = false;
     record_def_ = true;
 
@@ -271,7 +269,6 @@ void Parser::ParseAsRecord(const std::vector<Token> &tokens)
 void Parser::ParseAsFunction(const std::vector<Token> &tokens)
 {
     LOG(DEBUG, ASSEMBLER) << "started parsing of function (line " << line_stric_ << "): " << tokens[0].whole_line;
-
     record_def_ = false;
     func_def_ = true;
 
@@ -708,7 +705,6 @@ Expected<Program, Error> Parser::Parse(TokenSet &vectors_tokens, const std::stri
                 }
             }
         }
-
         if (!ParseAfterLine(is_first_statement)) {
             break;
         }
@@ -1182,7 +1178,7 @@ bool Parser::ParseOperandInteger()
     return true;
 }
 
-bool Parser::ParseOperandFloat()
+bool Parser::ParseOperandFloat(bool is_64bit)
 {
     if (context_.err.err != Error::ErrorType::ERR_NONE) {
         return false;
@@ -1202,7 +1198,7 @@ bool Parser::ParseOperandFloat()
         return false;
     }
 
-    double n = FloatNumber(p);
+    double n = FloatNumber(p, is_64bit);
     if (errno == ERANGE) {
         context_.err =
             GetError("Too large immediate (length is more than 64 bit).", Error::ErrorType::ERR_BAD_FLOAT_WIDTH);

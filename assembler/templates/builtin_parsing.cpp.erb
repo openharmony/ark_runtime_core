@@ -20,10 +20,10 @@
 namespace panda::pandasm {
 
 int64_t Parser::MnemonicToBuiltinId() {
-    const auto token = context_.GiveToken();
+    [[maybe_unused]] const auto token = context_.GiveToken();
 
     --context_;
-    const auto ins = context_.GiveToken();
+    [[maybe_unused]] const auto ins = context_.GiveToken();
     ++context_;
 
 % PandaBuiltins::builtins.each_with_index do |builtin, i|

@@ -1553,12 +1553,12 @@ tests:
         header-template: []
         code-template: |
           .record Z {
-              %s    f
+              f64    f
           }
           .function void Z.ctor1(Z a0) <ctor> {
               return.void
           }
-          .function void Z.ctor2(Z a0, %s a1) <ctor> {
+          .function void Z.ctor2(Z a0, f64 a1) <ctor> {
               lda.64 a1
               stobj.64 a0, Z.f
               return.void
@@ -1584,27 +1584,69 @@ tests:
           ok:
         check-type: exit-positive
         cases:
-          - values: [f64, f64, 0.0]
-          - values: [f64, f64, 4.625]
-          - values: [f64, f64, -4.625]
-          - values: [f64, f64, 0xfff0000000000000] # -Inf
+          - values: [0.0]
+          - values: [4.625]
+          - values: [-4.625]
+          - values: [0xfff0000000000000] # -Inf
             tags: ['tsan']
-          - values: [f64, f64, 0x7ff0000000000000] # +Inf
-          - values: [f64, f64, 0x7ff8000000000000]
-          - values: [f64, f64, 0x7ff8000000000010]
-          - values: [f64, f64, 0x7fffffffffffffff]
-          - values: [f64, f64, 0xffffffffffffffff]
-          - values: [f32, f32, 0.0]
-          - values: [f32, f32, 4.625]
-          - values: [f32, f32, -4.625]
-          - values: [f32, f32, 0xfff0000000000000] # -Inf
-          - values: [f32, f32, 0x7ff0000000000000] # +Inf
-          - values: [f32, f32, 0x7ff8000000000000]
-          - values: [f32, f32, 0x7ff8000000000010]
-          - values: [f32, f32, 0x7fffffffffffffff]
-          - values: [f32, f32, 0xffffffffffffffff]
+          - values: [0x7ff0000000000000] # +Inf
+          - values: [0x7ff8000000000000]
+          - values: [0x7ff8000000000010]
+          - values: [0x7fffffffffffffff]
+          - values: [0xffffffffffffffff]
             tags: ['tsan']
 
+      - file-name: "check_float32_type_p"
+        isa:
+          instructions:
+            - sig: initobj method_id, v1:in:none, v2:in:none, v3:in:none, v4:in:none
+              acc: out:ref
+              format: [op_v1_4_v2_4_v3_4_v4_4_id_16]
+        description: Check 'initobj' constructor behavior with primitive float argument types in PandaAssembly context.
+        header-template: []
+        code-template: |
+          .record Z {
+              f32    f
+          }
+          .function void Z.ctor1(Z a0) <ctor> {
+              return.void
+          }
+          .function void Z.ctor2(Z a0, f32 a1) <ctor> {
+              lda a1
+              stobj a0, Z.f
+              return.void
+          }
+          .function i32 main() {
+              initobj Z.ctor1
+              sta.obj v0
+              ldobj v0, Z.f
+              fmovi v1, 0.0
+              fcmpg v1
+              jeqz chk2
+              ldai 1
+              return
+          chk2:
+              fmovi v1, %s
+              initobj Z.ctor2, v1
+              sta.obj v0
+              ldobj v0, Z.f
+              fcmpg v1
+              jeqz ok
+              ldai 2
+              return
+          ok:
+        check-type: exit-positive
+        cases:
+          - values: [0.0]
+          - values: [4.625]
+          - values: [-4.625]
+          - values: [0xff800000] # -Inf
+          - values: [0x7f800000] # +Inf
+          - values: [0x7fc00000]
+          - values: [0x7fc00010]
+          - values: [0x7fffffff]
+          - values: [0xffffffff]
+            tags: ['tsan']
 
       - file-name: "check_obj_types_p"
         isa:
@@ -1729,7 +1771,7 @@ tests:
             - x_oom
         description: Create objects with 'initobj' instruction until OutOfMemoryError in PandaAssembly context
         header-template: []
-        panda-options: "--object-pool-size=67108864"
+        panda-options: "--heap-size-limit=67108864"
         bugid: ['3578', '4170', '4171']
         ignore: true
         code-template: |

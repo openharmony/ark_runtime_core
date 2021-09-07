@@ -51,7 +51,7 @@ echo "$MSG_PREFIX Cloning googletest from $GOOGLETEST_URL"
 
 git clone --verbose "$GOOGLETEST_URL" "$PANDA_THIRD_PARTY_DIR/googletest"
 
-MINIZ_URL="https://gitee.com/OHOS_STD/third_party_miniz.git"
+MINIZ_URL="https://gitee.com/openharmony/third_party_miniz.git"
 echo "$MSG_PREFIX Cloning miniz from $MINIZ_URL"
 
 git clone --verbose "$MINIZ_URL" "$PANDA_THIRD_PARTY_DIR/miniz"

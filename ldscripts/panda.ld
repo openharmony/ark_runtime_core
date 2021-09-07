@@ -68,7 +68,7 @@ SECTIONS {
 
     .tdata : { *(.tdata .tdata.* .gnu.linkonce.td.*) }
     .tbss : { *(.tbss .tbss.* .gnu.linkonce.tb.*) *(.tcommon) }
-    
+
     .preinit_array : {
         PROVIDE_HIDDEN (__preinit_array_start = .);
         KEEP (*(.preinit_array))

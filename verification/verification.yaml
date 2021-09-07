@@ -195,6 +195,14 @@ compatibility_checks:
           - i64
         size:
           - u64
+      f32:
+        _default: wrong_acc
+        unknown:
+          - invalid
+          - void
+          - reference
+        ok: f32
+        precision: f64
 
     StobjWide:
       _domains:

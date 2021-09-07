@@ -146,6 +146,13 @@ public:
         SetValue(v);
     }
 
+    ALWAYS_INLINE inline void Set(float value)
+    {
+        ASSERT(!HasObject());
+        auto v = bit_cast<int32_t>(value);
+        SetValue(v);
+    }
+
     ALWAYS_INLINE inline void Set(double value)
     {
         ASSERT(!HasObject());
@@ -172,6 +179,13 @@ public:
         MarkAsPrimitive();
     }
 
+    ALWAYS_INLINE inline void SetPrimitive(float value)
+    {
+        auto v = bit_cast<int32_t>(value);
+        SetValue(v);
+        MarkAsPrimitive();
+    }
+
     ALWAYS_INLINE inline void SetPrimitive(double value)
     {
         auto v = bit_cast<int64_t>(value);
@@ -188,7 +202,7 @@ public:
     ALWAYS_INLINE inline float GetFloat() const
     {
         ASSERT(!HasObject());
-        return static_cast<float>(bit_cast<double>(GetValue()));
+        return bit_cast<float>(Get());
     }
 
     ALWAYS_INLINE inline int64_t GetLong() const
@@ -245,6 +259,7 @@ public:
             values << "obj = " << std::hex << GetValue();
         } else {
             values << "pri = (i64) " << GetValue() << " | "
+                   << "(f32) " << GetFloat() << " | "
                    << "(f64) " << GetDouble() << " | "
                    << "(hex) " << std::hex << GetValue();
         }

@@ -73,7 +73,6 @@ bool LoadConfig(std::string_view filename)
             if (!file.IsValid()) {
                 break;
             }
-
             auto size = file.GetFileSize();
             if (!size.HasValue()) {
                 file.Close();

@@ -164,13 +164,13 @@ template("ark_gen") {
 # * requires -- if defined, will require additional Ruby files for template generation, must be list
 # * extra_dependencies -- a list of files that should be considered as dependencies lable, must be list, not used
 template("ark_isa_gen") {
-  isa_data = "$ark_root/isa/isa.yaml"
+  isa_data = "$root_gen_dir/isa/isa.yaml"
   isa_requires = [ "$ark_root/isa/isapi.rb" ]
   if (defined(invoker.requires)) {
     isa_requires += invoker.requires
   }
 
-  dependencies = []
+  dependencies = ["$ark_root/isa:isa_combine"]
   if (defined(invoker.extra_dependencies)) {
     dependencies += invoker.extra_dependencies
   }

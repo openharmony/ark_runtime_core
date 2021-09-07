@@ -251,8 +251,8 @@ bool Runtime::Create(const RuntimeOptions &options, const std::vector<LanguageCo
 
     trace::ScopedTrace scoped_trace("Runtime::Create");
 
-    panda::mem::MemConfig::Initialize(options.GetObjectPoolSize(), options.GetInternalPoolSize(),
-                                      options.GetCompilerPoolSize(), options.GetCodePoolSize());
+    panda::mem::MemConfig::Initialize(options.GetHeapSizeLimit(), options.GetInternalMemorySizeLimit(),
+                                      options.GetCompilerMemorySizeLimit(), options.GetCodeCacheSizeLimit());
     PoolManager::Initialize();
 
     mem::InternalAllocatorPtr internal_allocator =

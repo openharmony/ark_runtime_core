@@ -117,7 +117,7 @@ tests:
           .function i32 main() {
             call.short get_null
             sta.obj v0
-            ldai 1
+            %s
           try_begin:
             stobj v0, %s
             ldai 1
@@ -129,19 +129,30 @@ tests:
           }
         cases:
           - values:
+            - ldai 1
             - R.fu1
           - values:
+            - ldai 1
             - R.fu8
           - values:
+            - ldai 1
             - R.fi8
           - values:
+            - ldai 1
             - R.fu16
           - values:
+            - ldai 1
             - R.fi16
           - values:
+            - ldai 1
             - R.fu32
           - values:
+            - ldai 1
             - R.fi32
+          - values:
+            - fldai 1.1
+            - R.ff32
+            bugid: ['1882']
 
       - file-name: "with_non_object_ref"
         description: Check that verifier reports error when the 1st operand is not a ref to an object (other than array)
@@ -394,47 +405,59 @@ tests:
             stobj v0, R.%s
             lda.null
             ldobj v0, R.%s
-            movi v1, %s
+            %s v1, %s
             %s v1
+            %s
             jeqz success
             ldai 1
             return
           success:
         cases:
           # u1
-          - values: ['ldai 0x00000000', 'fu1', 'fu1', 0, 'ucmp']
-          - values: ['ldai 0xffffffff', 'fu1', 'fu1', 1, 'ucmp']
+          - values: ['ldai 0x00000000', 'fu1', 'fu1', 'movi', 0, 'ucmp', '']
+          - values: ['ldai 0xffffffff', 'fu1', 'fu1', 'movi', 1, 'ucmp', '']
             bugid: ['1848']
             ignore: true
-          - values: ['ldai 0x00000001', 'fu1', 'fu1', 1, 'ucmp']
-          - values: ['ldai 0xfffffffe', 'fu1', 'fu1', 0, 'ucmp']
+          - values: ['ldai 0x00000001', 'fu1', 'fu1', 'movi', 1, 'ucmp', '']
+          - values: ['ldai 0xfffffffe', 'fu1', 'fu1', 'movi', 0, 'ucmp', '']
             bugid: ['1848']
             ignore: true
-          - values: ['ldai 0x11111111', 'fu1', 'fu1', 1, 'ucmp']
+          - values: ['ldai 0x11111111', 'fu1', 'fu1', 'movi', 1, 'ucmp', '']
             bugid: ['1848']
             ignore: true
-          - values: ['ldai 0x88888888', 'fu1', 'fu1', 0, 'ucmp']
+          - values: ['ldai 0x88888888', 'fu1', 'fu1', 'movi', 0, 'ucmp', '']
             bugid: ['1848']
             ignore: true
           # u8
-          - values: ['ldai 0x00000000', 'fu8', 'fu8', 0, 'ucmp']
-          - values: ['ldai 0xffffffff', 'fu8', 'fu8', 255, 'ucmp']
-          - values: ['ldai 0x000000ff', 'fu8', 'fu8', 255, 'ucmp']
-          - values: ['ldai 0xffffff00', 'fu8', 'fu8', 0, 'ucmp']
-          - values: ['ldai 0x11111111', 'fu8', 'fu8', 17, 'ucmp']
-          - values: ['ldai 0x88888888', 'fu8', 'fu8', 136, 'ucmp']
+          - values: ['ldai 0x00000000', 'fu8', 'fu8', 'movi', 0, 'ucmp', '']
+          - values: ['ldai 0xffffffff', 'fu8', 'fu8', 'movi', 255, 'ucmp', '']
+          - values: ['ldai 0x000000ff', 'fu8', 'fu8', 'movi', 255, 'ucmp', '']
+          - values: ['ldai 0xffffff00', 'fu8', 'fu8', 'movi', 0, 'ucmp', '']
+          - values: ['ldai 0x11111111', 'fu8', 'fu8', 'movi', 17, 'ucmp', '']
+          - values: ['ldai 0x88888888', 'fu8', 'fu8', 'movi', 136, 'ucmp', '']
           # u16
-          - values: ['ldai 0x00000000', 'fu16', 'fu16', 0, 'ucmp']
-          - values: ['ldai 0xffffffff', 'fu16', 'fu16', 65535, 'ucmp']
-          - values: ['ldai 0x0000ffff', 'fu16', 'fu16', 65535, 'ucmp']
-          - values: ['ldai 0xffff0000', 'fu16', 'fu16', 0, 'ucmp']
-          - values: ['ldai 0x11111111', 'fu16', 'fu16', 4369, 'ucmp']
-          - values: ['ldai 0x88888888', 'fu16', 'fu16', 34952, 'ucmp']
+          - values: ['ldai 0x00000000', 'fu16', 'fu16', 'movi', 0, 'ucmp', '']
+          - values: ['ldai 0xffffffff', 'fu16', 'fu16', 'movi', 65535, 'ucmp', '']
+          - values: ['ldai 0x0000ffff', 'fu16', 'fu16', 'movi', 65535, 'ucmp', '']
+          - values: ['ldai 0xffff0000', 'fu16', 'fu16', 'movi', 0, 'ucmp', '']
+          - values: ['ldai 0x11111111', 'fu16', 'fu16', 'movi', 4369, 'ucmp', '']
+          - values: ['ldai 0x88888888', 'fu16', 'fu16', 'movi', 34952, 'ucmp', '']
           # u32
-          - values: ['ldai 0x00000000', 'fu32', 'fu32', 0, 'ucmp']
-          - values: ['ldai 0xffffffff', 'fu32', 'fu32', 4294967295, 'ucmp']
-          - values: ['ldai 0x11111111', 'fu32', 'fu32', 286331153, 'ucmp']
-          - values: ['ldai 0x88888888', 'fu32', 'fu32', 2290649224, 'ucmp']
+          - values: ['ldai 0x00000000', 'fu32', 'fu32', 'movi', 0, 'ucmp', '']
+          - values: ['ldai 0xffffffff', 'fu32', 'fu32', 'movi', 4294967295, 'ucmp', '']
+          - values: ['ldai 0x11111111', 'fu32', 'fu32', 'movi', 286331153, 'ucmp', '']
+          - values: ['ldai 0x88888888', 'fu32', 'fu32', 'movi', 2290649224, 'ucmp', '']
+          # f32
+          - values: ['fldai 0.0', 'ff32', 'ff32', 'fmovi', 0.0, 'fcmpg', '']
+            bugid: ['3292']
+          - values: ['fldai -6510615.0', 'ff32', 'ff32', 'fmovi', -6510615.0, 'fcmpg', '']
+            bugid: ['3292']
+          - values: ['fldai 0x7fffffff', 'ff32', 'ff32', 'fmovi', 0.0, 'fcmpg', 'subi 1']
+            bugid: ['3292']
+          - values: ['fldai 0x7f800000', 'ff32', 'ff32', 'fmovi', '0x7f800000', 'fcmpg', '']
+            bugid: ['3292']
+          - values: ['fldai 0xff800000', 'ff32', 'ff32', 'fmovi', '0xff800000', 'fcmpg', '']
+            bugid: ['3292']
 
       - file-name: "into_all_field_types_int"
         description: Version for integer types

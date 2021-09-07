@@ -1,0 +1,2638 @@
+# Copyright (c) 2021 Huawei Device Co., Ltd.
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+---
+definitions:
+  - name: java
+    template: >
+      .language Java
+
+tests:
+  - file-name: call.virt.acc.short
+    isa:
+      title: Object calls with accumulator as input
+      description: >
+        Call indicated object method, i.e. create new frame, pass values of arguments and
+        continue execution from the first instruction of a method.
+        Callee should treat accumulator value as undefined and cannot use it until accumulator
+        definition in the new frame.
+        Result (if any) is returned in accumulator (see 'Calling sequence' chapter for more details).
+        Method, its class and the number of argument is resolved by given method_id in runtime
+        constant-pool based on object reference using language-specific semantics (currently only Java
+        virtual methods are supported, further extensions are TBD).
+        Object reference is passed in the first source register, arguments are passed starting from
+        the second source register in the same order as in method signature.
+        Non-range instructions can be used to pass up to 4 arguments (including object reference).
+        Immediate operand encodes a position starting from 0 on which accumulator is passed.
+      instructions:
+        - sig: call.virt.acc.short method_id, v:in:top, imm:u1
+          acc: inout:top
+          format: [op_v_4_imm_4_id_16]
+    commands:
+
+      - file-name: op_v_4_imm_4_id_16
+        description: Check that compiler reports an error on invalid instruction format.
+        isa:
+          instructions:
+            - sig: call.virt.acc.short method_id, v:in:top, imm:u1
+              acc: inout:top
+              format: [op_v_4_imm_4_id_16]
+        header-template: []
+        check-type: exit-positive
+        runner-options: [compile-failure]
+        code-template: |
+          .record R {}
+          .function void R.f1(R a0) {
+              return.void
+          }
+          .function void R.f2(R a0, i32 a1) {
+              return.void
+          }
+          .function void R.f3(R a0, i32 a1, i32 a2) {
+              return.void
+          }
+          .function void R.sf0() {
+              return.void
+          }
+          .function void R.sf1(i32 a0) {
+              return.void
+          }
+          .function void R.sf2(i32 a0, i32 a1) {
+              return.void
+          }
+          .function void R.sf3(i32 a0, i32 a1, i32 a2) {
+              return.void
+          }
+          .function void sf0() {
+              return.void
+          }
+          .function void sf1(i32 a0) {
+              return.void
+          }
+          .function void sf2(i32 a0, i32 a1) {
+              return.void
+          }
+          .function void sf3(i32 a0, i32 a1, i32 a2) {
+              return.void
+          }
+          .function i32 main() {
+              newobj v0, R
+              ldai 0
+              call.virt.acc.short %s
+        cases:
+          - values: ['R.f1, v0, 0']
+            runner-options: [verifier-failure, verifier-debug-config]
+          - values: ['R.f2, v0, 1']
+            runner-options: [verifier-only, verifier-debug-config]
+          - values: ['R.f3, v0, 1']
+            bugid: ['5593']
+            ignore: true
+          - values: ['R.sf1, v0, 0']
+            runner-options: [verifier-failure, verifier-debug-config]
+          - values: ['R.sf2, v0, 1']
+            runner-options: [verifier-failure, verifier-debug-config]
+          - values: ['R.sf3, v0, 1']
+            bugid: ['5593']
+            ignore: true
+          - values: ['sf1, v0, 0']
+            runner-options: [verifier-failure, verifier-debug-config]
+          - values: ['sf2, v0, 1']
+            runner-options: [verifier-failure, verifier-debug-config]
+          - values: ['sf3, v0, 1']
+            bugid: ['5593']
+            ignore: true
+          - values: ['R.foo, v0, 0']
+          - values: ['foo, v0, 1']
+          - values: ['R.sf0']
+          - values: ['sf0']
+          - values: ['R.f2, v16, 0']
+          - values: ['R.f2, v255, 1']
+          - values: ['R.f2, v32767, 1']
+          - values: ['R.f2, v65536, 0']
+          - values: ['R.f2, v255, 1']
+          - values: ['R.f2, a0, 1']
+          - values: ['R.f3, v0, 0']
+            bugid: ['5593']
+            ignore: true
+
+
+      - file-name: reg_v_valid
+        description: Check with all valid 'v' register numbers.
+        isa:
+          instructions:
+            - sig: call.virt.acc.short method_id, v:in:top, imm:u1
+              acc: inout:top
+              format: [op_v_4_imm_4_id_16]
+        runner-options: [verifier-only, verifier-debug-config]
+        tags: [verifier]
+        header-template: []
+        check-type: exit-positive
+        code-template: |
+          .record R {}
+          .function R R.foo(R a0, i32 a1) {
+              lda.obj a0
+              return.obj
+          }
+          .function i32 main() {
+              newobj v0, R
+              lda.obj v0
+              movi v0, 0
+              movi v1, 1
+              movi v2, 2
+              movi v3, 3
+              movi v4, 4
+              movi v5, 5
+              movi v6, 6
+              movi v7, 7
+              movi v8, 8
+              movi v9, 9
+              movi v10, 10
+              movi v11, 11
+              movi v12, 12
+              movi v13, 13
+              movi v14, 14
+              movi v15, 15
+              call.virt.acc.short R.foo, v0, 0
+              call.virt.acc.short R.foo, v1, 0
+              call.virt.acc.short R.foo, v2, 0
+              call.virt.acc.short R.foo, v3, 0
+              call.virt.acc.short R.foo, v4, 0
+              call.virt.acc.short R.foo, v5, 0
+              call.virt.acc.short R.foo, v6, 0
+              call.virt.acc.short R.foo, v7, 0
+              call.virt.acc.short R.foo, v8, 0
+              call.virt.acc.short R.foo, v9, 0
+              call.virt.acc.short R.foo, v10, 0
+              call.virt.acc.short R.foo, v11, 0
+              call.virt.acc.short R.foo, v12, 0
+              call.virt.acc.short R.foo, v13, 0
+              call.virt.acc.short R.foo, v14, 0
+              call.virt.acc.short R.foo, v15, 0
+
+
+      - file-name: reg_a_valid
+        description: Check with all valid 'a' register numbers.
+        isa:
+          instructions:
+            - sig: call.virt.acc.short method_id, v:in:top, imm:u1
+              acc: inout:top
+              format: [op_v_4_imm_4_id_16]
+        runner-options: [verifier-only, verifier-debug-config]
+        tags: [verifier]
+        header-template: []
+        check-type: exit-positive
+        code-template: |
+          .record R {}
+          .function R R.foo(R a0, i32 a1) {
+              lda.obj a0
+              return.obj
+          }
+          .function void f(i32 a0, i32 a1, i32 a2, i32 a3, i32 a4, i32 a5, i32 a6, i32 a7, i32 a8, i32 a9, i32 a10, i32 a11, i32 a12, i32 a13, i32 a14, R a15) {
+              lda.obj a15
+              call.virt.acc.short R.foo, a0, 0
+              call.virt.acc.short R.foo, a1, 0
+              call.virt.acc.short R.foo, a2, 0
+              call.virt.acc.short R.foo, a3, 0
+              call.virt.acc.short R.foo, a4, 0
+              call.virt.acc.short R.foo, a5, 0
+              call.virt.acc.short R.foo, a6, 0
+              call.virt.acc.short R.foo, a7, 0
+              call.virt.acc.short R.foo, a8, 0
+              call.virt.acc.short R.foo, a9, 0
+              call.virt.acc.short R.foo, a10, 0
+              call.virt.acc.short R.foo, a11, 0
+              call.virt.acc.short R.foo, a12, 0
+              call.virt.acc.short R.foo, a13, 0
+              call.virt.acc.short R.foo, a14, 0
+              return.void
+          }
+          .function i32 main() {
+              movi v0, 0
+              movi v1, 1
+              movi v2, 2
+              movi v3, 3
+              movi v4, 4
+              movi v5, 5
+              movi v6, 6
+              movi v7, 7
+              movi v8, 8
+              movi v9, 9
+              movi v10, 10
+              movi v11, 11
+              movi v12, 12
+              movi v13, 13
+              movi v14, 14
+              newobj v15, R
+              call.range f, v0
+
+
+      - file-name: uninitialized_regs
+        description: Check that verifier reports an error on uninitialized registers.
+        isa:
+          description: >
+            Unused register slot values will be discarded and corresponding registers will not be
+            passed to the callee).
+          instructions:
+            - sig: call.virt.acc.short method_id, v:in:top, imm:u1
+              acc: inout:top
+              format: [op_v_4_imm_4_id_16]
+        header-template: []
+        runner-options: [verifier-failure, verifier-debug-config]
+        tags: [verifier]
+        check-type: exit-positive
+        code-template: |
+          .record R {}
+          .function i32 R.foo(%s) {
+              %s
+              return
+          }
+          .function i32 main() {
+              %s
+              call.virt.acc.short R.foo, %s
+        cases:
+          - description: Register v0 (obj ref) is not initialized.
+            values:
+            - R a0, i32 a1
+            - lda a1
+            - ldai 0
+            - v0, 1
+          - description: Register v0 (i32) is not initialized.
+            values:
+            - R a0, i32 a1
+            - lda a1
+            - |
+              #
+                  newobj v1, R
+                  lda.obj v1
+            - v0, 0
+          - description: Register v0 is not initialized, but it's not used.
+            values:
+            - R a0
+            - ldai 0
+            - |
+              #
+                  newobj v1, R
+                  lda.obj v1
+            - v0, 0
+            runner-options: [verifier-only, verifier-debug-config]
+          - description: Accumulator (obj ref) is not initialized.
+            values:
+            - R a0, i32 a1
+            - lda a1
+            - movi v0, 0
+            - v0, 0
+          - description: Accumulator (i32) is not initialized.
+            values:
+            - R a0, i32 a1
+            - lda a1
+            - newobj v0, R
+            - v0, 1
+          - description: Accumulator is not initialized, but it's not used.
+            values:
+            - R a0
+            - ldai 0
+            - newobj v0, R
+            - v0, 1
+            runner-options: [verifier-only, verifier-debug-config]
+          - description: Accumulator and v0 are both not initialized.
+            values:
+            - R a0, i32 a1
+            - ldai 0
+            - ''
+            - v0, 0
+          - description: Accumulator is not initialized in function.
+            values:
+            - R a0, i32 a1
+            - call.virt.acc.short R.foo, a0, 1
+            - |
+              #
+                  ldai 0
+                  newobj v0, R
+            - v0, 1
+          - description: v0 is not initialized in function.
+            values:
+            - R a0, i32 a1
+            - call.virt.acc.short R.foo, a1, 0
+            - |
+              #
+                  ldai 0
+                  newobj v0, R
+            - v0, 1
+
+
+      - file-name: static_method
+        description: Check that verifier reports an error on static method.
+        isa:
+          verification:
+            - method_id_non_static
+        header-template: []
+        runner-options: [verifier-failure, verifier-debug-config]
+        tags: [verifier]
+        check-type: exit-positive
+        code-template: |
+          .record R {}
+          .function void %s {
+              return.void
+          }
+          .function i32 main() {
+              newobj v0, R
+              ldai 0
+              call.virt.acc.short %s
+        cases:
+          - values:
+            - R.foo(R a0, i32 a1) <static>
+            - R.foo, v0, 1
+          - values:
+            - R.foo(R a0) <static>
+            - R.foo, v0, 1
+          - values:
+            - R.foo(i32 a0, R a1)
+            - R.foo, v0, 0
+          - values:
+            - R.foo(R a0, i32 a1) <cctor>
+            - R.foo, v0, 1
+            bugid: ['5583']
+            ignore: true
+          - values:
+            - R.foo(R a0) <cctor>
+            - R.foo, v0, 1
+            bugid: ['5583']
+            ignore: true
+          - values:
+            - foo(R a0, i32 a1)
+            - foo, v0, 1
+
+
+      - file-name: non_accessible_method_p
+        description: Check that verifier reports an error on non-accessible method.
+        isa:
+          verification:
+            - method_id_accessible
+        header-template: []
+        runner-options: [verifier-failure, verifier-debug-config]
+        tags: [verifier]
+        check-type: exit-positive
+        code-template: |
+          .record R {}
+          .function void %s
+          .function i32 main() {
+              newobj v0, R
+              ldai 0
+              call.virt.acc.short R.foo, v0, 1
+        cases:
+          - values:
+            - R.foo(R a0, i32 a1) <external>
+          - values:
+            - R.foo(R a0, i32 a1) <external, noimpl>
+
+
+      - file-name: non_accessible_method_j
+        description: Check that verifier reports an error on non-accessible method.
+        isa:
+          verification:
+            - method_id_accessible
+        header-template: [java]
+        runner-options: [verifier-failure, verifier-debug-config, use-java]
+        tags: [verifier]
+        check-type: exit-positive
+        code-template: |
+          %s
+          .function i32 main() {
+              newobj v0, %s
+              ldai 0
+              call.virt.acc.short %s, v0, 1
+        cases:
+          - values:
+            - |
+              .record R {}
+              .function void R.foo(R a0, i32 a1) <external>
+            - R
+            - R.foo
+          - values:
+            - |
+              .record R {}
+              .function void R.foo(R a0, i32 a1) <external>
+              .record Q <java.extends=R> {}
+            - Q
+            - R.foo
+
+
+      - file-name: invalid_method
+        description: Check that verifier reports an error on invalid method.
+        isa:
+          verification:
+            - method_id_non_static
+            - method_id_accessible
+        header-template: []
+        runner-options: [verifier-failure, verifier-debug-config]
+        tags: [verifier]
+        check-type: exit-positive
+        code-template: |
+          .record R {}
+          %s
+          .function i32 main() {
+              newobj v0, R
+              ldai 0
+              call.virt.acc.short %s
+        cases:
+          - description: No return in function.
+            values:
+            - .function void R.foo(R a0, i32 a1) {}
+            - R.foo, v0, 1
+            bugid: ['5607']
+            ignore: true
+          - description: No return in function.
+            values:
+            - |
+              #
+              .function i32 R.foo(R a0) {
+                  ldai 0
+              }
+            - R.foo, v0, 1
+
+
+      - file-name: incompatible_v_p
+        description: Check 'call.virt.acc.short' instruction called with incompatible register argument in PandaAssembly context.
+        isa:
+          verification:
+            - compatible_arguments
+        runner-options: [verifier-failure, verifier-debug-config]
+        tags: [verifier]
+        header-template: []
+        check-type: exit-positive
+        code-template: |
+          .record panda.Object <external>
+          .record panda.Class <external>
+          .record panda.String <external>
+          .record R {}
+          .function void R.foo(R a0, %s a1) {
+              return.void
+          }
+          .function i32 main() {
+              *s
+              newobj v0, R
+              lda.obj v0
+              call.virt.acc.short R.foo, v1, 0
+        template-cases:
+          - values:
+            - u1
+            exclude: [i32]
+          - values:
+            - u8
+            exclude: [i32]
+          - values:
+            - i8
+            exclude: [i32]
+          - values:
+            - u16
+            exclude: [i32]
+          - values:
+            - i16
+            exclude: [i32]
+          - values:
+            - u32
+            exclude: [i32]
+          - values:
+            - u64
+            exclude: [i64]
+          - values:
+            - f32
+            exclude: [f64]
+          - values:
+            - u32[]
+            exclude: [u32a, nul]
+          - values:
+            - u64[]
+            exclude: [u64a, nul]
+          - values:
+            - f32[]
+            exclude: [f32a, nul]
+          - values:
+            - u32[][]
+            exclude: [u32aa, nul]
+          - values:
+            - u64[][]
+            exclude: [u64aa, nul]
+          - values:
+            - f32[][]
+            exclude: [f32aa, nul]
+          - values:
+            - R
+            exclude: [nul]
+          - values:
+            - panda.String
+            exclude: [str, nul]
+          - values:
+            - panda.Class
+            exclude: [typ, nul]
+          - values:
+            - panda.Object
+            exclude: [u32a, u64a, f32a, u32aa, u64aa, f32aa, str, typ, ra, stra, typa, obja, raa, straa, typaa, objaa, nul]
+          - values:
+            - R[]
+            exclude: [ra, nul]
+          - values:
+            - panda.String[]
+            exclude: [stra, nul]
+          - values:
+            - panda.Class[]
+            exclude: [typa, nul]
+          - values:
+            - panda.Object[]
+            exclude: [obja, u32aa, u64aa, f32aa, ra, stra, typa, raa, straa, typaa, objaa, nul]
+          - values:
+            - R[][]
+            exclude: [raa, nul]
+          - values:
+            - panda.String[][]
+            exclude: [straa, nul]
+          - values:
+            - panda.Class[][]
+            exclude: [typaa, nul]
+          - values:
+            - panda.Object[][]
+            exclude: [objaa, raa, straa, typaa, nul]
+        cases:
+          - values:
+            - movi v1, 1
+            id: i32
+          - values:
+            - movi.64 v1, 1
+            id: i64
+          - values:
+            - fmovi.64 v1, 1.0
+            id: f64
+          - values:
+            - |
+              #
+                  movi v1, 10
+                  newarr v1, v1, u32[]
+            id: u32a
+          - values:
+            - |
+              #
+                  movi v1, 10
+                  newarr v1, v1, u64[]
+            id: u64a
+          - values:
+            - |
+              #
+                  movi v1, 10
+                  newarr v1, v1, f32[]
+            id: f32a
+          - values:
+            - |
+              #
+                  movi v1, 10
+                  newarr v1, v1, u32[][]
+            id: u32aa
+          - values:
+            - |
+              #
+                  movi v1, 10
+                  newarr v1, v1, u64[][]
+            id: u64aa
+          - values:
+            - |
+              #
+                  movi v1, 10
+                  newarr v1, v1, f32[][]
+            id: f32aa
+          - values:
+            - |
+              #
+                  lda.str "test message"
+                  sta.obj v1
+            id: str
+          - values:
+            - |
+              #
+                  lda.type R
+                  sta.obj v1
+            id: typ
+          - values:
+            - |
+              #
+                  movi v1, 10
+                  newarr v1, v1, R[]
+            id: ra
+          - values:
+            - |
+              #
+                  movi v1, 10
+                  newarr v1, v1, panda.String[]
+            id: stra
+          - values:
+            - |
+              #
+                  movi v1, 10
+                  newarr v1, v1, panda.Class[]
+            id: typa
+          - values:
+            - |
+              #
+                  movi v1, 10
+                  newarr v1, v1, panda.Object[]
+            id: obja
+          - values:
+            - |
+              #
+                  movi v1, 10
+                  newarr v1, v1, R[][]
+            id: raa
+          - values:
+            - |
+              #
+                  movi v1, 10
+                  newarr v1, v1, panda.String[][]
+            id: straa
+          - values:
+            - |
+              #
+                  movi v1, 10
+                  newarr v1, v1, panda.Class[][]
+            id: typaa
+          - values:
+            - |
+              #
+                  movi v1, 10
+                  newarr v1, v1, panda.Object[][]
+            id: objaa
+          - values:
+            - mov.null v1
+            id: nul
+
+
+      - file-name: incompatible_acc_p
+        description: Check 'call.virt.acc.short' instruction called with incompatible accumulator argument in PandaAssembly context.
+        isa:
+          verification:
+            - compatible_arguments
+        runner-options: [verifier-failure, verifier-debug-config]
+        tags: [verifier]
+        header-template: []
+        check-type: exit-positive
+        code-template: |
+          .record panda.Object <external>
+          .record panda.Class <external>
+          .record panda.String <external>
+          .record R {}
+          .function void R.foo(R a0, %s a1) {
+              return.void
+          }
+          .function i32 main() {
+              *s
+              newobj v2, R
+              call.virt.acc.short R.foo, v2, 1
+        template-cases:
+          - values:
+            - u1
+            exclude: [i32]
+          - values:
+            - u8
+            exclude: [i32]
+          - values:
+            - i8
+            exclude: [i32]
+          - values:
+            - u16
+            exclude: [i32]
+          - values:
+            - i16
+            exclude: [i32]
+          - values:
+            - u32
+            exclude: [i32]
+          - values:
+            - u64
+            exclude: [i64]
+          - values:
+            - f32
+            exclude: [f64]
+          - values:
+            - u32[]
+            exclude: [u32a, nul]
+          - values:
+            - u64[]
+            exclude: [u64a, nul]
+          - values:
+            - f32[]
+            exclude: [f32a, nul]
+          - values:
+            - u32[][]
+            exclude: [u32aa, nul]
+          - values:
+            - u64[][]
+            exclude: [u64aa, nul]
+          - values:
+            - f32[][]
+            exclude: [f32aa, nul]
+          - values:
+            - R
+            exclude: [nul]
+          - values:
+            - panda.String
+            exclude: [str, nul]
+          - values:
+            - panda.Class
+            exclude: [typ, nul]
+          - values:
+            - panda.Object
+            exclude: [u32a, u64a, f32a, u32aa, u64aa, f32aa, str, typ, ra, stra, typa, obja, raa, straa, typaa, objaa, nul]
+          - values:
+            - R[]
+            exclude: [ra, nul]
+          - values:
+            - panda.String[]
+            exclude: [stra, nul]
+          - values:
+            - panda.Class[]
+            exclude: [typa, nul]
+          - values:
+            - panda.Object[]
+            exclude: [obja, u32aa, u64aa, f32aa, ra, stra, typa, raa, straa, typaa, objaa, nul]
+          - values:
+            - R[][]
+            exclude: [raa, nul]
+          - values:
+            - panda.String[][]
+            exclude: [straa, nul]
+          - values:
+            - panda.Class[][]
+            exclude: [typaa, nul]
+          - values:
+            - panda.Object[][]
+            exclude: [objaa, raa, straa, typaa, nul]
+        cases:
+          - values:
+            - ldai 1
+            id: i32
+          - values:
+            - ldai.64 1
+            id: i64
+          - values:
+            - fldai.64 1.0
+            id: f64
+          - values:
+            - |
+              #
+                  movi v1, 10
+                  newarr v1, v1, u32[]
+                  lda.obj v1
+            id: u32a
+          - values:
+            - |
+              #
+                  movi v1, 10
+                  newarr v1, v1, u64[]
+                  lda.obj v1
+            id: u64a
+          - values:
+            - |
+              #
+                  movi v1, 10
+                  newarr v1, v1, f32[]
+                  lda.obj v1
+            id: f32a
+          - values:
+            - |
+              #
+                  movi v1, 10
+                  newarr v1, v1, u32[][]
+                  lda.obj v1
+            id: u32aa
+          - values:
+            - |
+              #
+                  movi v1, 10
+                  newarr v1, v1, u64[][]
+                  lda.obj v1
+            id: u64aa
+          - values:
+            - |
+              #
+                  movi v1, 10
+                  newarr v1, v1, f32[][]
+                  lda.obj v1
+            id: f32aa
+          - values:
+            - |
+              #
+                  lda.str "test message"
+            id: str
+          - values:
+            - |
+              #
+                  lda.type R
+            id: typ
+          - values:
+            - |
+              #
+                  movi v1, 10
+                  newarr v1, v1, R[]
+                  lda.obj v1
+            id: ra
+          - values:
+            - |
+              #
+                  movi v1, 10
+                  newarr v1, v1, panda.String[]
+                  lda.obj v1
+            id: stra
+          - values:
+            - |
+              #
+                  movi v1, 10
+                  newarr v1, v1, panda.Class[]
+                  lda.obj v1
+            id: typa
+          - values:
+            - |
+              #
+                  movi v1, 10
+                  newarr v1, v1, panda.Object[]
+                  lda.obj v1
+            id: obja
+          - values:
+            - |
+              #
+                  movi v1, 10
+                  newarr v1, v1, R[][]
+                  lda.obj v1
+            id: raa
+          - values:
+            - |
+              #
+                  movi v1, 10
+                  newarr v1, v1, panda.String[][]
+                  lda.obj v1
+            id: straa
+          - values:
+            - |
+              #
+                  movi v1, 10
+                  newarr v1, v1, panda.Class[][]
+                  lda.obj v1
+            id: typaa
+          - values:
+            - |
+              #
+                  movi v1, 10
+                  newarr v1, v1, panda.Object[][]
+                  lda.obj v1
+            id: objaa
+          - values:
+            - lda.null
+            id: nul
+
+
+      - file-name: incompatible_v_j
+        isa:
+          verification:
+            - compatible_arguments
+        runner-options: [verifier-failure, use-java, verifier-debug-config]
+        tags: [verifier]
+        description: Check 'call.virt.acc.short' instruction with incompatible register in Java context.
+        header-template: [java]
+        code-template: |
+          .record java.lang.Object <external>
+          .record java.lang.Class <external>
+          .record R {}
+          .function void R.foo(R a0, %s a1) {
+              return.void
+          }
+          .function i32 main() {
+              *s
+              newobj v2, R
+              lda.obj v2
+              call.virt.acc.short R.foo, v1, 0
+        check-type: exit-positive
+        template-cases:
+          - values:
+            - u1
+            exclude: [i32]
+          - values:
+            - i8
+            exclude: [i32]
+          - values:
+            - u16
+            exclude: [i32]
+          - values:
+            - i16
+            exclude: [i32]
+          - values:
+            - i32
+            exclude: [i32]
+          - values:
+            - i64
+            exclude: [i64]
+          - values:
+            - f32
+            exclude: [f64]
+          - values:
+            - f64
+            exclude: [f64]
+          - values:
+            - u1[]
+            exclude: [u1a, nul]
+          - values:
+            - i8[]
+            exclude: [i8a, nul]
+          - values:
+            - u16[]
+            exclude: [u1a, u16a, nul]
+          - values:
+            - i16[]
+            exclude: [i8a, i16a, nul]
+          - values:
+            - i32[]
+            exclude: [i8a, i16a, i32a, nul]
+          - values:
+            - i64[]
+            exclude: [i64a, nul]
+          - values:
+            - f32[]
+            exclude: [f32a, nul]
+          - values:
+            - f64[]
+            exclude: [f32a, f64a, nul]
+          - values:
+            - i32[][]
+            exclude: [i32aa, nul]
+          - values:
+            - f64[][]
+            exclude: [f64aa, nul]
+          - values:
+            - R
+            exclude: [nul]
+          - values:
+            - java.lang.Class
+            exclude: [typ, nul]
+          - values:
+            - java.lang.Object
+            exclude: [u1a, i8a, u16a, i16a, i32a, i64a, f32a, f64a, i32aa, f64aa, typ, ra, typa, obja, raa, typaa, objaa, nul]
+          - values:
+            - R[]
+            exclude: [ra, nul]
+          - values:
+            - java.lang.Class[]
+            exclude: [typa, nul]
+          - values:
+            - java.lang.Object[]
+            exclude: [obja, i32aa, f64aa, ra, typa, raa, typaa, objaa, nul]
+          - values:
+            - R[][]
+            exclude: [raa, nul]
+          - values:
+            - java.lang.Class[][]
+            exclude: [typaa, nul]
+          - values:
+            - java.lang.Object[][]
+            exclude: [objaa, raa, typaa, nul]
+        cases:
+          - values:
+            - movi v1, 1
+            id: i32
+          - values:
+            - movi.64 v1, 1
+            id: i64
+          - values:
+            - fmovi.64 v1, 1.0
+            id: f64
+          - values:
+            - |
+              #
+                  movi v1, 10
+                  newarr v1, v1, u1[]
+            id: u1a
+          - values:
+            - |
+              #
+                  movi v1, 10
+                  newarr v1, v1, i8[]
+            id: i8a
+          - values:
+            - |
+              #
+                  movi v1, 10
+                  newarr v1, v1, u16[]
+            id: u16a
+          - values:
+            - |
+              #
+                  movi v1, 10
+                  newarr v1, v1, i16[]
+            id: i16a
+          - values:
+            - |
+              #
+                  movi v1, 10
+                  newarr v1, v1, i32[]
+            id: i32a
+          - values:
+            - |
+              #
+                  movi v1, 10
+                  newarr v1, v1, i64[]
+            id: i64a
+          - values:
+            - |
+              #
+                  movi v1, 10
+                  newarr v1, v1, f32[]
+            id: f32a
+          - values:
+            - |
+              #
+                  movi v1, 10
+                  newarr v1, v1, f64[]
+            id: f64a
+          - values:
+            - |
+              #
+                  movi v1, 10
+                  newarr v1, v1, i32[][]
+            id: i32aa
+          - values:
+            - |
+              #
+                  movi v1, 10
+                  newarr v1, v1, f64[][]
+            id: f64aa
+          - values:
+            - |
+              #
+                  lda.type R
+                  sta.obj v1
+            id: typ
+          - values:
+            - |
+              #
+                  movi v1, 10
+                  newarr v1, v1, R[]
+            id: ra
+          - values:
+            - |
+              #
+                  movi v1, 10
+                  newarr v1, v1, java.lang.Class[]
+            id: typa
+          - values:
+            - |
+              #
+                  movi v1, 10
+                  newarr v1, v1, java.lang.Object[]
+            id: obja
+          - values:
+            - |
+              #
+                  movi v1, 10
+                  newarr v1, v1, R[][]
+            id: raa
+          - values:
+            - |
+              #
+                  movi v1, 10
+                  newarr v1, v1, java.lang.Class[][]
+            id: typaa
+          - values:
+            - |
+              #
+                  movi v1, 10
+                  newarr v1, v1, java.lang.Object[][]
+            id: objaa
+          - values:
+            - mov.null v1
+            id: nul
+
+
+      - file-name: incompatible_acc_j
+        isa:
+          verification:
+            - compatible_arguments
+        runner-options: [verifier-failure, use-java, verifier-debug-config]
+        tags: [verifier]
+        description: Check 'call.virt.acc.short' instruction with incompatible accumulator in Java context.
+        header-template: [java]
+        check-type: exit-positive
+        code-template: |
+          .record java.lang.Object <external>
+          .record java.lang.Class <external>
+          .record R {}
+          .function void R.foo(R a0, %s a1) {
+              return.void
+          }
+          .function i32 main() {
+              *s
+              newobj v2, R
+              call.virt.acc.short R.foo, v2, 1
+        template-cases:
+          - values:
+            - u1
+            exclude: [i32]
+          - values:
+            - i8
+            exclude: [i32]
+          - values:
+            - u16
+            exclude: [i32]
+          - values:
+            - i16
+            exclude: [i32]
+          - values:
+            - i32
+            exclude: [i32]
+          - values:
+            - i64
+            exclude: [i64]
+          - values:
+            - f32
+            exclude: [f64]
+          - values:
+            - f64
+            exclude: [f64]
+          - values:
+            - u1[]
+            exclude: [u1a, nul]
+          - values:
+            - i8[]
+            exclude: [i8a, nul]
+          - values:
+            - u16[]
+            exclude: [u1a, u16a, nul]
+          - values:
+            - i16[]
+            exclude: [i8a, i16a, nul]
+          - values:
+            - i32[]
+            exclude: [i8a, i16a, i32a, nul]
+          - values:
+            - i64[]
+            exclude: [i64a, nul]
+          - values:
+            - f32[]
+            exclude: [f32a, nul]
+          - values:
+            - f64[]
+            exclude: [f32a, f64a, nul]
+          - values:
+            - i32[][]
+            exclude: [i32aa, nul]
+          - values:
+            - f64[][]
+            exclude: [f64aa, nul]
+          - values:
+            - R
+            exclude: [nul]
+          - values:
+            - java.lang.Class
+            exclude: [typ, nul]
+          - values:
+            - java.lang.Object
+            exclude: [u1a, i8a, u16a, i16a, i32a, i64a, f32a, f64a, i32aa, f64aa, typ, ra, typa, obja, raa, typaa, objaa, nul]
+          - values:
+            - R[]
+            exclude: [ra, nul]
+          - values:
+            - java.lang.Class[]
+            exclude: [typa, nul]
+          - values:
+            - java.lang.Object[]
+            exclude: [obja, i32aa, f64aa, ra, typa, raa, typaa, objaa, nul]
+          - values:
+            - R[][]
+            exclude: [raa, nul]
+          - values:
+            - java.lang.Class[][]
+            exclude: [typaa, nul]
+          - values:
+            - java.lang.Object[][]
+            exclude: [objaa, raa, typaa, nul]
+        cases:
+          - values:
+            - ldai 1
+            id: i32
+          - values:
+            - ldai.64 1
+            id: i64
+          - values:
+            - fldai.64 1.0
+            id: f64
+          - values:
+            - |
+              #
+                  movi v1, 10
+                  newarr v1, v1, u1[]
+                  lda.obj v1
+            id: u1a
+          - values:
+            - |
+              #
+                  movi v1, 10
+                  newarr v1, v1, i8[]
+                  lda.obj v1
+            id: i8a
+          - values:
+            - |
+              #
+                  movi v1, 10
+                  newarr v1, v1, u16[]
+                  lda.obj v1
+            id: u16a
+          - values:
+            - |
+              #
+                  movi v1, 10
+                  newarr v1, v1, i16[]
+                  lda.obj v1
+            id: i16a
+          - values:
+            - |
+              #
+                  movi v1, 10
+                  newarr v1, v1, i32[]
+                  lda.obj v1
+            id: i32a
+          - values:
+            - |
+              #
+                  movi v1, 10
+                  newarr v1, v1, i64[]
+                  lda.obj v1
+            id: i64a
+          - values:
+            - |
+              #
+                  movi v1, 10
+                  newarr v1, v1, f32[]
+                  lda.obj v1
+            id: f32a
+          - values:
+            - |
+              #
+                  movi v1, 10
+                  newarr v1, v1, f64[]
+                  lda.obj v1
+            id: f64a
+          - values:
+            - |
+              #
+                  movi v1, 10
+                  newarr v1, v1, i32[][]
+                  lda.obj v1
+            id: i32aa
+          - values:
+            - |
+              #
+                  movi v1, 10
+                  newarr v1, v1, f64[][]
+                  lda.obj v1
+            id: f64aa
+          - values:
+            - |
+              #
+                  lda.type R
+            id: typ
+          - values:
+            - |
+              #
+                  movi v1, 10
+                  newarr v1, v1, R[]
+                  lda.obj v1
+            id: ra
+          - values:
+            - |
+              #
+                  movi v1, 10
+                  newarr v1, v1, java.lang.Class[]
+                  lda.obj v1
+            id: typa
+          - values:
+            - |
+              #
+                  movi v1, 10
+                  newarr v1, v1, java.lang.Object[]
+                  lda.obj v1
+            id: obja
+          - values:
+            - |
+              #
+                  movi v1, 10
+                  newarr v1, v1, R[][]
+                  lda.obj v1
+            id: raa
+          - values:
+            - |
+              #
+                  movi v1, 10
+                  newarr v1, v1, java.lang.Class[][]
+                  lda.obj v1
+            id: typaa
+          - values:
+            - |
+              #
+                  movi v1, 10
+                  newarr v1, v1, java.lang.Object[][]
+                  lda.obj v1
+            id: objaa
+          - values:
+            - lda.null
+            id: nul
+
+
+      - file-name: compatible_primitive_args_p
+        isa:
+          verification:
+            - compatible_arguments
+        runner-options: [verifier-only, verifier-debug-config]
+        tags: [verifier]
+        description: Check 'call.virt.acc.short' instruction with compatible primitive arguments in PandaAssembly context.
+        header-template: []
+        check-type: exit-positive
+        code-template: |
+          .record R {}
+          .function void R.foo(R a0, %s a1) {
+              return.void
+          }
+          .function i32 main() {
+              newobj v0, R
+              lda.obj v0
+              %s
+              call.virt.acc.short R.foo, v1, 0
+        cases:
+          - values:
+            - u1
+            - movi v1, 1
+          - values:
+            - u8
+            - movi v1, 1
+          - values:
+            - i8
+            - movi v1, 1
+          - values:
+            - u16
+            - movi v1, 1
+          - values:
+            - i16
+            - movi v1, 1
+          - values:
+            - u32
+            - movi v1, 1
+          - values:
+            - i32
+            - movi v1, 1
+          - values:
+            - u64
+            - movi.64 v1, 1
+          - values:
+            - i64
+            - movi.64 v1, 1
+          - values:
+            - f32
+            - fmovi.64 v1, 1.1
+          - values:
+            - f64
+            - fmovi.64 v1, 1.1
+
+
+      - file-name: compatible_primitive_args_j
+        isa:
+          verification:
+            - compatible_arguments
+        runner-options: [verifier-only, use-java, verifier-debug-config]
+        tags: [verifier]
+        description: Check 'call.virt.acc.short' instruction with compatible primitive arguments in Java context.
+        header-template: [java]
+        code-template: |
+          .record R {}
+          .function void R.foo(R a0, %s a1) {
+              return.void
+          }
+          .function i32 main() {
+              %s
+              newobj v1, R
+              call.virt.acc.short R.foo, v1, 1
+        check-type: exit-positive
+        cases:
+          - values:
+            - u1
+            - ldai 1
+          - values:
+            - i8
+            - ldai 1
+          - values:
+            - u16
+            - ldai 1
+          - values:
+            - i16
+            - ldai 1
+          - values:
+            - i32
+            - ldai 1
+          - values:
+            - i64
+            - ldai.64 1
+          - values:
+            - f32
+            - fldai.64 1.1
+          - values:
+            - f64
+            - fldai.64 1.1
+
+
+      - file-name: compatible_prim_array_args_p
+        isa:
+          verification:
+            - compatible_arguments
+        runner-options: [verifier-only, verifier-debug-config]
+        tags: [verifier]
+        description: Check 'call.virt.acc.short' instruction called with compatible primitive array arguments in PandaAssembly context.
+        header-template: []
+        code-template: |
+          .record R {}
+          .function void R.foo(R a0, %s a1) {
+              return.void
+          }
+          .function i32 main() {
+              newobj v1, R
+              lda.obj v1
+              movi v1, 10
+              newarr v1, v1, %s
+              call.virt.acc.short R.foo, v1, 0
+        check-type: exit-positive
+        cases:
+          - values:
+            - u1[]
+            - u1[]
+          - values:
+            - u8[]
+            - u8[]
+          - values:
+            - i8[]
+            - i8[]
+          - values:
+            - u16[]
+            - u16[]
+          - values:
+            - i16[]
+            - i16[]
+          - values:
+            - u32[]
+            - u32[]
+          - values:
+            - i32[]
+            - i32[]
+          - values:
+            - u64[]
+            - u64[]
+          - values:
+            - i64[]
+            - i64[]
+          - values:
+            - f32[]
+            - f32[]
+          - values:
+            - f64[]
+            - f64[]
+          - values:
+            - u1[][]
+            - u1[][]
+          - values:
+            - u8[][]
+            - u8[][]
+          - values:
+            - i8[][]
+            - i8[][]
+          - values:
+            - u16[][]
+            - u16[][]
+          - values:
+            - i16[][]
+            - i16[][]
+          - values:
+            - u32[][]
+            - u32[][]
+          - values:
+            - i32[][]
+            - i32[][]
+          - values:
+            - u64[][]
+            - u64[][]
+          - values:
+            - i64[][]
+            - i64[][]
+          - values:
+            - f32[][]
+            - f32[][]
+          - values:
+            - f64[][]
+            - f64[][]
+
+
+      - file-name: compatible_prim_array_args_j
+        isa:
+          verification:
+            - compatible_arguments
+        runner-options: [verifier-only, use-java]
+        tags: [verifier]
+        description: Check 'call.virt.acc.short' instruction called with compatible primitive array arguments in Java context.
+        header-template: [java]
+        code-template: |
+          .record R {}
+          .function void foo(R a0, %s a1) {
+              return.void
+          }
+          .function i32 main() {
+              movi v0, 10
+              newarr v0, v0, %s
+              lda.obj v0
+              newobj v1, R
+              call.virt.acc.short foo, v1, 1
+        check-type: exit-positive
+        cases:
+          - values:
+            - u1[]
+            - u1[]
+          - values:
+            - i8[]
+            - i8[]
+          - values:
+            - u16[]
+            - u16[]
+          - values:
+            - i16[]
+            - i16[]
+          - values:
+            - i32[]
+            - i32[]
+          - values:
+            - i64[]
+            - i64[]
+          - values:
+            - f32[]
+            - f32[]
+          - values:
+            - f64[]
+            - f64[]
+          - values:
+            - u1[][]
+            - u1[][]
+          - values:
+            - i8[][]
+            - i8[][]
+          - values:
+            - u16[][]
+            - u16[][]
+          - values:
+            - i16[][]
+            - i16[][]
+          - values:
+            - i32[][]
+            - i32[][]
+          - values:
+            - i64[][]
+            - i64[][]
+          - values:
+            - f32[][]
+            - f32[][]
+          - values:
+            - f64[][]
+            - f64[][]
+
+
+      - file-name: compatible_obj_args_p
+        isa:
+          verification:
+            - compatible_arguments
+        runner-options: [verifier-only, verifier-debug-config]
+        tags: [verifier]
+        description: Check 'call.virt.acc.short' instruction called with compatible object arguments in PandaAssembly context.
+        header-template: []
+        check-type: exit-positive
+        code-template: |
+          .record panda.Object <external>
+          .record panda.Class <external>
+          .record panda.String <external>
+          .record Q {}
+          .record R {}
+          .function void R.foo(R a0, %s a1) {
+              return.void
+          }
+          .function i32 main() {
+              %s
+              newobj v7, R
+              lda.obj v7
+              call.virt.acc.short R.foo, v1, 0
+        cases:
+          # Object of type O is instance of type T if O is the same as T ...
+          - values:
+            - Q
+            - newobj v1, Q
+          - values:
+            - panda.String
+            - |
+              #
+                  lda.str "test"
+                  sta.obj v1
+          - values:
+            - panda.Class
+            - |
+              #
+                  lda.type Q
+                  sta.obj v1
+          # ... or is subtype of T
+          - values:
+            - panda.Object
+            - newobj v1, Q
+          - values:
+            - panda.Object
+            - |
+              #
+                  lda.str "test"
+                  sta.obj v1
+          - values:
+            - panda.Object
+            - |
+              #
+                  lda.type Q
+                  sta.obj v1
+            bugid: ['3594']
+            ignore: true
+          # For arrays T should be a root type in type hierarchy ...
+          - values:
+            - panda.Object
+            - |
+              #
+                  movi v0, 10
+                  newarr v1, v0, i32[]
+          - values:
+            - panda.Object
+            - |
+              #
+                  movi v0, 10
+                  newarr v1, v0, f64[][]
+          - values:
+            - panda.Object
+            - |
+              #
+                  movi v0, 10
+                  newarr v1, v0, Q[]
+          - values:
+            - panda.Object
+            - |
+              #
+                  movi v0, 10
+                  newarr v1, v0, panda.Object[]
+          - values:
+            - panda.Object
+            - |
+              #
+                  movi v0, 10
+                  newarr v1, v0, panda.String[]
+          - values:
+            - panda.Object
+            - |
+              #
+                  movi v0, 10
+                  newarr v1, v0, panda.Class[]
+
+
+      - file-name: compatible_obj_args_j
+        isa:
+          verification:
+            - compatible_arguments
+        runner-options: [verifier-only, use-java, verifier-debug-config]
+        tags: [verifier]
+        description: Check 'call.virt.acc.short' instruction called with compatible object arguments in Java context.
+        header-template: [java]
+        check-type: exit-positive
+        code-template: |
+          .record java.lang.Object <external>
+          .record java.lang.Class <external>
+          .record java.lang.String <external>
+          .record java.io.Serializable <external>
+          .record I <java.interface> {}
+          .record E {}
+          .record Q <java.extends=E, java.implements=I> {}
+          .record R {}
+          .function void R.foo(R a0, %s a1) {
+              return.void
+          }
+          .function i32 main() {
+              %s
+              newobj v1, R
+              call.virt.acc.short R.foo, v1, 1
+        cases:
+          # Object of type O is instance of type T if O is the same as T ...
+          - values:
+            - Q
+            - |
+              #
+                  newobj v1, Q
+                  lda.obj v1
+          - values:
+            - java.lang.String
+            - lda.str "test"
+          - values:
+            - java.lang.Class
+            - lda.type Q
+          - values:
+            - E
+            - |
+              #
+                  newobj v0, E
+                  lda.obj v0
+          # ... or is subtype of T
+          - values:
+            - E
+            - |
+              #
+                  newobj v0, Q
+                  lda.obj v0
+          - values:
+            - I
+            - |
+              #
+                  newobj v0, Q
+                  lda.obj v0
+          - values:
+            - java.lang.Object
+            - |
+              #
+                  newobj v0, Q
+                  lda.obj v0
+          - values:
+            - java.lang.Object
+            - lda.str "test"
+          - values:
+            - java.lang.Object
+            - lda.type java.lang.String
+            bugid: ['3594']
+            ignore: true
+          - values:
+            - java.io.Serializable
+            - lda.type Q
+            bugid: ['3594']
+            ignore: true
+          # For arrays T should be a root type in type hierarchy ...
+          - values:
+            - java.lang.Object
+            - |
+              #
+                  movi v0, 10
+                  newarr v1, v0, i32[]
+                  lda.obj v1
+          - values:
+            - java.lang.Object
+            - |
+              #
+                  movi v0, 10
+                  newarr v1, v0, f64[][]
+                  lda.obj v1
+          - values:
+            - java.lang.Object
+            - |
+              #
+                  movi v0, 10
+                  newarr v1, v0, Q[]
+                  lda.obj v1
+          - values:
+            - java.lang.Object
+            - |
+              #
+                  movi v0, 10
+                  newarr v1, v0, java.lang.Object[]
+                  lda.obj v1
+          - values:
+            - java.lang.Object
+            - |
+              #
+                  movi v0, 10
+                  newarr v1, v0, java.lang.String[]
+                  lda.obj v1
+          - values:
+            - java.lang.Object
+            - |
+              #
+                  movi v0, 10
+                  newarr v1, v0, java.lang.Class[]
+                  lda.obj v1
+
+
+      - file-name: compatible_obj_array_args_p
+        isa:
+          verification:
+            - compatible_arguments
+        runner-options: [verifier-only, verifier-debug-config]
+        tags: [verifier]
+        description: Check 'call.virt.acc.short' instruction called with compatible object array arguments in PandaAssembly context.
+        header-template: []
+        check-type: exit-positive
+        code-template: |
+          .record panda.Object <external>
+          .record panda.Class <external>
+          .record panda.String <external>
+          .record Q {}
+          .record R {}
+          .function void R.foo(R a0, %s a1) {
+              return.void
+          }
+          .function i32 main() {
+              movi v0, 10
+              newarr v1, v0, %s
+              newobj v0, R
+              lda.obj v0
+              call.virt.acc.short R.foo, v1, 0
+        cases:
+          # T is such array that O array elements are the same as T array elements
+          - values:
+            - Q[]
+            - Q[]
+          - values:
+            - Q[][]
+            - Q[][]
+          - values:
+            - panda.Object[]
+            - panda.Object[]
+          - values:
+            - panda.Object[][]
+            - panda.Object[][]
+          - values:
+            - panda.String[]
+            - panda.String[]
+          - values:
+            - panda.String[][]
+            - panda.String[][]
+          - values:
+            - panda.Class[]
+            - panda.Class[]
+          - values:
+            - panda.Class[][]
+            - panda.Class[][]
+          # T is such array that O array elements are subtypes of T array elements
+          - values:
+            - panda.Object[]
+            - panda.Object[][]
+          - values:
+            - panda.Object[]
+            - Q[]
+          - values:
+            - panda.Object[]
+            - Q[][]
+          - values:
+            - panda.Object[]
+            - panda.Class[]
+          - values:
+            - panda.Object[]
+            - panda.Class[][]
+          - values:
+            - panda.Object[]
+            - panda.String[]
+          - values:
+            - panda.Object[]
+            - panda.String[][]
+          - values:
+            - panda.Object[]
+            - i32[][]
+          - values:
+            - panda.Object[]
+            - f64[][][]
+          - values:
+            - panda.Object[][]
+            - panda.Object[][][]
+          - values:
+            - panda.Object[][]
+            - panda.Class[][]
+          - values:
+            - panda.Object[][]
+            - panda.Class[][][]
+          - values:
+            - panda.Object[][]
+            - i32[][][]
+          - values:
+            - panda.Object[][]
+            - f64[][][][]
+
+
+      - file-name: compatible_obj_array_args_j
+        isa:
+          verification:
+            - compatible_arguments
+        runner-options: [verifier-only, use-java, verifier-debug-config]
+        tags: [verifier]
+        description: Check 'call.virt.acc.short' instruction called with compatible object array arguments in Java context.
+        header-template: [java]
+        code-template: |
+          .record java.lang.Object <external>
+          .record java.lang.Class <external>
+          .record java.lang.String <external>
+          .record I <java.interface> {}
+          .record E {}
+          .record Q <java.extends=E, java.implements=I> {}
+          .record R {}
+          .function void R.foo(R a0, %s a1) {
+              return.void
+          }
+          .function i32 main() {
+              movi v1, 10
+              newarr v1, v1, %s
+              lda.obj v1
+              newobj v1, R
+              call.virt.acc.short R.foo, v1, 1
+        check-type: exit-positive
+        cases:
+          # T is such array that O array elements are the same as T array elements
+          - values:
+            - Q[]
+            - Q[]
+          - values:
+            - java.lang.String[]
+            - java.lang.String[]
+          - values:
+            - Q[][]
+            - Q[][]
+          - values:
+            - java.lang.String[][]
+            - java.lang.String[][]
+          - values:
+            - java.lang.Object[]
+            - java.lang.Object[]
+          - values:
+            - java.lang.Class[][]
+            - java.lang.Class[][]
+          - values:
+            - java.lang.Class[]
+            - java.lang.Class[]
+          - values:
+            - java.lang.Object[][]
+            - java.lang.Object[][]
+          # T is such array that O array elements are subtypes of T array elements
+          - values:
+            - E[]
+            - Q[]
+          - values:
+            - java.lang.Object[]
+            - Q[][]
+          - values:
+            - I[]
+            - Q[]
+          - values:
+            - java.lang.Object[]
+            - java.lang.Class[]
+          - values:
+            - java.lang.Object[]
+            - java.lang.Object[][]
+          - values:
+            - java.lang.Object[]
+            - Q[]
+          - values:
+            - java.lang.Object[]
+            - java.lang.String[]
+          - values:
+            - java.lang.Object[]
+            - f64[][][]
+          - values:
+            - java.lang.Object[]
+            - java.lang.String[][]
+          - values:
+            - java.lang.Object[]
+            - i32[][]
+          # inherited types from object[][]
+          - values:
+            - E[][]
+            - Q[][]
+          - values:
+            - java.lang.Object[][]
+            - java.lang.Object[][][]
+          - values:
+            - I[][]
+            - Q[][]
+          - values:
+            - java.lang.Object[][]
+            - java.lang.Class[][][]
+          - values:
+            - java.lang.Object[][]
+            - java.lang.Class[][]
+          - values:
+            - java.lang.Object[][]
+            - i32[][][]
+
+
+      - file-name: compatible_obj_null_args_p
+        isa:
+          verification:
+            - compatible_arguments
+        runner-options: [verifier-only, verifier-debug-config]
+        tags: [verifier]
+        description: Check 'call.virt.acc.short' instruction called with null object ref in PandaAssembly context.
+        header-template: []
+        check-type: exit-positive
+        code-template: |
+          .record panda.Object <external>
+          .record panda.Class <external>
+          .record panda.String <external>
+          .record R {}
+          .function void R.foo(R a0, %s a1) {
+              return.void
+          }
+          .function i32 main() {
+              newobj v1, R
+              lda.null
+              call.virt.acc.short R.foo, v1, 1
+        cases:
+          - values: ['i32[]']
+          - values: ['f64[][]']
+          - values: ['panda.Object']
+          - values: ['panda.Object[]']
+          - values: ['panda.Object[][]']
+          - values: ['R']
+          - values: ['R[][]']
+          - values: ['panda.String']
+          - values: ['panda.String[]']
+          - values: ['panda.Class']
+          - values: ['panda.Class[]']
+          - values: ['u32[][][]']
+
+
+      - file-name: compatible_obj_null_args_j
+        isa:
+          verification:
+            - compatible_arguments
+        runner-options: [verifier-only, use-java, verifier-debug-config]
+        tags: [verifier]
+        description: Check 'call.virt.acc.short' instruction called with null object ref in Java context.
+        header-template: [java]
+        code-template: |
+          .record java.lang.Object <external>
+          .record java.lang.Class <external>
+          .record java.lang.String <external>
+          .record R {}
+          .function void R.foo(R a0, %s a1) {
+              return.void
+          }
+          .function i32 main() {
+              newobj v1, R
+              lda.obj v1
+              mov.null v1
+              call.virt.acc.short R.foo, v1, 0
+        check-type: exit-positive
+        cases:
+          - values: ['i32[]']
+          - values: ['f64[][]']
+          - values: ['java.lang.Object']
+          - values: ['java.lang.Object[]']
+          - values: ['java.lang.Object[][]']
+          - values: ['R']
+          - values: ['R[][]']
+          - values: ['java.lang.String']
+          - values: ['java.lang.String[]']
+          - values: ['java.lang.Class']
+          - values: ['java.lang.Class[]']
+          - values: ['u1[][][]']
+
+
+      - file-name: values_p
+        isa:
+          instructions:
+            - sig: call.virt.acc.short method_id, v:in:top, imm:u1
+              acc: inout:top
+              format: [op_v_4_imm_4_id_16]
+        runner-options: []
+        description: Check 'call.virt.acc.short' instruction called with various values in PandaAssembly context.
+        header-template: []
+        check-type: exit-positive
+        code-template: |
+          .record panda.Object <external>
+          .record panda.String <external>
+          .record R {}
+          .function i32 R.fooi32(R a0, i32 a1) {
+              lda a1
+              return
+          }
+          .function i64 R.fooi64(R a0, i64 a1) {
+              lda.64 a1
+              return.64
+          }
+          .function u32 R.foou32(R a0, u32 a1) {
+              lda a1
+              return
+          }
+          .function u64 R.foou64(R a0, u64 a1) {
+              lda.64 a1
+              return.64
+          }
+          .function f32 R.foof32(R a0, f32 a1) {
+              lda a1
+              return
+          }
+          .function f64 R.foof64(R a0, f64 a1) {
+              lda.64 a1
+              return.64
+          }
+          .function panda.Object R.fooobj(R a0, panda.Object a1) {
+              lda.obj a1
+              return.obj
+          }
+          .function i32 main() {
+              %s
+              newobj v0, R
+              lda.obj v0
+              call.virt.acc.short R.foo%s, v1, 0
+              call.virt.acc.short R.foo%s, v0, 1
+              %s
+              ldai 1
+              return
+          ok:
+        cases:
+          # signed i32
+          - values:
+            - movi v1, 0
+            - i32
+            - i32
+            - jeq v1, ok
+          - values:
+            - movi v1, -1
+            - i32
+            - i32
+            - jeq v1, ok
+          - values:
+            - movi v1, 0x5a5a5a5a
+            - i32
+            - i32
+            - jeq v1, ok
+          - values:
+            - movi v1, 0x11111111
+            - i32
+            - i32
+            - jeq v1, ok
+          # signed i64
+          - values:
+            - movi.64 v1, 0
+            - i64
+            - i64
+            - |
+              #
+                  cmp.64 v1
+                  jeqz ok
+          - values:
+            - movi.64 v1, -1
+            - i64
+            - i64
+            - |
+              #
+                  cmp.64 v1
+                  jeqz ok
+          - values:
+            - movi.64 v1, 0xa5a5a5a5cafebabe
+            - i64
+            - i64
+            - |
+              #
+                  cmp.64 v1
+                  jeqz ok
+          - values:
+            - movi.64 v1, 0xe1e1e1e1e1e1e1e1
+            - i64
+            - i64
+            - |
+              #
+                  cmp.64 v1
+                  jeqz ok
+          # unsigned u32
+          - values:
+            - movi v1, 0
+            - u32
+            - u32
+            - |
+              #
+                  ucmp v1
+                  jeqz ok
+          - values:
+            - movi v1, 0xffffffff
+            - u32
+            - u32
+            - |
+              #
+                  ucmp v1
+                  jeqz ok
+          - values:
+            - movi v1, 123456789
+            - u32
+            - u32
+            - |
+              #
+                  ucmp v1
+                  jeqz ok
+          - values:
+            - movi v1, 0x1111eeee
+            - u32
+            - u32
+            - |
+              #
+                  ucmp v1
+                  jeqz ok
+          # unsigned u64
+          - values:
+            - movi.64 v1, 0
+            - u64
+            - u64
+            - |
+              #
+                  ucmp.64 v1
+                  jeqz ok
+          - values:
+            - movi.64 v1, 0xefffffffffffffff
+            - u64
+            - u64
+            - |
+              #
+                  ucmp.64 v1
+                  jeqz ok
+          - values:
+            - movi.64 v1, 0xa5a5a5a5a5a5a5a5
+            - u64
+            - u64
+            - |
+              #
+                  ucmp.64 v1
+                  jeqz ok
+          - values:
+            - movi.64 v1, 0xeeee1111ffffdddd
+            - u64
+            - u64
+            - |
+              #
+                  ucmp.64 v1
+                  jeqz ok
+          # f32
+          - values:
+            - fmovi v1, 0.0
+            - f32
+            - f32
+            - |
+              #
+                  fcmpg v1
+                  jeqz ok
+          - values:
+            - fmovi v1, -1.1
+            - f32
+            - f32
+            - |
+              #
+                  fcmpg v1
+                  jeqz ok
+          - values:
+            - fmovi v1, 1.98765e14
+            - f32
+            - f32
+            - |
+              #
+                  fcmpg v1
+                  jeqz ok
+          - values:
+            - fmovi v1, 0.717171717171717171717171e71
+            - f32
+            - f32
+            - |
+              #
+                  fcmpg v1
+                  jeqz ok
+          - values:
+            - fmovi v1, 0xff800000
+            - f32
+            - f32
+            - |
+              #
+                  fcmpg v1
+                  jeqz ok
+          # f64
+          - values:
+            - fmovi.64 v1, 0.0
+            - f64
+            - f64
+            - |
+              #
+                  fcmpg.64 v1
+                  jeqz ok
+          - values:
+            - fmovi.64 v1, -1.1
+            - f64
+            - f64
+            - |
+              #
+                  fcmpg.64 v1
+                  jeqz ok
+          - values:
+            - fmovi.64 v1, -0.000000019e19
+            - f64
+            - f64
+            - |
+              #
+                  fcmpg.64 v1
+                  jeqz ok
+          - values:
+            - fmovi.64 v1, 0.373737373737373737e37
+            - f64
+            - f64
+            - |
+              #
+                  fcmpg.64 v1
+                  jeqz ok
+          - values:
+            - fmovi.64 v1, 0x7ff0000000000000
+            - f64
+            - f64
+            - |
+              #
+                  fcmpg.64 v1
+                  jeqz ok
+          # object
+          - values:
+            - newobj v1, R
+            - obj
+            - obj
+            - jeq.obj v1, ok
+          - values:
+            - newobj v1, panda.Object
+            - obj
+            - obj
+            - jeq.obj v1, ok
+          - values:
+            - |
+              #
+                  lda.str "test"
+                  sta.obj v1
+            - obj
+            - obj
+            - jeq.obj v1, ok
+          - values:
+            - |
+              #
+                  lda.type panda.String
+                  sta.obj v1
+            - obj
+            - obj
+            - jeq.obj v1, ok
+          - values:
+            - mov.null v1
+            - obj
+            - obj
+            - jeq.obj v1, ok
+          - values:
+            - |
+              #
+                  movi v3, 10
+                  newarr v1, v3, panda.String[]
+            - obj
+            - obj
+            - jeq.obj v1, ok
+          - values:
+            - |
+              #
+                  movi v3, 10
+                  newarr v1, v3, i32[][]
+            - obj
+            - obj
+            - jeq.obj v1, ok
+
+
+      - file-name: regs_restored
+        isa:
+          description: >
+            Call indicated object method, i.e. create new frame, pass values of arguments and
+            continue execution from the first instruction of a method.
+            Callee should treat accumulator value as undefined and cannot use it until accumulator
+            definition in the new frame.
+        description: Check 'call.virt.acc.short' that registers are restored after the call.
+        tags: [tsan]
+        header-template: []
+        code-template: |
+          .record R {}
+          .function R R.foo(R a0, i32 a1) {
+              movi v0, 100
+              movi v1, 200
+              movi v2, 300
+              movi v3, 400
+              movi v4, 500
+              movi v5, 600
+              movi v6, 700
+              movi v7, 800
+              movi v8, 900
+              movi v9, 1000
+              movi v10, 1100
+              movi v11, 1200
+              movi v12, 1300
+              movi v13, 1400
+              movi v14, 1500
+              movi v15, 1600
+              lda.obj a0
+              return.obj
+          }
+          .function i32 main() {
+              newobj v0, R
+              lda.obj v0
+              movi v0, 1
+              movi v1, 2
+              movi v2, 3
+              movi v3, 4
+              movi v4, 5
+              movi v5, 6
+              movi v6, 7
+              movi v7, 8
+              movi v8, 9
+              movi v9, 10
+              movi v10, 11
+              movi v11, 12
+              movi v12, 13
+              movi v13, 14
+              movi v14, 15
+              movi v15, 16
+              call.virt.acc.short R.foo, v0, 0
+              call.virt.acc.short R.foo, v1, 0
+              call.virt.acc.short R.foo, v2, 0
+              call.virt.acc.short R.foo, v3, 0
+              call.virt.acc.short R.foo, v4, 0
+              call.virt.acc.short R.foo, v5, 0
+              call.virt.acc.short R.foo, v6, 0
+              call.virt.acc.short R.foo, v7, 0
+              call.virt.acc.short R.foo, v8, 0
+              call.virt.acc.short R.foo, v9, 0
+              call.virt.acc.short R.foo, v10, 0
+              call.virt.acc.short R.foo, v11, 0
+              call.virt.acc.short R.foo, v12, 0
+              call.virt.acc.short R.foo, v13, 0
+              call.virt.acc.short R.foo, v14, 0
+              call.virt.acc.short R.foo, v15, 0
+          ok0:
+              ldai 1
+              jeq v0, ok1
+              return
+          ok1:
+              ldai 2
+              jeq v1, ok2
+              return
+          ok2:
+              ldai 3
+              jeq v2, ok3
+              return
+          ok3:
+              ldai 4
+              jeq v3, ok4
+              return
+          ok4:
+              ldai 5
+              jeq v4, ok5
+              return
+          ok5:
+              ldai 6
+              jeq v5, ok6
+              return
+          ok6:
+              ldai 7
+              jeq v6, ok7
+              return
+          ok7:
+              ldai 8
+              jeq v7, ok8
+              return
+          ok8:
+              ldai 9
+              jeq v8, ok9
+              return
+          ok9:
+              ldai 10
+              jeq v9, ok10
+              return
+          ok10:
+              ldai 11
+              jeq v10, ok11
+              return
+          ok11:
+              ldai 12
+              jeq v11, ok12
+              return
+          ok12:
+              ldai 13
+              jeq v12, ok13
+              return
+          ok13:
+              ldai 14
+              jeq v13, ok14
+              return
+          ok14:
+              ldai 15
+              jeq v14, ok15
+              return
+          ok15:
+              ldai 16
+              jeq v15, ok16
+              return
+          ok16:
+        check-type: exit-positive
+
+
+      - file-name: ame_p
+        isa:
+          exceptions:
+            - x_abstract
+        description: Check that AbstractMethodError is thrown in PandaAssembly context.
+        header-template: []
+        code-template: |
+          .record panda.AbstractMethodError <external>
+          .record R {}
+          .function void R.foo1(R a0) <noimpl>
+          .function void R.foo2(R a0, R a1) <noimpl>
+          .function i32 main() {
+          begin:
+              newobj v0, R
+              lda.obj v0
+              call.virt.acc.short %s
+          end:
+              ldai 1 # Should not reach this line
+              return
+
+          catch_AME:
+              ldai 0 # Expected panda.AbstractMethodError
+              return
+
+          catch_all:
+              ldai 2 # Unexpected exception, test failed
+              return
+
+          .catch panda.AbstractMethodError, begin, end, catch_AME
+          .catchall begin, end, catch_all
+        check-type: none
+        cases:
+          - values:
+            - R.foo1, v0, 1
+            tags: ['tsan']
+          - values:
+            - R.foo2, v0, 0
+
+
+      - file-name: npe_p
+        isa:
+          exceptions:
+            - x_null
+        description: Check that NullPointerException is thrown in PandaAssembly context.
+        header-template: []
+        code-template: |
+          .record panda.NullPointerException <external>
+          .record R {}
+          .function void R.foo(R a0, R a1) {
+              return.void
+          }
+          .function R get_null() {
+              lda.null
+              return.obj
+          }
+          .function i32 main() {
+              call.short get_null
+              %s
+          begin:
+              call.virt.acc.short R.foo, %s
+          end:
+              ldai 1 # Should not reach this line
+              return
+
+          catch_NPE:
+              ldai 0 # Expected panda.NullPointerException
+              return
+
+          catch_all:
+              ldai 2 # Unexpected exception, test failed
+              return
+
+          .catch panda.NullPointerException, begin, end, catch_NPE
+          .catchall begin, end, catch_all
+        check-type: none
+        cases:
+          - values:
+            - newobj v0, R
+            - v0, 0
+          - values:
+            - |
+              #
+                  sta.obj v0
+                  newobj v1, R
+                  lda.obj v1
+            - v0, 1
+          - values:
+            - sta.obj v0
+            - v0, 1
+          - values:
+            - sta.obj v0
+            - v0, 0
+          - values:
+            - newobj v0, R
+            - v0, 1
+            runner-options: [run-failure]

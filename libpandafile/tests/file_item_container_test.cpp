@@ -19,9 +19,9 @@
 #include "debug_data_accessor-inl.h"
 #include "field_data_accessor-inl.h"
 #include "file.h"
+#include "file_format_version.h"
 #include "file_item_container.h"
 #include "file_writer.h"
-#include "isa_checksum.h"
 #include "helpers.h"
 #include "method_data_accessor-inl.h"
 #include "method_handle_data_accessor.h"
@@ -95,8 +95,35 @@ TEST(ItemContainer, TestFileFormatVersionTooOld)
 
         File::Header header = {};
         header.magic = File::MAGIC;
-        header.isa_checksum = ISA_CHECKSUM;
-        header.version = {0, 0, 0, 0};
+
+        auto old = std::array<uint8_t, File::VERSION_SIZE>(minVersion);
+        --old[3];
+
+        header.version = old;
+        header.file_size = sizeof(File::Header);
+
+        for (uint8_t b : Span<uint8_t>(reinterpret_cast<uint8_t *>(&header), sizeof(header))) {
+            writer.WriteByte(b);
+        }
+    }
+
+    EXPECT_EQ(File::Open(file_name), nullptr);
+}
+
+TEST(ItemContainer, TestFileFormatVersionTooNew)
+{
+    const std::string file_name = "test_file_format_version_too_new.abc";
+    {
+        ItemContainer container;
+        auto writer = FileWriter(file_name);
+
+        File::Header header = {};
+        header.magic = File::MAGIC;
+
+        auto new_ = std::array<uint8_t, File::VERSION_SIZE>(minVersion);
+        ++new_[3];
+
+        header.version = new_;
         header.file_size = sizeof(File::Header);
 
         for (uint8_t b : Span<uint8_t>(reinterpret_cast<uint8_t *>(&header), sizeof(header))) {
@@ -114,9 +141,9 @@ TEST(ItemContainer, TestFileFormatVersionValid)
         ItemContainer container;
         auto writer = FileWriter(file_name);
 
-        File::Header header = {};
+        File::Header header;
+        memset(&header, 0, sizeof(header));
         header.magic = File::MAGIC;
-        header.isa_checksum = ISA_CHECKSUM;
         header.version = {0, 0, 0, 2};
         header.file_size = sizeof(File::Header);
 
@@ -126,123 +153,6 @@ TEST(ItemContainer, TestFileFormatVersionValid)
     }
 
     EXPECT_NE(File::Open(file_name), nullptr);
-}
-
-TEST(ItemContainer, TestIsaChecksumMismatch)
-{
-    using panda::os::file::Mode;
-    using panda::os::file::Open;
-
-    // 1. Write panda file to disk
-
-    // 1.1. Create data members from ItemContainer
-
-    std::unordered_map<std::string, StringItem *> string_map;
-
-    std::map<std::string, BaseClassItem *> class_map;
-
-    std::unordered_map<uint32_t, ValueItem *> i_value_map;
-    std::unordered_map<uint64_t, ValueItem *> l_value_map;
-    std::unordered_map<float, ValueItem *> f_value_map;
-    std::unordered_map<double, ValueItem *> d_value_map;
-    std::unordered_map<BaseItem *, ValueItem *> id_value_map;
-
-    std::vector<std::unique_ptr<BaseItem>> items;
-    std::vector<std::unique_ptr<BaseItem>> foreign_items;
-
-    // 1.2 Create a file handler
-
-    const std::string file_name = "test_isa_checksum_mismatch.panda";
-    auto writer = FileWriter(file_name);
-
-    // 1.3 Body of function ItemContainer::ComputeLayout
-
-    uint32_t num_classes = class_map.size();
-    uint32_t class_idx_offset = sizeof(File::Header);
-    uint32_t cur_offset = class_idx_offset + num_classes * ID_SIZE;
-
-    for (auto &item : foreign_items) {
-        cur_offset = RoundUp(cur_offset, item->Alignment());
-        item->SetOffset(cur_offset);
-        item->ComputeLayout();
-        cur_offset += item->GetSize();
-    }
-
-    for (auto &item : items) {
-        if (!item->NeedsEmit()) {
-            continue;
-        }
-
-        cur_offset = RoundUp(cur_offset, item->Alignment());
-        item->SetOffset(cur_offset);
-        item->ComputeLayout();
-        cur_offset += item->GetSize();
-    }
-
-    uint32_t offset = cur_offset;
-
-    // 1.4 Body of function ItemContainer::Write
-
-    // Write header
-
-    std::vector<uint8_t> magic;
-    magic.assign(File::MAGIC.cbegin(), File::MAGIC.cend());
-    ASSERT_TRUE(writer.WriteBytes(magic));
-
-    uint32_t checksum = 0;
-    ASSERT_TRUE(writer.Write(checksum));
-
-    uint32_t wrong_isa_checksum = 0;
-    ASSERT_TRUE(writer.Write(wrong_isa_checksum));
-
-    std::vector<uint8_t> version {0, 0, 0, 1};
-    ASSERT_TRUE(writer.WriteBytes(version));
-
-    ASSERT_TRUE(writer.Write(offset));
-
-    uint32_t foreign_offset = 0;
-    if (!foreign_items.empty()) {
-        foreign_offset = foreign_items.front()->GetOffset();
-    }
-
-    ASSERT_TRUE(writer.Write(foreign_offset));
-
-    uint32_t foreign_size = 0;
-    if (!foreign_items.empty()) {
-        size_t begin = foreign_items.front()->GetOffset();
-        size_t end = foreign_items.back()->GetOffset() + foreign_items.back()->GetSize();
-
-        foreign_size = end - begin;
-    }
-
-    ASSERT_TRUE(writer.Write(foreign_size));
-    ASSERT_TRUE(writer.Write<uint32_t>(class_map.size()));
-    ASSERT_TRUE(writer.Write<uint32_t>(sizeof(File::Header)));
-
-    // Write class idx
-
-    for (auto &entry : class_map) {
-        ASSERT_TRUE(writer.Write(entry.second->GetOffset()));
-    }
-
-    for (auto &item : foreign_items) {
-        ASSERT_TRUE(writer.Align(item->Alignment()));
-        ASSERT_TRUE(item->Write(&writer));
-    }
-
-    for (auto &item : items) {
-        if (!item->NeedsEmit()) {
-            continue;
-        }
-
-        ASSERT_TRUE(writer.Align(item->Alignment()));
-        ASSERT_TRUE(item->Write(&writer));
-    }
-
-    // Read panda file from disk
-
-    auto ptr = File::Open(file_name);
-    EXPECT_EQ(ptr, nullptr);
 }
 
 static std::unique_ptr<const File> GetPandaFile(std::vector<uint8_t> &data)
@@ -315,8 +225,7 @@ TEST(ItemContainer, TestClasses)
 
     ASSERT_NE(panda_file, nullptr);
 
-    EXPECT_THAT(panda_file->GetHeader()->version, ::testing::ElementsAre(0, 0, 0, 1));
-    EXPECT_EQ(panda_file->GetHeader()->isa_checksum, ISA_CHECKSUM);
+    EXPECT_THAT(panda_file->GetHeader()->version, ::testing::ElementsAre(0, 0, 0, 2));
     EXPECT_EQ(panda_file->GetHeader()->file_size, mem_writer.GetData().size());
     EXPECT_EQ(panda_file->GetHeader()->foreign_off, 0U);
     EXPECT_EQ(panda_file->GetHeader()->foreign_size, 0U);

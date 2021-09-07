@@ -1346,7 +1346,7 @@ static void TestArray()
     if constexpr (component_type_id == panda_file::Type::TypeId::REFERENCE) {
         emitter.LdaObj(4);
     } else if constexpr (component_type_id == panda_file::Type::TypeId::F32) {
-        emitter.FldaiWide(bit_cast<int64_t>(static_cast<double>(STORE_VALUE)));
+        emitter.Fldai(bit_cast<int32_t>(STORE_VALUE));
     } else if constexpr (component_type_id == panda_file::Type::TypeId::F64) {
         emitter.FldaiWide(bit_cast<int64_t>(STORE_VALUE));
     } else {

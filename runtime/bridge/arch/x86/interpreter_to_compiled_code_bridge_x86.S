@@ -152,7 +152,7 @@ InterpreterToCompiledCodeBridge:
     PREPARE_ARG_STACK
 
     // setup regs and memory as follow
-    // %eax - SHORTY_PTR_REG, %edx - SHORTY_REG, %ecx - shorty value, (%esp) - insn_ptr, 
+    // %eax - SHORTY_PTR_REG, %edx - SHORTY_REG, %ecx - shorty value, (%esp) - insn_ptr,
     // 8(%ebp) - iframe, 4(%esp) - iframe->vregs[], %edi - pointer to stack
     movl METHOD_SHORTY_OFFSET(%ebx), %SHORTY_PTR_REG // method->shorty*
     INIT_SHORTY_REG
@@ -280,7 +280,7 @@ InterpreterToCompiledCodeBridge:
 
 .Lreturn:
     leal -28(%ebp), %esp
-    
+
     popl %edi
     popl %esi
     popl %ebx
@@ -334,10 +334,10 @@ InvokeCompiledCodeWithArgArray:
     movl METHOD_SHORTY_OFFSET(%ebx), %SHORTY_PTR_REG // method->shorty*
     INIT_SHORTY_REG
 
-    PREPARE_ARG_STACK  
+    PREPARE_ARG_STACK
 
     // setup regs and memory as follow
-    // %eax - SHORTY_PTR_REG, %edx - SHORTY_REG, %ecx - shorty value, %esi - args[], 
+    // %eax - SHORTY_PTR_REG, %edx - SHORTY_REG, %ecx - shorty value, %esi - args[],
     // %edi - pointer to stack
     movl METHOD_SHORTY_OFFSET(%ebx), %SHORTY_PTR_REG // method->shorty*
     INIT_SHORTY_REG
@@ -379,7 +379,7 @@ InvokeCompiledCodeWithArgArray:
     movl %eax, (%esp)
     movl %edx, 4(%esp)
     // handle the first arg index
-    PUSH_ARG %esi, %edi, %eax, %edx 
+    PUSH_ARG %esi, %edi, %eax, %edx
     movl (%esp), %eax
     movl 4(%esp), %edx
 
@@ -468,7 +468,7 @@ InvokeCompiledCodeWithArgArray:
 
 .Lreturn_:
     leal -28(%ebp), %esp
-    
+
     popl %edi
     popl %esi
     popl %ebx

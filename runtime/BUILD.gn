@@ -333,7 +333,6 @@ template("gen_intrinsics_yaml") {
 
   action("$target_name") {
     script = "$ark_root/runtime/templates/gen_intrinsics_data.rb"
-
     # rerun action when data file or template file update
     inputs = [ template_file ]
     inputs += invoker.data_files
@@ -389,7 +388,7 @@ ark_isa_gen("isa_gen_libarkruntime") {
   extra_dependencies = builtin_labels
 }
 
-isa = "$ark_root/isa/isa.yaml"
+isa = "$root_gen_dir/isa/isa.yaml"
 isa_api = "$ark_root/isa/isapi.rb"
 bridge_dispatch_template = "templates/bridge_dispatch.S.erb"
 bridge_archs = [
@@ -411,6 +410,7 @@ foreach(arch, bridge_archs) {
       "templates/bridge_helpers_${arch}.rb",
       "templates/bridge_helpers_static.rb",
     ]
+    extra_dependencies = [ "$ark_root/isa:isa_combine" ]
   }
 
   ark_gen_file("bridge_dispatch_dyn_${arch}") {
@@ -422,6 +422,7 @@ foreach(arch, bridge_archs) {
       "templates/bridge_helpers_dynamic.rb",
       "templates/bridge_helpers_${arch}.rb",
     ]
+    extra_dependencies = [ "$ark_root/isa:isa_combine" ]
   }
 }
 

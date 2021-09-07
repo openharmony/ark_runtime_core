@@ -15,7 +15,7 @@
     movi v0, 1
     newarr v1, v0, f32[]
     movi v2,0
-    fldai.64 0
+    fldai 0
     fstarr.32 v1, v2
     ldai 0
     return

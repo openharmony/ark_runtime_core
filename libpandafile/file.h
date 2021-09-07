@@ -44,7 +44,6 @@ public:
     struct Header {
         std::array<uint8_t, MAGIC_SIZE> magic;
         uint32_t checksum;
-        uint32_t isa_checksum;
         std::array<uint8_t, VERSION_SIZE> version;
         uint32_t file_size;
         uint32_t foreign_off;
@@ -367,10 +366,9 @@ std::unique_ptr<const panda_file::File> OpenPandaFileFromZipFILE(FILE *inputfile
                                                                  std::string_view archive_filename);
 
 /*
- * Check ptr point valid panda file: magic/isa_checksum
+ * Check ptr point valid panda file: magic
  */
-bool CheckHeader(const os::mem::ConstBytePtr &ptr, const std::string_view &filename = "",
-                 bool check_isa_checksum = true);
+bool CheckHeader(const os::mem::ConstBytePtr &ptr, const std::string_view &filename = "");
 
 // NOLINTNEXTLINE(readability-identifier-naming)
 extern const char *ARCHIVE_FILENAME;

@@ -12,7 +12,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 // All common ObjectHeader methods can be found here:
 // - Get/Set Mark or Class word
 // - Get size of the object header and an object itself

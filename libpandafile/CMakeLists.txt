@@ -24,7 +24,7 @@ set(TEMPLATES
     bytecode_instruction-inl_gen.h.erb
     bytecode_emitter_def_gen.h.erb
     bytecode_emitter_gen.h.erb
-    isa_checksum.h.erb
+    file_format_version.h.erb
     tests/bytecode_emitter_tests_gen.h.erb
 )
 
@@ -69,7 +69,7 @@ set(SOURCES
     method_handle_data_accessor.cpp
     debug_info_extractor.cpp
     literal_data_accessor.cpp
-    ark_version.cpp
+    file_format_version.cpp
 )
 
 add_library(arkfile ${PANDA_DEFAULT_LIB_TYPE} ${SOURCES})
@@ -100,7 +100,7 @@ panda_add_gtest(
         tests/bytecode_emitter_tests.cpp
         tests/debug_info_extractor_test.cpp
         tests/panda_cache_test.cpp
-        tests/ark_version_test.cpp
+        tests/file_format_version_test.cpp
     LIBRARIES
         arkbase
         arkfile

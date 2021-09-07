@@ -315,7 +315,10 @@ tests:
       - file-name: "from_all_int_field_types"
         description: Check that accumulator value is loaded from field into accumulator. More tests on ldobj.64 can be found in stobj.64 tests
         isa:
-          description: If field type is f32, load will implicitly convert value into f64 type.
+          instructions:
+            - sig: ldobj.64 v:in:ref, field_id
+              acc: out:b64
+              format: [op_v_8_id_16]
         header-template: ['pandasm_header']
         check-type: exit-positive
         tags: ['tsan']
@@ -343,10 +346,13 @@ tests:
           - values: [-1, 'i64', -1, 'i64', 'cmp.64']
           - values: [-6510615555426900571, 'i64', -6510615555426900571, 'i64', 'cmp.64']
 
-      - file-name: "from_all_float_field_types"
+      - file-name: "from_float_field_type"
         description: Check that accumulator value is loaded from field into accumulator. More tests on ldobj.64 can be found in stobj.64 tests
         isa:
-          description: If field type is f32, load will implicitly convert value into f64 type.
+          instructions:
+            - sig: ldobj.64 v:in:ref, field_id
+              acc: out:b64
+              format: [op_v_8_id_16]
         header-template: ['pandasm_header']
         bugid: ['3292']
         check-type: exit-positive
@@ -356,10 +362,10 @@ tests:
             initobj.short R.ctor
             sta.obj v0
             %s
-            stobj.64 v0, R.f%s
+            stobj.64 v0, R.ff64
             lda.null
             %s
-            ldobj.64 v0, R.f%s
+            ldobj.64 v0, R.ff64
             fcmpg.64 v15
             %s
             jeqz success
@@ -367,15 +373,9 @@ tests:
             return
           success:
         cases:
-          # f32
-          - values: ['fldai.64 0.0', 'f32', 'fmovi.64 v15, 0.0', 'f32', '']
-          - values: ['fldai.64 -6510615.0', 'f32', 'fmovi.64 v15, -6510615.0', 'f32', '']
-          - values: ['fldai.64 0x7FFFFFFFFFFFFFFF', 'f32', 'fmovi.64 v15, 0x7FFFFFFFFFFFFFFF', 'f32', 'subi 1']    # NaN
-          - values: ['fldai.64 0x7ff0000000000000', 'f32', 'fmovi.64 v15, 0x7ff0000000000000', 'f32', '']    # + Inf
-          - values: ['fldai.64 0xfff0000000000000', 'f32', 'fmovi.64 v15, 0xfff0000000000000', 'f32', '']    # - Inf
           # f64
-          - values: ['fldai.64 0.0', 'f64', 'fmovi.64 v15, 0.0', 'f64', '']
-          - values: ['fldai.64 -6510615555426900571.0', 'f64', 'fmovi.64 v15, -6510615555426900571.0', 'f64', '']
-          - values: ['fldai.64 0x7FFFFFFFFFFFFFFF', 'f64', 'fmovi.64 v15, 0x7FFFFFFFFFFFFFFF', 'f64', 'subi 1']    # NaN
-          - values: ['fldai.64 0x7ff0000000000000', 'f64', 'fmovi.64 v15, 0x7ff0000000000000', 'f64', '']    # + Inf
-          - values: ['fldai.64 0xfff0000000000000', 'f64', 'fmovi.64 v15, 0xfff0000000000000', 'f64', '']    # - Inf
+          - values: ['fldai.64 0.0', 'fmovi.64 v15, 0.0', '']
+          - values: ['fldai.64 -6510615555426900571.0', 'fmovi.64 v15, -6510615555426900571.0', '']
+          - values: ['fldai.64 0x7FFFFFFFFFFFFFFF', 'fmovi.64 v15, 0x7FFFFFFFFFFFFFFF', 'subi 1']    # NaN
+          - values: ['fldai.64 0x7ff0000000000000', 'fmovi.64 v15, 0x7ff0000000000000', '']    # + Inf
+          - values: ['fldai.64 0xfff0000000000000', 'fmovi.64 v15, 0xfff0000000000000', '']    # - Inf

@@ -18,7 +18,6 @@
 
 #include <string>
 #include <optional>
-
 #include "assembly-file-location.h"
 
 namespace panda::pandasm {

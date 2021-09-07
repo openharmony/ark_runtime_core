@@ -310,35 +310,6 @@ TEST(instructions_test, test_newarr)
     EXPECT_TRUE(body_g.find("\tnewarr v0, a0, u64[]") != std::string::npos);
 }
 
-TEST(instructions_test, test_builtins)
-{
-    Disassembler d {};
-
-    std::stringstream ss {};
-    d.Disassemble(g_bin_path_abs + "builtins.bc");
-    d.Serialize(ss);
-
-    size_t beg_g = ss.str().find("g_f32_f32_void_(f32 a0, f32 a1) <static> {");
-    size_t end_g = ss.str().find('}', beg_g);
-
-    ASSERT_TRUE(beg_g != std::string::npos && end_g != std::string::npos) << "function g not found";
-
-    std::string body_g = ss.str().substr(beg_g + strlen("g() {"), end_g - (beg_g + strlen("g() {")));
-
-    EXPECT_TRUE(body_g.find("\tbuiltin.acc i32tof32") != std::string::npos);
-    EXPECT_TRUE(body_g.find("\tbuiltin.acc i64tof32") != std::string::npos);
-    EXPECT_TRUE(body_g.find("\tbuiltin.acc f64tof32") != std::string::npos);
-    EXPECT_TRUE(body_g.find("\tbuiltin.acc monitorenter") != std::string::npos);
-    EXPECT_TRUE(body_g.find("\tbuiltin.acc monitorexit") != std::string::npos);
-    EXPECT_TRUE(body_g.find("\tbuiltin.bin2 fadd2f32, a1") != std::string::npos);
-    EXPECT_TRUE(body_g.find("\tbuiltin.bin2 fsub2f32, v13") != std::string::npos);
-    EXPECT_TRUE(body_g.find("\tbuiltin.bin2 fmul2f32, v13") != std::string::npos);
-    EXPECT_TRUE(body_g.find("\tbuiltin.bin2 fdiv2f32, v13") != std::string::npos);
-    EXPECT_TRUE(body_g.find("\tbuiltin.bin2 fmod2f32, v13") != std::string::npos);
-    EXPECT_TRUE(body_g.find("\tbuiltin.bin2 fcmpl2f32, a0") != std::string::npos);
-    EXPECT_TRUE(body_g.find("\tbuiltin.bin2 fcmpg2f32, v13") != std::string::npos);
-}
-
 int main(int argc, char **argv)
 {
     std::string dir_basename {};

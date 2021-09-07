@@ -38,7 +38,7 @@ tests:
         isa:
           instructions:
             - sig: fldarr.32 v:in:f32[]
-              acc: inout:i32->f64
+              acc: inout:i32->f32
               format: [op_v_8]
               properties: [acc_read, acc_write, float]
         description: Check fldarr.32 reads items from array of different size and type in Panda Assembly context.
@@ -59,7 +59,7 @@ tests:
         isa:
           instructions:
             - sig: fldarr.32 v:in:f32[]
-              acc: inout:i32->f64
+              acc: inout:i32->f32
               format: [op_v_8]
               properties: [acc_read, acc_write, float]
         tags: ['tsan', 'verifier']
@@ -77,7 +77,7 @@ tests:
         isa:
           instructions:
             - sig: fldarr.32 v:in:f32[]
-              acc: inout:i32->f64
+              acc: inout:i32->f32
               format: [op_v_8]
               properties: [acc_read, acc_write, float]
         description: Check rejectable array of primitive types for fldarr.32 instruction in Panda Assembly context.
@@ -107,7 +107,7 @@ tests:
         isa:
           instructions:
             - sig: fldarr.32 v:in:f32[]
-              acc: inout:i32->f64
+              acc: inout:i32->f32
               format: [op_v_8]
               properties: [acc_read, acc_write, float]
         description: Check fldarr.32 reads correct items from array of primitives.
@@ -126,12 +126,12 @@ tests:
               call.short nextRand, v0
               sta v0           # v0 - next random number
               andi 0xFFFFFF    # Limit amount of digit in number to fit in f32 primitive without loss of precision
-              i32tof64
-              sta.64 v5
+              i32tof32
+              sta v5
               fstarr.32 v1, v2 # save random number v1[v2] = acc
               lda v2
               fldarr.32 v1     # acc = v1[v2]
-              fcmpl.64 v5      # Compare random number and stored value from array
+              fcmpl v5      # Compare random number and stored value from array
               jeqz passed
               ldai 1
               return
@@ -152,7 +152,7 @@ tests:
         isa:
           instructions:
             - sig: fldarr.32 v:in:f32[]
-              acc: inout:i32->f64
+              acc: inout:i32->f32
               format: [op_v_8]
               properties: [acc_read, acc_write, float]
         description: Check fldarr.32 reads correct items from array of primitives. Inspect different indexes and values.
@@ -165,7 +165,7 @@ tests:
               newarr v0, v0, f32[]       # v0 - testable array
           fill_array:
               lda v1
-              i32tof64         # acc = (f32)v1
+              i32tof32         # acc = (f32)v1
               fstarr.32 v0, v1 # v0[v1] = acc
               inci v1, 1       # v1 = v1 + 1
               lda v1
@@ -175,10 +175,10 @@ tests:
           check_array:
               lda v1
               fldarr.32 v0
-              sta.64 v3
+              sta v3
               lda v1
-              i32tof64
-              fcmpl.64 v3
+              i32tof32
+              fcmpl v3
               jeqz ok
               ldai 1
               return
@@ -198,7 +198,7 @@ tests:
         isa:
           instructions:
             - sig: fldarr.32 v:in:f32[]
-              acc: inout:i32->f64
+              acc: inout:i32->f32
               format: [op_v_8]
               properties: [acc_read, acc_write, float]
         check-type: empty
@@ -257,7 +257,7 @@ tests:
         isa:
           instructions:
             - sig: fldarr.32 v:in:f32[]
-              acc: inout:i32->f64
+              acc: inout:i32->f32
               format: [op_v_8]
               properties: [acc_read, acc_write, float]
           verification:
@@ -333,7 +333,7 @@ tests:
         isa:
           instructions:
             - sig: fldarr.32 v:in:f32[]
-              acc: inout:i32->f64
+              acc: inout:i32->f32
               format: [op_v_8]
               properties: [acc_read, acc_write, float]
           verification:
@@ -404,7 +404,7 @@ tests:
         isa:
           instructions:
             - sig: fldarr.32 v:in:f32[]
-              acc: inout:i32->f64
+              acc: inout:i32->f32
               format: [op_v_8]
               properties: [acc_read, acc_write, float]
           verification:
@@ -527,7 +527,7 @@ tests:
         isa:
           instructions:
             - sig: fldarr.32 v:in:f32[]
-              acc: inout:i32->f64
+              acc: inout:i32->f32
               format: [op_v_8]
               properties: [acc_read, acc_write, float]
         description: Check 'fldarr.32' with uninitialized register and accumulator.
@@ -548,7 +548,7 @@ tests:
         isa:
           instructions:
             - sig: fldarr.32 v:in:f32[]
-              acc: inout:i32->f64
+              acc: inout:i32->f32
               format: [op_v_8]
               properties: [acc_read, acc_write, float]
           exceptions:
@@ -603,7 +603,7 @@ tests:
         isa:
           instructions:
             - sig: fldarr.32 v:in:f32[]
-              acc: inout:i32->f64
+              acc: inout:i32->f32
               format: [op_v_8]
               properties: [acc_read, acc_write, float]
           exceptions:

@@ -34,7 +34,6 @@ static Array *AllocateArray(panda::BaseClass *array_class, size_t elem_size, arr
         ThrowOutOfMemoryError("OOM when allocating array");
         return nullptr;
     }
-
     if (LIKELY(space_type == panda::SpaceType::SPACE_TYPE_OBJECT)) {
         return static_cast<coretypes::Array *>(
             vm->GetHeapManager()->AllocateObject(array_class, size, DEFAULT_ALIGNMENT, MTManagedThread::GetCurrent()));

@@ -14,6 +14,10 @@
 import("//ark/runtime_core/ark_config.gni")
 import("//build/ohos.gni")
 
+config("arkdisassembler_public_config") {
+  defines = [ "PANDA_WITH_ECMASCRIPT" ]
+}
+
 arkdisassembler_sources = [
   "$target_gen_dir/bc_ins_to_pandasm_ins.cpp",
   "$target_gen_dir/get_ins_info.cpp",
@@ -25,6 +29,7 @@ arkdisassembler_sources = [
 
 arkdisassembler_configs = [
   sdk_libc_secshared_config,
+  ":arkdisassembler_public_config",
   "$ark_root:ark_config",
   "$ark_root/libpandabase:arkbase_public_config",
   "$ark_root/assembler:arkassembler_public_config",
@@ -121,10 +126,7 @@ ark_isa_gen("isa_gen_ark_disam") {
 ark_gen_file("get_instructions_cpp") {
   template_file = "$ark_root/disassembler/templates/get_instructions.cpp.erb"
   data_file = "$ark_root/isa/builtins.yaml"
-  requires = [
-    "$ark_root/isa/builtinsapi.rb",
-    "//ark/js_runtime/ecmascript/ecma_builtins.rb",
-  ]
+  requires = [ "$ark_root/isa/builtinsapi.rb" ]
   output_file = "$target_gen_dir/get_instructions.cpp"
 }
 

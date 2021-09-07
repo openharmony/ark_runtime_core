@@ -161,7 +161,7 @@ private:
     bool ParseOperandVreg();
     bool ParseOperandComma();
     bool ParseOperandInteger();
-    bool ParseOperandFloat();
+    bool ParseOperandFloat(bool is_64bit);
     bool ParseOperandId();
     bool ParseOperandLabel();
     bool ParseOperandField();

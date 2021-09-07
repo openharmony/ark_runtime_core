@@ -230,17 +230,6 @@ add_custom_target(disasm_binaries_test_metadata)
 
 add_dependencies(disasm_binaries_test_metadata disasm_binaries-meta)
 
-# builtin_tests files
-compile_pre_build(TARGET disasm_binaries-builtins
-                  FILE_SRC ${DISASM_TESTS_DIR}/builtins.pa
-                  FILE_DST ${DISASM_BIN_DIR}/builtins.bc)
-
-add_custom_target(disasm_binaries_test_builtins)
-
-add_dependencies(disasm_binaries_test_builtins disasm_binaries-builtins)
-
-add_dependencies(disasm_test_instructions disasm_binaries_test_builtins)
-
 add_custom_target(disasm_tests
                   DEPENDS disasm_test_records
                   DEPENDS disasm_test_labels

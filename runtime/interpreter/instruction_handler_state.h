@@ -103,6 +103,11 @@ public:
         return (static_cast<unsigned>(GetInst().GetOpcode()) >> 8) & 0xff;
     }
 
+    ALWAYS_INLINE bool IsPrimaryOpcodeValid() const
+    {
+        return GetInst().IsPrimaryOpcodeValid();
+    }
+
     ALWAYS_INLINE BytecodeInstruction GetInst() const
     {
         return state_.GetInst();

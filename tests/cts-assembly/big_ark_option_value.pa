@@ -11,25 +11,25 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# Running this test asserts correct usage of runtime option (e.g. object-pool-size) with value > 2 GB
+# Running this test asserts correct usage of runtime option (e.g. heap-size-limit) with value > 2 GB
 # Test content copies compiler_effective_types.pa
 
 .function f32 foo(f32 a0) {
-    fmovi.64 v0, 1.0
-    lda.64 a0
-    fcmpg.64 v0
+    fmovi v0, 1.0
+    lda a0
+    fcmpg v0
     jnez exit_failure
-    fldai.64 1.0
-    return.64
+    fldai 1.0
+    return
 exit_failure:
-    fldai.64 99.0
-    return.64
+    fldai 99.0
+    return
 }
 
 .function u1 main() {
-    fmovi.64 v1, 1.0
+    fmovi v1, 1.0
     call.short foo, v1, v1
-    fcmpg.64 v1
+    fcmpg v1
     jnez exit_failure
     ldai 0
     return

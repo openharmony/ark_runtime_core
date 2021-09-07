@@ -28,7 +28,6 @@
 #include "runtime/mem/gc/bitmap.h"
 
 namespace panda {
-
 class ObjectHeader;
 }  // namespace panda
 

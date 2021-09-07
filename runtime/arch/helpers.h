@@ -156,32 +156,27 @@ public:
     template <class T>
     T Read()
     {
-        // The runtime alway operates with double so read double instead of float
-        if constexpr (std::is_same<T, float>::value) {  // NOLINT
-            return static_cast<float>(*ReadPtr<double>());
-        } else {  // NOLINT
-            return *ReadPtr<T>();
-        }
+        return *ReadPtr<T>();
     }
 
     template <class T>
     const T *ReadPtr()
     {
-        static_assert(!std::is_same<T, float>::value, "float variables are not supported");
-
         constexpr size_t PTR_SIZE = ArchTraits<A>::POINTER_SIZE;
         // NOLINTNEXTLINE(readability-braces-around-statements, bugprone-suspicious-semicolon)
-        if constexpr (std::is_same<T, double>::value) {
+        if constexpr (std::is_same<T, double>::value || std::is_same<T, float>::value) {
             // NOLINTNEXTLINE(readability-braces-around-statements, bugprone-suspicious-semicolon)
             if constexpr (ExtArchTraits<A>::HARDFP) {
-                const double *v;
+                const T *v;
+                size_t read_bytes = std::max(sizeof(T), ExtArchTraits<A>::FPR_SIZE);
+                fp_arg_bytes_read_ = RoundUp(fp_arg_bytes_read_, read_bytes);
                 if (fp_arg_bytes_read_ < ExtArchTraits<A>::FP_ARG_NUM_BYTES) {
-                    v = reinterpret_cast<const double *>(fpr_args_.data() + fp_arg_bytes_read_);
-                    fp_arg_bytes_read_ += sizeof(double);
+                    v = reinterpret_cast<const T *>(fpr_args_.data() + fp_arg_bytes_read_);
+                    fp_arg_bytes_read_ += read_bytes;
                 } else {
-                    stack_args_ = AlignPtr<double>(stack_args_);
-                    v = reinterpret_cast<const double *>(stack_args_);
-                    stack_args_ += sizeof(double);  // NOLINT(cppcoreguidelines-pro-bounds-pointer-arithmetic)
+                    stack_args_ = AlignPtr<T>(stack_args_);
+                    v = reinterpret_cast<const T *>(stack_args_);
+                    stack_args_ += read_bytes;  // NOLINT(cppcoreguidelines-pro-bounds-pointer-arithmetic)
                 }
                 return v;
             }

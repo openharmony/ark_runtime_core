@@ -30,6 +30,10 @@ public:
         return inst_.GetSecondaryOpcode();
     }
 
+    bool IsPrimaryOpcodeValid() const
+    {
+        return inst_.IsPrimaryOpcodeValid();
+    }
 
 #include "cflow_iterate_inl_gen_builtin_handlers.h"
 
@@ -120,24 +124,33 @@ CflowStatus IterateOverInstructions(const uint8_t* pc, const uint8_t* from, cons
     std::optional<CflowStatus> status;
     uint8_t secondary_opcode;
 
-    ASSERT(handler.GetPrimaryOpcode() <= <%= Panda::dispatch_table.primary_opcode_bound %>);
+    ASSERT(handler.IsPrimaryOpcodeValid());
     goto* dispatch_table[handler.GetPrimaryOpcode()];
 
 % Panda::instructions.each do |i|
 %   mnemonic = i.mnemonic.split('.').map { |p| p == '64' ? 'Wide' : p.capitalize }.join
-HANDLE_<%= Panda::dispatch_table.instruction_handler_name(i) %>:
+HANDLE_<%= i.handler_name %>:
     status = handler.template Handle<%= mnemonic %><BytecodeInstructionSafe::Format::<%= i.format.pretty.upcase %>>();
     if (status) { return *status; }
-    if (handler.GetPrimaryOpcode() > <%= Panda::dispatch_table.primary_opcode_bound %>) {
+    if (!handler.IsPrimaryOpcodeValid()) {
         LOG(DEBUG, VERIFIER) << "Opcode value is out of range. "
-                             << "Current value is: " << handler.GetPrimaryOpcode()
-                             << "Maximum allowed value is: " << <%= Panda::dispatch_table.primary_opcode_bound %>;
+                             << "Current value is: " << static_cast<int>(handler.GetPrimaryOpcode())
+                             << ". Allowed value is in the interval: [0, <%= Panda::dispatch_table.invalid_non_prefixed_interval.min - 1 %>] U "
+                                 << "[<%= Panda::dispatch_table.invalid_non_prefixed_interval.max + 1 %>, <%= Panda::dispatch_table.invalid_prefixes_interval.min + 1 %>] U "
+                                 << "[<%= Panda::dispatch_table.invalid_prefixes_interval.max + 1 %>, 255]";
         return CflowStatus::ERROR;
     }
     goto* dispatch_table[handler.GetPrimaryOpcode()];
 % end
+HANDLE_INVALID:
+    LOG(DEBUG, VERIFIER) << "Opcode value is out of range. "
+                         << "Current value is: " << static_cast<int>(handler.GetPrimaryOpcode())
+                         << ". Allowed value is in the interval: [0, <%= Panda::dispatch_table.invalid_non_prefixed_interval.min - 1 %>] U "
+                                 << "[<%= Panda::dispatch_table.invalid_non_prefixed_interval.max + 1 %>, <%= Panda::dispatch_table.invalid_prefixes_interval.min + 1 %>] U "
+                                 << "[<%= Panda::dispatch_table.invalid_prefixes_interval.max + 1 %>, 255]";
+    return CflowStatus::ERROR;
 % Panda::prefixes.each do |p|
-HANDLE_<%= Panda::dispatch_table.prefix_hanlder_name(p) %>:
+HANDLE_<%= p.handler_name %>:
     secondary_opcode = handler.GetSecondaryOpcode();
     LOG(DEBUG, VERIFIER) << "CFLOW: Prefix subdispatch: " << "<%= p.name %>, " << secondary_opcode;
 

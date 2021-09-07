@@ -314,25 +314,25 @@ options:
   default: true
   description: Enable/disable TLAB using for object allocations. Now, it is ignored for all GCs except GenGC. Temporary option for quick switch between modes.
 
-- name: object-pool-size
+- name: heap-size-limit
   type: uint32_t
   default: 536870912
-  description: Size of pool used for objects
+  description: Max heap size
 
-- name: internal-pool-size
+- name: internal-memory-size-limit
   type: uint64_t
   default: 2147483648
-  description: Size of pool used for internal memory.
+  description: Max internal memory used by the VM
 
-- name: code-pool-size
-  type: uint32_t
+- name: code-cache-size-limit
+  type: uint64_t
   default: 33554432
-  description: Size of pool used for compiled code memory
+  description: The limit for compiled code size.
 
-- name: compiler-pool-size
-  type: uint32_t
+- name: compiler-memory-size-limit
+  type: uint64_t
   default: 268435456
-  description: Size of pool used for internal compiler memory
+  description: Max memory used by the compiler
 
 - name: print-memory-statistics
   type: bool
@@ -547,3 +547,8 @@ options:
   type: bool
   default: false
   description: Print backtrace each time a thread gets suspended
+
+- name: icu-data-path
+  type: std::string
+  default: "default"
+  description: Path to generated icu data file
