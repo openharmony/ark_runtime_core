@@ -333,6 +333,7 @@ template("gen_intrinsics_yaml") {
 
   action("$target_name") {
     script = "$ark_root/runtime/templates/gen_intrinsics_data.rb"
+
     # rerun action when data file or template file update
     inputs = [ template_file ]
     inputs += invoker.data_files

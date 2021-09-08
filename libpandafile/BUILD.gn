@@ -31,7 +31,6 @@ config("arkfile_public_config") {
 
 libarkfile_sources = [
   "annotation_data_accessor.cpp",
-  "file_format_version.cpp",
   "bytecode_emitter.cpp",
   "class_data_accessor.cpp",
   "code_data_accessor.cpp",
@@ -39,6 +38,7 @@ libarkfile_sources = [
   "debug_info_extractor.cpp",
   "field_data_accessor.cpp",
   "file.cpp",
+  "file_format_version.cpp",
   "file_item_container.cpp",
   "file_items.cpp",
   "file_writer.cpp",

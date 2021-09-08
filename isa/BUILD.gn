@@ -17,15 +17,15 @@ action("isa_combine") {
   script = "$ark_root/isa/combine.rb"
   inputs = [
     "$ark_root/isa/isa.yaml",
-    "$ark_root/../js_runtime/ecmascript/ecma_isa.yaml"
+    "$ark_root/../js_runtime/ecmascript/ecma_isa.yaml",
   ]
   input0 = rebase_path(inputs[0], root_build_dir)
   input1 = rebase_path(inputs[1], root_build_dir)
-  outputs = ["$root_gen_dir/isa/isa.yaml"]
+  outputs = [ "$root_gen_dir/isa/isa.yaml" ]
   args = [
     "-d",
     "$input0,$input1",
     "-o",
-    rebase_path(outputs[0], root_build_dir)
+    rebase_path(outputs[0], root_build_dir),
   ]
 }
