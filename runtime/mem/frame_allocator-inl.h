@@ -206,5 +206,4 @@ inline bool FrameAllocator<AlignmenT, UseMemsetT>::Contains(void *mem)
 #undef LOG_FRAME_ALLOCATOR
 
 }  // namespace panda::mem
-
 #endif  // PANDA_RUNTIME_MEM_FRAME_ALLOCATOR_INL_H_

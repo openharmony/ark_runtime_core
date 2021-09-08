@@ -17,11 +17,11 @@
 #define PANDA_LIBPANDAFILE_FILE_ITEMS_H_
 
 #include "file.h"
+#include "file_format_version.h"
 #include "file_writer.h"
 #include "macros.h"
 #include "modifiers.h"
 #include "type.h"
-#include "ark_version.h"
 
 #include <cstddef>
 #include <cstdint>

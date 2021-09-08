@@ -17,7 +17,6 @@
 #include "mangling.h"
 
 namespace panda::pandasm {
-
 bool Ins::Emit(BytecodeEmitter& emitter, panda_file::MethodItem *method,
     const std::unordered_map<std::string, panda_file::BaseMethodItem *> &methods,
     const std::unordered_map<std::string, panda_file::BaseFieldItem *> &fields,
@@ -101,7 +100,7 @@ bool Ins::Emit(BytecodeEmitter& emitter, panda_file::MethodItem *method,
 %       raise "Unexpected operand type"
 %     end
 %   end
-%   if insn.call?
+%   if insn.call? && insn.properties.include?('method_id')
 %     ops << ops.shift
 %   end
 %   ops
@@ -137,7 +136,7 @@ bool Ins::Emit(BytecodeEmitter& emitter, panda_file::MethodItem *method,
 %     imms_num += 1
 %   end
 % end
-% if (insn.call? && !insn.call_range?) || (insn.calli? && !insn.calli_range?) || insn.builtin_idr4? || insn.builtin_idr6?
+% if insn.simple_call?
 %   if imms_num > 0
         if (imms.size() < <%= imms_num %>) {
             return false;
@@ -164,7 +163,7 @@ bool Ins::Emit(BytecodeEmitter& emitter, panda_file::MethodItem *method,
         }
 %   end
 % end
-% if (insn.call? && !insn.call_range?) || (insn.calli? && !insn.calli_range?) || insn.builtin_idr4? || insn.builtin_idr6?
+% if insn.simple_call?
         auto registers = regs;
 %   call_map[insn.mnemonic].map { |m| inst_map[m] }.each do |i|
 %     registers = i.operands.select(&:reg?)

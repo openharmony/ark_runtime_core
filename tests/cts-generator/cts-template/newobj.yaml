@@ -398,9 +398,9 @@ tests:
               return
           label_f32:
               ldai 111
-              ldobj.64 v1, Z.ff32
-              fmovi.64 v2, 0.0
-              fcmpg.64 v2
+              ldobj v1, Z.ff32
+              fmovi v2, 0.0
+              fcmpg v2
               jeqz label_f64
               ldai 10
               return
@@ -625,7 +625,7 @@ tests:
             - x_oom
         description: Create objects with newobj instruction until OutOfMemoryError in PandaAssembly context
         header-template: []
-        panda-options: "--object-pool-size=67108864"
+        panda-options: "--heap-size-limit=67108864"
         bugid: ["3578", "4170", "4171"]
         ignore: true
         code-template: |

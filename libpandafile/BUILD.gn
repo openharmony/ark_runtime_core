@@ -31,7 +31,6 @@ config("arkfile_public_config") {
 
 libarkfile_sources = [
   "annotation_data_accessor.cpp",
-  "ark_version.cpp",
   "bytecode_emitter.cpp",
   "class_data_accessor.cpp",
   "code_data_accessor.cpp",
@@ -39,6 +38,7 @@ libarkfile_sources = [
   "debug_info_extractor.cpp",
   "field_data_accessor.cpp",
   "file.cpp",
+  "file_format_version.cpp",
   "file_item_container.cpp",
   "file_items.cpp",
   "file_writer.cpp",
@@ -64,7 +64,7 @@ ohos_shared_library("libarkfile") {
     ":isa_gen_libarkfile_bytecode_emitter_gen_h",
     ":isa_gen_libarkfile_bytecode_instruction-inl_gen_h",
     ":isa_gen_libarkfile_bytecode_instruction_enum_gen_h",
-    ":isa_gen_libarkfile_isa_checksum_h",
+    ":isa_gen_libarkfile_file_format_version_h",
     ":isa_gen_libarkfile_tests_bytecode_emitter_tests_gen_h",
     ":libarkfile_bytecode_builtin_enum_gen_h",
     ":libarkfile_type_gen_h",
@@ -90,7 +90,7 @@ ohos_static_library("libarkfile_frontend_static") {
     ":isa_gen_libarkfile_bytecode_emitter_gen_h",
     ":isa_gen_libarkfile_bytecode_instruction-inl_gen_h",
     ":isa_gen_libarkfile_bytecode_instruction_enum_gen_h",
-    ":isa_gen_libarkfile_isa_checksum_h",
+    ":isa_gen_libarkfile_file_format_version_h",
     ":isa_gen_libarkfile_tests_bytecode_emitter_tests_gen_h",
     ":libarkfile_bytecode_builtin_enum_gen_h",
     ":libarkfile_type_gen_h",
@@ -120,7 +120,7 @@ ark_isa_gen("isa_gen_libarkfile") {
     "bytecode_instruction-inl_gen.h.erb",
     "bytecode_emitter_def_gen.h.erb",
     "bytecode_emitter_gen.h.erb",
-    "isa_checksum.h.erb",
+    "file_format_version.h.erb",
     "tests/bytecode_emitter_tests_gen.h.erb",
   ]
   sources = "templates"  ## ark_root/templates

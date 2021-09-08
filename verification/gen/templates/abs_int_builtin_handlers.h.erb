@@ -14,6 +14,8 @@
  */
 
 % builtin_kinds = PandaBuiltins::builtins.map(&:insn).uniq
+% builtin_mnemonics = PandaBuiltins::instructions.map { |instruction| instruction.sig.split(' ').at(0) }
+% undefined_builtins = builtin_mnemonics.select { |mnemonic| not builtin_kinds.include?(mnemonic) }.uniq
 % builtin_kinds.each do |kind|
 %   mnemonic = kind.split('.').map { |p| p == '64' ? 'Wide' : p.capitalize }.join
 %   builtins = PandaBuiltins::builtins.select { |builtin| builtin.insn == kind }.sort_by(&:id)
@@ -33,3 +35,14 @@ bool Handle<%= mnemonic %>() {
 }
 
 % end
+% undefined_builtins.each do |builtin|
+%   mnemonic = builtin.split('.').map { |p| p == '64' ? 'Wide' : p.capitalize }.join
+template <BytecodeInstructionSafe::Format format>
+bool Handle<%= mnemonic %>() {
+    LOG_INST();
+    LOG(DEBUG, VERIFIER) << "ABSINT: "
+                         << "<%= builtin %>";
+    return true;
+}
+
+%end

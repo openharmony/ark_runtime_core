@@ -212,7 +212,7 @@ panda_isa_gen(
     EXTRA_DEPENDENCIES ${builtin_headers}
 )
 
-set(ISA "${PANDA_ROOT}/isa/isa.yaml")
+set(ISA "${CMAKE_BINARY_DIR}/isa/isa.yaml")
 set(ISA_API "${PANDA_ROOT}/isa/isapi.rb")
 set(BRIDGE_DISPATCH_TEMPLATE "${CMAKE_CURRENT_LIST_DIR}/templates/bridge_dispatch.S.erb")
 set(BRIDGE_ARCHS aarch64 arm armhf amd64 x86)
@@ -224,8 +224,8 @@ foreach(arch ${BRIDGE_ARCHS})
         REQUIRES ${ISA_API} ${CMAKE_CURRENT_LIST_DIR}/templates/bridge_helpers_${arch}.rb
                             ${CMAKE_CURRENT_LIST_DIR}/templates/bridge_helpers_static.rb
     )
-    add_custom_target(bridge_dispatch_${arch} DEPENDS ${GEN_INCLUDE_DIR}/bridge_dispatch_${arch}.S)
-
+    add_custom_target(bridge_dispatch_${arch} DEPENDS ${GEN_INCLUDE_DIR}/bridge_dispatch_${arch}.S ${ISA})
+    add_dependencies(bridge_dispatch_${arch} isa_assert)
 
     panda_gen_file(
         DATAFILE ${ISA}
@@ -233,7 +233,8 @@ foreach(arch ${BRIDGE_ARCHS})
         OUTPUTFILE ${GEN_INCLUDE_DIR}/bridge_dispatch_dyn_${arch}.S
         REQUIRES ${ISA_API} ${CMAKE_CURRENT_LIST_DIR}/templates/bridge_helpers_dynamic.rb ${CMAKE_CURRENT_LIST_DIR}/templates/bridge_helpers_${arch}.rb
     )
-    add_custom_target(bridge_dispatch_dyn_${arch} DEPENDS ${GEN_INCLUDE_DIR}/bridge_dispatch_dyn_${arch}.S)
+    add_custom_target(bridge_dispatch_dyn_${arch} DEPENDS ${GEN_INCLUDE_DIR}/bridge_dispatch_dyn_${arch}.S ${ISA})
+    add_dependencies(bridge_dispatch_${arch} isa_assert)
 
 endforeach()
 

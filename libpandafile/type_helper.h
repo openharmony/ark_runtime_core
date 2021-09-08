@@ -24,12 +24,7 @@ namespace panda::panda_file {
 
 inline panda::panda_file::Type GetEffectiveType(const panda_file::Type &type)
 {
-    auto type_id = type.GetId();
-    if (type_id == panda_file::Type::TypeId::F32) {
-        type_id = panda_file::Type::TypeId::F64;
-    }
-
-    return panda_file::Type {type_id};
+    return type;
 }
 
 inline bool IsArrayDescriptor(const uint8_t *descriptor)

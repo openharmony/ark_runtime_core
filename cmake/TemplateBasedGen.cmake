@@ -75,7 +75,7 @@ function(panda_gen)
             REQUIRES ${GEN_ARG_REQUIRES}
             EXTRA_DEPENDENCIES ${GEN_ARG_EXTRA_DEPENDENCIES}
         )
-        add_custom_target(${TARGET} ALL DEPENDS ${OUTPUT_FILE})
+        add_custom_target(${TARGET} DEPENDS ${OUTPUT_FILE})
         add_dependencies(${GEN_ARG_TARGET_NAME} ${TARGET})
     endforeach()
 endfunction()
@@ -103,9 +103,10 @@ function(panda_isa_gen)
         "${multivalues}"
         ${ARGN}
     )
-    set(ISA_DATA "${PANDA_ROOT}/isa/isa.yaml")
+    set(ISA_DATA "${CMAKE_BINARY_DIR}/isa/isa.yaml")
     set(ISAPI "${PANDA_ROOT}/isa/isapi.rb")
     list(INSERT ISA_GEN_ARG_REQUIRES 0 ${ISAPI})
+    list(APPEND ISA_GEN_ARG_EXTRA_DEPENDENCIES isa_assert)
     panda_gen(DATA ${ISA_DATA}
         TEMPLATES ${ISA_GEN_ARG_TEMPLATES}
         SOURCE ${ISA_GEN_ARG_SOURCE}

@@ -887,5 +887,4 @@ bool RunSlotsAllocator<AllocConfigT, LockConfigT>::MemPoolManager::PoolListEleme
 #undef LOG_RUNSLOTS_ALLOCATOR
 
 }  // namespace panda::mem
-
 #endif  // PANDA_RUNTIME_MEM_RUNSLOTS_ALLOCATOR_INL_H_

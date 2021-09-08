@@ -525,8 +525,8 @@ tests:
             - |
               #
                   fldarr.32 v0
-                  fmovi.64 v3, 0
-                  fcmpg.64 v3
+                  fmovi v3, 0
+                  fcmpg v3
           - values:
             - 'f64[]'
             - |

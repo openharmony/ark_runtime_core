@@ -15,11 +15,10 @@
 
 #include "file_item_container.h"
 
+#include "file_format_version.h"
 #include "file-inl.h"
 #include "helpers.h"
-#include "isa_checksum.h"
 #include "macros.h"
-#include "ark_version.h"
 
 #include <cstddef>
 
@@ -585,11 +584,6 @@ bool ItemContainer::WriteHeader(Writer *writer, ssize_t *checksum_offset)
         return false;
     }
     writer->CountChecksum(true);
-
-    uint32_t isa_checksum = ISA_CHECKSUM;
-    if (!writer->Write(isa_checksum)) {
-        return false;
-    }
 
     std::vector<uint8_t> versionVec(std::begin(version), std::end(version));
     if (!writer->WriteBytes(versionVec)) {

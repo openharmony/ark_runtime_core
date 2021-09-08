@@ -119,6 +119,9 @@ Value Method::InvokeInterpretedCode(ManagedThread *thread, uint32_t num_actual_a
             }
             return res;
         }
+
+        LOG(DEBUG, INTERPRETER) << "Invoke entry: " << GetFullName();
+
         auto is_compiled = thread->IsCurrentFrameCompiled();
         thread->SetCurrentFrameIsCompiled(false);
         thread->SetCurrentFrame(frame.get());
@@ -152,6 +155,8 @@ Value Method::InvokeInterpretedCode(ManagedThread *thread, uint32_t num_actual_a
         }
         thread->SetCurrentFrame(current_frame);
         res = GetReturnValueFromAcc(ret_type, thread->HasPendingException(), frame->GetAcc());
+
+        LOG(DEBUG, INTERPRETER) << "Invoke exit: " << GetFullName();
     }
     return res;
 }

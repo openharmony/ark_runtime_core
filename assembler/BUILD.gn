@@ -20,6 +20,8 @@ config("arkassembler_public_config") {
     "$target_gen_dir",
     "$target_gen_dir/include",
   ]
+
+  defines = [ "PANDA_WITH_ECMASCRIPT" ]
 }
 
 libarkassembler_sources = [
@@ -162,20 +164,14 @@ ark_gen_file("ark_asm_ins_create_builtins_api_h") {
 ark_gen_file("builtin_parsing_cpp") {
   template_file = "templates/builtin_parsing.cpp.erb"
   data_file = "../isa/builtins.yaml"
-  requires = [
-    "../isa/builtinsapi.rb",
-    "//ark/js_runtime/ecmascript/ecma_builtins.rb",
-  ]
+  requires = [ "../isa/builtinsapi.rb" ]
   output_file = "$target_gen_dir/builtin_parsing.cpp"
 }
 
 ark_gen_file("builtin_parsing_tests_cpp") {
   template_file = "templates/builtin_parsing_tests.cpp.erb"
   data_file = "../isa/builtins.yaml"
-  requires = [
-    "../isa/builtinsapi.rb",
-    "//ark/js_runtime/ecmascript/ecma_builtins.rb",
-  ]
+  requires = [ "../isa/builtinsapi.rb" ]
   output_file = "$target_gen_dir/builtin_parsing_tests.cpp"
 }
 

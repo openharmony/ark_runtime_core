@@ -39,7 +39,7 @@ $ make coverage
 ```
 Location of the code coverage report: BUILD_DIR/compiler/coverage_report
 
-## Check style 
+## Check style
 
 To check the style, perform the previous steps and build style-checker targets. Note that you must install clang-format and clang-tidy with libraries. For details, see scripts/bootstrap*.sh.
 ```
@@ -62,12 +62,12 @@ Run `make help | grep clang` to see all possible clang-[format|style] targets.
 For issues in opt.cpp, you may check the style through clang-format `make clang_format_opt_opt.cpp`, or through clang-tidy `make clang_tidy_opt_opt.cpp`. For the force clang-format code style, use `make clang_force_format_opt_opt.cpp`.
 For code-style check through one check system, use `make clang_tidy` or `make clang_format`.
 
-Generated files: 
+Generated files:
 *  `compile_commands.json` - json nija-commands file to correct execution clang-tidy.
 *  Standard cmake-files: `CMakeCache.txt`, `Makefile`, `cmake_install.cmake`  and folder `CMakeFiles`.
 
 
-Discussion about format : rus-os-team/virtual-machines-and-tools/vm-investigation-and-design#24 
+Discussion about format : rus-os-team/virtual-machines-and-tools/vm-investigation-and-design#24
 *  Clang-tidy style file - `.clang-tidy`
 *  Clang-format style file - `.clang-format`
 *  Script to show diff through clang-format execution - `build/run-clang-format.py`

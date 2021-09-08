@@ -69,52 +69,17 @@ def get_ret_type(type)
 end
 
 def get_effective_type(type)
-  @effective_type_map ||= {
-    'void' => 'void',
-    'u1' => 'uint8_t',
-    'i8' => 'int8_t',
-    'u8' => 'uint8_t',
-    'i16' => 'int16_t',
-    'u16' => 'uint16_t',
-    'i32' => 'int32_t',
-    'u32' => 'uint32_t',
-    'i64' => 'int64_t',
-    'u64' => 'uint64_t',
-    'f32' => 'double',
-    'f64' => 'double',
-    'any' => ['int64_t', 'int64_t'],
-    'acc' => ['int64_t', 'int64_t'],
-    'string_id' => 'uint32_t',
-    'method_id' => 'uint32_t',
-  }
-  @effective_type_map[type] || get_object_type(type)
+  get_type(type)
 end
 
 def get_ret_effective_type(type)
-  @ret_effective_type_map ||= {
-    'void' => 'void',
-    'u1' => 'uint8_t',
-    'i8' => 'int8_t',
-    'u8' => 'uint8_t',
-    'i16' => 'int16_t',
-    'u16' => 'uint16_t',
-    'i32' => 'int32_t',
-    'u32' => 'uint32_t',
-    'i64' => 'int64_t',
-    'u64' => 'uint64_t',
-    'f32' => 'double',
-    'f64' => 'double',
-    'any' => 'DecodedTaggedValue',
-    'string_id' => 'uint32_t',
-    'method_id' => 'uint32_t',
-    'acc' => 'DecodedTaggedValue',
-  }
-  @ret_effective_type_map[type] || get_object_type(type)
+  get_ret_type(type)
 end
 
 class Intrinsic < SimpleDelegator
   def need_abi_wrapper?
-    signature.ret == 'f32' || signature.args.include?('f32')
+    Object.send(:get_ret_type, signature.ret) != Object.send(:get_ret_effective_type, signature.ret) ||
+    signature.args.any? { |arg| Object.send(:get_ret_type, arg) != Object.send(:get_ret_effective_type, arg) }
   end
 
   def enum_name

@@ -94,6 +94,13 @@ public:
 #include "unimplemented_handlers-inl.h"
 
     template <BytecodeInstruction::Format format>
+    ALWAYS_INLINE void HandleNop()
+    {
+        LOG_INST() << "nop";
+        this->template MoveToNextInst<format, false>();
+    }
+
+    template <BytecodeInstruction::Format format>
     ALWAYS_INLINE void HandleFldaiDyn()
     {
         auto imm = bit_cast<double>(this->GetInst().template GetImm<format>());
@@ -178,6 +185,16 @@ public:
     }
 
     template <BytecodeInstruction::Format format>
+    ALWAYS_INLINE void HandleFmovi()
+    {
+        auto imm = bit_cast<float>(this->GetInst().template GetImm<format>());
+        uint16_t vd = this->GetInst().template GetVReg<format>();
+        LOG_INST() << "fmovi v" << vd << ", " << imm;
+        this->GetFrame()->GetVReg(vd).SetPrimitive(imm);
+        this->template MoveToNextInst<format, false>();
+    }
+
+    template <BytecodeInstruction::Format format>
     ALWAYS_INLINE void HandleFmoviWide()
     {
         auto imm = bit_cast<double>(this->GetInst().template GetImm<format>());
@@ -237,6 +254,15 @@ public:
     {
         int64_t imm = this->GetInst().template GetImm<format>();
         LOG_INST() << "ldai.64 " << std::hex << imm;
+        this->GetAcc().SetPrimitive(imm);
+        this->template MoveToNextInst<format, false>();
+    }
+
+    template <BytecodeInstruction::Format format>
+    ALWAYS_INLINE void HandleFldai()
+    {
+        auto imm = bit_cast<float>(this->GetInst().template GetImm<format>());
+        LOG_INST() << "fldai " << imm;
         this->GetAcc().SetPrimitive(imm);
         this->template MoveToNextInst<format, false>();
     }
@@ -385,10 +411,24 @@ public:
     }
 
     template <BytecodeInstruction::Format format>
+    ALWAYS_INLINE void HandleFcmpl()
+    {
+        LOG_INST() << "fcmpl ->";
+        HandleBinaryOp2<format, float, math_helpers::fcmpl>();
+    }
+
+    template <BytecodeInstruction::Format format>
     ALWAYS_INLINE void HandleFcmplWide()
     {
         LOG_INST() << "fcmpl.64 ->";
         HandleBinaryOp2<format, double, math_helpers::fcmpl>();
+    }
+
+    template <BytecodeInstruction::Format format>
+    ALWAYS_INLINE void HandleFcmpg()
+    {
+        LOG_INST() << "fcmpg ->";
+        HandleBinaryOp2<format, float, math_helpers::fcmpg>();
     }
 
     template <BytecodeInstruction::Format format>
@@ -525,6 +565,13 @@ public:
     }
 
     template <BytecodeInstruction::Format format>
+    ALWAYS_INLINE void HandleFadd2()
+    {
+        LOG_INST() << "fadd2 ->";
+        HandleBinaryOp2<format, float, std::plus>();
+    }
+
+    template <BytecodeInstruction::Format format>
     ALWAYS_INLINE void HandleFadd2Wide()
     {
         LOG_INST() << "fadd2.64 ->";
@@ -543,6 +590,13 @@ public:
     {
         LOG_INST() << "sub2.64 ->";
         HandleBinaryOp2<format, int64_t, math_helpers::Minus>();
+    }
+
+    template <BytecodeInstruction::Format format>
+    ALWAYS_INLINE void HandleFsub2()
+    {
+        LOG_INST() << "fsub2 ->";
+        HandleBinaryOp2<format, float, std::minus>();
     }
 
     template <BytecodeInstruction::Format format>
@@ -567,6 +621,13 @@ public:
     }
 
     template <BytecodeInstruction::Format format>
+    ALWAYS_INLINE void HandleFmul2()
+    {
+        LOG_INST() << "fmul2 ->";
+        HandleBinaryOp2<format, float, std::multiplies>();
+    }
+
+    template <BytecodeInstruction::Format format>
     ALWAYS_INLINE void HandleFmul2Wide()
     {
         LOG_INST() << "fmul2.64 ->";
@@ -574,10 +635,24 @@ public:
     }
 
     template <BytecodeInstruction::Format format>
+    ALWAYS_INLINE void HandleFdiv2()
+    {
+        LOG_INST() << "fdiv2 ->";
+        HandleBinaryOp2<format, float, std::divides>();
+    }
+
+    template <BytecodeInstruction::Format format>
     ALWAYS_INLINE void HandleFdiv2Wide()
     {
         LOG_INST() << "fdiv2.64 ->";
         HandleBinaryOp2<format, double, std::divides>();
+    }
+
+    template <BytecodeInstruction::Format format>
+    ALWAYS_INLINE void HandleFmod2()
+    {
+        LOG_INST() << "fmod2 ->";
+        HandleBinaryOp2<format, float, math_helpers::fmodulus>();
     }
 
     template <BytecodeInstruction::Format format>
@@ -2226,174 +2301,6 @@ public:
             frame = prev;
         }
         return panda_file::INVALID_OFFSET;
-    }
-
-    template <BytecodeInstruction::Format format>
-    ALWAYS_INLINE void HandleBuiltinI32tof32()
-    {  // builtin: 0x00 (acc)
-        auto v = static_cast<float>(this->GetAcc().template GetAs<int32_t>());
-
-        LOG_INST() << "\t"
-                   << "i32tof32";
-
-        this->GetAcc().Set(static_cast<double>(v));
-        this->template MoveToNextInst<format, false>();
-    }
-
-    template <BytecodeInstruction::Format format>
-    ALWAYS_INLINE void HandleBuiltinI64tof32()
-    {  // builtin: 0x01 (acc)
-        auto v = static_cast<float>(this->GetAcc().template GetAs<int64_t>());
-
-        LOG_INST() << "\t"
-                   << "i64tof32";
-
-        this->GetAcc().Set(static_cast<double>(v));
-        this->template MoveToNextInst<format, false>();
-    }
-
-    template <BytecodeInstruction::Format format>
-    ALWAYS_INLINE void HandleBuiltinF64tof32()
-    {  // builtin: 0x02 (acc)
-        auto v = static_cast<float>(this->GetAcc().template GetAs<double>());
-
-        LOG_INST() << "\t"
-                   << "f64tof32";
-
-        this->GetAcc().Set(static_cast<double>(v));
-        this->template MoveToNextInst<format, false>();
-    }
-
-    template <BytecodeInstruction::Format format>
-    ALWAYS_INLINE void HandleBuiltinMonitorenter()
-    {  // builtin: 0x03 (acc)
-
-        LOG_INST() << "\t"
-                   << "monitorenter";
-
-        this->GetFrame()->SetAcc(this->GetAcc());
-        panda::intrinsics::ObjectMonitorEnter(this->GetAcc().GetReference());
-        this->GetAcc() = this->GetFrame()->GetAcc();
-
-        if (UNLIKELY(this->GetThread()->HasPendingException())) {
-            this->MoveToExceptionHandler();
-        } else {
-            this->template MoveToNextInst<format, true>();
-        }
-    }
-
-    template <BytecodeInstruction::Format format>
-    ALWAYS_INLINE void HandleBuiltinMonitorexit()
-    {  // builtin: 0x04 (acc)
-
-        LOG_INST() << "\t"
-                   << "monitorexit";
-
-        panda::intrinsics::ObjectMonitorExit(this->GetAcc().GetReference());
-
-        if (UNLIKELY(this->GetThread()->HasPendingException())) {
-            this->MoveToExceptionHandler();
-        } else {
-            this->template MoveToNextInst<format, true>();
-        }
-    }
-
-    template <BytecodeInstruction::Format format>
-    ALWAYS_INLINE void HandleBuiltinFadd2f32()
-    {  // builtin: 0x00 (bin2)
-        auto v1 = static_cast<float>(this->GetAcc().template GetAs<double>());
-        auto vs = this->GetInst().template GetVReg<format>();
-        auto v2 = static_cast<float>(this->GetFrame()->GetVReg(vs).template GetAs<double>());
-
-        LOG_INST() << "\t"
-                   << "fadd2f32 v" << vs;
-
-        this->GetAcc().Set(static_cast<double>(v1 + v2));
-        this->template MoveToNextInst<format, false>();
-    }
-
-    template <BytecodeInstruction::Format format>
-    ALWAYS_INLINE void HandleBuiltinFsub2f32()
-    {  // builtin: 0x01 (bin2)
-        auto v1 = static_cast<float>(this->GetAcc().template GetAs<double>());
-        auto vs = this->GetInst().template GetVReg<format>();
-        auto v2 = static_cast<float>(this->GetFrame()->GetVReg(vs).template GetAs<double>());
-
-        LOG_INST() << "\t"
-                   << "fsub2f32 v" << vs;
-
-        this->GetAcc().Set(static_cast<double>(v1 - v2));
-        this->template MoveToNextInst<format, false>();
-    }
-
-    template <BytecodeInstruction::Format format>
-    ALWAYS_INLINE void HandleBuiltinFmul2f32()
-    {  // builtin: 0x02 (bin2)
-        auto v1 = static_cast<float>(this->GetAcc().template GetAs<double>());
-        auto vs = this->GetInst().template GetVReg<format>();
-        auto v2 = static_cast<float>(this->GetFrame()->GetVReg(vs).template GetAs<double>());
-
-        LOG_INST() << "\t"
-                   << "fmul2f32 v" << vs;
-
-        this->GetAcc().Set(static_cast<double>(v1 * v2));
-        this->template MoveToNextInst<format, false>();
-    }
-
-    template <BytecodeInstruction::Format format>
-    ALWAYS_INLINE void HandleBuiltinFdiv2f32()
-    {  // builtin: 0x03 (bin2)
-        auto v1 = static_cast<float>(this->GetAcc().template GetAs<double>());
-        auto vs = this->GetInst().template GetVReg<format>();
-        auto v2 = static_cast<float>(this->GetFrame()->GetVReg(vs).template GetAs<double>());
-
-        LOG_INST() << "\t"
-                   << "fdiv2f32 v" << vs;
-
-        this->GetAcc().Set(static_cast<double>(v1 / v2));
-        this->template MoveToNextInst<format, false>();
-    }
-
-    template <BytecodeInstruction::Format format>
-    ALWAYS_INLINE void HandleBuiltinFmod2f32()
-    {  // builtin: 0x04 (bin2)
-        auto v1 = static_cast<float>(this->GetAcc().template GetAs<double>());
-        auto vs = this->GetInst().template GetVReg<format>();
-        auto v2 = static_cast<float>(this->GetFrame()->GetVReg(vs).template GetAs<double>());
-
-        LOG_INST() << "\t"
-                   << "fmod2f32 v" << vs;
-
-        this->GetAcc().Set(static_cast<double>(std::fmod(v1, v2)));
-        this->template MoveToNextInst<format, false>();
-    }
-
-    template <BytecodeInstruction::Format format>
-    ALWAYS_INLINE void HandleBuiltinFcmpl2f32()
-    {  // builtin: 0x05 (bin2)
-        auto v1 = static_cast<float>(this->GetAcc().template GetAs<double>());
-        auto vs = this->GetInst().template GetVReg<format>();
-        auto v2 = static_cast<float>(this->GetFrame()->GetVReg(vs).template GetAs<double>());
-
-        LOG_INST() << "\t"
-                   << "fcmplf32 v" << vs;
-
-        this->GetAcc().Set(static_cast<int64_t>(math_helpers::fcmpl<float>()(v1, v2)));
-        this->template MoveToNextInst<format, false>();
-    }
-
-    template <BytecodeInstruction::Format format>
-    ALWAYS_INLINE void HandleBuiltinFcmpg2f32()
-    {  // builtin: 0x06 (bin2)
-        auto v1 = static_cast<float>(this->GetAcc().template GetAs<double>());
-        auto vs = this->GetInst().template GetVReg<format>();
-        auto v2 = static_cast<float>(this->GetFrame()->GetVReg(vs).template GetAs<double>());
-
-        LOG_INST() << "\t"
-                   << "fcmpgf32 v" << vs;
-
-        this->GetAcc().Set(static_cast<int64_t>(math_helpers::fcmpg<float>()(v1, v2)));
-        this->template MoveToNextInst<format, false>();
     }
 
     ALWAYS_INLINE static bool IsCompilerEnableJit()

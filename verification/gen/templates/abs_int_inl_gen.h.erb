@@ -33,7 +33,7 @@ VerificationStatus AbstractInterpret([[maybe_unused]] VerificationLevel v_level,
     AbsIntInstructionHandler handler(v_ctx, pc, code_type);
     uint8_t secondary_opcode;
 
-    if(handler.GetPrimaryOpcode() > <%= Panda::dispatch_table.primary_opcode_bound %>) {
+    if (!handler.IsPrimaryOpcodeValid()) {
         LOG(ERROR, VERIFIER) << "Incorrect opcode";
         return VerificationStatus::ERROR;
     }
@@ -41,19 +41,28 @@ VerificationStatus AbstractInterpret([[maybe_unused]] VerificationLevel v_level,
 
 % Panda::instructions.each do |i|
 %   mnemonic = i.mnemonic.split('.').map { |p| p == '64' ? 'Wide' : p.capitalize }.join
-HANDLE_<%= Panda::dispatch_table.instruction_handler_name(i) %>:
+HANDLE_<%= i.handler_name %>:
+% if i.namespace != 'core'
+#ifdef PANDA_WITH_<%= i.namespace.upcase %>
+% end
     if (!handler.template Handle<%= mnemonic %><BytecodeInstructionSafe::Format::<%= i.format.pretty.upcase %>>()) {
         return handler.GetStatus();
     }
-    if(handler.GetPrimaryOpcode() > <%= Panda::dispatch_table.primary_opcode_bound %>) {
+
+    if (!handler.IsPrimaryOpcodeValid()) {
         LOG(ERROR, VERIFIER) << "Incorrect opcode";
         return VerificationStatus::ERROR;
     }
+% if i.namespace != 'core'
+#endif // PANDA_WITH_<%= i.namespace.upcase %>
+% end
     goto* dispatch_table[handler.GetPrimaryOpcode()];
 % end
-
+HANDLE_INVALID:
+    LOG(ERROR, VERIFIER) << "Incorrect opcode";
+    return VerificationStatus::ERROR;
 % Panda::prefixes.each do |p|
-HANDLE_<%= Panda::dispatch_table.prefix_hanlder_name(p) %>:
+HANDLE_<%= p.handler_name %>:
     secondary_opcode = handler.GetSecondaryOpcode();
     LOG(DEBUG, VERIFIER) << "CFLOW: Prefix subdispatch: " << "<%= p.name %>, " << secondary_opcode;
 

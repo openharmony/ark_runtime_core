@@ -25,6 +25,8 @@ def get_format_for(insn)
 end
 
 def get_call_insns()
-  return Panda::instructions.select {|insn| ((insn.properties.include? "call" or insn.stripped_mnemonic == "initobj") and !(insn.properties.include? "dynamic"))}
+  Panda::instructions.reject(&:prefix).select do |insn|
+    ((insn.properties.include?("call") || insn.stripped_mnemonic == "initobj") && !(insn.properties.include? "dynamic"))
+  end
 end
 

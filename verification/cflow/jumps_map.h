@@ -27,7 +27,6 @@
 #include <cstdint>
 
 namespace panda::verifier {
-
 class JumpsMap {
 public:
     struct FromTo {
@@ -52,12 +51,10 @@ public:
     }
 
     JumpsMap(const void *pc_start_ptr, const void *pc_end_ptr) : AddrMap_(pc_start_ptr, pc_end_ptr) {}
-
     JumpsMap(const void *pc_start_ptr, size_t size)
         : JumpsMap(pc_start_ptr, reinterpret_cast<const void *>(reinterpret_cast<uintptr_t>(pc_start_ptr) + size - 1))
     {
     }
-
     JumpsMap() = delete;
     ~JumpsMap() = default;
 
@@ -92,12 +89,10 @@ public:
             }
         }
     }
-
     bool IsConflictingWith(const InstructionsMap &inst_map) const
     {
         return AddrMap_.HasCommonMarks(inst_map.AddrMap_);
     }
-
     template <typename PtrType>
     bool GetFirstConflictingJump(const InstructionsMap &inst_map, PtrType *pc_jump_ptr, PtrType *pc_target_ptr) const
     {
@@ -118,7 +113,6 @@ private:
     PandaVector<const void *> Target_;
     PandaVector<FromTo> FromTo_;
 };
-
 }  // namespace panda::verifier
 
 #endif  // PANDA_VERIFICATION_CFLOW_JUMPS_MAP_H_

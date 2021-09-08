@@ -13,9 +13,8 @@
  * limitations under the License.
  */
 
-#include "ark_version.h"
+#include "file_format_version.h"
 #include "file-inl.h"
-#include "isa_checksum.h"
 #include "os/file.h"
 #include "os/mem.h"
 #include "mem/mem.h"
@@ -36,6 +35,7 @@
 
 #include <algorithm>
 #include <memory>
+#include <string>
 #include <variant>
 #include <cstdio>
 #include <map>
@@ -457,6 +457,19 @@ File::~File()
     AnonMemSet::GetInstance().Remove(FILENAME);
 }
 
+inline std::string VersionToString(const std::array<uint8_t, File::VERSION_SIZE> &array)
+{
+    std::stringstream ss;
+
+    for (size_t i = 0; i < File::VERSION_SIZE - 1; ++i) {
+        ss << static_cast<int>(array[i]);
+        ss << ".";
+    }
+    ss << static_cast<int>(array[File::VERSION_SIZE - 1]);
+
+    return ss.str();
+}
+
 /* static */
 std::unique_ptr<const File> File::Open(std::string_view filename, OpenMode open_mode)
 {
@@ -490,35 +503,29 @@ std::unique_ptr<const File> File::Open(std::string_view filename, OpenMode open_
         return nullptr;
     }
 
-    uint32_t isa_checksum = 0;
-    if (!file.ReadAll(&isa_checksum, sizeof(uint32_t))) {
-        LOG(ERROR, PANDAFILE) << "Failed to read isa's checksum of panda file '" << filename << "'";
-        return nullptr;
-    }
-
     std::array<uint8_t, File::VERSION_SIZE> buf {};
     if (!file.ReadAll(&buf[0], buf.size())) {
         return nullptr;
     }
-    std::array<uint8_t, File::VERSION_SIZE> min_version_local {0, 0, 0, 1};
-    if (buf < min_version_local) {
-        std::stringstream ss;
-        ss << "Unable to open file '" << filename << "' with bytecode version " << buf[0U] << ".";
-        ss << buf[1U] << "." << buf[2U] << "." << buf[3U] << ". Minimum supported version is ";
-        ss << min_version_local[0U] << "." << min_version_local[1U] << "." << min_version_local[2U] << "."
-           << min_version_local[3U];
-        LOG(ERROR, PANDAFILE) << ss.str();
-
+    if (buf < minVersion || buf > version) {
+        LOG(ERROR, PANDAFILE) << "Unable to open file '" << filename
+                              << "' with bytecode version "  // CODECHECK-NOLINTNEXTLINE(C_RULE_ID_INDENT_CHECK)
+                              << VersionToString(buf);
+        if (buf < minVersion) {
+            LOG(ERROR, PANDAFILE)
+                << "Minimum supported version is "  // CODECHECK-NOLINTNEXTLINE(C_RULE_ID_INDENT_CHECK)
+                << VersionToString(minVersion);
+        } else {
+            LOG(ERROR, PANDAFILE)
+                << "Maximum supported version is "  // CODECHECK-NOLINTNEXTLINE(C_RULE_ID_INDENT_CHECK)
+                << VersionToString(version);
+        }
         return nullptr;
     }
 
     os::mem::ConstBytePtr ptr = os::mem::MapFile(file, GetProt(open_mode), os::mem::MMAP_FLAG_PRIVATE, size).ToConst();
     if (ptr.Get() == nullptr) {
         PLOG(ERROR, PANDAFILE) << "Failed to map panda file '" << filename << "'";
-        return nullptr;
-    }
-
-    if (!CheckHeader(ptr, filename)) {
         return nullptr;
     }
 
@@ -556,15 +563,11 @@ std::unique_ptr<const File> File::OpenUncompressedArchive(int fd, const std::str
     return std::unique_ptr<File>(new File(filename.data(), std::move(ptr)));
 }
 
-bool CheckHeader(const os::mem::ConstBytePtr &ptr, const std::string_view &filename, bool check_isa_checksum)
+bool CheckHeader(const os::mem::ConstBytePtr &ptr, const std::string_view &filename)
 {
     auto header = reinterpret_cast<const File::Header *>(ptr.Get());
     if (header->magic != File::MAGIC) {
         LOG(ERROR, PANDAFILE) << "Invalid panda file '" << filename << "'";
-        return false;
-    }
-    if (check_isa_checksum && header->isa_checksum != ISA_CHECKSUM) {
-        LOG(ERROR, PANDAFILE) << "Isa checksums mismatch in panda file '" << filename << "'";
         return false;
     }
 
@@ -577,10 +580,6 @@ std::unique_ptr<const File> File::OpenFromMemory(os::mem::ConstBytePtr &&ptr)
     auto header = reinterpret_cast<const Header *>(ptr.Get());
     if (header->magic != File::MAGIC) {
         LOG(ERROR, PANDAFILE) << "Invalid panda file";
-        return nullptr;
-    }
-
-    if (!CheckHeader(ptr)) {
         return nullptr;
     }
 
@@ -601,10 +600,6 @@ std::unique_ptr<const File> File::OpenFromMemory(os::mem::ConstBytePtr &&ptr, st
 
     if (header->magic != File::MAGIC) {
         LOG(ERROR, PANDAFILE) << "Invalid panda file";
-        return nullptr;
-    }
-
-    if (!CheckHeader(ptr, filename)) {
         return nullptr;
     }
 

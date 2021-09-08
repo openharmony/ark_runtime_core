@@ -429,7 +429,7 @@ void GC::PreStartup()
     // Add a delay GCTask.
     if ((!Runtime::GetCurrent()->IsZygote()) && (!gc_settings_.run_gc_in_place)) {
         // divide 2 to temporarily set target footprint to a high value to disable GC during App startup.
-        GetPandaVm()->GetGCTrigger()->SetMinTargetFootprint(Runtime::GetOptions().GetObjectPoolSize() / 2);
+        GetPandaVm()->GetGCTrigger()->SetMinTargetFootprint(Runtime::GetOptions().GetHeapSizeLimit() / 2);
         PreStartupImp();
         constexpr uint64_t DISABLE_GC_DURATION_NS = 2000 * 1000 * 1000;
         auto task = MakePandaUnique<PostForkGCTask>(GCTaskCause::STARTUP_COMPLETE_CAUSE,

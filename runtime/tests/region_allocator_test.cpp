@@ -38,7 +38,7 @@ public:
     {
         options_.SetShouldLoadBootPandaFiles(false);
         options_.SetShouldInitializeIntrinsics(false);
-        options_.SetObjectPoolSize(256_MB);
+        options_.SetHeapSizeLimit(256_MB);
         Runtime::Create(options_);
         thread_ = panda::MTManagedThread::GetCurrent();
         thread_->ManagedCodeBegin();

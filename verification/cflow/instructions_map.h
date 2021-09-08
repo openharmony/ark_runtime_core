@@ -21,7 +21,6 @@
 #include <cstdint>
 
 namespace panda::verifier {
-
 class InstructionsMap {
 public:
     bool PutInstruction(const void *pc_curr, const void *pc_next)
@@ -36,27 +35,22 @@ public:
         pc_next = reinterpret_cast<const void *>(reinterpret_cast<uintptr_t>(pc_next) - 1);
         return AddrMap_.Mark(pc_curr, pc_next);
     }
-
     bool PutInstruction(const void *pc_ptr, size_t sz)
     {
         return PutInstruction(pc_ptr, reinterpret_cast<const void *>(reinterpret_cast<uintptr_t>(pc_ptr) + sz));
     }
-
     bool MarkCodeBlock(const void *pc_start, const void *pc_end)
     {
         return AddrMap_.Mark(pc_start, pc_end);
     }
-
     bool MarkCodeBlock(const void *pc_start, size_t sz)
     {
         return AddrMap_.Mark(pc_start, reinterpret_cast<const void *>(reinterpret_cast<uintptr_t>(pc_start) + sz - 1));
     }
-
     bool ClearCodeBlock(const void *pc_start, const void *pc_end)
     {
         return AddrMap_.Clear(pc_start, pc_end);
     }
-
     bool ClearCodeBlock(const void *pc_start, size_t sz)
     {
         return AddrMap_.Clear(pc_start, reinterpret_cast<const void *>(reinterpret_cast<uintptr_t>(pc_start) + sz - 1));
@@ -68,7 +62,6 @@ public:
         : InstructionsMap(ptr_start, reinterpret_cast<const void *>(reinterpret_cast<uintptr_t>(ptr_start) + size - 1))
     {
     }
-
     InstructionsMap() = delete;
     ~InstructionsMap() = default;
 
@@ -93,7 +86,6 @@ private:
     AddrMap AddrMap_;
     friend class JumpsMap;
 };
-
 }  // namespace panda::verifier
 
 #endif  // PANDA_VERIFICATION_CFLOW_INSTRUCTIONS_MAP_H_

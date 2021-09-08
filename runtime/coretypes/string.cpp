@@ -128,8 +128,8 @@ String *String::CreateFromUtf16(const uint16_t *utf16_data, uint32_t utf16_lengt
     if (can_be_compressed) {
         CopyUtf16AsMUtf8(utf16_data, string->GetDataMUtf8(), utf16_length);
     } else {
-        if (memcpy_s(string->GetDataUtf16(), ComputeDataSizeUtf16(string->GetLength()), utf16_data,
-                     utf16_length << 1UL) != EOK) {
+        if (utf16_length != 0 && memcpy_s(string->GetDataUtf16(), ComputeDataSizeUtf16(string->GetLength()), utf16_data,
+                                          utf16_length << 1UL) != EOK) {
             LOG(FATAL, RUNTIME) << __func__ << " memcpy_s failed";
             UNREACHABLE();
         }

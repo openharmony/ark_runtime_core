@@ -100,7 +100,7 @@ module PandaBuiltins
 
         id = 0 unless all_builtins[i - 1][:insn] == all_builtins[i][:insn]
     end
-    all_builtins[all_builtins.length() - 1][:id] = id
+    all_builtins[all_builtins.length() - 1][:id] = id if all_builtins.any?
 
     all_builtins
   end
@@ -214,11 +214,9 @@ end
 
 module ExtBuiltins
   def self.load_ecma_builtins(data); end
-  def self.load_polymorphic_builtins(data); end
 end
 
 def Gen.on_require(data)
-  ExtBuiltins.load_polymorphic_builtins(data)
   ExtBuiltins.load_ecma_builtins(data)
   prepared_data = prepare_data(data)
   PandaBuiltins.wrap_data(prepared_data)

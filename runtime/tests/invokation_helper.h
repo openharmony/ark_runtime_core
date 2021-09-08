@@ -17,6 +17,7 @@
 #define PANDA_RUNTIME_TESTS_INVOKATION_HELPER_H_
 
 #include <cstdint>
+#include <type_traits>
 
 #include "bridge/bridge.h"
 #include "include/thread.h"
@@ -34,13 +35,50 @@ auto GetInvokeHelper()
     return reinterpret_cast<Fn>(const_cast<void *>(GetInvokeHelperImpl()));
 }
 
-inline void WriteArg(arch::ArgWriter<RUNTIME_ARCH> *) {}
+inline void WriteArgImpl(arch::ArgWriter<RUNTIME_ARCH> *, size_t) {}
 
 template <typename T, typename... Args>
-inline void WriteArg(arch::ArgWriter<RUNTIME_ARCH> *writer, T arg, Args... args)
+inline void WriteArgImpl(arch::ArgWriter<RUNTIME_ARCH> *writer, size_t nfloats, T arg, Args... args);
+
+template <typename... Args>
+inline void WriteArgImpl(arch::ArgWriter<RUNTIME_ARCH> *writer, size_t nfloats, float arg, Args... args)
 {
     writer->Write(arg);
-    WriteArg(writer, args...);
+    WriteArgImpl(writer, nfloats + 1, args...);
+}
+
+template <typename T, typename... Args>
+inline void WriteArgImpl(arch::ArgWriter<RUNTIME_ARCH> *writer, size_t nfloats, T arg, Args... args)
+{
+    if (RUNTIME_ARCH == Arch::AARCH32 && std::is_same_v<double, T>) {
+        // JIT compiler doesn't pack floats according armhf ABI. So in the following case:
+        //
+        // void foo(f32 a0, f64 a1, f32 a2)
+        //
+        // Arguments will be passed in the following registers:
+        // a0 - s0
+        // a1 - d1
+        // a2 - s4
+        //
+        // But according to armhf ABI a0 and a2 should be packed into d0:
+        // a0 - s0
+        // a1 - d1
+        // a2 - s1
+        //
+        // So write additional float if necessary to prevent packing
+        if ((nfloats & 0x1) != 0) {
+            nfloats += 1;
+            writer->Write(0.0f);
+        }
+    }
+    writer->Write(arg);
+    WriteArgImpl(writer, nfloats, args...);
+}
+
+template <class T, typename... Args>
+inline void WriteArg(arch::ArgWriter<RUNTIME_ARCH> *writer, T arg, Args... args)
+{
+    WriteArgImpl(writer, 0, arg, args...);
 }
 
 template <typename T>

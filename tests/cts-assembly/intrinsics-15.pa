@@ -15,7 +15,7 @@
 .function void IO.printF32(f32 a0) <external>
 
 .function u1 main(){
-    fmovi.64 v0, 26.6
+    fmovi v0, 26.6
     call.short IO.printF32, v0, v0
     ldai 0
     return

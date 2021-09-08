@@ -202,8 +202,6 @@ tests:
           - values:
             - R.ff64
           - values:
-            - R.ff32
-          - values:
             - R.fObj
           - values:
             - R.fObjArray

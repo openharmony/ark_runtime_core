@@ -37,14 +37,15 @@ enum class LiteralTag : uint8_t {
     METHOD = 0x06,
     GENERATORMETHOD = 0x07,
     ACCESSOR = 0x08,
-    NULLVALUE = 0x09,
+    METHODAFFILIATE = 0x09,
     ARRAY_I8 = 0x0a,
     ARRAY_I16 = 0x0b,
     ARRAY_I32 = 0x0c,
     ARRAY_I64 = 0x0d,
     ARRAY_F32 = 0x0e,
     ARRAY_F64 = 0x0f,
-    ARRAY_STRING = 0x10
+    ARRAY_STRING = 0x10,
+    NULLVALUE = 0xff
 };
 
 class LiteralDataAccessor {

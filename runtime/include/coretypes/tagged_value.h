@@ -53,7 +53,6 @@ inline TaggedType ReinterpretDoubleToTaggedType(double value)
 {
     return bit_cast<TaggedType>(value);
 }
-
 inline double ReinterpretTaggedTypeToDouble(TaggedType value)
 {
     return bit_cast<double>(value);

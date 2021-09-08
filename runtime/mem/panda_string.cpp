@@ -59,13 +59,22 @@ double PandaStringToD(const PandaString &str)
     return result;
 }
 
-PandaString ConvertToString(Span<const uint8_t> sp)
+template <class T>
+PandaString ConvertToString(T sp)
 {
     PandaString res;
     res.reserve(sp.size());
+
+    // Also support ascii that great than 127, so using unsigned char here
+    constexpr size_t MAX_CHAR = std::numeric_limits<unsigned char>::max();
+
     for (auto c : sp) {
+        if (c > MAX_CHAR) {
+            return "";
+        }
         res.push_back(c);
     }
+
     return res;
 }
 

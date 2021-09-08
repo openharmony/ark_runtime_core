@@ -138,10 +138,6 @@ tests:
             - fldai.64 1.1
             - R.ff64
             bugid: ['1882']
-          - values:
-            - fldai.64 1.1
-            - R.ff32
-            bugid: ['1882']
 
       - file-name: "with_non_object_ref"
         description: Check that verifier reports error when the 1st operand is not a ref to an object (other than array)
@@ -477,48 +473,6 @@ tests:
             - |
                 movi.64 v1, -6510615555426900571
                   cmp.64 v1
-          # f32
-          - values:
-            - fldai.64 0.0
-            - ff32
-            - ff32
-            - |
-                fmovi.64 v1, 0.0
-                  fcmpg.64 v1
-            bugid: ['3292']
-          - values:
-            - fldai.64 -6510615.0
-            - ff32
-            - ff32
-            - |
-                fmovi.64 v1, -6510615.0
-                  fcmpg.64 v1
-            bugid: ['3292']
-          - values:
-            - fldai.64 0x7FFFFFFFFFFFFFFF  # NaN
-            - ff32
-            - ff32
-            - |
-                fmovi.64 v1, 0.0
-                  fcmpg.64 v1
-                  subi 1
-            bugid: ['3292']
-          - values:
-            - fldai.64 0x7ff0000000000000  # + Inf
-            - ff32
-            - ff32
-            - |
-                fmovi.64 v1, 0x7ff0000000000000
-                  fcmpg.64 v1
-            bugid: ['3292']
-          - values:
-            - fldai.64 0xfff0000000000000  # - Inf
-            - ff32
-            - ff32
-            - |
-                fmovi.64 v1, 0xfff0000000000000
-                  fcmpg.64 v1
-            bugid: ['3292']
           # f64
           - values:
             - fldai.64 0.0

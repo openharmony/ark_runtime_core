@@ -40,7 +40,7 @@ bool ResolveIdentifiersForJob(CacheOfRuntimeThings& cache, Job& job, const uint8
     BytecodeInstructionSafe inst{start, start, end};
     uint8_t secondary_opcode;
 
-    ASSERT(inst.GetPrimaryOpcode() <= <%= Panda::dispatch_table.primary_opcode_bound %>);
+    ASSERT(inst.IsPrimaryOpcodeValid());
     goto* dispatch_table[inst.GetPrimaryOpcode()];
 
 % Panda::instructions.each do |i|
@@ -153,10 +153,12 @@ HANDLE_<%= i.opcode.upcase %>:
 
     {
         auto next_inst = inst.GetNext();
-        if (inst.GetPrimaryOpcode() > <%= Panda::dispatch_table.primary_opcode_bound %>) {
+        if (!inst.IsPrimaryOpcodeValid()) {
             LOG(DEBUG, VERIFIER) << "Opcode value is out of range. "
-                                 << "Current value is: " << inst.GetPrimaryOpcode()
-                                 << "Maximum allowed value is: " << <%= Panda::dispatch_table.primary_opcode_bound %>;
+                                 << "Current value is: " << static_cast<int>(inst.GetPrimaryOpcode())
+                                 << ". Allowed value is in the interval: [0, <%= Panda::dispatch_table.invalid_non_prefixed_interval.min - 1 %>] U "
+                                 << "[<%= Panda::dispatch_table.invalid_non_prefixed_interval.max + 1 %>, <%= Panda::dispatch_table.invalid_prefixes_interval.min + 1 %>] U "
+                                 << "[<%= Panda::dispatch_table.invalid_prefixes_interval.max + 1 %>, 255]";
             return false;
         }
         if (!next_inst.IsValid()) {
@@ -169,9 +171,11 @@ HANDLE_<%= i.opcode.upcase %>:
     }
     goto* dispatch_table[inst.GetPrimaryOpcode()];
 % end
-
+HANDLE_INVALID:
+    LOG(ERROR, VERIFIER) << "Incorrect opcode";
+    return false;
 % Panda::prefixes.each do |p|
-HANDLE_<%= Panda::dispatch_table.prefix_hanlder_name(p) %>:
+HANDLE_<%= p.handler_name %>:
     secondary_opcode = inst.GetSecondaryOpcode();
     LOG(DEBUG, VERIFIER) << "Prefix subdispatch: " << "<%= p.name %>, " << secondary_opcode;
 

@@ -446,7 +446,6 @@ ObjectAllocatorGen<MTMode>::~ObjectAllocatorGen()
     delete non_movable_object_allocator_;
     delete large_non_movable_object_allocator_;
 }
-
 template <MTModeT MTMode>
 size_t ObjectAllocatorGen<MTMode>::GetRegularObjectMaxSize()
 {

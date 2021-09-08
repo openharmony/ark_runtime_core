@@ -216,6 +216,8 @@ tests:
           - values:
             - R.fi32
           - values:
+            - R.ff32
+          - values:
             - R.fObj
           - values:
             - R.fObjArray
@@ -305,34 +307,15 @@ tests:
                 newarr v1, v1, i32[]
                 lda.obj v1
             - R.ff64
-          # f32
-          - values:
-            - ldai 0
-            - R.ff32
-          - values:
-            - ldai 0xCAFECAFE
-            - R.ff32
-          - values:
-            - ldai.64 1
-            - R.ff32
-          - values:
-            - lda.null
-            - R.ff32
-          - values:
-            - initobj Q.ctor
-            - R.ff32
-          - values:
-            - |
-              movi v1, 10
-                newarr v1, v1, i32[]
-                lda.obj v1
-            - R.ff32
 
 
       - file-name: "into_all_field_types"
         description: Check that accumulator value is stored in field
         isa:
-          description: If field type is f32, accumulator content will be implicitly converted from f64 to f32 before storing.
+          instructions:
+            - sig: ststatic.64 field_id
+              acc: in:b64
+              format: [op_id_16]
         header-template: ['pandasm_header']
         check-type: exit-positive
         tags: ['tsan']
@@ -393,43 +376,6 @@ tests:
             - |
                 movi.64 v1, -6510615555426900571
                   cmp.64 v1
-          # f32
-          - values:
-            - fldai.64 0.0
-            - ff32
-            - ff32
-            - |
-                fmovi.64 v1, 0.0
-                  fcmpg.64 v1
-          - values:
-            - fldai.64 -6510615.0
-            - ff32
-            - ff32
-            - |
-                fmovi.64 v1, -6510615.0
-                  fcmpg.64 v1
-          - values:
-            - fldai.64 0x7FFFFFFFFFFFFFFF  # NaN
-            - ff32
-            - ff32
-            - |
-                fmovi.64 v1, 0.0
-                  fcmpg.64 v1
-                  subi 1
-          - values:
-            - fldai.64 0x7ff0000000000000  # + Inf
-            - ff32
-            - ff32
-            - |
-                fmovi.64 v1, 0x7ff0000000000000
-                  fcmpg.64 v1
-          - values:
-            - fldai.64 0xfff0000000000000  # - Inf
-            - ff32
-            - ff32
-            - |
-                fmovi.64 v1, 0xfff0000000000000
-                  fcmpg.64 v1
           # f64
           - values:
             - fldai.64 0.0

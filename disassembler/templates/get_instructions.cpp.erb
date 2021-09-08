@@ -43,7 +43,7 @@ IdList Disassembler::GetInstructions(pandasm::Function *method, panda_file::File
         }
 
         auto pa_ins = BytecodeInstructionToPandasmInstruction(bc_ins, method_id, method->language);
-        
+
         // alter instructions operands depending on instruction type
         if (pa_ins.IsConditionalJump() || pa_ins.IsJump()) {
             const int32_t jmp_offset = std::get<int64_t>(pa_ins.imms.at(0));
@@ -65,7 +65,7 @@ IdList Disassembler::GetInstructions(pandasm::Function *method, panda_file::File
                                              << "0x" << std::hex << code_id.GetOffset() << "). incorrect instruction at offset "
                                              << (bc_ins.GetAddress() - ins_arr) << ": invalid jump offset "
                                              << jmp_offset << " - jumping in the middle of another instruction!";
-                
+
                 }
             } else {
                 LOG(ERROR, DISASSEMBLER) << "> error encountered at " << std::dec << code_id.GetOffset() << " ("
@@ -78,7 +78,7 @@ IdList Disassembler::GetInstructions(pandasm::Function *method, panda_file::File
         // if builtin - change imm to mnemonic
         switch (pa_ins.opcode) {
 % PandaBuiltins::instructions.each do |insn|
-        case pandasm::Opcode::<%=insn.mnemonic.tr('.', '_').upcase%>: 
+        case pandasm::Opcode::<%=insn.mnemonic.tr('.', '_').upcase%>:
             switch(pa_ins.imms[0].index()) {
             // contains int64_t
             case 0:

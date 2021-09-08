@@ -358,4 +358,3 @@ SECTIONS {
   /DISCARD/ : { *(.note.GNU-stack) *(.gnu_debuglink) *(.gnu.lto_*) }
 
 }
-    

@@ -22,7 +22,6 @@
 #include "runtime/mem/mem_stats.h"
 
 namespace panda {
-
 class Class;
 }  // namespace panda
 

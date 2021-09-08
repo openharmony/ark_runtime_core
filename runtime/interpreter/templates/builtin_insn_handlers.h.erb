@@ -21,10 +21,9 @@ HANDLE_<%= insn.opcode.upcase %>: {
     const auto builtin_id = state.GetInst().template GetImm<BytecodeInstruction::Format::<%= insn.format.upcase %>>();
 
     LOG(DEBUG, INTERPRETER) << "Subdispatch: " << "<%= insn.mnemonic %>, " << builtin_id
-                            << " (NUM_OPS=" << NUM_OPS << ", NUM_PREFIXES=" << NUM_PREFIXES
+                            << " (NUM_PREFIXED=" << NUM_PREFIXED
                             << ", delta=" << <%= insn.delta %> << ")";
-
-    DISPATCH(GetDispatchTable(dispatch_table), NUM_OPS + NUM_PREFIXES + <%= insn.delta %> + builtin_id, label);
+    DISPATCH(GetDispatchTable(dispatch_table), 256 + NUM_PREFIXED + 1 + <%= insn.delta %> + builtin_id, label);
 }
 % end
 

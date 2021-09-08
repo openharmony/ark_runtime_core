@@ -46,7 +46,7 @@ protected:
         seed_ = 123456U;
 #endif
         RuntimeOptions options;
-        options.SetObjectPoolSize(64_MB);
+        options.SetHeapSizeLimit(64_MB);
         options.SetShouldLoadBootPandaFiles(false);
         options.SetShouldInitializeIntrinsics(false);
         options.SetGcType("epsilon");
