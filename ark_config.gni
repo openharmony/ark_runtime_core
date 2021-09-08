@@ -170,7 +170,7 @@ template("ark_isa_gen") {
     isa_requires += invoker.requires
   }
 
-  dependencies = ["$ark_root/isa:isa_combine"]
+  dependencies = [ "$ark_root/isa:isa_combine" ]
   if (defined(invoker.extra_dependencies)) {
     dependencies += invoker.extra_dependencies
   }
