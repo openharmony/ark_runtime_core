@@ -17,17 +17,16 @@ Runtime组件是方舟运行时的公共组件，主要包括一些语言无关�
 ├── cmake                 # cmake脚本，包含工具链文件和用于定义构建和测试目标的常用cmake函数
 ├── CMakeLists.txt        # cmake主入口文件
 ├── disassembler          # 反汇编器，将二进制格式的方舟字节码文件(*.abc)转换为文本格式的方舟字节码文件(*.pa)
-├── docs                  # 包含语言前端、方舟文件格式和运行时的设计文档。
+├── docs                  # 包含语言前端、方舟文件格式和运行时的设计文档
 ├── dprof                 # 用于ARK运行时搜集profile数据
 ├── gn                    # GN模板和配置文件
 ├── isa                   # 字节码ISA描述文件YAML，和ruby脚本和模板
-├── ldscripts             # 包含链接器脚本，用于在非PIE可执行文件中放置4GB以上的ELF section。
+├── ldscripts             # 包含链接器脚本，用于在非PIE可执行文件中放置4GB以上的ELF section
 ├── libpandabase          # ARK运行时基本库，包含：日志、同步原语、公共数据结构等
 ├── libpandafile          # 二进制格式的方舟字节码文件(*.abc)源码仓
-├── libziparchive         # 提供读取和使用miniz的ZIP压缩文件的API。
-├── panda                 # CLI工具，用于执行方舟字节码文件（*.abc）文件
+├── libziparchive         # 提供读取和使用miniz的ZIP压缩文件的API
+├── panda                 # CLI工具，用于执行方舟字节码文件（*.abc）
 ├── pandastdlib           # 通过方舟汇编编写的标准库
-├── resources             # CI jobs描述文件
 ├── runtime               # ARK运行时公共组件
 ├── scripts               # CI脚本
 ├── templates             # ruby模板和脚本，处理包括：命令行选项、记录器组件、错误消息、事件等
@@ -70,6 +69,11 @@ ark_asm [选项] 输入文件 输出文件
 <td class="cellrowborder" valign="top" width="50%" headers="mcps1.1.3.1.2 "><p id="p1615627173019"><a name="p1615627173019"></a><a name="p1615627173019"></a>使能log打印后，指定log文件输出路径</p>
 </td>
 </tr>
+<tr id="row1015112763020"><td class="cellrowborder" valign="top" width="50%" headers="mcps1.1.3.1.1 "><p id="p1815182733012"><a name="p1815182733012"></a><a name="p1815182733012"></a>--optimize</p>
+</td>
+<td class="cellrowborder" valign="top" width="50%" headers="mcps1.1.3.1.2 "><p id="p1615627173019"><a name="p1615627173019"></a><a name="p1615627173019"></a>执行字节码优化</p>
+</td>
+</tr>
 <tr id="row1815112753020"><td class="cellrowborder" valign="top" width="50%" headers="mcps1.1.3.1.1 "><p id="p2151927193015"><a name="p2151927193015"></a><a name="p2151927193015"></a>--size-stat</p>
 </td>
 <td class="cellrowborder" valign="top" width="50%" headers="mcps1.1.3.1.2 "><p id="p1715312588115"><a name="p1715312588115"></a><a name="p1715312588115"></a>统计并打印出转换后方舟字节码信息</p>
@@ -89,12 +93,12 @@ ark_asm [选项] 输入文件 输出文件
 
 反汇编器工具概述
 
-工具名称为ark\_dissam，用于将二进制格式的方舟字节码文件转换为可读的文本格式的方舟字节码文件。
+工具名称为ark\_disasm，用于将二进制格式的方舟字节码文件转换为可读的文本格式的方舟字节码文件。
 
 命令行格式：
 
 ```
-ark_dissam [选项] 输入文件 输出文件
+ark_disasm [选项] 输入文件 输出文件
 ```
 
 <a name="table125062517328"></a>
@@ -133,6 +137,8 @@ ark_dissam [选项] 输入文件 输出文件
 
 ## 相关仓<a name="section1371113476307"></a>
 
+[方舟运行时使用指南](https://gitee.com/openharmony/ark_js_runtime/blob/master/docs/ARK-Runtime-Usage-Guide-zh.md)
+
 [方舟运行时子系统](https://gitee.com/openharmony/ark_js_runtime/blob/master/docs/ARK-Runtime-Subsystem-zh.md)
 
 **[ark/runtime\_core](README_zh.md)**
@@ -140,4 +146,3 @@ ark_dissam [选项] 输入文件 输出文件
 [ark/js\_runtime](https://gitee.com/openharmony/ark_js_runtime/blob/master/README_zh.md)
 
 [ark/ts2abc](https://gitee.com/openharmony/ark_ts2abc/blob/master/README_zh.md)
-

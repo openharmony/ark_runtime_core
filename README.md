@@ -27,7 +27,6 @@ As a common module of ARK runtime, Runtime consists of some basic language-irrel
 ├── libziparchive         # provides APIs for reading and using zip files implemented by miniz.
 ├── panda                 # CLI tool used to execute ARK bytecode files (*.abc).
 ├── pandastdlib           # Standard libraries wrote by the ARK assembler.
-├── resources             # CI jobs description files.
 ├── runtime               # ARK runtime command module.
 ├── scripts               # CI scripts.
 ├── templates             # Ruby templates and scripts used to process command line options, loggers, error messages, and events.
@@ -70,6 +69,11 @@ ark_asm [Option] Input file Output file
 <td class="cellrowborder" valign="top" width="50%" headers="mcps1.1.3.1.2 "><p id="p1615627173019"><a name="p1615627173019"></a><a name="p1615627173019"></a>Specifies the log file output path after log printing is enabled.</p>
 </td>
 </tr>
+tr id="row1015112763020"><td class="cellrowborder" valign="top" width="50%" headers="mcps1.1.3.1.1 "><p id="p1815182733012"><a name="p1815182733012"></a><a name="p1815182733012"></a>-optimize</p>
+</td>
+<td class="cellrowborder" valign="top" width="50%" headers="mcps1.1.3.1.2 "><p id="p1615627173019"><a name="p1615627173019"></a><a name="p1615627173019"></a>Runs the bytecode optimization.</p>
+</td>
+</tr>
 <tr id="row131515277307"><td class="cellrowborder" valign="top" width="50%" headers="mcps1.1.3.1.1 "><p id="p111572716304"><a name="p111572716304"></a><a name="p111572716304"></a>--optimize</p>
 </td>
 <td class="cellrowborder" valign="top" width="50%" headers="mcps1.1.3.1.2 "><p id="p25842312319"><a name="p25842312319"></a><a name="p25842312319"></a>Enables compilation optimization.</p>
@@ -92,14 +96,14 @@ Input file: ARK bytecodes in text format
 
 Output file: ARK bytecodes in binary format
 
-Disassembler ark\_dissam
+Disassembler ark\_disasm
 
-The ark\_dissam disassembler converts a bytecode file in binary format into a text ARK bytecode file.
+The ark\_disasm disassembler converts a bytecode file in binary format into a text ARK bytecode file.
 
 Command:
 
 ```
-ark_dissam [Option] Input file Output file
+ark_disasm [Option] Input file Output file
 ```
 
 <a name="table125062517328"></a>
@@ -138,6 +142,8 @@ Output file: ARK bytecodes in text format
 
 ## Repositories Involved<a name="section1371113476307"></a>
 
+[ARK Runtime Usage Guide](https://gitee.com/openharmony/ark_js_runtime/blob/master/docs/ARK-Runtime-Usage-Guide.md)
+
 [ARK Runtime Subsystem](https://gitee.com/openharmony/ark_js_runtime/blob/master/docs/ARK-Runtime-Subsystem.md)
 
 **[ark/runtime\_core](README_zh.md)**
@@ -145,4 +151,3 @@ Output file: ARK bytecodes in text format
 [ark/js\_runtime](https://gitee.com/openharmony/ark_js_runtime/blob/master/README.md)
 
 [ark/ts2abc](https://gitee.com/openharmony/ark_js_runtime/blob/master/README.md)
-
