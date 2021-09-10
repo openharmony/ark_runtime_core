@@ -21,7 +21,6 @@ config("arkdisassembler_public_config") {
 arkdisassembler_sources = [
   "$target_gen_dir/bc_ins_to_pandasm_ins.cpp",
   "$target_gen_dir/get_ins_info.cpp",
-  "$target_gen_dir/get_instructions.cpp",
   "$target_gen_dir/opcode_translator.cpp",
   "$target_gen_dir/type_to_pandasm_type.cpp",
   "disassembler.cpp",
@@ -44,7 +43,6 @@ ohos_shared_library("arkdisassembler") {
   configs = arkdisassembler_configs
 
   deps = [
-    ":get_instructions_cpp",
     ":isa_gen_ark_disam_bc_ins_to_pandasm_ins_cpp",
     ":isa_gen_ark_disam_get_ins_info_cpp",
     ":isa_gen_ark_disam_opcode_translator_cpp",
@@ -69,7 +67,6 @@ ohos_static_library("arkdisassembler_frontend_static") {
   configs = arkdisassembler_configs
 
   deps = [
-    ":get_instructions_cpp",
     ":isa_gen_ark_disam_bc_ins_to_pandasm_ins_cpp",
     ":isa_gen_ark_disam_get_ins_info_cpp",
     ":isa_gen_ark_disam_opcode_translator_cpp",
@@ -121,13 +118,6 @@ ark_isa_gen("isa_gen_ark_disam") {
     "$ark_root//assembler/asm_isapi.rb",
     "$ark_root//libpandafile/pandafile_isapi.rb",
   ]
-}
-
-ark_gen_file("get_instructions_cpp") {
-  template_file = "$ark_root/disassembler/templates/get_instructions.cpp.erb"
-  data_file = "$ark_root/isa/builtins.yaml"
-  requires = [ "$ark_root/isa/builtinsapi.rb" ]
-  output_file = "$target_gen_dir/get_instructions.cpp"
 }
 
 ark_gen_file("type_to_pandasm_type_cpp") {

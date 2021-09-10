@@ -212,7 +212,6 @@ ohos_static_library("libarkruntime_static") {
     "$ark_root/verification/gen:isa_gen_verification_gen_abs_int_inl_gen_h",
     "$ark_root/verification/gen:isa_gen_verification_gen_cflow_iterate_inl_gen_h",
     "$ark_root/verification/gen:isa_gen_verification_gen_job_fill_gen_h",
-    "$ark_root/verification/gen:verification_abs_int_builtin_handlers_h",
     "$ark_root/verification/gen:verification_abs_int_inl_compat_checks_h",
     "$ark_root/verification/gen:verification_verifier_messages_h",
     sdk_libc_secshared_dep,
@@ -358,24 +357,6 @@ gen_intrinsics_yaml("arkruntime_gen_intrinsics_yaml") {
   output_file = "$target_gen_dir/intrinsics.yaml"
 }
 
-builtin_templates = [
-  "builtin_count",
-  "builtin_dispatch",
-  "builtin_handlers",
-  "builtin_insn_handlers",
-]
-builtin_labels = []
-foreach(t, builtin_templates) {
-  output = "$target_gen_dir/include/${t}.h"
-  builtin_labels += [ ":${t}" ]
-  ark_gen_file(t) {
-    data_file = "$ark_root/isa/builtins.yaml"
-    requires = [ "$ark_root/isa/builtinsapi.rb" ]
-    template_file = "interpreter/templates/${t}.h.erb"
-    output_file = output
-  }
-}
-
 gen_include_dir = "$target_gen_dir/include"
 
 ark_isa_gen("isa_gen_libarkruntime") {
@@ -386,7 +367,6 @@ ark_isa_gen("isa_gen_libarkruntime") {
   ]
   sources = "interpreter/templates"
   destination = gen_include_dir
-  extra_dependencies = builtin_labels
 }
 
 isa = "$root_gen_dir/isa/isa.yaml"

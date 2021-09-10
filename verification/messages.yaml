@@ -51,12 +51,6 @@ messages:
     args: method
     message: ( method is '${method}' )
 
-  DebugBuiltin:
-    number: 306
-    level: debug
-    args: name
-    message: "builtin: ${name}"
-
   DebugResult:
     number: 307
     level: debug

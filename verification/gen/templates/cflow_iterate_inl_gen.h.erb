@@ -35,8 +35,6 @@ public:
         return inst_.IsPrimaryOpcodeValid();
     }
 
-#include "cflow_iterate_inl_gen_builtin_handlers.h"
-
 % Panda::instructions.uniq{|i| i.mnemonic}.each do |i|
 %   mnemonic = i.mnemonic.split('.').map { |p| p == '64' ? 'Wide' : p.capitalize }.join
     template <BytecodeInstructionSafe::Format format>
@@ -47,10 +45,7 @@ public:
         }
         const uint8_t* pc = inst_.GetAddress();
         const size_t sz = inst_.Size(format);
-%   if i.mnemonic.split('.').at(0) == 'builtin'
-        bool const EXC_SRC = IsExceptionSource<%= mnemonic %><format>();
-%   elsif i.properties.include?('call') or i.stripped_mnemonic == 'throw' or !i.exceptions.include?('x_none')
-        // TOOD: add support of builtins: monitorenter monitorexit
+%   if !i.exceptions.include?('x_none')
         bool const EXC_SRC = true;
 %   else
         bool const EXC_SRC = false;

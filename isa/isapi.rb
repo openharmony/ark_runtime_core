@@ -533,12 +533,5 @@ module Panda
 end
 
 def Gen.on_require(data)
-  builtins_fname = File.expand_path(File.join(File.dirname(__FILE__), 'builtins.yaml'))
-  builtins = YAML.load_file(builtins_fname)
-  builtins = JSON.parse(builtins.to_json, object_class: OpenStruct)
-  builtins.groups.each do |group|
-    data.groups << group
-  end
-
   Panda.wrap_data(data)
 end

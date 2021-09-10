@@ -17,10 +17,6 @@ Instruction.class_eval do
     mnemonic.tr('.', '_').upcase
   end
 
-  def builtin?
-    stripped_mnemonic == 'builtin'
-  end
-
   def call?
     properties.include?('call') || stripped_mnemonic == 'initobj'
   end
