@@ -274,7 +274,6 @@ else
     while file = queue.pop(true)
       runner = TestRunner::SingleTestRunner.new(
         file, 1, reporter_factory, $root_dir, $report_dir)
-      end
       runner.process_single
       if ($GLOBAL_TIMEOUT > 0 && (Time.now - start_time >= $GLOBAL_TIMEOUT))
         puts "Global timeout reached, finish test execution"

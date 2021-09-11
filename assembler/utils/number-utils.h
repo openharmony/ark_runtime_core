@@ -176,13 +176,16 @@ inline bool ValidateFloat(std::string_view p)
     return !nowexp;
 }
 
-inline double FloatNumber(std::string_view p)
+inline double FloatNumber(std::string_view p, bool is_64bit)
 {
     constexpr size_t GENERAL_SHIFT = 2;
     // expects a valid number
     if (p.size() > GENERAL_SHIFT && p.substr(0, GENERAL_SHIFT) == "0x") {  // hex literal
         char *end = nullptr;
-        return bit_cast<double>(strtoull(p.data(), &end, 0));
+        if (is_64bit) {
+            return bit_cast<double>(strtoull(p.data(), &end, 0));
+        }
+        return bit_cast<float>(static_cast<uint32_t>(strtoull(p.data(), &end, 0)));
     }
     return std::strtold(std::string(p.data(), p.length()).c_str(), nullptr);
 }

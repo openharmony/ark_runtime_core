@@ -34,7 +34,6 @@ void ExecuteImpl(ManagedThread* thread, const uint8_t *pc, Frame* frame) {
 #define INSTRUMENT_FRAME() do { if (enable_instrumentation && (handler.GetFrame()->IsForcePop() || handler.GetFrame()->IsRetryInstruction())) { goto INSTRUMENT_FRAME_HANDLER; } } while (0)
 
     ASSERT(!thread->IsCurrentFrameCompiled());
-#include <builtin_count.h>
 
     EVENT_METHOD_ENTER(frame->GetMethod()->GetFullName(), events::MethodEnterKind::INTERP, thread->RecordMethodEnter());
 
@@ -45,30 +44,32 @@ void ExecuteImpl(ManagedThread* thread, const uint8_t *pc, Frame* frame) {
     PandaUniquePtr<void, decltype(method_exit_event)> method_exit(&method_exit_event, method_exit_event);
 #endif
 
-    static std::array<const void*, NUM_OPS + NUM_PREFIXES + NUM_BUILTINS> dispatch_table{
+    static std::array<const void*, 256 + NUM_PREFIXED + 1> dispatch_table{
 % Panda::dispatch_table.handler_names.each do |name|
         &&HANDLE_<%= name %>,
 % end
         &&EXCEPTION_HANDLER,
-#include <builtin_dispatch.h>
     };
 
     SetDispatchTable(dispatch_table);
 
     InstructionHandlerState state(thread, pc, frame);
-
     if constexpr (jump_to_eh) {
         goto EXCEPTION_HANDLER;
     }
-    ASSERT(state.GetPrimaryOpcode() <= <%= Panda::dispatch_table.primary_opcode_bound %>);
+    ASSERT(state.IsPrimaryOpcodeValid());
 
     const void *label;
     DISPATCH(GetDispatchTable(dispatch_table), state.GetPrimaryOpcode(), label);
 
-% Panda::instructions.select(&:public?).each do |i|
+% Panda::instructions.each do |i|
 %   mnemonic = i.mnemonic.split('.').map { |p| p == '64' ? 'Wide' : p.capitalize }.join
-HANDLE_<%= Panda::dispatch_table.instruction_handler_name(i) %>: {
-    InstructionHandler<RuntimeIfaceT, enable_instrumentation> handler(&state);
+HANDLE_<%= i.handler_name %>: {
+% namespace = i.namespace == 'core' ? '' : "#{i.namespace}::"
+% if i.namespace != 'core'
+#ifdef PANDA_WITH_<%= i.namespace.upcase %>
+% end
+    <%= namespace %>InstructionHandler<RuntimeIfaceT, enable_instrumentation> handler(&state);
     INSTRUMENT_FRAME();
     handler.DumpVRegs();
     handler.InstrumentInstruction();
@@ -79,25 +80,30 @@ HANDLE_<%= Panda::dispatch_table.instruction_handler_name(i) %>: {
 %   if i.properties.include?('return')
     if (handler.GetFrame()->IsStackless()) {
         handler.HandleReturnStackless();
-        ASSERT(handler.GetExceptionOpcode() < NUM_OPS + NUM_PREFIXES);
+        ASSERT(handler.IsPrimaryOpcodeValid() || (handler.GetExceptionOpcode() == UINT8_MAX + NUM_PREFIXED + 1));
         DISPATCH(GetDispatchTable(dispatch_table), handler.GetExceptionOpcode(), label);
     } else {
         return;
     }
 %   else
 % if !i.exceptions.include?('x_none') || i.properties.include?("call") || ['ststatic', 'ldstatic', 'throw', 'lda'].include?(i.stripped_mnemonic)
-    ASSERT(handler.GetExceptionOpcode() < NUM_OPS + NUM_PREFIXES);
+    ASSERT(handler.IsPrimaryOpcodeValid() || (handler.GetExceptionOpcode() == UINT8_MAX + NUM_PREFIXED + 1));
     DISPATCH(GetDispatchTable(dispatch_table), handler.GetExceptionOpcode(), label);
 % else
-    ASSERT(handler.GetPrimaryOpcode() <= <%= Panda::dispatch_table.primary_opcode_bound %>);
+    ASSERT(handler.IsPrimaryOpcodeValid());
     DISPATCH(GetDispatchTable(dispatch_table), handler.GetPrimaryOpcode(), label);
 % end
 %   end
+% if i.namespace != 'core'
+#endif // PANDA_WITH_<%= i.namespace.upcase %>
+% end
 }
 % end
-
+HANDLE_INVALID: {
+    LOG(FATAL,INTERPRETER) << "Incorrect opcode";
+}
 % Panda::prefixes.each do |p|
-HANDLE_<%= Panda::dispatch_table.prefix_hanlder_name(p) %>: {
+HANDLE_<%= p.handler_name %>: {
     const auto secondary_opcode = state.GetSecondaryOpcode();
 
     LOG(DEBUG, INTERPRETER) << "Prefix subdispatch: " << "<%= p.name %>, " << secondary_opcode;
@@ -109,10 +115,6 @@ HANDLE_<%= Panda::dispatch_table.prefix_hanlder_name(p) %>: {
 }
 % end
 
-#include <builtin_insn_handlers.h>
-
-#include <builtin_handlers.h>
-
 INSTRUMENT_FRAME_HANDLER: {
     InstructionHandler<RuntimeIfaceT, enable_instrumentation> handler(&state);
 
@@ -123,7 +125,7 @@ INSTRUMENT_FRAME_HANDLER: {
         handler.InstrumentForceReturn();
         if (handler.GetFrame()->IsStackless()) {
             handler.HandleInstrumentForceReturn();
-            ASSERT(handler.GetPrimaryOpcode() <= <%= Panda::dispatch_table.primary_opcode_bound %>);
+            ASSERT(handler.IsPrimaryOpcodeValid());
             DISPATCH(GetDispatchTable(dispatch_table), handler.GetPrimaryOpcode(), label);
         } else {
             return;
@@ -133,8 +135,7 @@ INSTRUMENT_FRAME_HANDLER: {
     handler.GetFrame()->ClearRetryInstruction();
     auto* method = handler.GetFrame()->GetMethod();
     state = InstructionHandlerState(thread, method->GetInstructions() + handler.GetFrame()->GetBytecodeOffset(), handler.GetFrame());
-
-    ASSERT(state.GetPrimaryOpcode() <= <%= Panda::dispatch_table.primary_opcode_bound %>);
+    ASSERT(state.IsPrimaryOpcodeValid());
     goto* dispatch_table[state.GetPrimaryOpcode()];
 }
 
@@ -167,7 +168,7 @@ EXCEPTION_HANDLER: {
     Span<const uint8_t> sp(handler.GetFrame()->GetMethod()->GetInstructions(), pc_offset);
     state = InstructionHandlerState(thread, sp.cend(), handler.GetFrame());
 
-    ASSERT(state.GetPrimaryOpcode() <= <%= Panda::dispatch_table.primary_opcode_bound %>);
+    ASSERT(state.IsPrimaryOpcodeValid());
     goto* dispatch_table[state.GetPrimaryOpcode()];
 }
 

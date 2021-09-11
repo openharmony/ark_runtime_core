@@ -18,7 +18,7 @@ project(cts_coverage_tool)
 # Coverage reports generation
 
 # Source files:
-set(ISA_FILE "${isa_SOURCE_DIR}/isa.yaml")
+set(ISA_FILE "${CMAKE_BINARY_DIR}/isa/isa.yaml")
 set(NON_TESTABLE "${PROJECT_SOURCE_DIR}/non_testable.yaml")
 set(TESTS_DIR "${PROJECT_BINARY_DIR}/../cts-generator")
 set(TESTS_GLOB_ASSEMBLY "cts-assembly/**/*.pa")

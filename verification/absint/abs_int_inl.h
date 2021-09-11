@@ -226,6 +226,11 @@ public:
         return inst_.GetSecondaryOpcode();
     }
 
+    bool IsPrimaryOpcodeValid() const
+    {
+        return inst_.IsPrimaryOpcodeValid();
+    }
+
     bool IsRegDefined(int reg);
 
     const PandaString &ImageOf(const Type &type);
@@ -396,6 +401,16 @@ public:
     }
 
     template <BytecodeInstructionSafe::Format format>
+    bool HandleNop()
+    {
+        LOG_INST();
+        DBGBRK();
+        Sync();
+        MoveToNextInst<format>();
+        return true;
+    }
+
+    template <BytecodeInstructionSafe::Format format>
     bool HandleMov()
     {
         LOG_INST();
@@ -483,6 +498,18 @@ public:
         uint16_t vd = inst_.GetVReg<format>();
         Sync();
         SetReg(vd, I64);
+        MoveToNextInst<format>();
+        return true;
+    }
+
+    template <BytecodeInstructionSafe::Format format>
+    bool HandleFmovi()
+    {
+        LOG_INST();
+        DBGBRK();
+        uint16_t vd = inst_.GetVReg<format>();
+        Sync();
+        SetReg(vd, F32);
         MoveToNextInst<format>();
         return true;
     }
@@ -621,6 +648,17 @@ public:
         DBGBRK();
         Sync();
         SetAcc(I64);
+        MoveToNextInst<format>();
+        return true;
+    }
+
+    template <BytecodeInstructionSafe::Format format>
+    bool HandleFldai()
+    {
+        LOG_INST();
+        DBGBRK();
+        Sync();
+        SetAcc(F32);
         MoveToNextInst<format>();
         return true;
     }
@@ -831,12 +869,30 @@ public:
     }
 
     template <BytecodeInstructionSafe::Format format>
+    bool HandleFcmpl()
+    {
+        LOG_INST();
+        DBGBRK();
+        Sync();
+        return CheckBinaryOp2<format>(F32, F32, I32);
+    }
+
+    template <BytecodeInstructionSafe::Format format>
     bool HandleFcmplWide()
     {
         LOG_INST();
         DBGBRK();
         Sync();
         return CheckBinaryOp2<format>(F64, F64, I32);
+    }
+
+    template <BytecodeInstructionSafe::Format format>
+    bool HandleFcmpg()
+    {
+        LOG_INST();
+        DBGBRK();
+        Sync();
+        return CheckBinaryOp2<format>(F32, F32, I32);
     }
 
     template <BytecodeInstructionSafe::Format format>
@@ -1090,6 +1146,15 @@ public:
     }
 
     template <BytecodeInstructionSafe::Format format>
+    bool HandleFadd2()
+    {
+        LOG_INST();
+        DBGBRK();
+        Sync();
+        return CheckBinaryOp2<format>(F32, F32, F32);
+    }
+
+    template <BytecodeInstructionSafe::Format format>
     bool HandleFadd2Wide()
     {
         LOG_INST();
@@ -1124,6 +1189,15 @@ public:
         DBGBRK();
         Sync();
         return CheckBinaryOp2<format>(Types().Integral64Type(), Types().Integral64Type(), I64);
+    }
+
+    template <BytecodeInstructionSafe::Format format>
+    bool HandleFsub2()
+    {
+        LOG_INST();
+        DBGBRK();
+        Sync();
+        return CheckBinaryOp2<format>(F32, F32, F32);
     }
 
     template <BytecodeInstructionSafe::Format format>
@@ -1164,12 +1238,32 @@ public:
     }
 
     template <BytecodeInstructionSafe::Format format>
+    bool HandleFmul2()
+    {
+        LOG_INST();
+        DBGBRK();
+        Sync();
+        return CheckBinaryOp2<format>(F32, F32, F32);
+    }
+
+    template <BytecodeInstructionSafe::Format format>
     bool HandleFmul2Wide()
     {
         LOG_INST();
         DBGBRK();
         Sync();
         return CheckBinaryOp2<format>(F64, F64, F64);
+    }
+
+    template <BytecodeInstructionSafe::Format format>
+    bool HandleFdiv2()
+    {
+        LOG_INST();
+        DBGBRK();
+        Sync();
+        // TODO(vdyadov): take into consideration possible exception generation
+        //                context is of good precision here
+        return CheckBinaryOp2<format>(F32, F32, F32);
     }
 
     template <BytecodeInstructionSafe::Format format>
@@ -1180,6 +1274,15 @@ public:
         Sync();
         //                context is of good precision here
         return CheckBinaryOp2<format>(F64, F64, F64);
+    }
+
+    template <BytecodeInstructionSafe::Format format>
+    bool HandleFmod2()
+    {
+        LOG_INST();
+        DBGBRK();
+        Sync();
+        return CheckBinaryOp2<format>(F32, F32, F32);
     }
 
     template <BytecodeInstructionSafe::Format format>
@@ -2162,7 +2265,7 @@ public:
         uint16_t v1 = inst_.GetVReg<format, 0x00>();
         uint16_t v2 = inst_.GetVReg<format, 0x01>();
         Sync();
-        return CheckArrayStoreExact<format>(v1, v2, Types().Float64Type(), {F32});
+        return CheckArrayStoreExact<format>(v1, v2, Types().Float32Type(), {F32});
     }
 
     template <BytecodeInstructionSafe::Format format>
@@ -2637,7 +2740,7 @@ public:
     template <BytecodeInstructionSafe::Format format>
     bool ProcessStobj(int vd, int vs, bool is_static)
     {
-        return ProcessStoreField<format>(vd, vs, Types().Integral32Type(), is_static, CheckStobj);
+        return ProcessStoreField<format>(vd, vs, Types().Bits32Type(), is_static, CheckStobj);
     }
 
     template <BytecodeInstructionSafe::Format format>
@@ -2786,7 +2889,7 @@ public:
         LOG_INST();
         DBGBRK();
         Sync();
-        return ProcessFieldLoad<format>(INVALID_REG, Types().Integral32Type(), true);
+        return ProcessFieldLoad<format>(INVALID_REG, Types().Bits32Type(), true);
     }
 
     template <BytecodeInstructionSafe::Format format>
@@ -3696,331 +3799,6 @@ public:
     {
         return inst_;
     }
-
-    // builtins
-
-    template <BytecodeInstructionSafe::Format format>
-    bool HandleBuiltinI32tof32()
-    {
-        LOG_VERIFIER_DEBUG_BUILTIN("i32tof32");
-        DBGBRK();
-        Sync();
-        return HandleConversion<format>(I32, F32);
-    }
-
-    template <BytecodeInstructionSafe::Format format>
-    bool HandleBuiltinI64tof32()
-    {
-        LOG_VERIFIER_DEBUG_BUILTIN("i64tof32");
-        DBGBRK();
-        Sync();
-        return HandleConversion<format>(I64, F32);
-    }
-
-    template <BytecodeInstructionSafe::Format format>
-    bool HandleBuiltinF64tof32()
-    {
-        LOG_VERIFIER_DEBUG_BUILTIN("f64tof32");
-        DBGBRK();
-        Sync();
-        return HandleConversion<format>(F64, F32);
-    }
-
-    template <BytecodeInstructionSafe::Format format>
-    bool HandleBuiltinFadd2f32()
-    {
-        LOG_INST();
-        DBGBRK();
-        Sync();
-        return CheckBinaryOp2<format>(F64, F64, F32);
-    }
-
-    template <BytecodeInstructionSafe::Format format>
-    bool HandleBuiltinFsub2f32()
-    {
-        LOG_INST();
-        DBGBRK();
-        Sync();
-        return CheckBinaryOp2<format>(F64, F64, F32);
-    }
-
-    template <BytecodeInstructionSafe::Format format>
-    bool HandleBuiltinFmul2f32()
-    {
-        LOG_INST();
-        DBGBRK();
-        Sync();
-        return CheckBinaryOp2<format>(F64, F64, F32);
-    }
-
-    template <BytecodeInstructionSafe::Format format>
-    bool HandleBuiltinFdiv2f32()
-    {
-        LOG_INST();
-        DBGBRK();
-        Sync();
-        return CheckBinaryOp2<format>(F64, F64, F32);
-    }
-
-    template <BytecodeInstructionSafe::Format format>
-    bool HandleBuiltinFmod2f32()
-    {
-        LOG_INST();
-        DBGBRK();
-        Sync();
-        return CheckBinaryOp2<format>(F64, F64, F32);
-    }
-
-    template <BytecodeInstructionSafe::Format format>
-    bool HandleBuiltinFcmpl2f32()
-    {
-        LOG_INST();
-        DBGBRK();
-        Sync();
-        return CheckBinaryOp2<format>(F64, F64, I32);
-    }
-
-    template <BytecodeInstructionSafe::Format format>
-    bool HandleBuiltinFcmpg2f32()
-    {
-        LOG_INST();
-        DBGBRK();
-        Sync();
-        return CheckBinaryOp2<format>(F64, F64, I32);
-    }
-
-    template <BytecodeInstructionSafe::Format format>
-    bool HandleBuiltinCall_polymorphic_short()
-    {
-        LOG_INST();
-        DBGBRK();
-        Sync();
-        return true;
-    }
-
-    template <BytecodeInstructionSafe::Format format>
-    bool HandleBuiltinMonitorenter()
-    {
-        LOG_VERIFIER_DEBUG_BUILTIN("monitorenter");
-        DBGBRK();
-        Sync();
-        auto &&acc_type = GetAccType();
-        if (acc_type.ForAllTypes([&](Type acc_type1) { return acc_type1 == Types().NullRefType(); })) {
-            // treat it as always throw NPE
-            SHOW_MSG(AlwaysNpeAccumulator)
-            LOG_VERIFIER_ALWAYS_NPE_ACCUMULATOR();
-            END_SHOW_MSG();
-            SET_STATUS_FOR_MSG(AlwaysNpeAccumulator);
-            return false;
-        }
-        if (!CheckTypes(acc_type, {Types().RefType()})) {
-            SET_STATUS_FOR_MSG(BadRegisterType);
-            SET_STATUS_FOR_MSG(UndefinedRegister);
-            return false;
-        }
-        MoveToNextInst<format>();
-        return true;
-    }
-
-    template <BytecodeInstructionSafe::Format format>
-    bool HandleBuiltinMonitorexit()
-    {
-        LOG_VERIFIER_DEBUG_BUILTIN("monitorexit");
-        DBGBRK();
-        Sync();
-        auto &&acc_type = GetAccType();
-        if (acc_type.ForAllTypes([&](Type acc_type1) { return acc_type1 == Types().NullRefType(); })) {
-            // treat it as always throw NPE
-            SHOW_MSG(AlwaysNpeAccumulator)
-            LOG_VERIFIER_ALWAYS_NPE_ACCUMULATOR();
-            END_SHOW_MSG();
-            SET_STATUS_FOR_MSG(AlwaysNpeAccumulator);
-            return false;
-        }
-        if (!CheckTypes(acc_type, {Types().RefType()})) {
-            SET_STATUS_FOR_MSG(BadRegisterType);
-            SET_STATUS_FOR_MSG(UndefinedRegister);
-            return false;
-        }
-        MoveToNextInst<format>();
-        return true;
-    }
-
-    template <BytecodeInstructionSafe::Format format>
-    bool HandleBuiltinTern3()
-    {
-        LOG_INST();
-        LOG(DEBUG, VERIFIER) << "ABSINT: "
-                             << "builtin.tern3";
-        return true;
-    }
-
-    template <BytecodeInstructionSafe::Format format>
-    bool HandleBuiltinQuatern4()
-    {
-        LOG_INST();
-        LOG(DEBUG, VERIFIER) << "ABSINT: "
-                             << "builtin.quatern4";
-        return true;
-    }
-
-    template <BytecodeInstructionSafe::Format format>
-    bool HandleBuiltinQuin5()
-    {
-        LOG_INST();
-        LOG(DEBUG, VERIFIER) << "ABSINT: "
-                             << "builtin.quin5";
-        return true;
-    }
-
-    template <BytecodeInstructionSafe::Format format>
-    bool HandleBuiltinR2i()
-    {
-        LOG_INST();
-        LOG(DEBUG, VERIFIER) << "ABSINT: "
-                             << "builtin.r2i";
-        return true;
-    }
-
-    template <BytecodeInstructionSafe::Format format>
-    bool HandleBuiltinR3i()
-    {
-        LOG_INST();
-        LOG(DEBUG, VERIFIER) << "ABSINT: "
-                             << "builtin.r3i";
-        return true;
-    }
-
-    template <BytecodeInstructionSafe::Format format>
-    bool HandleBuiltinR4i()
-    {
-        LOG_INST();
-        LOG(DEBUG, VERIFIER) << "ABSINT: "
-                             << "builtin.r4i";
-        return true;
-    }
-
-    template <BytecodeInstructionSafe::Format format>
-    bool HandleBuiltinBin3()
-    {
-        LOG_INST();
-        LOG(DEBUG, VERIFIER) << "ABSINT: "
-                             << "builtin.bin3";
-    }
-
-    template <BytecodeInstructionSafe::Format format>
-    bool HandleBuiltinBin5()
-    {
-        LOG_INST();
-        LOG(DEBUG, VERIFIER) << "ABSINT: "
-                             << "builtin.bin5";
-    }
-
-    template <BytecodeInstructionSafe::Format format>
-    bool HandleBuiltinId()
-    {
-        LOG_INST();
-        LOG(DEBUG, VERIFIER) << "ABSINT: "
-                             << "builtin.id";
-        return true;
-    }
-
-    template <BytecodeInstructionSafe::Format format>
-    bool HandleBuiltinMidr()
-    {
-        LOG_INST();
-        LOG(DEBUG, VERIFIER) << "ABSINT: "
-                             << "builtin.midr";
-        return true;
-    }
-
-    template <BytecodeInstructionSafe::Format format>
-    bool HandleBuiltinIdr3i()
-    {
-        LOG_INST();
-        LOG(DEBUG, VERIFIER) << "ABSINT: "
-                             << "builtin.idr3i";
-        return true;
-    }
-
-    template <BytecodeInstructionSafe::Format format>
-    bool HandleBuiltinIdi()
-    {
-        LOG_INST();
-        LOG(DEBUG, VERIFIER) << "ABSINT: "
-                             << "builtin.idi";
-        return true;
-    }
-
-    template <BytecodeInstructionSafe::Format format>
-    bool HandleBuiltinIdr4i()
-    {
-        LOG_INST();
-        LOG(DEBUG, VERIFIER) << "ABSINT: "
-                             << "builtin.idr4i";
-        return true;
-    }
-
-    template <BytecodeInstructionSafe::Format format>
-    bool HandleBuiltinI2r3()
-    {
-        LOG_INST();
-        LOG(DEBUG, VERIFIER) << "ABSINT: "
-                             << "builtin.i2r3";
-        return true;
-    }
-
-    template <BytecodeInstructionSafe::Format format>
-    bool HandleBuiltinI2r2()
-    {
-        LOG_INST();
-        LOG(DEBUG, VERIFIER) << "ABSINT: "
-                             << "builtin.i2r2";
-        return true;
-    }
-
-    template <BytecodeInstructionSafe::Format format>
-    bool HandleBuiltinImm()
-    {
-        LOG_INST();
-        LOG(DEBUG, VERIFIER) << "ABSINT: "
-                             << "builtin.imm";
-        return true;
-    }
-
-    template <BytecodeInstructionSafe::Format format>
-    bool HandleBuiltinImr2() const
-    {
-        LOG(DEBUG, VERIFIER) << "ABSINT: "
-                             << "builtin.imr";
-        return true;
-    }
-
-    template <BytecodeInstructionSafe::Format format>
-    bool HandleBuiltinIdr3() const
-    {
-        LOG(DEBUG, VERIFIER) << "ABSINT: "
-                             << "builtin.idr3";
-        return true;
-    }
-
-    template <BytecodeInstructionSafe::Format format>
-    bool HandleBuiltinIdr4() const
-    {
-        LOG(DEBUG, VERIFIER) << "ABSINT: "
-                             << "builtin.idr4";
-        return true;
-    }
-
-    template <BytecodeInstructionSafe::Format format>
-    bool HandleBuiltinIdr6() const
-    {
-        LOG(DEBUG, VERIFIER) << "ABSINT: "
-                             << "builtin.idr6";
-        return true;
-    }
-
-#include "abs_int_builtin_handlers.h"
 
     static PandaString RegisterName(int reg_idx, bool capitalize = false)
     {

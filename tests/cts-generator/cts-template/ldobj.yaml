@@ -91,7 +91,7 @@ tests:
         Get field value from an object by field id and put it into accumulator.
       instructions:
         - sig: ldobj v:in:ref, field_id
-          acc: out:i32
+          acc: out:b32
           format: [op_v_8_id_16]
     commands:
 
@@ -100,7 +100,7 @@ tests:
         isa:
           instructions:
             - sig: ldobj v:in:ref, field_id
-              acc: out:i32
+              acc: out:b32
               format: [op_v_8_id_16]
         header-template: ['pandasm_header']
         check-type: exit-positive
@@ -308,7 +308,7 @@ tests:
         isa:
           instructions:
             - sig: ldobj v:in:ref, field_id
-              acc: out:i32
+              acc: out:b32
               format: [op_v_8_id_16]
         header-template: ['pandasm_header']
         runner-options: ['compile-failure']
@@ -411,3 +411,36 @@ tests:
           - values: [0xa5a5a5a5, 'i32', 0xa5a5a5a5, 'i32']
           - values: [0x5a5a5a5a, 'i32', 0x5a5a5a5a, 'i32']
 
+      - file-name: "from_float_field_type"
+        description: Check that accumulator value is loaded from field into accumulator. More tests on ldobj can be found in stobj tests
+        isa:
+          instructions:
+            - sig: ldobj v:in:ref, field_id
+              acc: out:b32
+              format: [op_v_8_id_16]
+        header-template: ['pandasm_header']
+        bugid: ['3292']
+        check-type: exit-positive
+        code-template: |
+
+          .function i32 main() {
+            initobj.short R.ctor
+            sta.obj v0
+            %s
+            stobj v0, R.ff32
+            lda.null
+            %s
+            ldobj v0, R.ff32
+            fcmpg v15
+            %s
+            jeqz success
+            ldai 1
+            return
+          success:
+        cases:
+          # f32
+          - values: ['fldai 0.0', 'fmovi v15, 0.0', '']
+          - values: ['fldai -6510615.0', 'fmovi v15, -6510615.0', '']
+          - values: ['fldai 0x7FFFFFFF', 'fmovi v15, 0x7FFFFFFF', 'subi 1']    # NaN
+          - values: ['fldai 0x7f800000', 'fmovi v15, 0x7f800000', '']    # + Inf
+          - values: ['fldai 0xff800000', 'fmovi v15, 0xff800000', '']    # - Inf

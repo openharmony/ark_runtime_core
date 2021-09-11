@@ -20,10 +20,11 @@ config("arkassembler_public_config") {
     "$target_gen_dir",
     "$target_gen_dir/include",
   ]
+
+  defines = [ "PANDA_WITH_ECMASCRIPT" ]
 }
 
 libarkassembler_sources = [
-  "$target_gen_dir/builtin_parsing.cpp",
   "$target_gen_dir/ins_to_string.cpp",
   "annotation.cpp",
   "assembly-emitter.cpp",
@@ -53,9 +54,7 @@ ohos_shared_library("libarkassembler") {
 
   deps = [
     ":ark_asm_ecmascript_meta_gen_h",
-    ":ark_asm_ins_create_builtins_api_h",
     ":ark_asm_meta_gen_h",
-    ":builtin_parsing_cpp",
     ":isa_gen_libarkassembler_ins_create_api_h",
     ":isa_gen_libarkassembler_ins_emit_h",
     ":isa_gen_libarkassembler_ins_to_string_cpp",
@@ -80,9 +79,7 @@ ohos_static_library("libarkassembler_frontend_static") {
 
   deps = [
     ":ark_asm_ecmascript_meta_gen_h",
-    ":ark_asm_ins_create_builtins_api_h",
     ":ark_asm_meta_gen_h",
-    ":builtin_parsing_cpp",
     ":isa_gen_libarkassembler_ins_create_api_h",
     ":isa_gen_libarkassembler_ins_emit_h",
     ":isa_gen_libarkassembler_ins_to_string_cpp",
@@ -138,11 +135,6 @@ ark_isa_gen("isa_gen_libarkassembler") {
     "asm_isapi.rb",
     "../libpandafile/pandafile_isapi.rb",
   ]
-  extra_dependencies = [
-    ":ark_asm_ins_create_builtins_api_h",
-    ":builtin_parsing_cpp",
-    ":builtin_parsing_tests_cpp",
-  ]
 }
 
 ark_gen_file("ark_asm_meta_gen_h") {
@@ -150,33 +142,6 @@ ark_gen_file("ark_asm_meta_gen_h") {
   data_file = "metadata.yaml"
   requires = [ "asm_metadata.rb" ]
   output_file = "$target_gen_dir/meta_gen.h"
-}
-
-ark_gen_file("ark_asm_ins_create_builtins_api_h") {
-  template_file = "templates/ins_create_builtins_api.h.erb"
-  data_file = "../isa/builtins.yaml"
-  requires = [ "../isa/builtinsapi.rb" ]
-  output_file = "$target_gen_dir/ins_create_builtins_api.h"
-}
-
-ark_gen_file("builtin_parsing_cpp") {
-  template_file = "templates/builtin_parsing.cpp.erb"
-  data_file = "../isa/builtins.yaml"
-  requires = [
-    "../isa/builtinsapi.rb",
-    "//ark/js_runtime/ecmascript/ecma_builtins.rb",
-  ]
-  output_file = "$target_gen_dir/builtin_parsing.cpp"
-}
-
-ark_gen_file("builtin_parsing_tests_cpp") {
-  template_file = "templates/builtin_parsing_tests.cpp.erb"
-  data_file = "../isa/builtins.yaml"
-  requires = [
-    "../isa/builtinsapi.rb",
-    "//ark/js_runtime/ecmascript/ecma_builtins.rb",
-  ]
-  output_file = "$target_gen_dir/builtin_parsing_tests.cpp"
 }
 
 ark_gen_file("ark_asm_ecmascript_meta_gen_h") {

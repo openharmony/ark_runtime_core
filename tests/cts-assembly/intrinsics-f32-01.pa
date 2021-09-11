@@ -16,10 +16,10 @@
 .function f32 Math.fsqrt (f32 a0) <external>
 
 .function u1 main(){
-    fmovi.64 v0, 0.78539816339744828 # Pi / 4
-    fmovi.64 v1, 0.88622695207595825 # Expected result
+    fmovi v0, 0.78539816339744828 # Pi / 4
+    fmovi v1, 0.88622695207595825 # Expected result
     call.short Math.fsqrt, v0
-    fcmpl.64 v1
+    fcmpl v1
     jnez exit_failure
     ldai 0
     return

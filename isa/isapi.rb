@@ -14,6 +14,13 @@
 require 'delegate'
 require 'ostruct'
 require 'digest'
+require 'set'
+
+module Enumerable
+  def stable_sort_by
+    sort_by.with_index { |x, idx| [yield(x), idx] }
+  end
+end
 
 module Util
   module_function
@@ -86,6 +93,11 @@ class Instruction < SimpleDelegator
   def prefix
     name = dig(:prefix)
     Panda.prefixes_hash[name] if name
+  end
+
+  # Suggested handler name
+  def handler_name
+    opcode.upcase
   end
 
   def opcode_idx
@@ -161,8 +173,8 @@ class Instruction < SimpleDelegator
     !exceptions.include? 'x_none'
   end
 
-  def public?
-    !/^builtin\./.match(mnemonic)
+  def builtin?
+    /^builtin\./.match(mnemonic)
   end
 
   # Size of source operand
@@ -173,6 +185,24 @@ class Instruction < SimpleDelegator
   # Size of destination operand
   cached def dest_op_size
     dtype[1..-1].to_i
+  end
+
+  def namespace
+    dig(:namespace) || "core"
+  end
+end
+
+class Prefix < SimpleDelegator
+  # Suggested handler name
+  def handler_name
+    name.upcase
+  end
+end
+
+# Dummy class for invalid handlers
+class Invalid
+  def handler_name
+    'INVALID'
   end
 end
 
@@ -238,7 +268,7 @@ class Operand
     end
 
     @srcdst = srcdst.to_sym || :in
-    types = %i[none u1 u2 i8 u8 i16 u16 i32 u32 f32 i64 u64 b64 f64 ref top any]
+    types = %i[none u1 u2 i8 u8 i16 u16 i32 u32 b32 f32 i64 u64 b64 f64 ref top any]
     raise "Incorrect type #{type}" unless types.include?(type.sub('[]', '').to_sym)
 
     @type = type
@@ -279,33 +309,28 @@ end
 class DispatchTable
   # Canonical order of dispatch table consisting of
   # * non-prefixed instructions handlers
+  # * invalid handlers
   # * prefix handlers that re-dispatch to prefixed instruction based on second byte of opcode_idx
   # * prefixed instructions handlers, in the order of prefixes
   # Return array with proposed handler names
   def handler_names
-    names = Panda.instructions.reject(&:prefix).map { |i| instruction_handler_name(i) } +
-            Panda.prefixes.map { |p| prefix_hanlder_name(p) }
+    handlers = Panda.instructions.reject(&:prefix) +
+               Array.new(invalid_non_prefixed_interval.size, Invalid.new) +
+               Panda.prefixes.select(&:public?) +
+               Array.new(invalid_prefixes_interval.size, Invalid.new) +
+               Panda.prefixes.reject(&:public?) +
+               Panda.instructions.select(&:prefix).stable_sort_by { |i| Panda.prefixes_hash[i.prefix.name].opcode_idx }
 
-    Panda.prefixes.each do |p|
-        Panda.instructions.select { |i| i.prefix && (i.prefix.name == p.name) }.each do |i|
-            names << instruction_handler_name(i)
-        end
-    end
-
-    names
+    handlers.map(&:handler_name)
   end
 
-  def instruction_handler_name(insn)
-    insn.opcode.upcase
+  def invalid_non_prefixed_interval
+    (Panda.instructions.reject(&:prefix).map(&:opcode_idx).max + 1)..(Panda.prefixes.map(&:opcode_idx).min - 1)
   end
 
-  def prefix_hanlder_name(prefix)
-    prefix.name.upcase
-  end
-
-  # Maximum value for primary dispatch index, i.e. the maximum value of first byte of opcode_idx
-  def primary_opcode_bound
-    Panda.prefixes.map(&:opcode_idx).max
+  def invalid_prefixes_interval
+    max_invalid_idx = Panda.prefixes.reject(&:public?).map(&:opcode_idx).min || 256
+    (Panda.prefixes.select(&:public?).map(&:opcode_idx).max + 1)..(max_invalid_idx - 1)
   end
 
   # Maximum value for secondary dispatch index for given prefix name
@@ -317,8 +342,7 @@ class DispatchTable
   # Offset in dispatch table for handlers of instructions for given prefix name
   def secondary_opcode_offset(prefix)
     @prefix_data ||= prefix_data
-    @first_prefixed_idx ||= first_prefixed_idx
-    @first_prefixed_idx + @prefix_data[prefix.name][:delta]
+    256 + @prefix_data[prefix.name][:delta]
   end
 
   private
@@ -331,9 +355,45 @@ class DispatchTable
       cur_delta += prefix_instructions_num
     end
   end
+end
 
-  def first_prefixed_idx
-    Panda.instructions.reject(&:prefix).size + Panda.prefixes.size
+# Auxilary classes for opcode assignment
+class OpcodeAssigner
+  def initialize
+    @table = Hash.new { |h, k| h[k] = Set.new }
+    @all_opcodes = Set.new(0..255)
+  end
+
+  def consume(item)
+    raise 'Cannot consume instruction without opcode' unless item.opcode_idx
+
+    @table[prefix(item)] << item.opcode_idx
+  end
+
+  def yield_opcode(item)
+    return item.opcode_idx if item.opcode_idx
+
+    opcodes = @table[prefix(item)]
+    choose_opcode(opcodes)
+  end
+
+  private
+
+  def choose_opcode(occupied_opcodes)
+    (@all_opcodes - occupied_opcodes).min
+  end
+
+  def prefix(item)
+    item.prefix.nil? ? 'non_prefixed' : item.prefix
+  end
+end
+
+class PrefixOpcodeAssigner < OpcodeAssigner
+  private
+
+  # override opcodes assignment for prefixes
+  def choose_opcode(occupied_opcodes)
+    (@all_opcodes - occupied_opcodes).max
   end
 end
 
@@ -368,37 +428,33 @@ module Panda
 
   # Hash from format names to Format instances
   cached def format_hash
-    each_data_instruction_with_object([]) do |_, instruction, fmts|
-      instruction.format.each do |f|
-        fmts << [f, Format.new(f)]
-      end
+    each_data_instruction.with_object([]) do |instruction, fmts|
+      fmt_name = instruction.format
+      fmts << [fmt_name, Format.new(fmt_name)]
     end.to_h
   end
 
   # Array of Instruction instances for every possible instruction
-  cached def instructions
-    opcode_idxs = Hash.new(0)
-    # create separate instance for every instruction format and inherit group properties
-    each_data_instruction_with_object([]) do |group, instruction, insns|
-      props = group.to_h
-      props.delete(:instructions)
-      insn = props.merge(instruction.to_h) # instruction may override group props
-      instruction.format.each do |f|
-        insn[:format] = f
-        prefix_key = insn[:prefix].nil? ? 'non_prefixed' : insn[:prefix]
-        insn[:opcode_idx] = opcode_idxs[prefix_key]
-        opcode_idxs[prefix_key] += 1
-        insns << Instruction.new(OpenStruct.new(insn))
-      end
+  def instructions
+    unless defined? @instructions
+      opcodes = OpcodeAssigner.new
+      tmp_public = initialize_instructions(opcodes) { |ins| !ins.opcode_idx.nil? }
+      tmp_private = initialize_instructions(opcodes) { |ins| ins.opcode_idx.nil? }
+      tmp = tmp_public + tmp_private
+      @instructions = tmp.sort_by(&:opcode_idx)
     end
+    @instructions
   end
 
-  cached def prefixes
-    non_prefixed_num = groups.flat_map(&:instructions).reject(&:prefix).flat_map(&:format).size
-    dig(:prefixes).each_with_index do |p, idx|
-      p.opcode_idx = idx + non_prefixed_num
+  def prefixes
+    unless defined? @prefixes
+      opcodes = PrefixOpcodeAssigner.new
+      tmp_public = initialize_prefixes(opcodes) { |p| !p.opcode_idx.nil? }
+      tmp_private = initialize_prefixes(opcodes) { |p| p.opcode_idx.nil? }
+      tmp = tmp_public + tmp_private
+      @prefixes = tmp.sort_by(&:opcode_idx)
     end
-    dig(:prefixes)
+    @prefixes
   end
 
   cached def dispatch_table
@@ -408,11 +464,6 @@ module Panda
   # Array of all Format instances
   cached def formats
     format_hash.values.uniq(&:pretty).sort_by(&:pretty)
-  end
-
-  # 32-bit checksum of data YAML file
-  def checksum
-    Digest::MD5.hexdigest(@data.to_s).to_i(16) & 0xffffffff
   end
 
   # delegating part of module
@@ -441,22 +492,46 @@ module Panda
     hash
   end
 
-  private_class_method def each_data_instruction_with_object(object)
-    groups.each_with_object(object) do |g, obj|
+  private_class_method def each_data_instruction
+    # create separate instance for every instruction format and inherit group properties
+    @each_data_instruction ||= groups.each_with_object([]) do |g, obj|
       g.instructions.each do |i|
-        yield(g, i, obj)
+        props = g.to_h
+        props.delete(:instructions)
+        data_insn = props.merge(i.to_h) # instruction may override group props
+        if data_insn[:opcode_idx] && (data_insn[:opcode_idx].size != data_insn[:format].size)
+          raise 'format and opcode_idx arrays should have equal size'
+        end
+
+        data_insn[:format].each_with_index do |f, idx|
+          insn = data_insn.dup
+          insn[:format] = f
+          insn[:opcode_idx] = data_insn[:opcode_idx][idx] if data_insn[:opcode_idx]
+          obj << OpenStruct.new(insn)
+        end
       end
+    end.to_enum
+  end
+
+  private_class_method def initialize_instructions(opcodes, &block)
+    each_data_instruction.select(&block).each_with_object([]) do |instruction, insns|
+      instruction[:public?] = !instruction.opcode_idx.nil?
+      instruction.opcode_idx = opcodes.yield_opcode(instruction)
+      opcodes.consume(instruction)
+      insns << Instruction.new(instruction)
+    end
+  end
+
+  private_class_method def initialize_prefixes(opcodes, &block)
+    dig(:prefixes).select(&block).each_with_object([]) do |p, res|
+      p[:public?] = !p.opcode_idx.nil?
+      p.opcode_idx = opcodes.yield_opcode(p)
+      opcodes.consume(p)
+      res << Prefix.new(p)
     end
   end
 end
 
 def Gen.on_require(data)
-  builtins_fname = File.expand_path(File.join(File.dirname(__FILE__), 'builtins.yaml'))
-  builtins = YAML.load_file(builtins_fname)
-  builtins = JSON.parse(builtins.to_json, object_class: OpenStruct)
-  builtins.groups.each do |group|
-    data.groups << group
-  end
-
   Panda.wrap_data(data)
 end

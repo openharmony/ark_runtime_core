@@ -50,6 +50,11 @@ public:
         return (static_cast<unsigned>(GetInst().GetOpcode()) >> 8) & 0xff;
     }
 
+    ALWAYS_INLINE bool IsPrimaryOpcodeValid() const
+    {
+        return GetInst().IsPrimaryOpcodeValid();
+    }
+
     void DumpVRegs()
     {
 #ifndef NDEBUG
@@ -152,7 +157,7 @@ protected:
 
     ALWAYS_INLINE void MoveToExceptionHandler()
     {
-        SetOpcodeExtension(NUM_OPS + NUM_PREFIXES - 1);
+        SetOpcodeExtension(UINT8_MAX + NUM_PREFIXED + 1);
         SetOpcodeExtension(GetOpcodeExtension() - GetPrimaryOpcode());
     }
 

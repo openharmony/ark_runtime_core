@@ -49,7 +49,7 @@ bool Parser::ParseOperands()
 %  end
 %  required_args = operands.size
 %  required_args = 1 if insn.call?
-%  required_args = 2 if insn.calli?
+%  required_args = 2 if insn.stripped_mnemonic == 'calli'
 %  operands.each_with_index  do |op, j|
 %
 %  if (j != 0)
@@ -83,13 +83,11 @@ bool Parser::ParseOperands()
 
                 ParseOperandVreg();
 %    elsif op.imm?
-%      if (!insn.public? && j == 0)
-                    ParseOperandBuiltinMnemonic();
-%      elsif properties.include?("jump")
+%      if properties.include?("jump")
                 ParseOperandLabel();
 %      else
 %         if properties.include?("float")
-                ParseOperandFloat();
+                ParseOperandFloat(<%= op.size == 64 ? "true" : "false" %>);
 %         else
                 ParseOperandInteger();
 %         end

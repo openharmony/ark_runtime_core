@@ -772,6 +772,10 @@ static std::unique_ptr<ScalarValue> CreateValue(const panda::pandasm::LiteralArr
 {
     switch (literal.tag_) {
         case panda_file::LiteralTag::TAGVALUE:
+            [[fallthrough]];
+        case panda_file::LiteralTag::ACCESSOR:
+            [[fallthrough]];
+        case panda_file::LiteralTag::NULLVALUE:
             return std::make_unique<ScalarValue>(
                 ScalarValue::Create<Value::Type::U8>(std::get<uint8_t>(literal.value_)));
         case panda_file::LiteralTag::BOOL:
@@ -780,6 +784,9 @@ static std::unique_ptr<ScalarValue> CreateValue(const panda::pandasm::LiteralArr
         case panda_file::LiteralTag::ARRAY_I8:
             return std::make_unique<ScalarValue>(
                 ScalarValue::Create<Value::Type::I8>(std::get<uint8_t>(literal.value_)));
+        case panda_file::LiteralTag::METHODAFFILIATE:
+            return std::make_unique<ScalarValue>(
+                ScalarValue::Create<Value::Type::U16>(std::get<uint16_t>(literal.value_)));
         case panda_file::LiteralTag::ARRAY_I16:
             return std::make_unique<ScalarValue>(
                 ScalarValue::Create<Value::Type::I16>(std::get<uint16_t>(literal.value_)));
@@ -807,16 +814,10 @@ static std::unique_ptr<ScalarValue> CreateValue(const panda::pandasm::LiteralArr
             return std::make_unique<ScalarValue>(
                 ScalarValue::Create<Value::Type::STRING>(std::string_view(std::get<std::string>(literal.value_))));
         case panda_file::LiteralTag::METHOD:
-            return std::make_unique<ScalarValue>(
-                ScalarValue::Create<Value::Type::METHOD>(std::string_view(std::get<std::string>(literal.value_))));
+            [[fallthrough]];
         case panda_file::LiteralTag::GENERATORMETHOD:
             return std::make_unique<ScalarValue>(
                 ScalarValue::Create<Value::Type::METHOD>(std::string_view(std::get<std::string>(literal.value_))));
-        case panda_file::LiteralTag::ACCESSOR:
-            [[fallthrough]];
-        case panda_file::LiteralTag::NULLVALUE:
-            return std::make_unique<ScalarValue>(
-                ScalarValue::Create<Value::Type::U8>(std::get<uint8_t>(literal.value_)));
         default:
             UNREACHABLE();
             break;

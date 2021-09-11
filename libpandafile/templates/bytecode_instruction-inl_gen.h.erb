@@ -360,16 +360,19 @@ std::ostream& operator<<(std::ostream& os, const typename BytecodeInst<Mode>::Op
 }
 
 template <const BytecodeInstMode Mode>
-inline bool BytecodeInst<Mode>::IsBuiltin() const
+inline bool BytecodeInst<Mode>::IsPrimaryOpcodeValid() const
 {
-    switch (GetOpcode()) {
-% Panda::instructions.each do |inst|
-%   if inst["sig"].include? "builtin"
-        case BytecodeInst<Mode>::Opcode::<%= inst.opcode.upcase %>:
-%   end
-% end
-            return true;
-        default:
-            return false;
+    auto opcode = GetPrimaryOpcode();
+    // NOLINTNEXTLINE(readability-magic-numbers)
+    if (((opcode >= <%= Panda::dispatch_table.invalid_non_prefixed_interval.min %>) &&
+        // NOLINTNEXTLINE(readability-magic-numbers)
+        (opcode <= <%= Panda::dispatch_table.invalid_non_prefixed_interval.max %>)) ||
+        // NOLINTNEXTLINE(readability-magic-numbers)
+        ((opcode >= <%= Panda::dispatch_table.invalid_prefixes_interval.min %>) &&
+        // NOLINTNEXTLINE(readability-magic-numbers)
+        (opcode <= <%= Panda::dispatch_table.invalid_prefixes_interval.max %>))) {
+        // NOLINTNEXTLINE(readability-simplify-boolean-expr)
+        return false;
     }
+    return true;
 }

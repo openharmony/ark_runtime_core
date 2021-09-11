@@ -11,25 +11,24 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-cmake_minimum_required(VERSION 3.5.2 FATAL_ERROR)
-
 project(isa)
 
-set(ISA_FILE "${PROJECT_SOURCE_DIR}/isa.yaml")
+set(ISA_FILE "${CMAKE_BINARY_DIR}/isa/isa.yaml")
+set(ISA_CORE_FILE "${PROJECT_SOURCE_DIR}/isa.yaml")
 set(ISA_ASSERTS "${PROJECT_SOURCE_DIR}/asserts.rb")
+set(ISA_COMBINE "${PROJECT_SOURCE_DIR}/combine.rb")
 set(ISAPI "${PROJECT_SOURCE_DIR}/isapi.rb")
+set(ISA_PLUGIN_FILES "")
 
-# ISA YAML validation against the schema
+string(REPLACE ";" "," ISA_PLUGIN_FILES_STR "${ISA_PLUGIN_FILES}")
 
-set(ISA_SCHEMA "${PROJECT_SOURCE_DIR}/schema.json")
-
-set(VALIDATE_MARKER "${PROJECT_BINARY_DIR}/validate.ok")
-add_custom_command(OUTPUT ${VALIDATE_MARKER}
-    COMMENT "Validate ISA file"
-    COMMAND pajv -s ${ISA_SCHEMA} -d ${ISA_FILE} && ${CMAKE_COMMAND} -E touch ${VALIDATE_MARKER}
-    DEPENDS ${ISA_SCHEMA} ${ISA_FILE}
+# ISA combine
+add_custom_command(OUTPUT ${ISA_FILE}
+    COMMENT "Combine ISA files"
+    COMMAND ${ISA_COMBINE} -d "${ISA_CORE_FILE},${ISA_PLUGIN_FILES_STR}" -o ${ISA_FILE}
+    DEPENDS ${ISA_COMBINE} ${ISA_CORE_FILE} ${ISA_PLUGIN_FILES}
 )
-add_custom_target(isa_validate DEPENDS ${VALIDATE_MARKER})
+add_custom_target(isa_combine DEPENDS ${ISA_FILE})
 
 # Check ISA_FILE content
 
@@ -41,13 +40,12 @@ add_custom_command(OUTPUT ${ASSERT_MARKER}
     COMMAND ${CMAKE_COMMAND} -E touch ${ASSERT_MARKER}
     DEPENDS ${ISA_FILE} ${ISA_GEN_RB} ${ISA_ASSERTS} ${ISAPI}
 )
-add_custom_target(isa_assert ALL DEPENDS ${ASSERT_MARKER})
+add_custom_target(isa_assert DEPENDS ${ASSERT_MARKER})
+add_dependencies(isa_assert isa_combine)
 
 # Template generation
-
 set(TEMPLATES
     instructions.txt.erb
     isa.md.erb
 )
-
 panda_isa_gen(TEMPLATES ${TEMPLATES})

@@ -430,7 +430,6 @@ public:
         UNREACHABLE();
         return stream;
     }
-
     uint64_t GetTypeTag(interpreter::TypeTag tag) const
     {
         // return TypeTag default

@@ -16,14 +16,32 @@ def assert(name)
   raise "#{loc.path}:#{loc.lineno}: '#{name}' assertion failed" unless yield
 end
 
-def uniq?(arr)
-  arr.uniq.size == arr.size
+module Enumerable
+  def sorted?
+    each_cons(2).all? { |a, b| (a <=> b) <= 0 }
+  end
+
+  def sorted_by?(&block)
+    map(&block).sorted?
+  end
+
+  def uniq?
+    uniq.size == size
+  end
 end
 
-assert('Unique opcodes') { uniq?(Panda.instructions.map(&:opcode)) }
+assert('Unique opcodes') { Panda.instructions.map(&:opcode).uniq? }
 
 assert('Non-prefixed instruction opcodes and prefixes should fit one byte') do
   Panda.instructions.reject(&:prefix).size + Panda.prefixes.size <= 256
+end
+
+assert('Non-prefixed instruction opcode indexes are sorted') do
+  Panda.instructions.reject(&:prefix).sorted_by?(&:opcode_idx)
+end
+
+assert('Prefix opcode indexes are sorted') do
+  Panda.prefixes.sorted_by?(&:opcode_idx)
 end
 
 assert('All instructions for a prefix should fit one byte') do
@@ -47,11 +65,19 @@ assert('Prefix should be defined') do
 end
 
 assert('All prefixes should have unique name') do
-  uniq?(Panda.prefixes.map(&:name))
+  Panda.prefixes.map(&:name).uniq?
+end
+
+assert('There should be non-zero gap between non-prefixed and prefixes') do
+  !Panda.dispatch_table.invalid_non_prefixed_interval.to_a.empty?
+end
+
+assert('There should be non-zero gap between public and private prefixes') do
+  !Panda.dispatch_table.invalid_prefixes_interval.to_a.empty?
 end
 
 assert('All tags are unique between categories') do
-  uniq?(%i[verification exceptions properties].flat_map { |type| Panda.send(type).map(&:tag) })
+  %i[verification exceptions properties].flat_map { |type| Panda.send(type).map(&:tag) }.uniq?
 end
 
 assert('All tags are used') do
@@ -116,7 +142,9 @@ assert('All calls write into accumulator') do
 end
 
 assert('Calls should be non-prefixed') do # otherwise support in interpreter-to-compiler bridges
-  Panda.instructions.select { |i| i.properties.include?('call') }.select(&:prefix).empty?
+  Panda.instructions.select do |i|
+    i.properties.include?('call') && !i.mnemonic.include?('polymorphic')
+  end.select(&:prefix).empty?
 end
 
 assert('Jumps differ from other control-flow') do # At least currently
@@ -135,8 +163,8 @@ assert('Conversions should correspond to source and destination type') do
   end.all?
 end
 
-assert('Operand type should be one of none, ref, u1, u2, i8, u8, i16, u16, i32, u32, i64, u64, b64, f64, top, any') do
-  types = %w[none ref u1 u2 i8 u8 i16 u16 i32 u32 f32 i64 u64 b64 f64 top any]
+assert('Operand type should be one of none, ref, u1, u2, i8, u8, i16, u16, i32, u32, b32, i64, u64, b64, f64, top, any') do
+  types = %w[none ref u1 u2 i8 u8 i16 u16 i32 u32 b32 f32 i64 u64 b64 f64 top any]
   Panda.instructions.map do |i|
     i.acc_and_operands.all? { |op| types.include?(op.type.sub('[]', '')) }
   end.all?

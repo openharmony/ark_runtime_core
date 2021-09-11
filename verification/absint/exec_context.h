@@ -217,7 +217,6 @@ private:
     PandaUnorderedMap<const uint8_t *, RegContext> RegContextOnCheckPoint_;
     RegContext CurrentRegContext_;
 };
-
 }  // namespace panda::verifier
 
 #endif  // PANDA_VERIFICATION_ABSINT_EXEC_CONTEXT_H_

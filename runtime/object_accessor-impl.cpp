@@ -12,6 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 #ifndef PANDA_RUNTIME_OBJECT_ACCESSOR_IMPL_CPP_
 #define PANDA_RUNTIME_OBJECT_ACCESSOR_IMPL_CPP_
 // This file is included by interpreter to inline methods that defined in it.

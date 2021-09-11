@@ -14,17 +14,17 @@
 #Assert that intrinsic Math.sin works fine
 .record Math <external>
 .function f32 Math.fsin (f32 a0) <external>
-.function f64 Math.absF64 (f64 a0) <external>
+.function f32 Math.absF32 (f32 a0) <external>
 
 .function u1 main(){
-    fmovi.64 v0, 1.0
-    fmovi.64 v1, 0.8414709848
-    fmovi.64 v2, 1e-6
+    fmovi v0, 1.0
+    fmovi v1, 0.8414709848
+    fmovi v2, 1e-6
     call.short Math.fsin, v0, v0
-    fsub2.64 v1
-    sta.64 v1
-    call.short Math.absF64, v1, v1
-    fcmpl.64 v2
+    fsub2 v1
+    sta v1
+    call.short Math.absF32, v1, v1
+    fcmpl v2
     jgez exit_failure
     ldai 0
     return

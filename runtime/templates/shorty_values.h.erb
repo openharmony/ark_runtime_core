@@ -25,12 +25,12 @@
 
 % first_nonvoid = PandaFile::types.select {|type| type.name != "void"}.first.code
 % first_32 = PandaFile::types.select {|type| type.width && type.width == 32}.first.code
-% last_int32 = PandaFile::types.select {|type| type.width && type.width == 32 && type.properties.include?("integral") }.last.code
-% first_64 = PandaFile::types.select {|type| (type.width && type.width == 64) || type.properties.include?("float") }.first.code
+% last_int32 = PandaFile::types.select {|type| type.width && type.width == 32 && type.properties.include?("integral")}.last.code
+% first_64 = PandaFile::types.select {|type| (type.width && type.width == 64)}.first.code
 % first_float = PandaFile::types.select {|type| type.properties.include?("float") }.first.code
-% num_32_and_larger = PandaFile::types.select {|type| type.width && type.width >= 32 || type.properties.include?("float") || type.name == "reference" || type.name == "tagged" }.length
+% num_32_and_larger = PandaFile::types.select {|type| type.width && type.width >= 32 || type.name == "reference" || type.name == "tagged" }.length
 % num_float_types = PandaFile::types.select {|type| type.properties.include?("float") }.length
-% num_64bit_types = PandaFile::types.select {|type| (type.width && type.width == 64) || type.properties.include?("float") }.length
+% num_64bit_types = PandaFile::types.select {|type| (type.width && type.width == 64)}.length
 // NOLINTNEXTLINE(cppcoreguidelines-macro-usage)
 #define SHORTY_FIRST_NONVOID 0x<%= first_nonvoid.to_s(16) %>
 // NOLINTNEXTLINE(cppcoreguidelines-macro-usage)
@@ -38,7 +38,7 @@
 // NOLINTNEXTLINE(cppcoreguidelines-macro-usage)
 #define SHORTY_LAST_INT32 0x<%= last_int32.to_s(16) %>
 // NOLINTNEXTLINE(cppcoreguidelines-macro-usage)
-#define SHORTY_FIRST_64 0x<%= first_64.to_s(16) %>  // in the runtime all 32bit floats extends to doubles
+#define SHORTY_FIRST_64 0x<%= first_64.to_s(16) %>
 // NOLINTNEXTLINE(cppcoreguidelines-macro-usage)
 #define SHORTY_FIRST_FLOAT 0x<%= first_float.to_s(16) %>
 // NOLINTNEXTLINE(cppcoreguidelines-macro-usage)

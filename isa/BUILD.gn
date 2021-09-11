@@ -11,20 +11,21 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-.function void g(f32 a0, f32 a1) {
-    builtin.acc i32tof32
-    builtin.acc i64tof32
-    builtin.acc f64tof32
-    builtin.acc monitorenter
-    builtin.acc monitorexit
+import("//ark/runtime_core/ark_config.gni")
 
-    builtin.bin2 fadd2f32, a1
-    builtin.bin2 fsub2f32, v13
-    builtin.bin2 fmul2f32, v13
-    builtin.bin2 fdiv2f32, v13
-    builtin.bin2 fmod2f32, v13
-    builtin.bin2 fcmpl2f32, a0
-    builtin.bin2 fcmpg2f32, v13
-
-    return.void
+action("isa_combine") {
+  script = "$ark_root/isa/combine.rb"
+  inputs = [
+    "$ark_root/isa/isa.yaml",
+    "$ark_root/../js_runtime/ecmascript/ecma_isa.yaml",
+  ]
+  input0 = rebase_path(inputs[0], root_build_dir)
+  input1 = rebase_path(inputs[1], root_build_dir)
+  outputs = [ "$root_gen_dir/isa/isa.yaml" ]
+  args = [
+    "-d",
+    "$input0,$input1",
+    "-o",
+    rebase_path(outputs[0], root_build_dir),
+  ]
 }

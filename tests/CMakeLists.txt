@@ -737,8 +737,6 @@ add_test_file(FILE "${CMAKE_CURRENT_SOURCE_DIR}/cts-assembly/initobj-bad-02.pa" 
 
 add_test_file(FILE "${CMAKE_CURRENT_SOURCE_DIR}/cts-assembly/big_ark_option_value.pa" RUNTIME_OPTIONS --code-pool-size=3221225472 CTS_TEST)
 
-add_test_file(FILE "${CMAKE_CURRENT_SOURCE_DIR}/cts-assembly/compiler_effective_types.pa" CTS_TEST)
-
 if (TARGET verifier-tests)
 # Verifier regression tests
 # Negative (must fail)

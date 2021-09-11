@@ -230,4 +230,4 @@ private:
 
 }  // namespace panda::mem
 
-#endif  // PANDA_RUNTIME_MEM_GC_GC_STATS_H_
+#endif  // PANDA_RUNTIME_MEM_GC_GC_STATS_H

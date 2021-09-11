@@ -17,12 +17,10 @@
 #define PANDA_RUNTIME_INCLUDE_ISA_CONSTANTS_GEN_H_
 
 namespace panda::interpreter {
-
-constexpr auto NUM_OPS = <%= Panda::instructions.size %> + 1;  // +1 is for EXCEPTION_HANDLER
-constexpr auto NUM_PREFIXES = <%= Panda::prefixes.size %>;
-constexpr auto NUM_PREFIXED = <%= Panda::instructions.select(&:prefix).size %>;
-static_assert(NUM_OPS - NUM_PREFIXED + NUM_PREFIXES <= 210, "Too many first-level-dispatch opcodes in use, please review the ISA");
-
+    constexpr auto NUM_PREFIXED = <%= Panda::instructions.select(&:prefix).size %>;
+    constexpr auto NUM_NON_PREFIXED_OPS = <%= Panda::instructions.size %> - NUM_PREFIXED + 1;  // +1 is for EXCEPTION_HANDLER
+    constexpr auto NUM_PREFIXES = <%= Panda::prefixes.size %>;
+    static_assert(NUM_NON_PREFIXED_OPS + NUM_PREFIXES <= 210, "Too many first-level-dispatch opcodes in use, please review the ISA");
 }  // namespace panda::interpreter
 
 #endif  // PANDA_RUNTIME_INCLUDE_ISA_CONSTANTS_GEN_H_

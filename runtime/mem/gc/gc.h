@@ -44,7 +44,6 @@
 #include "runtime/timing.h"
 
 namespace panda {
-
 class BaseClass;
 class Class;
 class HClass;

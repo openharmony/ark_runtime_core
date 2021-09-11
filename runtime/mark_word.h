@@ -12,7 +12,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 // Our main goal is to have similar interface for two different platforms - high-end and low-end.
 //
 // 64 bits object header for high-end devices: (64 bits pointer)
@@ -80,7 +79,6 @@
 // |-----------------------------------------------------|--------------------------------|--------------------|
 // |         Forwarding address:14            | state:11 |     OOP to metadata object     |         GC         |
 // |-----------------------------------------------------|--------------------------------|--------------------|
-
 #ifndef PANDA_RUNTIME_MARK_WORD_H_
 #define PANDA_RUNTIME_MARK_WORD_H_
 

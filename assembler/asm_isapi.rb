@@ -17,36 +17,16 @@ Instruction.class_eval do
     mnemonic.tr('.', '_').upcase
   end
 
-  def builtin?
-    %w[builtin].include?(stripped_mnemonic)
-  end
-
-  def builtin_idr4?
-    builtin? && mnemonic.split('.')[-1] == 'idr4'
-  end
-
-  def builtin_idr6?
-    builtin? && mnemonic.split('.')[-1] == 'idr6'
-  end
-
   def call?
-    %w[call initobj].include?(stripped_mnemonic)
+    properties.include?('call') || stripped_mnemonic == 'initobj'
   end
 
-  def calli?
-    %w[calli].include?(stripped_mnemonic)
-  end
-
-  def call_range?
-    call? && mnemonic.split('.')[-1] == 'range'
-  end
-
-  def calli_range?
-    calli? && mnemonic.split('.')[-1] == 'range'
+  def range?
+    mnemonic.split('.')[-1] == 'range'
   end
 
   def simple_call?
-    (call? || calli?) && !call_range?
+    call? && !range?
   end
 
   def return?
@@ -108,7 +88,7 @@ end
 def assembler_signature(group, is_jump)
   insn = group.first
   sig = format_ops(insn.format)
-  sig.each_with_index do |o, i|
+  sig.each do |o|
     if o.name.start_with?('imm')
       if insn.asm_token.start_with?('F')
         o.type, o.name = is_jump ? ['const std::string &', 'label'] : ["double", o.name]

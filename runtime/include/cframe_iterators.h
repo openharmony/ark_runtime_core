@@ -22,6 +22,7 @@
 #include "runtime/include/cframe.h"
 #include "runtime/include/method.h"
 #include "libpandafile/shorty_iterator.h"
+#include "utils/bit_utils.h"
 
 namespace panda {
 
@@ -227,8 +228,7 @@ public:
         uint32_t vreg_num = num_args + (is_static ? 1 : 0);
 
         return Range<CFrameJniMethodIterator>(
-            CFrameJniMethodIterator(0, vreg_num, method->GetShorty(), gpr_begin_slot, GPR_END_SLOT,
-                                    FP_BEGIN_SLOT + 2,  // 2
+            CFrameJniMethodIterator(0, vreg_num, method->GetShorty(), gpr_begin_slot, GPR_END_SLOT, FP_BEGIN_SLOT,
                                     FP_END_SLOT, STACK_BEGIN_SLOT),
             CFrameJniMethodIterator(vreg_num, vreg_num, method->GetShorty(), 0, 0, 0, 0, 0));
     }
@@ -242,8 +242,7 @@ public:
     {
         static_assert(arch::ExtArchTraits<Arch::AARCH32>::GPR_SIZE == 4);  // 4 bytes -- register size on AARCH32
 
-        if (vreg_type == VRegInfo::Type::INT64 || vreg_type == VRegInfo::Type::FLOAT64 ||
-            vreg_type == VRegInfo::Type::FLOAT32) {
+        if (vreg_type == VRegInfo::Type::INT64 || vreg_type == VRegInfo::Type::FLOAT64) {
             return 2;  // 2 slots
         }
         return 1;
@@ -263,6 +262,11 @@ public:
         ptrdiff_t inc = GetSlotsCountForType(vreg_type_);
         ASSERT(inc == 1 || inc == 2);  // 1 or 2 slots
         if (inc == 1) {
+            if constexpr (arch::ExtArchTraits<Arch::AARCH32>::HARDFP) {
+                if (vreg_type_ == VRegInfo::Type::FLOAT32) {  // in this case one takes 1 slots
+                    return HandleHardFloat();
+                }
+            }
             if ((gpr_current_slot_ - 1) > gpr_end_slot_) {
                 --gpr_current_slot_;
                 current_slot_ = gpr_current_slot_;
@@ -274,18 +278,8 @@ public:
             }
         } else {
             if constexpr (arch::ExtArchTraits<Arch::AARCH32>::HARDFP) {
-                if (vreg_type_ == VRegInfo::Type::FLOAT32 ||
-                    vreg_type_ == VRegInfo::Type::FLOAT64) {  // in this case one takes 2 slots
-                    // CODECHECK-NOLINTNEXTLINE(C_RULE_ID_FUNCTION_NESTING_LEVEL)
-                    if ((fp_current_slot_ - 2) > fp_end_slot_) {
-                        fp_current_slot_ -= 2;
-                        current_slot_ = fp_current_slot_;
-                    } else {
-                        stack_current_slot_ = RoundUp(stack_current_slot_ - 1, 2) - 1;  // 2
-                        current_slot_ = stack_current_slot_;
-                        stack_current_slot_ -= 1;
-                    }
-                    return *this;
+                if (vreg_type_ == VRegInfo::Type::FLOAT64) {  // in this case one takes 2 slots
+                    return HandleHardDouble();
                 }
             }
             gpr_current_slot_ = RoundUp(gpr_current_slot_ - 1, 2) - 1;  // 2
@@ -349,6 +343,7 @@ private:
             case panda_file::Type::TypeId::U32:
                 return VRegInfo::Type::INT32;
             case panda_file::Type::TypeId::F32:
+                return VRegInfo::Type::FLOAT32;
             case panda_file::Type::TypeId::F64:
                 return VRegInfo::Type::FLOAT64;
             case panda_file::Type::TypeId::I64:
@@ -362,6 +357,34 @@ private:
                 UNREACHABLE();
         }
         return VRegInfo::Type::INT32;
+    }
+
+    CFrameJniMethodIterator &HandleHardFloat()
+    {
+        ASSERT(vreg_type_ == VRegInfo::Type::FLOAT32);
+        if (fp_current_slot_ > fp_end_slot_) {
+            current_slot_ = fp_current_slot_;
+            --fp_current_slot_;
+        } else {
+            --stack_current_slot_;
+            current_slot_ = stack_current_slot_;
+        }
+        return *this;
+    }
+
+    CFrameJniMethodIterator &HandleHardDouble()
+    {
+        ASSERT(vreg_type_ == VRegInfo::Type::FLOAT64);
+        fp_current_slot_ = RoundDown(static_cast<uintptr_t>(fp_current_slot_) + 1, 2U) - 1;
+        if (fp_current_slot_ > fp_end_slot_) {
+            current_slot_ = fp_current_slot_;
+            fp_current_slot_ -= 2U;
+        } else {
+            stack_current_slot_ = RoundUp(stack_current_slot_ - 1, 2U) - 1;
+            current_slot_ = stack_current_slot_;
+            stack_current_slot_ -= 1;
+        }
+        return *this;
     }
 
 private:

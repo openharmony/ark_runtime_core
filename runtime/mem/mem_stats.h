@@ -27,7 +27,6 @@
 #include "runtime/mem/gc/gc_phase.h"
 
 namespace panda {
-
 class BaseClass;
 }  // namespace panda
 

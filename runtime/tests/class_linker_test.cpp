@@ -45,7 +45,7 @@ public:
         options.SetShouldLoadBootPandaFiles(false);
         options.SetShouldInitializeIntrinsics(false);
         options.SetGcType("epsilon");
-        options.SetObjectPoolSize(64_MB);
+        options.SetHeapSizeLimit(64_MB);
         Runtime::Create(options);
         thread_ = panda::MTManagedThread::GetCurrent();
         thread_->ManagedCodeBegin();

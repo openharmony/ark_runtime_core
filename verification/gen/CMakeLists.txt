@@ -15,22 +15,6 @@ cmake_minimum_required(VERSION 3.10)
 
 project(pandaverification_gen)
 
-set(abs_int_builtin_templates
-    abs_int_builtin_handlers
-    cflow_iterate_inl_gen_builtin_handlers
-)
-set(abs_int_builtin_headers)
-foreach(template ${abs_int_builtin_templates})
-    set(output "${CMAKE_CURRENT_BINARY_DIR}/include/${template}.h")
-    panda_gen_file(
-        DATAFILE "${PANDA_ROOT}/isa/builtins.yaml"
-        REQUIRES "${PANDA_ROOT}/isa/builtinsapi.rb"
-        TEMPLATE "${CMAKE_CURRENT_SOURCE_DIR}/templates/${template}.h.erb"
-        OUTPUTFILE ${output}
-    )
-    list(APPEND abs_int_builtin_headers ${output})
-endforeach()
-
 set(ABS_INT_EXTRA_HEADERS)
 set(ABS_INT_TEMPLATES
     abs_int_inl_compat_checks
@@ -57,7 +41,7 @@ panda_isa_gen(
     TEMPLATES ${ISA_TEMPLATES}
     SOURCE ${CMAKE_CURRENT_LIST_DIR}/templates
     DESTINATION ${GEN_INCLUDE_DIR}
-    EXTRA_DEPENDENCIES ${abs_int_builtin_headers};${ABS_INT_EXTRA_HEADERS}
+    EXTRA_DEPENDENCIES ${ABS_INT_EXTRA_HEADERS}
 )
 
 panda_gen_messages(

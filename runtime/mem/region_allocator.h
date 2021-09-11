@@ -22,7 +22,6 @@
 #include "runtime/mem/region_space.h"
 
 namespace panda {
-
 class ManagedThread;
 }  // namespace panda
 

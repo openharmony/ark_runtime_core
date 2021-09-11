@@ -15,20 +15,20 @@
 .record Math <external>
 .function f32 Math.absF32(f32 a0)<external>
 .function u1 main(){
-    fmovi.64 v0, 2.0
-    fmovi.64 v1, 1e-13
+    fmovi v0, 2.0
+    fmovi v1, 1e-13
     call.short Math.absF32, v0, v0
-    fsub2.64 v0
-    sta.64 v2
+    fsub2 v0
+    sta v2
     call.short abs, v2, v2
-    fcmpl.64 v1
+    fcmpl v1
     jgtz exit_failure
-    fmovi.64 v0, -2.0
+    fmovi v0, -2.0
     call.short Math.absF32, v0, v0
-    fadd2.64 v0
-    sta.64 v2
+    fadd2 v0
+    sta v2
     call.short abs, v2, v2
-    fcmpl.64 v1
+    fcmpl v1
     jgtz exit_failure
     ldai 0
     return
@@ -38,14 +38,14 @@ exit_failure:
 }
 
 .function f32 abs(f32 a0){
-    fldai.64 0.0
-    fcmpl.64 a0
+    fldai 0.0
+    fcmpl a0
     jlez label
-    lda.64 a0
-    fneg.64
-    return.64
+    lda a0
+    fneg
+    return
 label:
     lda.64 a0
-    return.64
+    return
 }
 

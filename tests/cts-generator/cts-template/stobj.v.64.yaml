@@ -1,0 +1,848 @@
+# Copyright (c) 2021 Huawei Device Co., Ltd.
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+definitions:
+  - name: pandasm_header
+    template: |
+      .language PandaAssembly
+      .record panda.Object <external>
+      .record Q {}
+      .record R {
+        u1             fu1
+        u8             fu8
+        i8             fi8
+        u16            fu16
+        i16            fi16
+        u32            fu32
+        i32            fi32
+        u64            fu64
+        i64            fi64
+        f32            ff32
+        f64            ff64
+        i32[]          fi32Array
+        Q              fQ
+        Q[]            fQArray
+        panda.Object   fObj
+        panda.Object[] fObjArray
+      }
+
+  - name: java_header
+    template: |
+      .language Java
+      .record java.lang.Object <external>
+      .record I <java.interface> {}
+      .record Q <java.implements=I> {}
+      .record R <java.extends=Q> {
+        u1                 fu1
+        i8                 fi8
+        u16                fu16
+        i16                fi16
+        i32                fi32
+        i64                fi64
+        f32                ff32
+        f64                ff64
+        # objects
+        i32[]              fi32Array
+        Q                  fQ
+        Q[]                fQArray
+        R                  fR
+        R[]                fRArray
+        I                  fI
+        I[]                fIArray
+        java.lang.Object   fObj
+        java.lang.Object[] fObjArray
+      }
+
+
+tests:
+  - file-name: "stobj.v.64"
+    isa:
+      title: Store register content into object field
+      description: >
+        Store register content into object field by field_id. For non-object variant the size of actually stored
+        value is determined by field_id, other register bits are discarded.
+      instructions:
+        - sig: stobj.v.64 v1:in:b64, v2:in:ref, field_id
+          acc: none
+          format: [op_v1_4_v2_4_id_16]
+    commands:
+
+      - file-name: "check_if_regs_initialized_p"
+        description: Check that verifier reports error if a register is not initialized in PandaAssembly context.
+        isa:
+          description: Store register content into object field by field_id.
+        header-template: ['pandasm_header']
+        check-type: exit-positive
+        tags: ['verifier']
+        runner-options: ['verifier-failure', 'verifier-debug-config']
+        code-template: |
+
+          %s
+
+          .function i32 main() {
+            newobj v0, R
+            fmovi.64 v1, 1.1
+            %s
+        cases:
+          - values:
+            - ""
+            - stobj.v.64 v2, v0, R.ff64
+          - values:
+            - ""
+            - stobj.v.64 v1, v2, R.ff64
+          - values:
+            - |
+              # v0 (value) not initialized in the frame
+              .function void check(R a0) {
+                stobj.v.64 v0, a0, R.ff64
+                return.void
+              }
+            - call.short check, v0
+          - values:
+            - |
+              # v0 (object) not initialized in the frame
+              .function void check(f64 a0) {
+                stobj.v.64 a0, v0, R.ff64
+                return.void
+              }
+            - call.short check, v1
+
+
+      - file-name: "check_if_regs_initialized_j"
+        description: Check that verifier reports error if a register is not initialized in Java context.
+        isa:
+          description: Store register content into object field by field_id.
+        header-template: ['java_header']
+        check-type: exit-positive
+        tags: ['verifier']
+        runner-options: ['use-java', 'verifier-failure', 'verifier-debug-config']
+        code-template: |
+
+          %s
+
+          .function i32 main() {
+            newobj v0, R
+            fmovi.64 v1, 1.1
+            %s
+        cases:
+          - values:
+            - ""
+            - stobj.v.64 v2, v0, R.ff64
+          - values:
+            - ""
+            - stobj.v.64 v1, v2, R.ff64
+          - values:
+            - |
+              # v0 (value) not initialized in the frame
+              .function void check(R a0) {
+                stobj.v.64 v0, a0, R.ff64
+                return.void
+              }
+            - call.short check, v0
+          - values:
+            - |
+              # v0 (object) not initialized in the frame
+              .function void check(f64 a0) {
+                stobj.v.64 a0, v0, R.ff64
+                return.void
+              }
+            - call.short check, v1
+
+
+      - file-name: "with_null_ref_p"
+        description: Check that NullPointerException is thrown if object ref is null in PandaAssembly context.
+        isa:
+          exceptions:
+            - x_null
+        header-template: ['pandasm_header']
+        check-type: empty
+        code-template: |
+          .record panda.NullPointerException <external>
+
+          .function R get_null() {
+            lda.null
+            return.obj
+          }
+
+          .function i32 main() {
+            call.short get_null
+            sta.obj v0
+            %s
+          try_begin:
+            stobj.v.64 v1, v0, %s
+            ldai 1
+            return
+          try_end:
+            ldai 0
+            return
+          .catch panda.NullPointerException, try_begin, try_end, try_end
+          }
+        cases:
+          - values:
+            - movi.64 v1, -1
+            - R.fi64
+          - values:
+            - movi.64 v1, 1
+            - R.fu64
+          - values:
+            - fmovi.64 v1, 1.1
+            - R.ff64
+
+
+      - file-name: "with_null_ref_j"
+        description: Check that NullPointerException is thrown if object ref is null in Java context.
+        isa:
+          exceptions:
+            - x_null
+        header-template: ['java_header']
+        runner-options: ['use-java']
+        check-type: empty
+        code-template: |
+          .record java.lang.NullPointerException <external>
+
+          .function R get_null() {
+            lda.null
+            return.obj
+          }
+
+          .function i32 main() {
+            call.short get_null
+            sta.obj v0
+            %s
+          try_begin:
+            stobj.v.64 v1, v0, %s
+            ldai 1
+            return
+          try_end:
+            ldai 0
+            return
+          .catch java.lang.NullPointerException, try_begin, try_end, try_end
+          }
+        cases:
+          - values:
+            - movi.64 v1, -1
+            - R.fi64
+          - values:
+            - fmovi.64 v1, 1.1
+            - R.ff64
+
+
+      - file-name: "with_non_object_ref_p"
+        description: >
+          Check that verifier reports error when the 2nd operand is not a ref to an
+          object (other than array) in PandaAssembly context.
+        isa:
+          verification:
+            - v2_object
+        header-template: ['pandasm_header']
+        check-type: exit-positive
+        tags: ['verifier']
+        runner-options: ['verifier-failure', 'verifier-debug-config']
+        code-template: |
+          .function i32 main() {
+            *s
+            movi.64 v1, 1
+            stobj.v.64 v1, v0, %s
+        template-cases:
+          - values: ['R.fi64']
+          - values: ['R.fu64']
+            bugid: ['5502']
+            ignore: true
+          - values: ['R.ff32']
+          - values: ['R.ff64']
+        cases:
+          - values:
+            - movi v0, 0
+          - values:
+            - movi v0, 1
+          - values:
+            - movi.64 v0, 0x00
+          - values:
+            - movi.64 v0, 0xCAFECAFECAFECAFE
+          - values:
+            - fmovi.64 v0, 0.0
+          - values:
+            - fmovi.64 v0, 6.62607015
+          - values:
+            - |
+              #
+                movi v1, 10
+                newarr v0, v1, panda.Object[]
+
+
+      - file-name: "with_non_object_ref_j"
+        description: >
+          Check that verifier reports error when the 2nd operand is not a ref to an
+          object (other than array) in Java context.
+        isa:
+          verification:
+            - v2_object
+        header-template: ['java_header']
+        check-type: exit-positive
+        tags: ['verifier']
+        runner-options: ['verifier-failure', 'verifier-debug-config']
+        code-template: |
+          .function i32 main() {
+            *s
+            fmovi.64 v1, 3.1415
+            stobj.v.64 v1, v0, %s
+        template-cases:
+          - values: ['R.fi64']
+            bugid: ['5502']
+            ignore: true
+          - values: ['R.ff32']
+            bugid: ['5502']
+            ignore: true
+          - values: ['R.ff64']
+            bugid: ['5502']
+            ignore: true
+        cases:
+          - values:
+            - movi v0, 0
+          - values:
+            - movi v0, 1
+          - values:
+            - movi.64 v0, 0x00
+          - values:
+            - movi.64 v0, 0xCAFECAFECAFECAFE
+          - values:
+            - fmovi.64 v0, 0.0
+          - values:
+            - fmovi.64 v0, 6.62607015
+          - values:
+            - |
+              #
+                movi v1, 10
+                newarr v0, v1, java.lang.Object[]
+
+
+      - file-name: "with_static_field_id_p"
+        description: >
+          Check that verifier reports error when the field doesn't resolve to a non-static
+          valid object field in PandaAssembly context.
+        isa:
+          verification:
+            - field_id_non_static
+        header-template: []
+        check-type: exit-positive
+        runner-options: ['compile-failure']
+        code-template: |
+          .record W {
+            i64   static_field  <static>
+          }
+          .record random_record {
+            i64 random_field
+            i64 random_static_field <static>
+          }
+          .function void random_function() {
+            return.void
+          }
+
+          .function i32 main() {
+            newobj v0, W
+            movi.64 v1, 1
+            stobj.v.64 v1, v0, %s
+        cases:
+          - values:
+            - W.static_field
+            runner-options: ['verifier-failure', 'verifier-debug-config']
+            tags: ['verifier']
+          - values:
+            - random_record
+          - values:
+            - random_function
+          - values:
+            - W.field_not_exists
+          - values:
+            - random_record.random_field
+            runner-options: ['verifier-failure', 'verifier-debug-config']
+            tags: ['verifier']
+          - values:
+            - random_record.random_static_field
+            runner-options: ['verifier-failure', 'verifier-debug-config']
+            tags: ['verifier']
+          - values:
+            - 0
+          - values:
+            - -1.1
+          - values:
+            - "null"
+          - values:
+            - "\"abc\""
+
+
+      - file-name: "with_static_field_id_j"
+        description: >
+          Check that verifier reports error when the field doesn't resolve to a non-static
+          valid object field in Java context.
+        isa:
+          verification:
+            - field_id_non_static
+        header-template: []
+        check-type: exit-positive
+        runner-options: ['use-java', 'verifier-failure', 'verifier-debug-config']
+        tags: ['verifier']
+        code-template: |
+          .language Java
+          .record A {
+            i64   a_field  <static, java.access=public>
+          }
+          .record B <java.extends=A> {
+            i64   b_field  <static, java.access=public>
+          }
+          .record C <java.extends=B> {
+            i64   c_field  <static, java.access=public>
+          }
+
+          .function i32 main() {
+            newobj v0, %s
+            movi.64 v2, 1
+            stobj.v.64 v2, v0, %s
+        cases:
+          - values:
+            - C
+            - C.c_field
+          - values:
+            - C
+            - B.b_field
+          - values:
+            - C
+            - A.a_field
+          - values:
+            - B
+            - B.a_field
+            runner-options: ['compile-failure']
+          - values:
+            - B
+            - B.c_field
+            runner-options: ['compile-failure']
+
+
+      - file-name: "with_wrong_field_size_p"
+        description: >
+          Check that verifier reports error when the field resolves to a field with size
+          that is not corresponding to bytecode in PandaAssembly context.
+        isa:
+          verification:
+            - field_id_size
+        header-template: ['pandasm_header']
+        check-type: exit-positive
+        tags: ['verifier']
+        runner-options: ['verifier-failure', 'verifier-debug-config']
+        code-template: |
+
+          .function i32 main() {
+            newobj v0, R
+            movi.64 v1, 0
+            stobj.v.64 v1, v0, %s
+        cases:
+          - values:
+            - R.fu1
+          - values:
+            - R.fu8
+          - values:
+            - R.fi8
+          - values:
+            - R.fu16
+          - values:
+            - R.fi16
+          - values:
+            - R.fu32
+          - values:
+            - R.fi32
+          - values:
+            - R.fObj
+          - values:
+            - R.fObjArray
+          - values:
+            - R.fi32Array
+
+
+      - file-name: "with_wrong_field_size_j"
+        description: >
+          Check that verifier reports error when the field resolves to a field with size
+          that is not corresponding to bytecode in Java context.
+        isa:
+          verification:
+            - field_id_size
+        header-template: ['java_header']
+        check-type: exit-positive
+        tags: ['verifier']
+        runner-options: ['use-java', 'verifier-failure', 'verifier-debug-config']
+        code-template: |
+
+          .function i32 main() {
+            newobj v0, R
+            fmovi.64 v1, 0.1
+            stobj.v.64 v1, v0, %s
+        cases:
+          - values:
+            - R.fu1
+          - values:
+            - R.fi8
+          - values:
+            - R.fu16
+          - values:
+            - R.fi16
+          - values:
+            - R.fi32
+          - values:
+            - R.fObj
+          - values:
+            - R.fObjArray
+          - values:
+            - R.fi32Array
+          - values:
+            - R.fI
+          - values:
+            - R.fIArray
+
+
+      - file-name: "with_wrong_reg_type_p"
+        description: >
+          Check that verifier reports error when the register contains a value of type not corresponding
+          to the bytecode in PandaAssembly context.
+        isa:
+          verification:
+            - v1_type
+        header-template: ['pandasm_header']
+        check-type: exit-positive
+        tags: ['verifier']
+        runner-options: ['verifier-failure', 'verifier-debug-config']
+        code-template: |
+          .function i32 main() {
+            newobj v0, R
+            %s
+            stobj.v.64 v1, v0, %s
+        cases:
+          # u64
+          - values:
+            - movi v1, 0
+            - R.fu64
+          - values:
+            - movi v1, 0xCAFECAFE
+            - R.fu64
+          - values:
+            - fmovi.64 v1, 1.1
+            - R.fu64
+          - values:
+            - mov.null v1
+            - R.fu64
+          - values:
+            - newobj v1, Q
+            - R.fu64
+          - values:
+            - |
+              #
+                movi v1, 10
+                newarr v1, v1, panda.Object[]
+            - R.fu64
+          # i64
+          - values:
+            - movi v1, 0
+            - R.fi64
+          - values:
+            - movi v1, 0xCAFECAFE
+            - R.fi64
+          - values:
+            - fmovi.64 v1, 1.1
+            - R.fi64
+          - values:
+            - mov.null v1
+            - R.fi64
+          - values:
+            - newobj v1, Q
+            - R.fi64
+          - values:
+            - |
+              #
+                movi v1, 10
+                newarr v1, v1, panda.Object[]
+            - R.fi64
+          # f64
+          - values:
+            - movi v1, 0
+            - R.ff64
+          - values:
+            - movi v1, 0xCAFECAFE
+            - R.ff64
+          - values:
+            - movi.64 v1, 1
+            - R.ff64
+          - values:
+            - mov.null v1
+            - R.ff64
+          - values:
+            - newobj v1, Q
+            - R.ff64
+          - values:
+            - |
+              #
+                movi v1, 10
+                newarr v1, v1, panda.Object[]
+            - R.ff64
+          # f32
+          - values:
+            - movi v1, 0
+            - R.ff32
+          - values:
+            - movi v1, 0xCAFECAFE
+            - R.ff32
+          - values:
+            - movi.64 v1, 1
+            - R.ff32
+          - values:
+            - mov.null v1
+            - R.ff32
+          - values:
+            - newobj v1, Q
+            - R.ff32
+          - values:
+            - |
+              #
+                movi v1, 10
+                newarr v1, v1, panda.Object[]
+            - R.ff32
+
+
+      - file-name: "with_wrong_reg_type_j"
+        description: >
+          Check that verifier reports error when the register contains
+          a value of type not corresponding to the bytecode in Java context.
+        isa:
+          verification:
+            - v1_type
+        header-template: ['java_header']
+        check-type: exit-positive
+        tags: ['verifier']
+        runner-options: ['use-java', 'verifier-failure', 'verifier-debug-config']
+        code-template: |
+          .function i32 main() {
+            newobj v0, R
+            %s
+            stobj.v.64 v1, v0, %s
+        cases:
+          # i64
+          - values:
+            - movi v1, 0
+            - R.fi64
+          - values:
+            - movi v1, 0xCAFECAFE
+            - R.fi64
+          - values:
+            - fmovi.64 v1, 1.1
+            - R.fi64
+          - values:
+            - mov.null v1
+            - R.fi64
+          - values:
+            - newobj v1, Q
+            - R.fi64
+          - values:
+            - |
+              #
+                movi v1, 10
+                newarr v1, v1, java.lang.Object[]
+            - R.fi64
+          # f64
+          - values:
+            - movi v1, 0
+            - R.ff64
+          - values:
+            - movi v1, 0xCAFECAFE
+            - R.ff64
+          - values:
+            - movi.64 v1, 1
+            - R.ff64
+          - values:
+            - mov.null v1
+            - R.ff64
+          - values:
+            - newobj v1, Q
+            - R.ff64
+          - values:
+            - |
+              #
+                movi v1, 10
+                newarr v1, v1, java.lang.Object[]
+            - R.ff64
+          # f32
+          - values:
+            - movi v1, 0
+            - R.ff32
+          - values:
+            - movi v1, 0xCAFECAFE
+            - R.ff32
+          - values:
+            - movi.64 v1, 1
+            - R.ff32
+          - values:
+            - mov.null v1
+            - R.ff32
+          - values:
+            - newobj v1, Q
+            - R.ff32
+          - values:
+            - |
+              #
+                movi v1, 10
+                newarr v1, v1, java.lang.Object[]
+            - R.ff32
+
+
+      - file-name: "op_v1_4_v2_4_id_16"
+        description: Check that compiler reports error when the register number is out of 4 bit size
+        isa:
+          instructions:
+            - sig: stobj.v.64 v1:in:b64, v2:in:ref, field_id
+              acc: none
+              format: [op_v1_4_v2_4_id_16]
+        header-template: ['pandasm_header']
+        runner-options: ['compile-failure']
+        check-type: exit-positive
+        code-template: |
+
+          .function i32 main() {
+            stobj.v.64 %s, R.ff64
+        cases:
+          - values: ['v15, v15']
+            runner-options: ['compile-only']
+          - values: ['v16, v15']
+          - values: ['v15, v16']
+          - values: ['v255, v0']
+          - values: ['v15, v256']
+          - values: ['v65535, v65535']
+          - values: ['v32767, v0']
+
+
+      - file-name: "into_all_field_types"
+        description: Check that register value is stored in field.
+        isa:
+          instructions:
+            - sig: stobj.64 v:in:ref, field_id
+              acc: in:b64
+              format: [op_v_8_id_16]
+        header-template: ['pandasm_header']
+        check-type: exit-positive
+        tags: ['tsan']
+        code-template: |
+          .function i32 main() {
+            movi v7, 5151515
+            newobj v0, R
+            %s
+            ldai 5151515
+            stobj.v.64 v1, v0, R.%s
+            jeq v7, cont   # check acc_none
+            ldai 2
+            return
+          cont:
+            ldobj.v.64 v2, v0, R.%s
+            lda.64 v2
+            %s
+            jeqz success
+            ldai 1
+            return
+          success:
+        cases:
+          # u64
+          - values:
+            - movi.64 v1, 0x0000000000000000
+            - fu64
+            - fu64
+            - |
+              #
+                movi.64 v1, 0x0000000000000000
+                ucmp.64 v1
+          - values:
+            - movi.64 v1, 0xffffffffffffffff
+            - fu64
+            - fu64
+            - |
+              #
+                movi.64 v1, 0xffffffffffffffff
+                ucmp.64 v1
+          - values:
+            - movi.64 v1, 0xa5a5a5a5a5a5a5a5
+            - fu64
+            - fu64
+            - |
+              #
+                movi.64 v1, 0xa5a5a5a5a5a5a5a5
+                ucmp.64 v1
+          # i64
+          - values:
+            - movi.64 v1, 0
+            - fi64
+            - fi64
+            - |
+              #
+                movi.64 v1, 0
+                cmp.64 v1
+          - values:
+            - movi.64 v1, -1
+            - fi64
+            - fi64
+            - |
+              #
+                movi.64 v1, -1
+                cmp.64 v1
+          - values:
+            - movi.64 v1, -6510615555426900571
+            - fi64
+            - fi64
+            - |
+              #
+                movi.64 v1, -6510615555426900571
+                cmp.64 v1
+          # f64
+          - values:
+            - fmovi.64 v1, 0.0
+            - ff64
+            - ff64
+            - |
+              #
+                fmovi.64 v1, 0.0
+                fcmpg.64 v1
+          - values:
+            - fmovi.64 v1, -6510615555426900571.0
+            - ff64
+            - ff64
+            - |
+              #
+                fmovi.64 v1, -6510615555426900571.0
+                fcmpg.64 v1
+          - values:
+            - fmovi.64 v1, 0x7FFFFFFFFFFFFFFF  # NaN
+            - ff64
+            - ff64
+            - |
+              #
+                fmovi.64 v1, 0.0
+                fcmpg.64 v1
+                subi 1
+          - values:
+            - fmovi.64 v1, 0x7ff0000000000000  # + Inf
+            - ff64
+            - ff64
+            - |
+              #
+                fmovi.64 v1, 0x7ff0000000000000
+                fcmpg.64 v1
+          - values:
+            - fmovi.64 v1, 0xfff0000000000000  # - Inf
+            - ff64
+            - ff64
+            - |
+              #
+                fmovi.64 v1, 0xfff0000000000000
+                fcmpg.64 v1

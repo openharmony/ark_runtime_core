@@ -146,11 +146,6 @@ struct Ins {
         return HasFlag(InstFlags::CALL);
     }
 
-    bool IsBuiltinIdr6() const
-    {
-        return opcode == Opcode::BUILTIN_IDR6;
-    }
-
     bool IsPseudoCall() const
     {
         return HasFlag(InstFlags::PSEUDO) && HasFlag(InstFlags::CALL);

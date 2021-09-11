@@ -31,7 +31,7 @@ public:
     MethodTest()
     {
         RuntimeOptions options;
-        options.SetObjectPoolSize(128_MB);
+        options.SetHeapSizeLimit(128_MB);
         options.SetShouldLoadBootPandaFiles(false);
         options.SetShouldInitializeIntrinsics(false);
         options.SetGcType("epsilon");

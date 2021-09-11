@@ -34,10 +34,10 @@ std::string panda::pandasm::Ins::ToString(std::string endline, bool print_args /
         case panda::pandasm::Opcode::<%= insn.asm_token%>: {
             full_operation += "<%= insn.mnemonic%>";
 %  print_kind = case
+%  when insn.call? && !insn.properties.include?('method_id')
+%    'PrintKind::CALLI'
 %  when insn.call? || !insn.public?
 %    'PrintKind::CALL'
-%  when insn.calli?
-%    'PrintKind::CALLI'
 %  else
 %    'PrintKind::DEFAULT'
 %  end

@@ -13,9 +13,25 @@
  * limitations under the License.
  */
 
-#ifndef PANDA_RUNTIME_INCLUDE_BUILTIN_COUNT_H_
-#define PANDA_RUNTIME_INCLUDE_BUILTIN_COUNT_H_
+#include "file_format_version.h"
 
-constexpr size_t NUM_BUILTINS = <%= PandaBuiltins::builtins.length() %>;
+#include <cstring>
+#include <cstdio>
 
-#endif  // PANDA_RUNTIME_INCLUDE_BUILTIN_COUNT_H_
+namespace panda::panda_file {
+
+std::string GetVersion(const std::array<uint8_t, File::VERSION_SIZE> &v)
+{
+    std::string versionstr;
+    for (size_t i = 0; i < File::VERSION_SIZE; i++) {
+        versionstr += std::to_string(v[i]);
+        if (i == (File::VERSION_SIZE - 1)) {
+            break;
+        }
+        versionstr += ".";
+    }
+
+    return versionstr;
+}
+
+}  // namespace panda::panda_file
