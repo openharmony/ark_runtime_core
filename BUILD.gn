@@ -79,7 +79,6 @@ config("ark_config") {
     defines += [
       "PANDA_TARGET_UNIX",
       "PANDA_TARGET_MACOS",
-      "PANDA_USE_FUTEX",
     ]
   } else {
     defines += [
