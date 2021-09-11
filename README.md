@@ -1,13 +1,18 @@
-# Runtime<a name="EN-US_TOPIC_0000001138850082"></a>
+# Runtime Core<a name="EN-US_TOPIC_0000001138850082"></a>
 
--   [Introduction](#section11660541593)
--   [Directory Structure](#section161941989596)
--   [Usage Guidelines](#section1312121216216)
--   [Repositories Involved](#section1371113476307)
+- [Runtime Core<a name="EN-US_TOPIC_0000001138850082"></a>](#runtime-core)
+  - [Introduction<a name="section11660541593"></a>](#introduction)
+  - [Directory Structure<a name="section161941989596"></a>](#directory-structure)
+  - [Usage Guidelines<a name="section1312121216216"></a>](#usage-guidelines)
+    - [Assembler ark\_asm](#assembler-ark_asm)
+    - [Disassembler ark\_disasm](#disassembler-ark_disasm)
+  - [Repositories Involved<a name="section1371113476307"></a>](#repositories-involved)
 
 ## Introduction<a name="section11660541593"></a>
 
-As a common module of ARK runtime, Runtime consists of some basic language-irrelevant runtime libraries, including ARK File, Tooling, and ARK Base. ARK File provides bytecodes and information required for executing bytecodes. Tooling supports Debugger. ARK Base is responsible for implementing system calls.
+As a common module of ARK runtime, Runtime Core consists of some basic language-irrelevant runtime libraries, including ARK File, Tooling, and ARK Base. ARK File provides bytecodes and information required for executing bytecodes. Tooling supports Debugger. ARK Base is responsible for implementing platform related utilities.
+
+For more infomation, see: [ARK Runtime Subsystem](https://gitee.com/openharmony/docs/blob/master/en/readme/ARK-Runtime-Subsystem.md).
 
 ## Directory Structure<a name="section161941989596"></a>
 
@@ -37,9 +42,9 @@ As a common module of ARK runtime, Runtime consists of some basic language-irrel
 
 ## Usage Guidelines<a name="section1312121216216"></a>
 
-Assembler ark\_asm
+### Assembler ark\_asm
 
-The ark\_asm assembler converts a text ARK bytecode file into a bytecode file in binary format.
+The ark\_asm assembler converts the text ARK bytecode file into a bytecode file in binary format.
 
 Command:
 
@@ -69,11 +74,6 @@ ark_asm [Option] Input file Output file
 <td class="cellrowborder" valign="top" width="50%" headers="mcps1.1.3.1.2 "><p id="p1615627173019"><a name="p1615627173019"></a><a name="p1615627173019"></a>Specifies the log file output path after log printing is enabled.</p>
 </td>
 </tr>
-tr id="row1015112763020"><td class="cellrowborder" valign="top" width="50%" headers="mcps1.1.3.1.1 "><p id="p1815182733012"><a name="p1815182733012"></a><a name="p1815182733012"></a>-optimize</p>
-</td>
-<td class="cellrowborder" valign="top" width="50%" headers="mcps1.1.3.1.2 "><p id="p1615627173019"><a name="p1615627173019"></a><a name="p1615627173019"></a>Runs the bytecode optimization.</p>
-</td>
-</tr>
 <tr id="row131515277307"><td class="cellrowborder" valign="top" width="50%" headers="mcps1.1.3.1.1 "><p id="p111572716304"><a name="p111572716304"></a><a name="p111572716304"></a>--optimize</p>
 </td>
 <td class="cellrowborder" valign="top" width="50%" headers="mcps1.1.3.1.2 "><p id="p25842312319"><a name="p25842312319"></a><a name="p25842312319"></a>Enables compilation optimization.</p>
@@ -96,9 +96,9 @@ Input file: ARK bytecodes in text format
 
 Output file: ARK bytecodes in binary format
 
-Disassembler ark\_disasm
+### Disassembler ark\_disasm
 
-The ark\_disasm disassembler converts a bytecode file in binary format into a text ARK bytecode file.
+The ark\_disasm disassembler converts binary ARK bytecodes into readable text ARK bytecodes.
 
 Command:
 
@@ -140,14 +140,13 @@ Input file: ARK bytecodes in binary format
 
 Output file: ARK bytecodes in text format
 
+
+For more infomation, please see: [ARK Runtime Usage Guide](https://gitee.com/openharmony/ark_js_runtime/blob/master/docs/ARK-Runtime-Usage-Guide.md).
+
 ## Repositories Involved<a name="section1371113476307"></a>
 
-[ARK Runtime Usage Guide](https://gitee.com/openharmony/ark_js_runtime/blob/master/docs/ARK-Runtime-Usage-Guide.md)
+**[ark\_runtime\_core](https://gitee.com/openharmony/ark_runtime_core)**
 
-[ARK Runtime Subsystem](https://gitee.com/openharmony/ark_js_runtime/blob/master/docs/ARK-Runtime-Subsystem.md)
+[ark\_js\_runtime](https://gitee.com/openharmony/ark_js_runtime)
 
-**[ark/runtime\_core](README_zh.md)**
-
-[ark/js\_runtime](https://gitee.com/openharmony/ark_js_runtime/blob/master/README.md)
-
-[ark/ts2abc](https://gitee.com/openharmony/ark_js_runtime/blob/master/README.md)
+[ark\_ts2abc](https://gitee.com/openharmony/ark_ts2abc)
