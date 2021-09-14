@@ -1,13 +1,18 @@
-# 方舟公共组件<a name="ZH-CN_TOPIC_0000001138850082"></a>
+# 方舟运行时公共组件<a name="ZH-CN_TOPIC_0000001138850082"></a>
 
--   [简介](#section11660541593)
--   [目录](#section161941989596)
--   [使用说明](#section1312121216216)
--   [相关仓](#section1371113476307)
+- [方舟运行时公共组件<a name="ZH-CN_TOPIC_0000001138850082"></a>](#方舟运行时公共组件)
+  - [简介<a name="section11660541593"></a>](#简介)
+  - [目录<a name="section161941989596"></a>](#目录)
+  - [使用说明<a name="section1312121216216"></a>](#使用说明)
+    - [汇编器工具概述](#汇编器工具概述)
+    - [反汇编器工具概述](#反汇编器工具概述)
+  - [相关仓<a name="section1371113476307"></a>](#相关仓)
 
 ## 简介<a name="section11660541593"></a>
 
-Runtime组件是方舟运行时的公共组件，主要包括一些语言无关的基础运行库，包含承载字节码以及执行字节码所需要相关信息的ARK File、支持Debugger的Tooling、负责对应系统调用的ARK Base等。
+Runtime Core组件是方舟运行时的公共组件，主要包括一些语言无关的基础运行库，包含承载字节码以及执行字节码所需要相关信息的ARK File、支持Debugger的Tooling、负责系统平台公共基础接口的ARK Base等。
+
+更多信息请参考：[方舟运行时子系统](https://gitee.com/openharmony/docs/blob/master/zh-cn/readme/ARK-Runtime-Subsystem-zh.md)
 
 ## 目录<a name="section161941989596"></a>
 
@@ -37,7 +42,7 @@ Runtime组件是方舟运行时的公共组件，主要包括一些语言无关�
 
 ## 使用说明<a name="section1312121216216"></a>
 
-汇编器工具概述
+### 汇编器工具概述
 
 工具名称为ark\_asm，用于将文本格式的方舟字节码文件转换为二进制格式的方舟字节码文件。
 
@@ -69,9 +74,9 @@ ark_asm [选项] 输入文件 输出文件
 <td class="cellrowborder" valign="top" width="50%" headers="mcps1.1.3.1.2 "><p id="p1615627173019"><a name="p1615627173019"></a><a name="p1615627173019"></a>使能log打印后，指定log文件输出路径</p>
 </td>
 </tr>
-<tr id="row1015112763020"><td class="cellrowborder" valign="top" width="50%" headers="mcps1.1.3.1.1 "><p id="p1815182733012"><a name="p1815182733012"></a><a name="p1815182733012"></a>--optimize</p>
+<tr id="row131515277307"><td class="cellrowborder" valign="top" width="50%" headers="mcps1.1.3.1.1 "><p id="p111572716304"><a name="p111572716304"></a><a name="p111572716304"></a>--optimize</p>
 </td>
-<td class="cellrowborder" valign="top" width="50%" headers="mcps1.1.3.1.2 "><p id="p1615627173019"><a name="p1615627173019"></a><a name="p1615627173019"></a>执行字节码优化</p>
+<td class="cellrowborder" valign="top" width="50%" headers="mcps1.1.3.1.2 "><p id="p25842312319"><a name="p25842312319"></a><a name="p25842312319"></a>使能编译优化</p>
 </td>
 </tr>
 <tr id="row1815112753020"><td class="cellrowborder" valign="top" width="50%" headers="mcps1.1.3.1.1 "><p id="p2151927193015"><a name="p2151927193015"></a><a name="p2151927193015"></a>--size-stat</p>
@@ -91,9 +96,9 @@ ark_asm [选项] 输入文件 输出文件
 
 输出文件：二进制格式的方舟字节码
 
-反汇编器工具概述
+### 反汇编器工具概述
 
-工具名称为ark\_disasm，用于将二进制格式的方舟字节码文件转换为可读的文本格式的方舟字节码文件。
+工具名称为ark\_disasm，用于将二进制格式的方舟字节码文件转换为文本格式的方舟字节码文件。
 
 命令行格式：
 
@@ -125,7 +130,7 @@ ark_disasm [选项] 输入文件 输出文件
 </tr>
 <tr id="row194197407327"><td class="cellrowborder" valign="top" width="50%" headers="mcps1.1.3.1.1 "><p id="p154205401325"><a name="p154205401325"></a><a name="p154205401325"></a>--verbose</p>
 </td>
-<td class="cellrowborder" valign="top" width="50%" headers="mcps1.1.3.1.2 "><p id="p369871173312"><a name="p369871173312"></a><a name="p369871173312"></a>增加输出汇编文件的注释信息</p>
+<td class="cellrowborder" valign="top" width="50%" headers="mcps1.1.3.1.2 "><p id="p369871173312"><a name="p369871173312"></a><a name="p369871173312"></a>增加输出文件的注释信息</p>
 </td>
 </tr>
 </tbody>
@@ -135,14 +140,13 @@ ark_disasm [选项] 输入文件 输出文件
 
 输出文件：文本格式的方舟字节码
 
+
+更多使用说明请参考：[方舟运行时使用指南](https://gitee.com/openharmony/ark_js_runtime/blob/master/docs/ARK-Runtime-Usage-Guide-zh.md)
+
 ## 相关仓<a name="section1371113476307"></a>
 
-[方舟运行时使用指南](https://gitee.com/openharmony/ark_js_runtime/blob/master/docs/ARK-Runtime-Usage-Guide-zh.md)
+**[ark\_runtime\_core](https://gitee.com/openharmony/ark_runtime_core)**
 
-[方舟运行时子系统](https://gitee.com/openharmony/ark_js_runtime/blob/master/docs/ARK-Runtime-Subsystem-zh.md)
+[ark\_js\_runtime](https://gitee.com/openharmony/ark_js_runtime)
 
-**[ark/runtime\_core](README_zh.md)**
-
-[ark/js\_runtime](https://gitee.com/openharmony/ark_js_runtime/blob/master/README_zh.md)
-
-[ark/ts2abc](https://gitee.com/openharmony/ark_ts2abc/blob/master/README_zh.md)
+[ark\_ts2abc](https://gitee.com/openharmony/ark_ts2abc)
