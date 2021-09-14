@@ -18,6 +18,18 @@
 
 #include <unistd.h>
 
+// Mac Os' libc doesn't have this macro
+#ifndef TEMP_FAILURE_RETRY
+#define TEMP_FAILURE_RETRY(exp)                    \
+    (__extension__({                               \
+        decltype(exp) _result;                     \
+        do {                                       \
+            _result = (exp);                       \
+        } while (_result == -1 && errno == EINTR); \
+        _result;                                   \
+    }))
+#endif
+
 // NOLINTNEXTLINE(cppcoreguidelines-macro-usage)
 #define PANDA_FAILURE_RETRY(exp) (__extension__ TEMP_FAILURE_RETRY(exp))
 

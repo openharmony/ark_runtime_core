@@ -98,7 +98,7 @@ ohos_executable("ark_disasm") {
     "$ark_root/libpandafile:libarkfile_frontend_static",
   ]
 
-  if (!is_mingw && !ark_standalone_build) {
+  if (!is_mac && !is_mingw && !ark_standalone_build) {
     ldflags = [ "-static-libstdc++" ]
   }
 
