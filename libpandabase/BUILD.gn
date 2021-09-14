@@ -60,7 +60,6 @@ if (is_mingw) {
     "$ark_root/libpandabase/mem/pool_manager.cpp",
     "$ark_root/libpandabase/mem/pool_map.cpp",
     "$ark_root/libpandabase/os/dfx_option.cpp",
-    "$ark_root/libpandabase/os/filesystem.cpp",
     "$ark_root/libpandabase/os/native_stack.cpp",
     "$ark_root/libpandabase/os/property.cpp",
 
@@ -89,6 +88,7 @@ if (is_mingw) {
 
   if (!is_mac) {
     libarkbase_sources += [
+      "$ark_root/libpandabase/os/filesystem.cpp",
       "$ark_root/libpandabase/os/unix/exec.cpp",
       "$ark_root/libpandabase/os/unix/futex/mutex.cpp",
       "$ark_root/libpandabase/os/unix/pipe.cpp",
