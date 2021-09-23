@@ -69,7 +69,7 @@ protected:
         virtual ~Table() = default;
 
         virtual coretypes::String *GetOrInternString(const uint8_t *mutf8_data, uint32_t utf16_length,
-                                                     LanguageContext ctx);
+                                                     bool can_be_compressed, LanguageContext ctx);
         virtual coretypes::String *GetOrInternString(const uint16_t *utf16_data, uint32_t utf16_length,
                                                      LanguageContext ctx);
         coretypes::String *GetOrInternString(coretypes::String *string, LanguageContext ctx);
@@ -79,7 +79,8 @@ protected:
 
         size_t Size();
 
-        coretypes::String *GetString(const uint8_t *utf8_data, uint32_t utf16_length, LanguageContext ctx);
+        coretypes::String *GetString(const uint8_t *utf8_data, uint32_t utf16_length, bool can_be_compressed,
+                                     LanguageContext ctx);
         coretypes::String *GetString(const uint16_t *utf16_data, uint32_t utf16_length, LanguageContext ctx);
         coretypes::String *GetString(coretypes::String *string, LanguageContext ctx);
 
@@ -107,7 +108,7 @@ protected:
         }
         ~InternalTable() override = default;
 
-        coretypes::String *GetOrInternString(const uint8_t *mutf8_data, uint32_t utf16_length,
+        coretypes::String *GetOrInternString(const uint8_t *mutf8_data, uint32_t utf16_length, bool can_be_compressed,
                                              LanguageContext ctx) override;
 
         coretypes::String *GetOrInternString(const uint16_t *utf16_data, uint32_t utf16_length,

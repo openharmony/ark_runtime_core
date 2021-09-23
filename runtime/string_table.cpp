@@ -24,9 +24,10 @@ namespace panda {
 
 coretypes::String *StringTable::GetOrInternString(const uint8_t *mutf8_data, uint32_t utf16_length, LanguageContext ctx)
 {
-    auto *str = internal_table_.GetString(mutf8_data, utf16_length, ctx);
+    bool can_be_compressed = coretypes::String::CanBeCompressedMUtf8(mutf8_data);
+    auto *str = internal_table_.GetString(mutf8_data, utf16_length, can_be_compressed, ctx);
     if (str == nullptr) {
-        str = table_.GetOrInternString(mutf8_data, utf16_length, ctx);
+        str = table_.GetOrInternString(mutf8_data, utf16_length, can_be_compressed, ctx);
     }
     return str;
 }
@@ -54,7 +55,7 @@ coretypes::String *StringTable::GetOrInternInternalString(const panda_file::File
                                                           LanguageContext ctx)
 {
     auto data = pf.GetStringData(id);
-    coretypes::String *str = table_.GetString(data.data, data.utf16_length, ctx);
+    coretypes::String *str = table_.GetString(data.data, data.utf16_length, data.is_ascii, ctx);
     if (str != nullptr) {
         return str;
     }
@@ -77,13 +78,13 @@ size_t StringTable::Size()
 }
 
 coretypes::String *StringTable::Table::GetString(const uint8_t *utf8_data, uint32_t utf16_length,
-                                                 [[maybe_unused]] LanguageContext ctx)
+                                                 bool can_be_compressed, [[maybe_unused]] LanguageContext ctx)
 {
-    uint32_t hash_code = coretypes::String::ComputeHashcodeMutf8(utf8_data, utf16_length);
+    uint32_t hash_code = coretypes::String::ComputeHashcodeMutf8(utf8_data, utf16_length, can_be_compressed);
     os::memory::ReadLockHolder holder(table_lock_);
     for (auto it = table_.find(hash_code); it != table_.end(); it++) {
         auto found_string = it->second;
-        if (coretypes::String::StringsAreEqualMUtf8(found_string, utf8_data, utf16_length)) {
+        if (coretypes::String::StringsAreEqualMUtf8(found_string, utf8_data, utf16_length, can_be_compressed)) {
             return found_string;
         }
     }
@@ -140,15 +141,16 @@ coretypes::String *StringTable::Table::InternString(coretypes::String *string, [
 }
 
 coretypes::String *StringTable::Table::GetOrInternString(const uint8_t *mutf8_data, uint32_t utf16_length,
-                                                         LanguageContext ctx)
+                                                         bool can_be_compressed, LanguageContext ctx)
 {
-    coretypes::String *result = GetString(mutf8_data, utf16_length, ctx);
+    coretypes::String *result = GetString(mutf8_data, utf16_length, can_be_compressed, ctx);
     if (result != nullptr) {
         return result;
     }
 
     // Even if this string is not inserted, it should get removed during GC
-    result = coretypes::String::CreateFromMUtf8(mutf8_data, utf16_length, ctx, Runtime::GetCurrent()->GetPandaVM());
+    result = coretypes::String::CreateFromMUtf8(mutf8_data, utf16_length, can_be_compressed, ctx,
+                                                Runtime::GetCurrent()->GetPandaVM());
 
     result = InternString(result, ctx);
 
@@ -233,15 +235,15 @@ size_t StringTable::Table::Size()
 }
 
 coretypes::String *StringTable::InternalTable::GetOrInternString(const uint8_t *mutf8_data, uint32_t utf16_length,
-                                                                 LanguageContext ctx)
+                                                                 bool can_be_compressed, LanguageContext ctx)
 {
-    coretypes::String *result = GetString(mutf8_data, utf16_length, ctx);
+    coretypes::String *result = GetString(mutf8_data, utf16_length, can_be_compressed, ctx);
     if (result != nullptr) {
         return result;
     }
 
-    result =
-        coretypes::String::CreateFromMUtf8(mutf8_data, utf16_length, ctx, Runtime::GetCurrent()->GetPandaVM(), false);
+    result = coretypes::String::CreateFromMUtf8(mutf8_data, utf16_length, can_be_compressed, ctx,
+                                                Runtime::GetCurrent()->GetPandaVM(), false);
     return InternStringNonMovable(result, ctx);
 }
 
@@ -262,12 +264,12 @@ coretypes::String *StringTable::InternalTable::GetOrInternString(const panda_fil
                                                                  panda_file::File::EntityId id, LanguageContext ctx)
 {
     auto data = pf.GetStringData(id);
-    coretypes::String *result = GetString(data.data, data.utf16_length, ctx);
+    coretypes::String *result = GetString(data.data, data.utf16_length, data.is_ascii, ctx);
     if (result != nullptr) {
         return result;
     }
-    result = coretypes::String::CreateFromMUtf8(data.data, data.utf16_length, ctx, Runtime::GetCurrent()->GetPandaVM(),
-                                                false);
+    result = coretypes::String::CreateFromMUtf8(data.data, data.utf16_length, data.is_ascii, ctx,
+                                                Runtime::GetCurrent()->GetPandaVM(), false);
     result = InternStringNonMovable(result, ctx);
 
     // Update cache.

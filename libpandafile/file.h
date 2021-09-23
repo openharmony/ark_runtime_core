@@ -72,8 +72,11 @@ public:
     };
 
     struct StringData {
-        uint32_t utf16_length;
-        const uint8_t *data;
+        StringData(uint32_t len, const uint8_t *d) : utf16_length(len), data(d), is_ascii(false) {}
+        StringData() = default;
+        uint32_t utf16_length;  // NOLINT(misc-non-private-member-variables-in-classes)
+        const uint8_t *data;    // NOLINT(misc-non-private-member-variables-in-classes)
+        bool is_ascii;          // NOLINT(misc-non-private-member-variables-in-classes)
     };
 
     // NOLINTNEXTLINE(cppcoreguidelines-special-member-functions, hicpp-special-member-functions)
