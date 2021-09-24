@@ -1261,8 +1261,8 @@ public:
         LOG_INST();
         DBGBRK();
         Sync();
-        // TODO(vdyadov): take into consideration possible exception generation
-        //                context is of good precision here
+        // take into consideration possible exception generation
+        // context is of good precision here
         return CheckBinaryOp2<format>(F32, F32, F32);
     }
 

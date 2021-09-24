@@ -21,11 +21,11 @@
 #include "assembly-emitter.h"
 #include "assembly-parser.h"
 
-#include <stdio.h>
+#include <cstddef>
+#include <cstdio>
 #include <cstdint>
 #include <vector>
 #include <gtest/gtest.h>
-#include <stddef.h>
 #include <memory>
 #include <securec.h>
 

@@ -40,12 +40,12 @@ TEST(PandaCache, TestMethodCache)
     EntityId id1(100);
     ASSERT_EQ(cache.GetMethodFromCache(id1), nullptr);
 
-    Method *method1 = reinterpret_cast<Method *>(GetNewMockPointer());
+    auto *method1 = reinterpret_cast<Method *>(GetNewMockPointer());
     cache.SetMethodCache(id1, method1);
     ASSERT_EQ(cache.GetMethodFromCache(id1), method1);
 
     EntityId id2(10000);
-    Method *method2 = reinterpret_cast<Method *>(GetNewMockPointer());
+    auto *method2 = reinterpret_cast<Method *>(GetNewMockPointer());
     cache.SetMethodCache(id2, method2);
     ASSERT_EQ(cache.GetMethodFromCache(id2), method2);
 }
@@ -57,13 +57,13 @@ TEST(PandaCache, TestFieldCache)
     EntityId new_id1(id1.GetOffset() << 2U);
     ASSERT_EQ(cache.GetFieldFromCache(new_id1), nullptr);
 
-    Field *field1 = reinterpret_cast<Field *>(GetNewMockPointer());
+    auto *field1 = reinterpret_cast<Field *>(GetNewMockPointer());
     cache.SetFieldCache(new_id1, field1);
     ASSERT_EQ(cache.GetFieldFromCache(new_id1), field1);
 
     EntityId id2(10000);
     EntityId new_id2(id2.GetOffset() << 2U);
-    Field *field2 = reinterpret_cast<Field *>(GetNewMockPointer());
+    auto *field2 = reinterpret_cast<Field *>(GetNewMockPointer());
     cache.SetFieldCache(new_id2, field2);
     ASSERT_EQ(cache.GetFieldFromCache(new_id2), field2);
 }
@@ -90,7 +90,7 @@ struct ElementMock {
 
 static ElementMock *GetNewMockElement(int i)
 {
-    ElementMock *m = new ElementMock();
+    auto *m = new ElementMock();
     m->data = i;
     return m;
 }
