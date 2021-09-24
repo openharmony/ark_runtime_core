@@ -15,12 +15,12 @@
 
 #include "utils/string_helpers.h"
 
+#include <cerrno>
 #include <cstdarg>
 
 #include <sstream>
 
 #include <gtest/gtest.h>
-#include <errno.h>
 
 namespace panda::helpers::string::test {
 
