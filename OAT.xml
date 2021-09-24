@@ -60,8 +60,52 @@ Note:If the text contains special characters, please escape them according to th
             <filefilter name="binaryFileTypePolicyFilter" desc="二进制文件校验策略的过滤条件" >  
             </filefilter>
             <filefilter name="copyrightPolicyFilter" desc="copyright文件头校验策略的过滤条件" >
+                <filteritem type="filepath" name="AUTHORS" desc="开发者名单"/>
+                <filteritem type="filepath" name="scripts/dep-lists/ubuntu-18-04-arm-dev" desc="ubuntu构建依赖软件清单"/>
+                <filteritem type="filepath" name="scripts/dep-lists/ubuntu-18-04-build" desc="ubuntu构建依赖软件清单"/>
+                <filteritem type="filepath" name="scripts/dep-lists/ubuntu-18-04-ci" desc="ubuntu构建依赖软件清单"/>
+                <filteritem type="filepath" name="scripts/dep-lists/ubuntu-18-04-cross-arm-all" desc="ubuntu构建依赖软件清单"/>
+                <filteritem type="filepath" name="scripts/dep-lists/ubuntu-18-04-cross-windows" desc="ubuntu构建依赖软件清单"/>
+                <filteritem type="filepath" name="scripts/dep-lists/ubuntu-18-04-cross-x86" desc="ubuntu构建依赖软件清单"/>
+                <filteritem type="filepath" name="scripts/dep-lists/ubuntu-18-04-dev" desc="ubuntu构建依赖软件清单"/>
+                <filteritem type="filepath" name="scripts/dep-lists/ubuntu-18-04-fuzzing" desc="ubuntu构建依赖软件清单"/>
+                <filteritem type="filepath" name="scripts/dep-lists/ubuntu-20-04-build" desc="ubuntu构建依赖软件清单"/>
+                <filteritem type="filepath" name="scripts/dep-lists/ubuntu-20-04-ci" desc="ubuntu构建依赖软件清单"/>
+                <filteritem type="filepath" name="scripts/dep-lists/ubuntu-20-04-cross-arm-all" desc="ubuntu构建依赖软件清单"/>
+                <filteritem type="filepath" name="scripts/dep-lists/ubuntu-20-04-cross-windows" desc="ubuntu构建依赖软件清单"/>
+                <filteritem type="filepath" name="scripts/dep-lists/ubuntu-20-04-cross-x86" desc="ubuntu构建依赖软件清单"/>
+                <filteritem type="filepath" name="scripts/dep-lists/ubuntu-20-04-dev" desc="ubuntu构建依赖软件清单"/>
+                <filteritem type="filepath" name="scripts/dep-lists/ubuntu-20-04-fuzzing" desc="ubuntu构建依赖软件清单"/>
+                <filteritem type="filepath" name="scripts/dep-lists/ubuntu-build" desc="ubuntu构建依赖软件清单"/>
+                <filteritem type="filepath" name="scripts/dep-lists/ubuntu-cross-arm-all" desc="ubuntu构建依赖软件清单"/>
+                <filteritem type="filepath" name="scripts/dep-lists/ubuntu-cross-windows" desc="ubuntu构建依赖软件清单"/>
+                <filteritem type="filepath" name="scripts/dep-lists/ubuntu-cross-x86" desc="ubuntu构建依赖软件清单"/>
+                <filteritem type="filepath" name="scripts/dep-lists/ubuntu-dev" desc="ubuntu构建依赖软件清单"/>
+                <filteritem type="filepath" name="scripts/dep-lists/ubuntu-fuzzing" desc="ubuntu构建依赖软件清单"/>
             </filefilter>
             <filefilter name="defaultPolicyFilter" desc="根目录LICENSE文件校验策略的过滤条件xxx" >
+                <filteritem type="filepath" name="AUTHORS" desc="开发者名单"/>
+                <filteritem type="filepath" name="scripts/dep-lists/ubuntu-18-04-arm-dev" desc="ubuntu构建依赖软件清单"/>
+                <filteritem type="filepath" name="scripts/dep-lists/ubuntu-18-04-build" desc="ubuntu构建依赖软件清单"/>
+                <filteritem type="filepath" name="scripts/dep-lists/ubuntu-18-04-ci" desc="ubuntu构建依赖软件清单"/>
+                <filteritem type="filepath" name="scripts/dep-lists/ubuntu-18-04-cross-arm-all" desc="ubuntu构建依赖软件清单"/>
+                <filteritem type="filepath" name="scripts/dep-lists/ubuntu-18-04-cross-windows" desc="ubuntu构建依赖软件清单"/>
+                <filteritem type="filepath" name="scripts/dep-lists/ubuntu-18-04-cross-x86" desc="ubuntu构建依赖软件清单"/>
+                <filteritem type="filepath" name="scripts/dep-lists/ubuntu-18-04-dev" desc="ubuntu构建依赖软件清单"/>
+                <filteritem type="filepath" name="scripts/dep-lists/ubuntu-18-04-fuzzing" desc="ubuntu构建依赖软件清单"/>
+                <filteritem type="filepath" name="scripts/dep-lists/ubuntu-20-04-build" desc="ubuntu构建依赖软件清单"/>
+                <filteritem type="filepath" name="scripts/dep-lists/ubuntu-20-04-ci" desc="ubuntu构建依赖软件清单"/>
+                <filteritem type="filepath" name="scripts/dep-lists/ubuntu-20-04-cross-arm-all" desc="ubuntu构建依赖软件清单"/>
+                <filteritem type="filepath" name="scripts/dep-lists/ubuntu-20-04-cross-windows" desc="ubuntu构建依赖软件清单"/>
+                <filteritem type="filepath" name="scripts/dep-lists/ubuntu-20-04-cross-x86" desc="ubuntu构建依赖软件清单"/>
+                <filteritem type="filepath" name="scripts/dep-lists/ubuntu-20-04-dev" desc="ubuntu构建依赖软件清单"/>
+                <filteritem type="filepath" name="scripts/dep-lists/ubuntu-20-04-fuzzing" desc="ubuntu构建依赖软件清单"/>
+                <filteritem type="filepath" name="scripts/dep-lists/ubuntu-build" desc="ubuntu构建依赖软件清单"/>
+                <filteritem type="filepath" name="scripts/dep-lists/ubuntu-cross-arm-all" desc="ubuntu构建依赖软件清单"/>
+                <filteritem type="filepath" name="scripts/dep-lists/ubuntu-cross-windows" desc="ubuntu构建依赖软件清单"/>
+                <filteritem type="filepath" name="scripts/dep-lists/ubuntu-cross-x86" desc="ubuntu构建依赖软件清单"/>
+                <filteritem type="filepath" name="scripts/dep-lists/ubuntu-dev" desc="ubuntu构建依赖软件清单"/>
+                <filteritem type="filepath" name="scripts/dep-lists/ubuntu-fuzzing" desc="ubuntu构建依赖软件清单"/>
             </filefilter>
         </filefilterlist>
     </oatconfig>
