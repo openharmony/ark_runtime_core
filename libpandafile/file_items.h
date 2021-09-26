@@ -363,6 +363,7 @@ public:
 private:
     std::string str_;
     size_t utf16_length_ {0};
+    size_t is_ascii_ {0};
 };
 
 class AnnotationItem;

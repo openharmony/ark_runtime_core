@@ -37,6 +37,9 @@ public:
     }
 
     static String *CreateFromMUtf8(const uint8_t *mutf8_data, size_t mutf8_length, uint32_t utf16_length,
+                                   bool can_be_compressed, LanguageContext ctx, PandaVM *vm, bool movable = true);
+
+    static String *CreateFromMUtf8(const uint8_t *mutf8_data, uint32_t utf16_length, bool can_be_compressed,
                                    LanguageContext ctx, PandaVM *vm, bool movable = true);
 
     static String *CreateFromMUtf8(const uint8_t *mutf8_data, uint32_t utf16_length, LanguageContext ctx, PandaVM *vm,
@@ -235,11 +238,14 @@ public:
      * Compares strings by bytes. It doesn't check canonical unicode equivalence.
      */
     static bool StringsAreEqualMUtf8(String *str1, const uint8_t *mutf8_data, uint32_t utf16_length);
+    static bool StringsAreEqualMUtf8(String *str1, const uint8_t *mutf8_data, uint32_t utf16_length,
+                                     bool can_be_compressed);
     /**
      * Compares strings by bytes. It doesn't check canonical unicode equivalence.
      */
     static bool StringsAreEqualUtf16(String *str1, const uint16_t *utf16_data, uint32_t utf16_data_length);
     static String *DoReplace(String *src, uint16_t old_c, uint16_t new_c, LanguageContext ctx, PandaVM *vm);
+    static uint32_t ComputeHashcodeMutf8(const uint8_t *mutf8_data, uint32_t length, bool can_be_compressed);
     static uint32_t ComputeHashcodeMutf8(const uint8_t *mutf8_data, uint32_t length);
     static uint32_t ComputeHashcodeUtf16(uint16_t *utf16_data, uint32_t length);
 
@@ -255,6 +261,8 @@ public:
 
     static String *FastSubString(String *src, uint32_t start, uint32_t utf16_length, LanguageContext ctx,
                                  PandaVM *vm = nullptr);
+
+    static bool CanBeCompressedMUtf8(const uint8_t *mutf8_data);
 
 protected:
     void SetLength(uint32_t length, bool compressed = false)

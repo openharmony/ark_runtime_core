@@ -27,7 +27,9 @@ inline File::StringData File::GetStringData(EntityId id) const
     StringData str_data {};
     auto sp = GetSpanFromId(id);
 
-    str_data.utf16_length = panda_file::helpers::ReadULeb128(&sp);
+    auto tag_utf16_length = panda_file::helpers::ReadULeb128(&sp);
+    str_data.utf16_length = tag_utf16_length >> 1U;
+    str_data.is_ascii = static_cast<bool>(tag_utf16_length & 1U);
     str_data.data = sp.data();
 
     return str_data;
