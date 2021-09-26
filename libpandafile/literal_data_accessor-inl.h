@@ -55,8 +55,7 @@ inline void LiteralDataAccessor::EnumerateLiteralVals(File::EntityId id, const C
                 value = static_cast<float>(helpers::Read<sizeof(uint32_t)>(&sp));
                 break;
             case LiteralTag::STRING: {
-                auto offset = static_cast<uint32_t>(helpers::Read<sizeof(uint32_t)>(&sp));
-                value = panda_file_.GetStringData(File::EntityId(offset));
+                value = static_cast<uint32_t>(helpers::Read<sizeof(uint32_t)>(&sp));
                 break;
             }
             case LiteralTag::METHOD:

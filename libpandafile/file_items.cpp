@@ -18,6 +18,7 @@
 #include "macros.h"
 #include "utils/bit_utils.h"
 #include "utils/leb128.h"
+#include "utils/utf.h"
 
 #include <limits>
 #include <iomanip>
@@ -78,18 +79,32 @@ StringItem::StringItem(std::string str) : str_(std::move(str))
 {
     str_.push_back(0);
     utf16_length_ = utf::MUtf8ToUtf16Size(utf::CStringAsMutf8(str_.data()));
+    is_ascii_ = 1;
+
+    for (auto c : str_) {
+        if (static_cast<uint8_t>(c) > utf::MUTF8_1B_MAX) {
+            is_ascii_ = 0;
+            break;
+        }
+    }
 }
 
 size_t StringItem::CalculateSize() const
 {
-    return leb128::UnsignedEncodingSize(utf16_length_) + str_.size();
+    return leb128::UnsignedEncodingSize((utf16_length_ << 1U) | is_ascii_) + str_.size();
 }
 
 bool StringItem::Write(Writer *writer)
 {
     ASSERT(GetOffset() == writer->GetOffset());
 
-    if (!writer->WriteUleb128(utf16_length_)) {
+    constexpr size_t max_string_length = 0x7fffffffU;
+    if (utf16_length_ > max_string_length) {
+        LOG(ERROR, PANDAFILE) << "Writing StringItem with size greater than 0x7fffffffU is not supported!";
+        return false;
+    }
+
+    if (!writer->WriteUleb128((utf16_length_ << 1U) | is_ascii_)) {
         return false;
     }
 

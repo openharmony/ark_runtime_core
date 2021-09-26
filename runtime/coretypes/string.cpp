@@ -71,9 +71,8 @@ String *String::CreateFromString(String *str, LanguageContext ctx, PandaVM *vm)
 
 /* static */
 String *String::CreateFromMUtf8(const uint8_t *mutf8_data, size_t mutf8_length, uint32_t utf16_length,
-                                LanguageContext ctx, PandaVM *vm, bool movable)
+                                bool can_be_compressed, LanguageContext ctx, PandaVM *vm, bool movable)
 {
-    bool can_be_compressed = compressed_strings_enabled ? utf::IsMUtf8OnlySingleBytes(mutf8_data) : false;
     auto string = AllocStringObject(utf16_length, can_be_compressed, ctx, vm, movable);
     if (string == nullptr) {
         return nullptr;
@@ -101,7 +100,15 @@ String *String::CreateFromMUtf8(const uint8_t *mutf8_data, size_t mutf8_length, 
 String *String::CreateFromMUtf8(const uint8_t *mutf8_data, uint32_t utf16_length, LanguageContext ctx, PandaVM *vm,
                                 bool movable)
 {
-    return CreateFromMUtf8(mutf8_data, utf::Mutf8Size(mutf8_data), utf16_length, ctx, vm, movable);
+    bool can_be_compressed = CanBeCompressedMUtf8(mutf8_data);
+    return CreateFromMUtf8(mutf8_data, utf::Mutf8Size(mutf8_data), utf16_length, can_be_compressed, ctx, vm, movable);
+}
+
+/* static */
+String *String::CreateFromMUtf8(const uint8_t *mutf8_data, uint32_t utf16_length, bool can_be_compressed,
+                                LanguageContext ctx, PandaVM *vm, bool movable)
+{
+    return CreateFromMUtf8(mutf8_data, utf::Mutf8Size(mutf8_data), utf16_length, can_be_compressed, ctx, vm, movable);
 }
 
 /* static */
@@ -109,7 +116,8 @@ String *String::CreateFromMUtf8(const uint8_t *mutf8_data, LanguageContext ctx, 
 {
     size_t mutf8_length = utf::Mutf8Size(mutf8_data);
     size_t utf16_length = utf::MUtf8ToUtf16Size(mutf8_data, mutf8_length);
-    return CreateFromMUtf8(mutf8_data, mutf8_length, utf16_length, ctx, vm, movable);
+    bool can_be_compressed = CanBeCompressedMUtf8(mutf8_data);
+    return CreateFromMUtf8(mutf8_data, mutf8_length, utf16_length, can_be_compressed, ctx, vm, movable);
 }
 
 /* static */
@@ -398,6 +406,12 @@ bool String::CanBeCompressedMUtf8(const uint8_t *mutf8_data, uint32_t mutf8_leng
 }
 
 /* static */
+bool String::CanBeCompressedMUtf8(const uint8_t *mutf8_data)
+{
+    return compressed_strings_enabled ? utf::IsMUtf8OnlySingleBytes(mutf8_data) : false;
+}
+
+/* static */
 bool String::CanBeCompressedUtf16(const uint16_t *utf16_data, uint32_t utf16_length, uint16_t non)
 {
     if (!compressed_strings_enabled) {
@@ -452,17 +466,26 @@ bool String::StringsAreEqual(String *str1, String *str2)
 /* static */
 bool String::StringsAreEqualMUtf8(String *str1, const uint8_t *mutf8_data, uint32_t utf16_length)
 {
+    if (str1->GetLength() != utf16_length) {
+        return false;
+    }
+    return StringsAreEqualMUtf8(str1, mutf8_data, utf16_length, CanBeCompressedMUtf8(mutf8_data));
+}
+
+/* static */
+bool String::StringsAreEqualMUtf8(String *str1, const uint8_t *mutf8_data, uint32_t utf16_length,
+                                  bool can_be_compressed)
+{
     bool result = true;
     if (str1->GetLength() != utf16_length) {
         result = false;
     } else {
         bool str1_can_be_compressed = !str1->IsUtf16();
-        bool data2_can_be_compressed = compressed_strings_enabled ? utf::IsMUtf8OnlySingleBytes(mutf8_data) : false;
-        if (str1_can_be_compressed != data2_can_be_compressed) {
+        if (str1_can_be_compressed != can_be_compressed) {
             return false;
         }
 
-        ASSERT(str1_can_be_compressed == data2_can_be_compressed);
+        ASSERT(str1_can_be_compressed == can_be_compressed);
         if (str1_can_be_compressed) {
             Span<const uint8_t> data1(str1->GetDataMUtf8(), str1->GetLength());
             Span<const uint8_t> data2(mutf8_data, utf16_length);
@@ -608,7 +631,12 @@ uint32_t String::ComputeHashcode()
 /* static */
 uint32_t String::ComputeHashcodeMutf8(const uint8_t *mutf8_data, uint32_t utf16_length)
 {
-    bool can_be_compressed = compressed_strings_enabled ? utf::IsMUtf8OnlySingleBytes(mutf8_data) : false;
+    return ComputeHashcodeMutf8(mutf8_data, utf16_length, CanBeCompressedMUtf8(mutf8_data));
+}
+
+/* static */
+uint32_t String::ComputeHashcodeMutf8(const uint8_t *mutf8_data, uint32_t utf16_length, bool can_be_compressed)
+{
     uint32_t hash;
     if (can_be_compressed) {
         hash = ComputeHashForMutf8(mutf8_data);
