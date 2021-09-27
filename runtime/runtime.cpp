@@ -866,7 +866,7 @@ Expected<int, Runtime::Error> Runtime::ExecutePandaFile(std::string_view filenam
         // Create app name from path to executable file.
         std::string_view app_name = [](std::string_view path) -> std::string_view {
             auto pos = path.find_last_of('/');
-            return path.substr(pos == std::string_view::npos ? 0 : pos + 1);
+            return path.substr((pos == std::string_view::npos) ? 0 : (pos + 1));
         }(filename);
         StartDProfiler(app_name);
     }
@@ -900,7 +900,7 @@ void Runtime::RegisterAppInfo(const PandaVector<PandaString> &code_paths, const 
     }
     std::string_view app_name = [](std::string_view path) -> std::string_view {
         auto pos = path.find_last_of('/');
-        return path.substr(pos == std::string_view::npos ? 0 : pos + 1);
+        return path.substr((pos == std::string_view::npos) ? 0 : (pos + 1));
     }(profile_output_filename);
 
     StartDProfiler(app_name);
