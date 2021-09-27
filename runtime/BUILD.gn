@@ -39,7 +39,6 @@ config("arkruntime_config") {
   cflags_cc = [
     "-Wno-invalid-offsetof",
     "-Wno-unused-parameter",
-    "-Wno-implicit-fallthrough",
   ]
 }
 
@@ -276,7 +275,6 @@ config("arkruntime_interpreter_impl_config") {
   cflags_cc = [
     "-Wno-invalid-offsetof",
     "-Wno-unused-parameter",
-    "-Wno-implicit-fallthrough",
   ]
   defines = []
 

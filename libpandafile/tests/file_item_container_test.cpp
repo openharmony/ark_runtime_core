@@ -35,6 +35,8 @@
 #include <memory>
 #include <vector>
 
+#include <securec.h>
+
 #include <gtest/gtest.h>
 #include <gmock/gmock.h>
 
@@ -142,7 +144,7 @@ TEST(ItemContainer, TestFileFormatVersionValid)
         auto writer = FileWriter(file_name);
 
         File::Header header;
-        memset(&header, 0, sizeof(header));
+        (void)memset_s(&header, sizeof(header), 0, sizeof(header));
         header.magic = File::MAGIC;
         header.version = {0, 0, 0, 2};
         header.file_size = sizeof(File::Header);
