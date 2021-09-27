@@ -59,7 +59,7 @@ private:
     NO_COPY_SEMANTIC(EmptyRendezvous);
 };
 
-class ScopedSuspendAllThreads {
+class PANDA_PUBLIC_API ScopedSuspendAllThreads {
 public:
     explicit ScopedSuspendAllThreads(Rendezvous *rendezvous) ACQUIRE(*Locks::mutator_lock);
     ~ScopedSuspendAllThreads() RELEASE(*Locks::mutator_lock);
