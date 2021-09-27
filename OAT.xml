@@ -57,7 +57,9 @@ Note:If the text contains special characters, please escape them according to th
 		<policyitem type="compatibility" name="Apache" path="ark/runtime_core" rule="may" group="defaultGroup" filefilter="defaultPolicyFilter" desc=""/>
         </policy>
         <filefilterlist>
-            <filefilter name="binaryFileTypePolicyFilter" desc="二进制文件校验策略的过滤条件" >  
+            <filefilter name="binaryFileTypePolicyFilter" desc="二进制文件校验策略的过滤条件" >
+                <filteritem type="filepath" name="docs/images/cfi_hack_bridges.png" desc="自造的二进制图片"/>
+                <filteritem type="filepath" name="docs/images/panda-mm-overview.png" desc="自造的二进制图片"/>
             </filefilter>
             <filefilter name="copyrightPolicyFilter" desc="copyright文件头校验策略的过滤条件" >
                 <filteritem type="filepath" name="AUTHORS" desc="开发者名单"/>
