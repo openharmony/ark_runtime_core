@@ -120,7 +120,7 @@ public:
         // If we don't have Hash inside an object header, thisThread constant shouldn't be used
         HASH_SIZE = (CONFIG_HASH_STATUS_SIZE != 0UL)
                         ? 0UL
-                        : CONFIG_MARK_WORD_BIT_SIZE - STATUS_SIZE - GC_STATUS_SIZE - RB_STATUS_SIZE,
+                        : (CONFIG_MARK_WORD_BIT_SIZE - STATUS_SIZE - GC_STATUS_SIZE - RB_STATUS_SIZE),
         FORWARDING_ADDRESS_SIZE = CONFIG_MARK_WORD_BIT_SIZE - STATUS_SIZE - HASH_STATUS_SIZE,
 
         // Unlocked state masks and shifts

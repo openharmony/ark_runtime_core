@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 # Copyright (c) 2021 Huawei Device Co., Ltd.
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -14,7 +14,7 @@
 
 set -e
 
-TOP=`pwd`
+TOP=$(pwd)
 CMD=${TOP}/panda/isa/gen.rb
 ISA_DATA=${TOP}/panda/isa/isa.yaml
 ISA_REQUIRE=${TOP}/panda/isa/isapi.rb
@@ -30,7 +30,7 @@ if [ $? != 0  ] ; then echo "Terminating..." >&2 ; exit 1 ; fi
 
 while getopts "O:D:R:I" arg
 do
-    case $arg in
+    case "$arg" in
         O)
             OUTPUT=${OPTARG}
             ;;
@@ -51,7 +51,7 @@ do
 done
 shift $(($OPTIND - 1))
 
-if [ ${HAS_ISA} ];then
+if [ "${HAS_ISA}" ];then
     DATA=${ISA_DATA}
     REQUIRE=${ISA_REQUIRE},${REQUIRE}
 fi
