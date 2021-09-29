@@ -16,8 +16,12 @@ cmake_minimum_required(VERSION 3.10)
 project(arkziparchive)
 
 add_library(arkziparchive ${PANDA_DEFAULT_LIB_TYPE} zip_archive.cpp)
-target_include_directories(arkziparchive PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
-target_link_libraries(arkziparchive arkbase miniz)
+target_include_directories(arkziparchive
+    PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}
+    PUBLIC ${ZLIB_ROOT}
+    PUBLIC ${ZLIB_ROOT}/contrib/minizip
+)
+target_link_libraries(arkziparchive arkbase zlib)
 
 panda_add_gtest(
     NAME arkziparchive_tests
@@ -28,7 +32,7 @@ panda_add_gtest(
         arkfile
         arkziparchive
         arkassembler
-        miniz
+        zlib
     SANITIZERS
         ${PANDA_SANITIZERS_LIST}
 )
@@ -38,7 +42,7 @@ panda_add_sanitizers(TARGET arkziparchive SANITIZERS ${PANDA_SANITIZERS_LIST})
 
 if (PANDA_ENABLE_AFL)
     include("${PANDA_ROOT}/fuzzing/Fuzzing.cmake")
-    panda_substitute_libs(TARGET arkziparchive LIBS arkbase miniz)
+    panda_substitute_libs(TARGET arkziparchive LIBS arkbase zlib)
 endif()
 
 add_check_style(".")

@@ -42,7 +42,7 @@
 #include "libpandafile/code_data_accessor-inl.h"
 #include "libpandafile/debug_data_accessor-inl.h"
 #include "libpandafile/file-inl.h"
-#include "libpandafile/line_program_state.h"
+#include "libpandafile/line_number_program.h"
 #include "libpandafile/method_data_accessor-inl.h"
 #include "libpandafile/method_data_accessor.h"
 #include "libpandafile/proto_data_accessor-inl.h"
@@ -376,6 +376,113 @@ panda_file::Type Method::GetEffectiveReturnType() const
     return panda_file::GetEffectiveType(GetReturnType());
 }
 
+class BytecodeOffsetResolver {
+public:
+    BytecodeOffsetResolver(panda_file::LineProgramState *state, uint32_t bc_offset)
+        : state_(state), bc_offset_(bc_offset), prev_line_(state->GetLine()), line_(0)
+    {
+    }
+
+    panda_file::LineProgramState *GetState() const
+    {
+        return state_;
+    }
+
+    uint32_t GetLine() const
+    {
+        return line_;
+    }
+
+    void ProcessBegin() const {}
+
+    void ProcessEnd()
+    {
+        if (line_ == 0) {
+            line_ = state_->GetLine();
+        }
+    }
+
+    bool HandleAdvanceLine(int32_t line_diff) const
+    {
+        state_->AdvanceLine(line_diff);
+        return true;
+    }
+
+    bool HandleAdvancePc(uint32_t pc_diff) const
+    {
+        state_->AdvancePc(pc_diff);
+        return true;
+    }
+
+    bool HandleSetFile([[maybe_unused]] uint32_t source_file_id) const
+    {
+        return true;
+    }
+
+    bool HandleSetSourceCode([[maybe_unused]] uint32_t source_code_id) const
+    {
+        return true;
+    }
+
+    bool HandleSetPrologueEnd() const
+    {
+        return true;
+    }
+
+    bool HandleSetEpilogueBegin() const
+    {
+        return true;
+    }
+
+    bool HandleStartLocal([[maybe_unused]] int32_t reg_number, [[maybe_unused]] uint32_t name_id,
+                          [[maybe_unused]] uint32_t type_id) const
+    {
+        return true;
+    }
+
+    bool HandleStartLocalExtended([[maybe_unused]] int32_t reg_number, [[maybe_unused]] uint32_t name_id,
+                                  [[maybe_unused]] uint32_t type_id, [[maybe_unused]] uint32_t type_signature_id) const
+    {
+        return true;
+    }
+
+    bool HandleEndLocal([[maybe_unused]] int32_t reg_number) const
+    {
+        return true;
+    }
+
+    bool HandleSetColumn([[maybe_unused]] int32_t column_number) const
+    {
+        return true;
+    }
+
+    bool HandleSpecialOpcode(uint32_t pc_offset, int32_t line_offset)
+    {
+        state_->AdvancePc(pc_offset);
+        state_->AdvanceLine(line_offset);
+
+        if (state_->GetAddress() == bc_offset_) {
+            line_ = state_->GetLine();
+            return false;
+        }
+
+        if (state_->GetAddress() > bc_offset_) {
+            line_ = prev_line_;
+            return false;
+        }
+
+        prev_line_ = state_->GetLine();
+
+        return true;
+    }
+
+private:
+    panda_file::LineProgramState *state_;
+    uint32_t bc_offset_;
+    uint32_t prev_line_;
+    uint32_t line_;
+};
+
 int32_t Method::GetLineNumFromBytecodeOffset(uint32_t bc_offset) const
 {
     panda_file::MethodDataAccessor mda(*panda_file_, file_id_);
@@ -384,65 +491,17 @@ int32_t Method::GetLineNumFromBytecodeOffset(uint32_t bc_offset) const
         return -1;
     }
 
-    using Opcode = panda_file::LineNumberProgramItem::Opcode;
-    using EntityId = panda_file::File::EntityId;
-
     panda_file::DebugInfoDataAccessor dda(*panda_file_, debug_info_id.value());
     const uint8_t *program = dda.GetLineNumberProgram();
-    auto size = panda_file_->GetSpanFromId(panda_file_->GetIdFromPointer(program)).size();
-    auto opcode_sp = Span(reinterpret_cast<const Opcode *>(program), size);
 
-    panda_file::LineProgramState state(*panda_file_, EntityId(0), dda.GetLineStart(), dda.GetConstantPool());
+    panda_file::LineProgramState state(*panda_file_, panda_file::File::EntityId(0), dda.GetLineStart(),
+                                       dda.GetConstantPool());
 
-    size_t i = 0;
-    Opcode opcode;
-    size_t prev_line = state.GetLine();
-    while ((opcode = opcode_sp[i++]) != Opcode::END_SEQUENCE) {
-        switch (opcode) {
-            case Opcode::ADVANCE_LINE: {
-                auto line_diff = state.ReadSLeb128();
-                state.AdvanceLine(line_diff);
-                break;
-            }
-            case Opcode::ADVANCE_PC: {
-                auto pc_diff = state.ReadULeb128();
-                state.AdvancePc(pc_diff);
-                break;
-            }
-            default: {
-                // CODECHECK-NOLINTNEXTLINE(C_RULE_ID_REDUNDANT_INIT)
-                auto opcode_value = static_cast<uint8_t>(opcode);
-                if (opcode_value < panda_file::LineNumberProgramItem::OPCODE_BASE) {
-                    break;
-                }
+    BytecodeOffsetResolver resolver(&state, bc_offset);
+    panda_file::LineNumberProgramProcessor<BytecodeOffsetResolver> program_processor(program, &resolver);
+    program_processor.Process();
 
-                // CODECHECK-NOLINTNEXTLINE(C_RULE_ID_REDUNDANT_INIT)
-                auto adjust_opcode = opcode_value - panda_file::LineNumberProgramItem::OPCODE_BASE;
-                // CODECHECK-NOLINTNEXTLINE(C_RULE_ID_REDUNDANT_INIT)
-                uint32_t pc_diff = adjust_opcode / panda_file::LineNumberProgramItem::LINE_RANGE;
-                // CODECHECK-NOLINTNEXTLINE(C_RULE_ID_REDUNDANT_INIT)
-                int32_t line_diff = adjust_opcode % panda_file::LineNumberProgramItem::LINE_RANGE +
-                                    panda_file::LineNumberProgramItem::LINE_BASE;
-
-                state.AdvancePc(pc_diff);
-                state.AdvanceLine(line_diff);
-
-                if (state.GetAddress() == bc_offset) {
-                    return state.GetLine();
-                }
-
-                if (state.GetAddress() > bc_offset) {
-                    return prev_line;
-                }
-
-                prev_line = state.GetLine();
-
-                break;
-            }
-        }
-    }
-
-    return state.GetLine();
+    return resolver.GetLine();
 }
 
 panda_file::File::StringData Method::GetClassSourceFile() const

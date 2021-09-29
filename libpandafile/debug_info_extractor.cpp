@@ -14,7 +14,7 @@
  */
 
 #include "debug_info_extractor.h"
-#include "line_program_state.h"
+#include "line_number_program.h"
 #include "class_data_accessor-inl.h"
 #include "debug_data_accessor-inl.h"
 #include "utils/utf.h"
@@ -31,68 +31,109 @@ DebugInfoExtractor::DebugInfoExtractor(const File *pf)
     Extract(pf);
 }
 
-class LineNumberProgramProcessor {
+class LineNumberProgramHandler {
 public:
-    LineNumberProgramProcessor(LineProgramState state, const uint8_t *program) : state_(state), program_(program) {}
+    explicit LineNumberProgramHandler(LineProgramState *state) : state_(state) {}
+    ~LineNumberProgramHandler() = default;
 
-    ~LineNumberProgramProcessor() = default;
+    NO_COPY_SEMANTIC(LineNumberProgramHandler);
+    NO_MOVE_SEMANTIC(LineNumberProgramHandler);
 
-    NO_COPY_SEMANTIC(LineNumberProgramProcessor);
-    NO_MOVE_SEMANTIC(LineNumberProgramProcessor);
-
-    void Process()
+    LineProgramState *GetState() const
     {
-        auto opcode = ReadOpcode();
-        lnt_.push_back({state_.GetAddress(), state_.GetLine()});
-        while (opcode != Opcode::END_SEQUENCE) {
-            switch (opcode) {
-                case Opcode::ADVANCE_LINE: {
-                    HandleAdvanceLine();
-                    break;
-                }
-                case Opcode::ADVANCE_PC: {
-                    HandleAdvancePc();
-                    break;
-                }
-                case Opcode::SET_FILE: {
-                    HandleSetFile();
-                    break;
-                }
-                case Opcode::SET_SOURCE_CODE: {
-                    HandleSetSourceCode();
-                    break;
-                }
-                case Opcode::SET_PROLOGUE_END:
-                case Opcode::SET_EPILOGUE_BEGIN:
-                    break;
-                case Opcode::START_LOCAL: {
-                    HandleStartLocal();
-                    break;
-                }
-                case Opcode::START_LOCAL_EXTENDED: {
-                    HandleStartLocalExtended();
-                    break;
-                }
-                case Opcode::RESTART_LOCAL: {
-                    LOG(FATAL, PANDAFILE) << "Opcode RESTART_LOCAL is not supported";
-                    break;
-                }
-                case Opcode::END_LOCAL: {
-                    HandleEndLocal();
-                    break;
-                }
-                case Opcode::SET_COLUMN: {
-                    HandleSetColumn();
-                    break;
-                }
-                default: {
-                    HandleSpecialOpcode(opcode);
-                    break;
-                }
-            }
-            opcode = ReadOpcode();
-        }
+        return state_;
+    }
+
+    void ProcessBegin()
+    {
+        lnt_.push_back({state_->GetAddress(), state_->GetLine()});
+    }
+
+    void ProcessEnd()
+    {
         ProcessVars();
+    }
+
+    bool HandleAdvanceLine(int32_t line_diff) const
+    {
+        state_->AdvanceLine(line_diff);
+        return true;
+    }
+
+    bool HandleAdvancePc(uint32_t pc_diff) const
+    {
+        state_->AdvancePc(pc_diff);
+        return true;
+    }
+
+    bool HandleSetFile(uint32_t source_file_id) const
+    {
+        state_->SetFile(source_file_id);
+        return true;
+    }
+
+    bool HandleSetSourceCode(uint32_t source_code_id) const
+    {
+        state_->SetSourceCode(source_code_id);
+        return true;
+    }
+
+    bool HandleSetPrologueEnd() const
+    {
+        return true;
+    }
+
+    bool HandleSetEpilogueBegin() const
+    {
+        return true;
+    }
+
+    bool HandleStartLocal(int32_t reg_number, uint32_t name_id, uint32_t type_id)
+    {
+        const char *name = GetStringFromConstantPool(state_->GetPandaFile(), name_id);
+        const char *type = GetStringFromConstantPool(state_->GetPandaFile(), type_id);
+        lvt_.push_back({name, type, type, reg_number, state_->GetAddress(), 0});
+        return true;
+    }
+
+    bool HandleStartLocalExtended(int32_t reg_number, uint32_t name_id, uint32_t type_id, uint32_t type_signature_id)
+    {
+        const char *name = GetStringFromConstantPool(state_->GetPandaFile(), name_id);
+        const char *type = GetStringFromConstantPool(state_->GetPandaFile(), type_id);
+        const char *type_sign = GetStringFromConstantPool(state_->GetPandaFile(), type_signature_id);
+        lvt_.push_back({name, type, type_sign, reg_number, state_->GetAddress(), 0});
+        return true;
+    }
+
+    bool HandleEndLocal(int32_t reg_number)
+    {
+        bool found = false;
+        for (auto it = lvt_.rbegin(); it != lvt_.rend(); ++it) {
+            if (it->reg_number == reg_number) {
+                it->end_offset = state_->GetAddress();
+                found = true;
+                break;
+            }
+        }
+        if (!found) {
+            LOG(FATAL, PANDAFILE) << "Unknown variable";
+        }
+        return true;
+    }
+
+    bool HandleSetColumn(int32_t column_number)
+    {
+        state_->SetColumn(column_number);
+        cnt_.push_back({state_->GetAddress(), state_->GetColumn()});
+        return true;
+    }
+
+    bool HandleSpecialOpcode(uint32_t pc_offset, int32_t line_offset)
+    {
+        state_->AdvancePc(pc_offset);
+        state_->AdvanceLine(line_offset);
+        lnt_.push_back({state_->GetAddress(), state_->GetLine()});
+        return true;
     }
 
     LineNumberTable GetLineNumberTable() const
@@ -100,24 +141,24 @@ public:
         return lnt_;
     }
 
-    ColumnNumberTable GetColumnNumberTable() const
-    {
-        return cnt_;
-    }
-
     LocalVariableTable GetLocalVariableTable() const
     {
         return lvt_;
     }
 
+    ColumnNumberTable GetColumnNumberTable() const
+    {
+        return cnt_;
+    }
+
     const uint8_t *GetFile() const
     {
-        return state_.GetFile();
+        return state_->GetFile();
     }
 
     const uint8_t *GetSourceCode() const
     {
-        return state_.GetSourceCode();
+        return state_->GetSourceCode();
     }
 
 private:
@@ -127,112 +168,12 @@ private:
     {
         for (auto &var : lvt_) {
             if (var.end_offset == 0) {
-                var.end_offset = state_.GetAddress();
+                var.end_offset = state_->GetAddress();
             }
         }
     }
 
-    Opcode ReadOpcode()
-    {
-        auto opcode = static_cast<Opcode>(*program_);
-        ++program_;  // NOLINT(cppcoreguidelines-pro-bounds-pointer-arithmetic)
-        return opcode;
-    }
-
-    int32_t ReadRegisterNumber()
-    {
-        auto [regiser_number, n, is_full] = leb128::DecodeSigned<int32_t>(program_);
-        LOG_IF(!is_full, FATAL, COMMON) << "Cannot read a register number";
-        program_ += n;  // NOLINT(cppcoreguidelines-pro-bounds-pointer-arithmetic)
-        return regiser_number;
-    }
-
-    void HandleAdvanceLine()
-    {
-        auto line_diff = state_.ReadSLeb128();
-        state_.AdvanceLine(line_diff);
-    }
-
-    void HandleAdvancePc()
-    {
-        auto pc_diff = state_.ReadULeb128();
-        state_.AdvancePc(pc_diff);
-    }
-
-    void HandleSetFile()
-    {
-        state_.SetFile(state_.ReadULeb128());
-    }
-
-    void HandleSetSourceCode()
-    {
-        state_.SetSourceCode(state_.ReadULeb128());
-    }
-
-    void HandleSetPrologueEnd() {}
-
-    void HandleSetEpilogueBegin() {}
-
-    void HandleStartLocal()
-    {
-        auto reg_number = ReadRegisterNumber();
-        auto name_index = state_.ReadULeb128();
-        auto type_index = state_.ReadULeb128();
-        const char *name = GetStringFromConstantPool(state_.GetPandaFile(), name_index);
-        const char *type = GetStringFromConstantPool(state_.GetPandaFile(), type_index);
-        lvt_.push_back({name, type, type, reg_number, state_.GetAddress(), 0});
-    }
-
-    void HandleStartLocalExtended()
-    {
-        auto reg_number = ReadRegisterNumber();
-        auto name_index = state_.ReadULeb128();
-        auto type_index = state_.ReadULeb128();
-        auto type_signature_index = state_.ReadULeb128();
-        const char *name = GetStringFromConstantPool(state_.GetPandaFile(), name_index);
-        const char *type = GetStringFromConstantPool(state_.GetPandaFile(), type_index);
-        const char *type_sign = GetStringFromConstantPool(state_.GetPandaFile(), type_signature_index);
-        lvt_.push_back({name, type, type_sign, reg_number, state_.GetAddress(), 0});
-    }
-
-    void HandleEndLocal()
-    {
-        auto reg_number = ReadRegisterNumber();
-        bool found = false;
-        for (auto it = lvt_.rbegin(); it != lvt_.rend(); ++it) {
-            if (it->reg_number == reg_number) {
-                it->end_offset = state_.GetAddress();
-                found = true;
-                break;
-            }
-        }
-        if (!found) {
-            LOG(FATAL, PANDAFILE) << "Unknown variable";
-        }
-    }
-
-    void HandleSetColumn()
-    {
-        auto cn = state_.ReadULeb128();
-        state_.SetColumn(cn);
-        cnt_.push_back({state_.GetAddress(), state_.GetColumn()});
-    }
-
-    void HandleSpecialOpcode(LineNumberProgramItem::Opcode opcode)
-    {
-        ASSERT(static_cast<uint8_t>(opcode) >= LineNumberProgramItem::OPCODE_BASE);
-
-        auto adjust_opcode = static_cast<uint8_t>(static_cast<uint8_t>(opcode) - LineNumberProgramItem::OPCODE_BASE);
-        auto pc_offset = static_cast<uint32_t>(adjust_opcode / LineNumberProgramItem::LINE_RANGE);
-        int32_t line_offset =
-            static_cast<int32_t>(adjust_opcode) % LineNumberProgramItem::LINE_RANGE + LineNumberProgramItem::LINE_BASE;
-        state_.AdvancePc(pc_offset);
-        state_.AdvanceLine(line_offset);
-        lnt_.push_back({state_.GetAddress(), state_.GetLine()});
-    }
-
-    LineProgramState state_;
-    const uint8_t *program_;
+    LineProgramState *state_;
     LineNumberTable lnt_;
     LocalVariableTable lvt_;
     ColumnNumberTable cnt_;
@@ -278,15 +219,16 @@ void DebugInfoExtractor::Extract(const File *pf)
             LineProgramState state(panda_file, source_file_id.value_or(File::EntityId(0)), dda.GetLineStart(),
                                    dda.GetConstantPool());
 
-            LineNumberProgramProcessor program_processor(state, program);
+            LineNumberProgramHandler handler(&state);
+            LineNumberProgramProcessor<LineNumberProgramHandler> program_processor(program, &handler);
             program_processor.Process();
 
             File::EntityId method_id = mda.GetMethodId();
-            const char *source_file = utf::Mutf8AsCString(program_processor.GetFile());
-            const char *source_code = utf::Mutf8AsCString(program_processor.GetSourceCode());
-            methods_.push_back({source_file, source_code, method_id, program_processor.GetLineNumberTable(),
-                                program_processor.GetLocalVariableTable(), std::move(param_names),
-                                program_processor.GetColumnNumberTable()});
+            const char *source_file = utf::Mutf8AsCString(handler.GetFile());
+            const char *source_code = utf::Mutf8AsCString(handler.GetSourceCode());
+            methods_.push_back({source_file, source_code, method_id, handler.GetLineNumberTable(),
+                                handler.GetLocalVariableTable(), std::move(param_names),
+                                handler.GetColumnNumberTable()});
         });
     }
 }
