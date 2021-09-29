@@ -51,10 +51,10 @@ echo "$MSG_PREFIX Cloning googletest from $GOOGLETEST_URL"
 
 git clone --depth=1 --verbose "$GOOGLETEST_URL" "$PANDA_THIRD_PARTY_DIR/googletest"
 
-MINIZ_URL="https://gitee.com/openharmony/third_party_miniz.git"
-echo "$MSG_PREFIX Cloning miniz from $MINIZ_URL"
+ZLIB_URL="https://gitee.com/openharmony/third_party_zlib.git"
+echo "$MSG_PREFIX Cloning zlib from $ZLIB_URL"
 
-git clone --depth=1 --verbose "$MINIZ_URL" "$PANDA_THIRD_PARTY_DIR/miniz"
+git clone --depth=1 --verbose "$ZLIB_URL" "$PANDA_THIRD_PARTY_DIR/zlib"
 
 echo "$MSG_PREFIX Third-party dependencies cloned"
 exit 0

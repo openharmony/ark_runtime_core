@@ -344,6 +344,66 @@ TEST_F(MethodTest, GetLineNumFromBytecodeOffset9)
     VerifyLineNumber({3, 4, 5, 6, 6, 7, 9, 10, 16, 12, 13, 14, 15, 11});
 }
 
+TEST_F(MethodTest, GetLineNumFromBytecodeOffset10)
+{
+    pandasm::Parser p;
+
+    auto source = R"(          # line 1
+        .function void foo() { # line 2
+            mov v0, v1         # line 3, offset 0, size 2
+            mov v100, v200     # line 4, offset 2, size 3
+            movi v0, 4         # line 5, offset 5, size 2
+            movi v0, 100       # line 6, offset 7, size 3
+            movi v0, 300       # line 7, offset 10, size 4
+            return.void        # line 8, offset 14, size 1
+        }
+    )";
+
+    auto res = p.Parse(source);
+    auto &prog = res.Value();
+
+    auto &function = prog.function_table.at("foo");
+
+    pandasm::debuginfo::LocalVariable lv;
+    lv.name = "a";
+    lv.signature = "I";
+    lv.reg = 0;
+    lv.start = 0;
+    lv.length = 5;
+
+    function.local_variable_debug.push_back(lv);
+
+    lv.name = "b";
+    lv.start = 5;
+    lv.length = 10;
+
+    function.local_variable_debug.push_back(lv);
+
+    auto pf = pandasm::AsmEmitter::Emit(res.Value());
+    ASSERT_NE(pf, nullptr);
+
+    ClassLinker *class_linker = Runtime::GetCurrent()->GetClassLinker();
+    class_linker->AddPandaFile(std::move(pf));
+    auto *extension = class_linker->GetExtension(panda_file::SourceLang::PANDA_ASSEMBLY);
+
+    PandaString descriptor;
+
+    Class *klass = extension->GetClass(ClassHelper::GetDescriptor(utf::CStringAsMutf8("_GLOBAL"), &descriptor));
+    ASSERT_NE(klass, nullptr);
+
+    Method *method = klass->GetDirectMethod(utf::CStringAsMutf8("foo"));
+    ASSERT_NE(method, nullptr);
+
+    ASSERT_EQ(method->GetLineNumFromBytecodeOffset(0), 3);
+    ASSERT_EQ(method->GetLineNumFromBytecodeOffset(2), 4);
+    ASSERT_EQ(method->GetLineNumFromBytecodeOffset(5), 5);
+    ASSERT_EQ(method->GetLineNumFromBytecodeOffset(7), 6);
+    ASSERT_EQ(method->GetLineNumFromBytecodeOffset(10), 7);
+    ASSERT_EQ(method->GetLineNumFromBytecodeOffset(14), 8);
+
+    ASSERT_EQ(method->GetLineNumFromBytecodeOffset(20), 8);
+}
+
 TEST_F(MethodTest, GetClassSourceFile)
 {
     pandasm::Parser p;
