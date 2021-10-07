@@ -43,18 +43,6 @@ void Rendezvous::SafepointEnd()
     LOG(DEBUG, GC) << "Rendezvous: SafepointEnd exit";
 }
 
-ScopedSuspendAllThreads::ScopedSuspendAllThreads(Rendezvous *rendezvous) : rendezvous_(rendezvous)
-{
-    ASSERT(rendezvous_ != nullptr);
-    rendezvous_->SafepointBegin();
-}
-
-ScopedSuspendAllThreads::~ScopedSuspendAllThreads()
-{
-    ASSERT(rendezvous_ != nullptr);
-    rendezvous_->SafepointEnd();
-}
-
 ScopedSuspendAllThreadsRunning::ScopedSuspendAllThreadsRunning(Rendezvous *rendezvous) : rendezvous_(rendezvous)
 {
     ASSERT(rendezvous_ != nullptr);
