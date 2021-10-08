@@ -59,10 +59,18 @@ private:
     NO_COPY_SEMANTIC(EmptyRendezvous);
 };
 
-class PANDA_PUBLIC_API ScopedSuspendAllThreads {
+class ScopedSuspendAllThreads {
 public:
-    explicit ScopedSuspendAllThreads(Rendezvous *rendezvous) ACQUIRE(*Locks::mutator_lock);
-    ~ScopedSuspendAllThreads() RELEASE(*Locks::mutator_lock);
+    explicit ScopedSuspendAllThreads(Rendezvous *rendezvous) ACQUIRE(*Locks::mutator_lock) : rendezvous_(rendezvous)
+    {
+        ASSERT(rendezvous_ != nullptr);
+        rendezvous_->SafepointBegin();
+    }
+    ~ScopedSuspendAllThreads() RELEASE(*Locks::mutator_lock)
+    {
+        ASSERT(rendezvous_ != nullptr);
+        rendezvous_->SafepointEnd();
+    }
 
     NO_COPY_SEMANTIC(ScopedSuspendAllThreads);
     NO_MOVE_SEMANTIC(ScopedSuspendAllThreads);
