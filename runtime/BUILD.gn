@@ -42,6 +42,20 @@ config("arkruntime_config") {
   ]
 }
 
+group("arkruntime_header_deps") {
+  deps = [
+    ":arkruntime_gen_intrinsics_intrinsics_gen_h",
+    ":arkruntime_gen_intrinsics_intrinsics_h",
+    ":arkruntime_gen_intrinsics_unimplemented_intrinsics-inl_cpp",
+    ":arkruntime_gen_intrinsics_yaml",
+    ":isa_gen_libarkruntime_interpreter-inl_gen_h",
+    ":isa_gen_libarkruntime_isa_constants_gen_h",
+    ":isa_gen_libarkruntime_unimplemented_handlers-inl_h",
+    ":libarkruntime_options_gen_h",
+    ":libarkruntime_shorty_values_h",
+  ]
+}
+
 ohos_static_library("libarkruntime_static") {
   sources = [
     "arch/asm_support.cpp",
@@ -192,16 +206,8 @@ ohos_static_library("libarkruntime_static") {
   ]
 
   deps = [
-    ":arkruntime_gen_intrinsics_intrinsics_gen_h",
-    ":arkruntime_gen_intrinsics_intrinsics_h",
-    ":arkruntime_gen_intrinsics_unimplemented_intrinsics-inl_cpp",
-    ":arkruntime_gen_intrinsics_yaml",
+    ":arkruntime_header_deps",
     ":arkruntime_interpreter_impl",
-    ":isa_gen_libarkruntime_interpreter-inl_gen_h",
-    ":isa_gen_libarkruntime_isa_constants_gen_h",
-    ":isa_gen_libarkruntime_unimplemented_handlers-inl_h",
-    ":libarkruntime_options_gen_h",
-    ":libarkruntime_shorty_values_h",
     "$ark_root/dprof:libdprof",
     "$ark_root/libpandabase:libarkbase",
     "$ark_root/libpandafile:libarkfile",
@@ -306,15 +312,7 @@ ohos_static_library("arkruntime_interpreter_impl") {
   ]
 
   deps = [
-    ":arkruntime_gen_intrinsics_intrinsics_gen_h",
-    ":arkruntime_gen_intrinsics_intrinsics_h",
-    ":arkruntime_gen_intrinsics_unimplemented_intrinsics-inl_cpp",
-    ":arkruntime_gen_intrinsics_yaml",
-    ":isa_gen_libarkruntime_interpreter-inl_gen_h",
-    ":isa_gen_libarkruntime_isa_constants_gen_h",
-    ":isa_gen_libarkruntime_unimplemented_handlers-inl_h",
-    ":libarkruntime_options_gen_h",
-    ":libarkruntime_shorty_values_h",
+    ":arkruntime_header_deps",
     "$ark_root/libpandabase:libarkbase",
     "$ark_root/libpandafile:libarkfile",
     "$ark_root/verification/gen:verification_verifier_messages_h",
