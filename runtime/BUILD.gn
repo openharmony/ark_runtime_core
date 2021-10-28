@@ -53,6 +53,11 @@ group("arkruntime_header_deps") {
     ":isa_gen_libarkruntime_unimplemented_handlers-inl_h",
     ":libarkruntime_options_gen_h",
     ":libarkruntime_shorty_values_h",
+    "$ark_root/verification/gen:isa_gen_verification_gen_abs_int_inl_gen_h",
+    "$ark_root/verification/gen:isa_gen_verification_gen_cflow_iterate_inl_gen_h",
+    "$ark_root/verification/gen:isa_gen_verification_gen_job_fill_gen_h",
+    "$ark_root/verification/gen:verification_abs_int_inl_compat_checks_h",
+    "$ark_root/verification/gen:verification_verifier_messages_h",
   ]
 }
 
@@ -214,11 +219,6 @@ ohos_static_library("libarkruntime_static") {
     "$ark_root/libpandafile:libarkfile_type_gen_h",
     "$ark_root/libziparchive:libarkziparchive",
     "$ark_root/runtime/asm_defines:asm_defines_generator",
-    "$ark_root/verification/gen:isa_gen_verification_gen_abs_int_inl_gen_h",
-    "$ark_root/verification/gen:isa_gen_verification_gen_cflow_iterate_inl_gen_h",
-    "$ark_root/verification/gen:isa_gen_verification_gen_job_fill_gen_h",
-    "$ark_root/verification/gen:verification_abs_int_inl_compat_checks_h",
-    "$ark_root/verification/gen:verification_verifier_messages_h",
     sdk_libc_secshared_dep,
   ]
 
@@ -315,7 +315,6 @@ ohos_static_library("arkruntime_interpreter_impl") {
     ":arkruntime_header_deps",
     "$ark_root/libpandabase:libarkbase",
     "$ark_root/libpandafile:libarkfile",
-    "$ark_root/verification/gen:verification_verifier_messages_h",
   ]
 }
 
