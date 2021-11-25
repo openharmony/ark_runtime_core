@@ -11,6 +11,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+# This is an entry point for Ark standalone build with gn.
+# It is ignored when Ark is built as a part of OpenHarmony source tree.
+
 buildconfig = "//build/config/BUILDCONFIG.gn"
 
 secondary_source = "//gn"
