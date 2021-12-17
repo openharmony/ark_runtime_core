@@ -166,6 +166,11 @@ Expected<panda::Frame::VRegister *, Error> Debugger::GetVRegByPtThread(PtThread 
         Error(Error::Type::INVALID_REGISTER, std::string("Invalid register number: ") + std::to_string(regNumber)));
 }
 
+std::optional<Error> Debugger::GetThisVariableByFrame(PtThread thread, uint32_t frameDepth, PtValue *result)
+{
+    return {};
+}
+
 std::optional<Error> Debugger::GetVariable(PtThread thread, uint32_t frameDepth, int32_t regNumber,
                                            PtValue *result) const
 {
@@ -790,11 +795,11 @@ static uint64_t GetVRegValue(const Frame::VRegister &reg)
 }
 
 // NOLINTNEXTLINE(cppcoreguidelines-pro-type-member-init)
-PtDebugFrame::PtDebugFrame(Method *method, const Frame *interpreterFrame) : method_(MethodToPtMethod(method))
+PtDebugFrame::PtDebugFrame(Method *method, const Frame *interpreterFrame)
+    : method_(MethodToPtMethod(method)),
+      method_id_(method->GetFileId()),
+      panda_file_(method->GetPandaFile()->GetFilename())
 {
-    panda_file_ = method->GetPandaFile()->GetFilename();
-    method_id_ = method->GetFileId();
-
     is_interpreter_frame_ = interpreterFrame != nullptr;
     if (!is_interpreter_frame_) {
         return;

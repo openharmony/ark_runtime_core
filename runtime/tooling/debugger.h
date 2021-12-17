@@ -363,6 +363,8 @@ public:
 
     std::optional<Error> ClearPropertyModificationWatch(PtClass klass, PtProperty property) override;
 
+    std::optional<Error> GetThisVariableByFrame(PtThread thread, uint32_t frameDepth, PtValue *result) override;
+
 private:
     Expected<panda::Frame::VRegister *, Error> GetVRegByPtThread(PtThread thread, uint32_t frameDepth,
                                                                  int32_t regNumber) const;
