@@ -490,6 +490,8 @@ public:
 
     virtual std::optional<Error> SetPropertyModificationWatch(PtClass klass, PtProperty property) = 0;
 
+    virtual std::optional<Error> GetThisVariableByFrame(PtThread thread, uint32_t frameDepth, PtValue *value) = 0;
+
     virtual std::optional<Error> ClearPropertyModificationWatch(PtClass klass, PtProperty property) = 0;
 
     // * * * * *
