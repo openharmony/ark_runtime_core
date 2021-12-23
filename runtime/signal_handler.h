@@ -38,7 +38,7 @@ public:
     }
 
     bool SignalActionHandler(int sig, siginfo_t *info, void *context);
-    bool InOatCode(const siginfo_t *siginfo, const void *context, bool check_dex_pc);
+    bool InOatCode(const siginfo_t *siginfo, const void *context, bool check_bytecode_pc);
     bool InOtherCode(int sig, siginfo_t *info, void *context);
 
     void AddHandler(SignalHandler *handler, bool oat_code);

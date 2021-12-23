@@ -128,7 +128,7 @@ bool SignalManager::SignalActionHandler(int sig, siginfo_t *info, void *context)
 }
 
 bool SignalManager::InOatCode([[maybe_unused]] const siginfo_t *siginfo, [[maybe_unused]] const void *context,
-                              [[maybe_unused]] bool check_dex_pc)
+                              [[maybe_unused]] bool check_bytecode_pc)
 {
     return true;
 }

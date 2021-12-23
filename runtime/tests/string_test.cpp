@@ -335,8 +335,7 @@ TEST_F(StringTest, ForeignLenghtAndCopyTest3b)
 TEST_F(StringTest, ForeignLenghtAndCopyTest6b)
 {
     std::vector<uint8_t> data {0xed, 0xa0, 0x81, 0xed, 0xb0, 0xb7, 0x20, 0x00};  // UTF-16 size is 3
-    // To be compatible with ART we support 4-byte utf-8 sequences, so {0xd801, 0xdc37} is encoded to 4 bytes instead of
-    // 6
+    // We support 4-byte utf-8 sequences, so {0xd801, 0xdc37} is encoded to 4 bytes instead of 6
     std::vector<uint8_t> utf8_data {0xf0, 0x90, 0x90, 0xb7, 0x20, 0x00};
     String *string = String::CreateFromMUtf8(data.data(), 3, GetLanguageContext(), Runtime::GetCurrent()->GetPandaVM());
     ASSERT_EQ(string->GetMUtf8Length(), utf8_data.size());

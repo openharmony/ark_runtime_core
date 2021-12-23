@@ -23,7 +23,7 @@
 namespace panda::os::unix::native_stack {
 
 static constexpr int MOVE_2 = 2;      // delete kernel stack's prefix
-static constexpr int STACK_TYPE = 2;  // for call ANR type
+static constexpr int STACK_TYPE = 2;  // for calling Application Not Responding stack type
 static constexpr int FIND_TID = 10;   // decimal number
 
 std::string GetNativeThreadNameForFile(pid_t tid)
@@ -75,7 +75,7 @@ void DumpKernelStack(std::ostream &os, pid_t tid, const char *tag, bool count)
         const char *kernel_stack_build = kernel_stack_frames[i].c_str();
         // change the stack string, case:
         // kernel stack in linux file is : "[<0>] do_syscall_64+0x73/0x130"
-        // kernel stack in ANR file is : "do_syscall_64+0x73/0x130"
+        // kernel stack in Application Not Responding file is : "do_syscall_64+0x73/0x130"
         const char *remove_bracket = strchr(kernel_stack_build, ']');
         if (remove_bracket != nullptr) {
             kernel_stack_build = remove_bracket + MOVE_2;  // NOLINT(cppcoreguidelines-pro-bounds-pointer-arithmetic)
