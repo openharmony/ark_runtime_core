@@ -139,7 +139,7 @@ void ReferenceStorage::RemoveRef(const Reference *ref)
 
     if (ref_check_validate_) {
         if (UNLIKELY(!IsValidRef(ref))) {
-            // Undefined behavior, we just print warning here to comply with ART.
+            // Undefined behavior, we just print warning here.
             LOG(WARNING, RUNTIME) << "Try to remove not existed ref: " << std::hex << ref;
             return;
         }
@@ -169,7 +169,7 @@ ObjectHeader *ReferenceStorage::GetObject(const Reference *ref)
 
     if (ref_check_validate_) {
         if (UNLIKELY(!IsValidRef(ref))) {
-            // Undefined behavior, we just print warning here to comply with ART.
+            // Undefined behavior, we just print warning here.
             LOG(WARNING, RUNTIME) << "Try to GetObject from a not existed ref: " << std::hex << ref;
             return nullptr;
         }

@@ -211,14 +211,14 @@ public:
         return unwindstack_;
     }
 
-    void SetTombstoneConnect(void *in)
+    void SetCrashConnect(void *in)
     {
-        tombstone_connect_ = reinterpret_cast<char *>(in);
+        crash_connect_ = reinterpret_cast<char *>(in);
     }
 
-    void *GetTombstoneConnect()
+    void *GetCrashConnect()
     {
-        return tombstone_connect_;
+        return crash_connect_;
     }
 
     void SetMobileLog(void *mlog_buf_print_ptr)
@@ -269,7 +269,7 @@ private:
     void *mlog_buf_print_ptr_ {nullptr};
     std::string fingerPrint_ {"unknown"};
     void *unwindstack_ {nullptr};
-    void *tombstone_connect_ {nullptr};
+    void *crash_connect_ {nullptr};
 
     friend class panda::JSNApi;
     friend class coretypes::test::ArrayTest;
