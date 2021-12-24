@@ -17,7 +17,6 @@
 #define PANDA_VERIFICATION_UTIL_RANGE_H_
 
 #include <limits>
-#include <type_traits>
 #include <string>
 #include <algorithm>
 #include <iterator>

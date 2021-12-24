@@ -16,8 +16,6 @@
 #include "cflow_check.h"
 #include "cflow_common.h"
 
-#include "instructions_map.h"
-
 #include "runtime/include/method-inl.h"
 
 #include "utils/logger.h"
@@ -25,9 +23,6 @@
 #include "verification/util/str.h"
 
 #include "verifier_messages.h"
-
-#include <optional>
-#include <iomanip>
 
 namespace panda::verifier {
 

@@ -17,8 +17,6 @@
 
 #include "verification/debug/parser/parser.h"
 
-#include <strings.h>
-#include <cstdlib>
 #include <cstring>
 
 namespace panda::verifier::test {

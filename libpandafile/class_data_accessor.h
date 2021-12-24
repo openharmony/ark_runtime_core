@@ -21,8 +21,6 @@
 #include "field_data_accessor.h"
 #include "method_data_accessor.h"
 
-#include <optional>
-
 namespace panda::panda_file {
 
 // NOLINTNEXTLINE(cppcoreguidelines-special-member-functions, hicpp-special-member-functions)

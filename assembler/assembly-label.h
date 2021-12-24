@@ -17,7 +17,6 @@
 #define PANDA_ASSEMBLER_ASSEMBLY_LABEL_H_
 
 #include <string>
-#include <optional>
 #include "assembly-file-location.h"
 
 namespace panda::pandasm {

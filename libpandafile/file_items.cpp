@@ -14,15 +14,12 @@
  */
 
 #include "file_items.h"
-#include "helpers.h"
 #include "macros.h"
 #include "utils/bit_utils.h"
 #include "utils/leb128.h"
 #include "utils/utf.h"
 
-#include <limits>
 #include <iomanip>
-#include <utility>
 
 namespace panda::panda_file {
 

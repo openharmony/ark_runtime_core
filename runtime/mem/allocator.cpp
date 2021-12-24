@@ -28,8 +28,6 @@
 #include "runtime/mem/pygote_space_allocator-inl.h"
 #include "runtime/mem/tlab.h"
 
-#include <functional>
-
 namespace panda::mem {
 
 Allocator::~Allocator() = default;

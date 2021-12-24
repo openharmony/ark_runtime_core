@@ -42,8 +42,6 @@
 
 #include "macros.h"
 
-#include <iostream>
-
 namespace panda::verifier {
 
 using FastAPIClassRW = CacheOfRuntimeThings::FastAPIClass<access::ReadWrite>;

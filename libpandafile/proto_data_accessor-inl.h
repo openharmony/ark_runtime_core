@@ -21,8 +21,6 @@
 #include "file_items.h"
 #include "proto_data_accessor.h"
 
-#include <limits>
-
 namespace panda::panda_file {
 
 constexpr size_t SHORTY_ELEM_SIZE = sizeof(uint16_t);

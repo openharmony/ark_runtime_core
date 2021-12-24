@@ -18,7 +18,6 @@
 
 #include <string>
 #include <vector>
-#include <variant>
 
 #include "../libpandafile/literal_data_accessor.h"
 

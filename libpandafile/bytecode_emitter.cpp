@@ -13,14 +13,9 @@
  * limitations under the License.
  */
 
-#include <algorithm>
 #include "bytecode_emitter.h"
 #include <bytecode_instruction-inl.h>
-#include <cstdarg>
-#include <limits>
-#include <list>
 #include <macros.h>
-#include <sstream>
 #include <utils/bit_utils.h>
 #include <utils/span.h>
 

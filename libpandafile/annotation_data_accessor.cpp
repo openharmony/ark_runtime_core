@@ -15,7 +15,6 @@
 
 #include "annotation_data_accessor.h"
 #include "file_items.h"
-#include "helpers.h"
 
 namespace panda::panda_file {
 

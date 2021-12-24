@@ -14,9 +14,6 @@
  */
 
 #include "runtime/mem/gc/gen-gc/gen-gc.h"
-
-#include <functional>
-
 #include "runtime/include/hclass.h"
 #include "runtime/include/coretypes/array-inl.h"
 #include "runtime/include/mem/panda_smart_pointers.h"

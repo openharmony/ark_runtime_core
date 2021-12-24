@@ -18,8 +18,6 @@
 
 #include "file-inl.h"
 
-#include <cstdint>
-
 namespace panda::panda_file {
 
 class CodeDataAccessor {

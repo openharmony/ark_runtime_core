@@ -20,11 +20,6 @@
 #include "file_items.h"
 #include "modifiers.h"
 
-#include <cstddef>
-#include <cstdint>
-
-#include <optional>
-
 namespace panda::panda_file {
 
 // NOLINTNEXTLINE(cppcoreguidelines-special-member-functions, hicpp-special-member-functions)
