@@ -16,7 +16,6 @@
 #ifndef PANDA_LIBPANDABASE_CONCEPTS_H_
 #define PANDA_LIBPANDABASE_CONCEPTS_H_
 
-#include <type_traits>
 #include <iterator>
 
 namespace panda {

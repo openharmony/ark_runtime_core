@@ -13,7 +13,6 @@
  * limitations under the License.
  */
 
-#include "time_unix.h"
 #include "time.h"  // NOLINTNEXTLINE(modernize-deprecated-headers, hicpp-deprecated-headers)
 #include <chrono>
 

@@ -14,7 +14,6 @@
  */
 
 #include "literal_data_accessor.h"
-#include "helpers.h"
 
 namespace panda::panda_file {
 

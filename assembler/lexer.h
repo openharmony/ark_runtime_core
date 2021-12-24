@@ -108,7 +108,7 @@ private:
     void LexPreprocess();
     void SkipSpace();
     void AnalyzeLine();
-    Token::Type LexGetType(size_t, size_t) const;
+    Token::Type LexGetType(size_t beg, size_t end) const;
 };
 
 /*

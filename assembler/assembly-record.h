@@ -22,7 +22,6 @@
 #include <vector>
 
 #include "assembly-field.h"
-#include "assembly-file-location.h"
 #include "extensions/extensions.h"
 #include "ide_helpers.h"
 

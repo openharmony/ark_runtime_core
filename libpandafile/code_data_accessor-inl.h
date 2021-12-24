@@ -18,8 +18,6 @@
 
 #include "code_data_accessor.h"
 
-#include <cstddef>
-
 namespace panda::panda_file {
 
 template <class Callback>

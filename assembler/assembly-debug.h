@@ -16,8 +16,6 @@
 #ifndef PANDA_ASSEMBLER_ASSEMBLY_DEBUG_H_
 #define PANDA_ASSEMBLER_ASSEMBLY_DEBUG_H_
 
-#include <cstddef>
-#include <cstdint>
 #include <string>
 
 namespace panda::pandasm::debuginfo {

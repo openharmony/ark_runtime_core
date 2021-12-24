@@ -19,7 +19,6 @@
 #include <map>
 #include <string>
 #include <vector>
-#include <utility>
 
 namespace panda::disasm {
 using LabelTable = std::map<size_t, std::string>;

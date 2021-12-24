@@ -14,12 +14,6 @@
  */
 
 #include "os/error.h"
-#include <stdio.h>
-#include <string.h>
-
-#include <cerrno>
-
-#include <array>
 
 namespace panda::os {
 

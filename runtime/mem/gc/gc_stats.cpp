@@ -13,10 +13,6 @@
  * limitations under the License.
  */
 
-#include <algorithm>
-#include <chrono>
-#include <numeric>
-
 #include "libpandabase/utils/time.h"
 #include "libpandabase/utils/type_converter.h"
 #include "runtime/include/runtime.h"

@@ -15,8 +15,6 @@
 
 #include "runtime/mem/gc/card_table.h"
 
-#include <cstring>
-
 #include "trace/trace.h"
 #include "libpandabase/mem/mem.h"
 #include "libpandabase/utils/logger.h"

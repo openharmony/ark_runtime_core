@@ -15,8 +15,6 @@
 
 #include "runtime/string_table.h"
 
-#include <mem/gc/gc.h>
-
 #include "runtime/include/runtime.h"
 #include "runtime/mem/object_helpers.h"
 
