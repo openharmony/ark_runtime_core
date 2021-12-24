@@ -19,10 +19,7 @@
 #include "bit_helpers.h"
 #include "bit_utils.h"
 
-#include <cstddef>
-
 #include <limits>
-#include <type_traits>
 #include <tuple>
 
 namespace panda::leb128 {

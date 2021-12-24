@@ -15,12 +15,6 @@
 
 #include "utils/leb128.h"
 
-#include <cstdint>
-
-#include <limits>
-#include <sstream>
-#include <vector>
-
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 

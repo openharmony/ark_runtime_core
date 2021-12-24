@@ -990,8 +990,6 @@ TEST(LIBZIPARCHIVE, OpenUncompressedArchiveFILE)
     ZipArchive object;  // on stack, but this is tmp obj as we will CloseArchive this.
     ZipArchiveHandle zip_archive_handler = &object;
 
-    // ZipArchiveHandle zip_archive_handler = new ZipArchive;
-
     // Delete the test archive, so it doesn't keep growing as we run this test
     remove(s_Test_archive_filename);
 

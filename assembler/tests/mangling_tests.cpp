@@ -14,8 +14,6 @@
  */
 
 #include <gtest/gtest.h>
-#include <iostream>
-#include <string>
 #include "mangling.h"
 #include "assembly-function.h"
 #include "extensions/extensions.h"

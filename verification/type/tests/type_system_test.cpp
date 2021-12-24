@@ -26,8 +26,6 @@
 
 #include "runtime/include/mem/panda_string.h"
 
-#include <iostream>
-
 #include <gtest/gtest.h>
 
 namespace panda::verifier::test {

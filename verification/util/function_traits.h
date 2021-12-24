@@ -16,7 +16,6 @@
 #ifndef PANDA_VERIFICATION_UTIL_FUNCTION_TRAITS_H_
 #define PANDA_VERIFICATION_UTIL_FUNCTION_TRAITS_H_
 
-#include <type_traits>
 #include <tuple>
 
 namespace panda::verifier {

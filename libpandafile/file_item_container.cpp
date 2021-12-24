@@ -16,14 +16,7 @@
 #include "file_item_container.h"
 
 #include "file_format_version.h"
-#include "file-inl.h"
-#include "helpers.h"
 #include "macros.h"
-
-#include <cstddef>
-
-#include <iomanip>
-#include <vector>
 
 namespace panda::panda_file {
 

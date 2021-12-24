@@ -16,16 +16,6 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
-#include <algorithm>
-#include <cmath>
-#include <cstdint>
-#include <functional>
-#include <limits>
-#include <memory>
-#include <sstream>
-#include <type_traits>
-#include <vector>
-
 #include "assembly-parser.h"
 #include "libpandabase/mem/pool_manager.h"
 #include "libpandabase/utils/utf.h"

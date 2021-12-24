@@ -17,13 +17,7 @@
 #include "mangling.h"
 #include "utils/logger.h"
 
-#include <fstream>
-#include <iostream>
 #include <iomanip>
-#include <algorithm>
-#include <map>
-#include <utility>
-#include <cctype>
 
 namespace panda::disasm {
 

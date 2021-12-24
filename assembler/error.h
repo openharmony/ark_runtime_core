@@ -18,8 +18,6 @@
 
 #include <string>
 
-#include "define.h"
-
 namespace panda::pandasm {
 
 struct Error {

@@ -19,7 +19,6 @@
 #include "bit_vector.h"
 
 #include <iterator>
-#include <functional>
 
 namespace panda::verifier {
 

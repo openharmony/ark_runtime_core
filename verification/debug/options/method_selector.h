@@ -17,7 +17,6 @@
 #define PANDA_VERIFICATION_DEBUG_OPTIONS_METHOD_SELECTOR_H_
 
 #include <regex>
-#include <optional>
 
 template <typename Info, template <typename...> class Vector, typename Regex, typename String>
 class VerifierMethodSelector {

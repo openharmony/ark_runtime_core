@@ -13,9 +13,6 @@
  * limitations under the License.
  */
 
-#include <array>
-#include <thread>
-
 #include "gtest/gtest.h"
 #include "iostream"
 #include "runtime/class_linker_context.h"

@@ -18,8 +18,6 @@
 #include "utils/logger.h"
 #include "utils/pandargs.h"
 
-#include <iostream>
-
 static void PrintHelp(const panda::PandArgParser &pa_parser)
 {
     std::cerr << "Usage:" << std::endl;

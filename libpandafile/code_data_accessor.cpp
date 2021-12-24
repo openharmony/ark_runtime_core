@@ -15,8 +15,6 @@
 
 #include "code_data_accessor.h"
 
-#include "helpers.h"
-
 namespace panda::panda_file {
 
 CodeDataAccessor::CatchBlock::CatchBlock(Span<const uint8_t> data)

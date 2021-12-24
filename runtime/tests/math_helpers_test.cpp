@@ -15,12 +15,6 @@
 
 #include <gtest/gtest.h>
 
-#include <cmath>
-#include <cstdint>
-#include <limits>
-#include <sstream>
-#include <type_traits>
-
 #include "runtime/interpreter/math_helpers.h"
 
 namespace panda::interpreter::math_helpers::test {

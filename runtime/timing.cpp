@@ -15,10 +15,7 @@
 
 #include "runtime/timing.h"
 
-#include <string>
-#include <iostream>
 #include <iomanip>
-#include <stack>
 
 #include "utils/logger.h"
 

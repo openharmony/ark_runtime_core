@@ -16,11 +16,7 @@
 #include "debug_info_extractor.h"
 #include "line_program_state.h"
 #include "class_data_accessor-inl.h"
-#include "code_data_accessor-inl.h"
 #include "debug_data_accessor-inl.h"
-#include "helpers.h"
-#include "method_data_accessor-inl.h"
-#include "proto_data_accessor-inl.h"
 #include "utils/utf.h"
 
 namespace panda::panda_file {

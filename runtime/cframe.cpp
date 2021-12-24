@@ -14,9 +14,6 @@
  */
 
 #include "runtime/include/cframe.h"
-
-#include <iomanip>
-
 #include "runtime/include/runtime.h"
 #include "runtime/include/stack_walker.h"
 

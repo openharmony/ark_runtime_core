@@ -16,8 +16,6 @@
 #ifndef PANDA_LIBPANDABASE_OS_UNIX_FAILURE_RETRY_H_
 #define PANDA_LIBPANDABASE_OS_UNIX_FAILURE_RETRY_H_
 
-#include <unistd.h>
-
 // Mac Os' libc doesn't have this macro
 #ifndef TEMP_FAILURE_RETRY
 #define TEMP_FAILURE_RETRY(exp)                    \

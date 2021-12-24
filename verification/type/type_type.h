@@ -22,8 +22,6 @@
 
 #include "type_system_kind.h"
 
-#include <type_traits>
-
 namespace panda::verifier {
 class TypeSystem;
 class TypeSet;
