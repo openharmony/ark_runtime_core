@@ -124,7 +124,7 @@ public:
 };
 
 struct GCSettings {
-    bool is_gc_enable_tracing = false;  /// tracing via systrace
+    bool is_gc_enable_tracing = false;  /// if true then enable tracing
     NativeGcTriggerType native_gc_trigger_type = {
         NativeGcTriggerType::INVALID_NATIVE_GC_TRIGGER};  /// type of native trigger
     bool is_dump_heap = false;                            /// dump heap at the beginning and the end of GC

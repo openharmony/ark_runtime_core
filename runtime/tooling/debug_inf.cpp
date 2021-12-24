@@ -16,7 +16,7 @@
 #include "include/tooling/debug_inf.h"
 
 //
-// Debuge interface for native tools(simpleperf, libunwind).
+// Debuge interface for native tools(perf, libunwind).
 //
 
 namespace panda::tooling {
@@ -55,7 +55,7 @@ struct PCodeMetaInfo {
     uint64_t timestamp_ = 1;
 };
 
-// simpleperf currently use g_jitDebugDescriptor and g_dexDebugDescriptor
+// perf currently use g_jitDebugDescriptor and g_dexDebugDescriptor
 // to find the jit code item and dexfiles.
 // for using the variable interface, we doesn't change the name in panda
 // NOLINTNEXTLINE(readability-identifier-naming, fuchsia-statically-constructed-objects)
