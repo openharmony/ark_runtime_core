@@ -260,14 +260,27 @@ size_t GetNativeBytesFromMallinfo()
     LOG(INFO, RUNTIME) << "Get native bytes from mallinfo with ASAN or TSAN. Return default value";
 #else
 #if defined(__GLIBC__) || defined(PANDA_TARGET_MOBILE)
-    struct mallinfo info = mallinfo();
+
     // For GLIBC, uordblks is total size of space which is allocated by malloc
     // For MOBILE_LIBC, uordblks is total size of space which is allocated by malloc or mmap called by malloc for
     // non-small allocations
+#if __GLIBC__ >= 2 && __GLIBC_MINOR__ >= 33
+    struct mallinfo2 info = mallinfo2();
+    mallinfo_bytes = info.uordblks;
+#else
+    struct mallinfo info = mallinfo();
     mallinfo_bytes = static_cast<unsigned int>(info.uordblks);
+#endif // __GLIBC__ >= 2 && __GLIBC_MINOR__ >= 33
+
 #if defined(__GLIBC__)
+
     // For GLIBC, hblkhd is total size of space which is allocated by mmap called by malloc for non-small allocations
+#if __GLIBC__ >= 2 && __GLIBC_MINOR__ >= 33
+    mallinfo_bytes += info.hblkhd;
+#else
     mallinfo_bytes += static_cast<unsigned int>(info.hblkhd);
+#endif // __GLIBC__ >= 2 && __GLIBC_MINOR__ >= 33
+
 #endif  // __GLIBC__
 #else
     mallinfo_bytes = DEFAULT_NATIVE_BYTES_FROM_MALLINFO;
