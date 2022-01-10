@@ -42,6 +42,16 @@ public:
         address_ += v;
     }
 
+    void SetColumn(int32_t c)
+    {
+        column_ = c;
+    }
+
+    size_t GetColumn() const
+    {
+        return column_;
+    }
+
     void SetFile(uint32_t offset)
     {
         file_ = File::EntityId(offset);
@@ -103,6 +113,7 @@ private:
     File::EntityId file_;
     File::EntityId source_code_;
     size_t line_;
+    size_t column_{0};
     Span<const uint8_t> constant_pool_;
 
     uint32_t address_ {0};

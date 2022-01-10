@@ -1384,6 +1384,15 @@ bool LineNumberProgramItem::EmitSpecialOpcode(uint32_t pc_inc, int32_t line_inc)
     return true;
 }
 
+void LineNumberProgramItem::EmitColumn(std::vector<uint8_t> *constant_pool, uint32_t pc_inc, int32_t column)
+{
+    if (pc_inc != 0U) {
+        EmitAdvancePc(constant_pool, pc_inc);
+    }
+    EmitOpcode(Opcode::SET_COLUMN);
+    EmitUleb128(constant_pool, column);
+}
+
 void LineNumberProgramItem::EmitPrologEnd()
 {
     EmitOpcode(Opcode::SET_PROLOGUE_END);
