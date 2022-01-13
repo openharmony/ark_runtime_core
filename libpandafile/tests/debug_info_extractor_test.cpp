@@ -178,7 +178,7 @@ void PreparePandaFile(ItemContainer *container)
     line_number_program_item_bar->EmitAdvancePc(constant_pool_bar, 1);
     line_number_program_item_bar->EmitAdvanceLine(constant_pool_bar, 1);
     line_number_program_item_bar->EmitSpecialOpcode(0, 0);
-    line_number_program_item_bar->EmitColumn(constant_pool, 0, 10);
+    line_number_program_item_bar->EmitColumn(constant_pool_bar, 0, 10);
     line_number_program_item_bar->EmitEnd();
 
     debug_info_item_bar->AddParameter(param_string_item_bar1);
@@ -193,7 +193,7 @@ void PreparePandaFile(ItemContainer *container)
     line_number_program_item_baz->EmitAdvancePc(constant_pool_baz, 1);
     line_number_program_item_baz->EmitAdvanceLine(constant_pool_baz, 1);
     line_number_program_item_baz->EmitSpecialOpcode(0, 0);
-    line_number_program_item_baz->EmitColumn(constant_pool, 0, 11);
+    line_number_program_item_baz->EmitColumn(constant_pool_baz, 0, 11);
     line_number_program_item_baz->EmitEnd();
 
     debug_info_item_baz->AddParameter(param_string_item_baz1);
@@ -388,7 +388,7 @@ TEST_F(ExtractorTest, DebugInfoTestColumnNumber)
     constexpr uint32_t column_start = 5;
     uint32_t i = column_start;
     for (auto const &method_id : methods) {
-        auto &cnt = extractor.GetColumnNumberTable();
+        auto &cnt = extractor.GetColumnNumberTable(method_id);
         for (auto const &col : cnt) {
             EXPECT_EQ(col.column, i++);
         }

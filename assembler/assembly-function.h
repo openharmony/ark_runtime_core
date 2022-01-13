@@ -142,7 +142,7 @@ struct Function {
                         int32_t &prev_line_number, uint32_t &pc_inc, size_t instruction_number) const;
     // column number is only for javascript for now
     void EmitColumnNumber(panda_file::LineNumberProgramItem *program, std::vector<uint8_t> *constant_pool,
-                        int32_t &prev_column_number, uint32_t &pc_inc, size_t instruction_number, bool emit_debug_info) const;
+                          int32_t &prev_column_number, uint32_t &pc_inc, size_t instruction_number) const;
 
     void BuildLineNumberProgram(panda_file::DebugInfoItem *debug_item, const std::vector<uint8_t> &bytecode,
                                 panda_file::ItemContainer *container, std::vector<uint8_t> *constant_pool,

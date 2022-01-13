@@ -113,7 +113,7 @@ private:
     File::EntityId file_;
     File::EntityId source_code_;
     size_t line_;
-    size_t column_{0};
+    size_t column_ {0};
     Span<const uint8_t> constant_pool_;
 
     uint32_t address_ {0};

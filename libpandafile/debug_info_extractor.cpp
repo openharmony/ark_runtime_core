@@ -90,10 +90,8 @@ public:
                     break;
                 }
             }
-
             opcode = ReadOpcode();
         }
-
         ProcessVars();
     }
 

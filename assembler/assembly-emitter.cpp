@@ -1654,55 +1654,15 @@ void Function::EmitLineNumber(panda_file::LineNumberProgramItem *program, std::v
     }
 }
 
-bool JsNoThrow(Ins ins)
-{
-    switch (ins.opcode) {
-        case Opcode::ECMA_LDNAN:
-        case Opcode::ECMA_LDINFINITY:
-        case Opcode::ECMA_LDGLOBALTHIS:
-        case Opcode::ECMA_LDUNDEFINED:
-        case Opcode::ECMA_LDNULL:
-        case Opcode::ECMA_LDSYMBOL:
-        case Opcode::ECMA_LDGLOBAL:
-        case Opcode::ECMA_LDTRUE:
-        case Opcode::ECMA_LDFALSE:
-        case Opcode::ECMA_TYPEOFDYN:
-        case Opcode::ECMA_LDHOLE:
-        case Opcode::ECMA_RETURNUNDEFINED:
-        case Opcode::ECMA_CREATEEMPTYOBJECT:
-        case Opcode::ECMA_CREATEEMPTYARRAY:
-        case Opcode::ECMA_LDHOMEOBJECT:
-        case Opcode::ECMA_STRICTNOTEQDYN:
-        case Opcode::ECMA_STRICTEQDYN:
-        case Opcode::ECMA_LDLEXENVDYN:
-        case Opcode::ECMA_RESUMEGENERATOR:
-        case Opcode::ECMA_GETRESUMEMODE:
-        case Opcode::ECMA_COPYMODULE:
-        case Opcode::ECMA_IMPORTMODULE:
-        case Opcode::ECMA_STMODULEVAR:
-        case Opcode::ECMA_LDMODVARBYNAME:
-        case Opcode::ECMA_LDLEXVARDYN:
-        case Opcode::ECMA_STLEXVARDYN:
-            return true;
-        default:
-            return false;
-    }
-}
-
 void Function::EmitColumnNumber(panda_file::LineNumberProgramItem *program, std::vector<uint8_t> *constant_pool,
-                        int32_t &prev_column_number, uint32_t &pc_inc, size_t instruction_number, bool emit_debug_info) const
+                                int32_t &prev_column_number, uint32_t &pc_inc, size_t instruction_number) const
 {
-    if (emit_debug_info) {
-        int32_t cn = GetColumnNumber(instruction_number);
-        if (cn != prev_column_number) {
-            program->EmitColumn(constant_pool, pc_inc, cn);
-            pc_inc = 0;
-            prev_column_number = cn;
-        }
-        return;
+    int32_t cn = GetColumnNumber(instruction_number);
+    if (cn != prev_column_number) {
+        program->EmitColumn(constant_pool, pc_inc, cn);
+        pc_inc = 0;
+        prev_column_number = cn;
     }
-
-
 }
 
 void Function::BuildLineNumberProgram(panda_file::DebugInfoItem *debug_item, const std::vector<uint8_t> &bytecode,
@@ -1734,8 +1694,8 @@ void Function::BuildLineNumberProgram(panda_file::DebugInfoItem *debug_item, con
             EmitLineNumber(program, constant_pool, prev_line_number, pc_inc, i);
         }
 
-        if (language == pandasm::extensions::Language::ECMASCRIPT && !JsNoThrow(ins[i])) {
-            EmitColumnNumber(program, constant_pool, prev_column_number, pc_inc, i, emit_debug_info);
+        if (language == pandasm::extensions::Language::ECMASCRIPT && ins[i].CanThrow()) {
+            EmitColumnNumber(program, constant_pool, prev_column_number, pc_inc, i);
         }
 
         pc_inc += bi.GetSize();
