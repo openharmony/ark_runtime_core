@@ -270,7 +270,7 @@ size_t GetNativeBytesFromMallinfo()
 #else
     struct mallinfo info = mallinfo();
     mallinfo_bytes = static_cast<unsigned int>(info.uordblks);
-#endif // __GLIBC__ >= 2 && __GLIBC_MINOR__ >= 33
+#endif  // __GLIBC__ >= 2 && __GLIBC_MINOR__ >= 33
 
 #if defined(__GLIBC__)
 
@@ -279,7 +279,7 @@ size_t GetNativeBytesFromMallinfo()
     mallinfo_bytes += info.hblkhd;
 #else
     mallinfo_bytes += static_cast<unsigned int>(info.hblkhd);
-#endif // __GLIBC__ >= 2 && __GLIBC_MINOR__ >= 33
+#endif  // __GLIBC__ >= 2 && __GLIBC_MINOR__ >= 33
 
 #endif  // __GLIBC__
 #else

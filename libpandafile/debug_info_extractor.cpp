@@ -81,21 +81,28 @@ public:
                     HandleEndLocal();
                     break;
                 }
+                case Opcode::SET_COLUMN: {
+                    HandleSetColumn();
+                    break;
+                }
                 default: {
                     HandleSpecialOpcode(opcode);
                     break;
                 }
             }
-
             opcode = ReadOpcode();
         }
-
         ProcessVars();
     }
 
     LineNumberTable GetLineNumberTable() const
     {
         return lnt_;
+    }
+
+    ColumnNumberTable GetColumnNumberTable() const
+    {
+        return cnt_;
     }
 
     LocalVariableTable GetLocalVariableTable() const
@@ -204,6 +211,13 @@ private:
         }
     }
 
+    void HandleSetColumn()
+    {
+        auto cn = state_.ReadULeb128();
+        state_.SetColumn(cn);
+        cnt_.push_back({state_.GetAddress(), state_.GetColumn()});
+    }
+
     void HandleSpecialOpcode(LineNumberProgramItem::Opcode opcode)
     {
         ASSERT(static_cast<uint8_t>(opcode) >= LineNumberProgramItem::OPCODE_BASE);
@@ -220,6 +234,7 @@ private:
     const uint8_t *program_;
     LineNumberTable lnt_;
     LocalVariableTable lvt_;
+    ColumnNumberTable cnt_;
 };
 
 void DebugInfoExtractor::Extract(const File *pf)
@@ -269,7 +284,8 @@ void DebugInfoExtractor::Extract(const File *pf)
             const char *source_file = utf::Mutf8AsCString(program_processor.GetFile());
             const char *source_code = utf::Mutf8AsCString(program_processor.GetSourceCode());
             methods_.push_back({source_file, source_code, method_id, program_processor.GetLineNumberTable(),
-                                program_processor.GetLocalVariableTable(), std::move(param_names)});
+                                program_processor.GetLocalVariableTable(), std::move(param_names),
+                                program_processor.GetColumnNumberTable()});
         });
     }
 }
@@ -284,6 +300,18 @@ const LineNumberTable &DebugInfoExtractor::GetLineNumberTable(File::EntityId met
 
     static const LineNumberTable EMPTY_LINE_TABLE {};  // NOLINT(fuchsia-statically-constructed-objects)
     return EMPTY_LINE_TABLE;
+}
+
+const ColumnNumberTable &DebugInfoExtractor::GetColumnNumberTable(File::EntityId method_id) const
+{
+    for (const auto &method : methods_) {
+        if (method.method_id == method_id) {
+            return method.column_number_table;
+        }
+    }
+
+    static const ColumnNumberTable EMPTY_COLUMN_TABLE {};  // NOLINT(fuchsia-statically-constructed-objects)
+    return EMPTY_COLUMN_TABLE;
 }
 
 const LocalVariableTable &DebugInfoExtractor::GetLocalVariableTable(File::EntityId method_id) const

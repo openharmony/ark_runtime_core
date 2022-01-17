@@ -489,6 +489,8 @@ public:
         SET_EPILOGUE_BEGIN = 0x08,
         SET_FILE = 0x09,
         SET_SOURCE_CODE = 0x0a,
+        SET_COLUMN = 0X0b, // The SET_COLUMN opcode takes a single unsigned LEB128 operand and
+                           // stores it in the column register of the state machine.
         LAST
     };
 
@@ -513,6 +515,8 @@ public:
     void EmitRestartLocal(int32_t register_number);
 
     bool EmitSpecialOpcode(uint32_t pc_inc, int32_t line_inc);
+
+    void EmitColumn(std::vector<uint8_t> *constant_pool, uint32_t pc_inc, int32_t column);
 
     void EmitPrologEnd();
 

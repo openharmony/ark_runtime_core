@@ -29,7 +29,13 @@ struct LineTableEntry {
     size_t line;
 };
 
+struct ColumnTableEntry {
+    uint32_t offset;
+    size_t column;
+};
+
 using LineNumberTable = std::vector<LineTableEntry>;
+using ColumnNumberTable = std::vector<ColumnTableEntry>;
 
 struct LocalVariableInfo {
     std::string name;
@@ -53,6 +59,8 @@ public:
 
     const LineNumberTable &GetLineNumberTable(File::EntityId method_id) const;
 
+    const ColumnNumberTable &GetColumnNumberTable(File::EntityId method_id) const;
+
     const LocalVariableTable &GetLocalVariableTable(File::EntityId method_id) const;
 
     const std::vector<std::string> &GetParameterNames(File::EntityId method_id) const;
@@ -73,6 +81,7 @@ private:
         LineNumberTable line_number_table;
         LocalVariableTable local_variable_table;
         std::vector<std::string> param_names;
+        ColumnNumberTable column_number_table;
     };
 
     std::list<MethodDebugInfo> methods_;

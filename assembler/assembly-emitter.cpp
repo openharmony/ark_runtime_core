@@ -1621,6 +1621,11 @@ size_t Function::GetLineNumber(size_t i) const
     return static_cast<int32_t>(ins[i].ins_debug.line_number);
 }
 
+size_t Function::GetColumnNumber(size_t i) const
+{
+    return static_cast<int32_t>(ins[i].ins_debug.column_number);
+}
+
 void Function::EmitNumber(panda_file::LineNumberProgramItem *program, std::vector<uint8_t> *constant_pool,
                           uint32_t pc_inc, int32_t line_inc) const
 {
@@ -1649,6 +1654,17 @@ void Function::EmitLineNumber(panda_file::LineNumberProgramItem *program, std::v
     }
 }
 
+void Function::EmitColumnNumber(panda_file::LineNumberProgramItem *program, std::vector<uint8_t> *constant_pool,
+                                int32_t &prev_column_number, uint32_t &pc_inc, size_t instruction_number) const
+{
+    int32_t cn = GetColumnNumber(instruction_number);
+    if (cn != prev_column_number) {
+        program->EmitColumn(constant_pool, pc_inc, cn);
+        pc_inc = 0;
+        prev_column_number = cn;
+    }
+}
+
 void Function::BuildLineNumberProgram(panda_file::DebugInfoItem *debug_item, const std::vector<uint8_t> &bytecode,
                                       ItemContainer *container, std::vector<uint8_t> *constant_pool,
                                       bool emit_debug_info) const
@@ -1662,6 +1678,7 @@ void Function::BuildLineNumberProgram(panda_file::DebugInfoItem *debug_item, con
 
     uint32_t pc_inc = 0;
     int32_t prev_line_number = GetLineNumber(0);
+    int32_t prev_column_number = GetColumnNumber(0);
     BytecodeInstruction bi(bytecode.data());
     debug_item->SetLineNumber(static_cast<uint32_t>(prev_line_number));
 
@@ -1675,6 +1692,10 @@ void Function::BuildLineNumberProgram(panda_file::DebugInfoItem *debug_item, con
 
         if (emit_debug_info || ins[i].CanThrow()) {
             EmitLineNumber(program, constant_pool, prev_line_number, pc_inc, i);
+        }
+
+        if (language == pandasm::extensions::Language::ECMASCRIPT && emit_debug_info) {
+            EmitColumnNumber(program, constant_pool, prev_column_number, pc_inc, i);
         }
 
         pc_inc += bi.GetSize();

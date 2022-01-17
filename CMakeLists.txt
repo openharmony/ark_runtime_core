@@ -219,7 +219,7 @@ if(PANDA_WITH_TESTS)
         tests
     )
     if(NOT PANDA_TARGET_MACOS)
-        add_dependencies(tests_full clang_format)
+        # add_dependencies(tests_full clang_format)
     endif()
 endif()
 
