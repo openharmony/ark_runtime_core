@@ -131,7 +131,6 @@ end
 assert('Acc_none should not be specified along with other accumulator properties') do
   Panda.instructions.map do |i|
     props = i.properties
-    # print "23333333, #{i.mnemonic}"
     props.include?('acc_none') == !(props.include?('acc_read') || props.include?('acc_write'))
   end.all?
 end
