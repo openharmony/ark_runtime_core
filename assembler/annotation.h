@@ -511,8 +511,8 @@ public:
     {
     }
 
-    NO_MOVE_SEMANTIC(ArrayValue);
-    NO_COPY_SEMANTIC(ArrayValue);
+    DEFAULT_MOVE_SEMANTIC(ArrayValue);
+    DEFAULT_COPY_SEMANTIC(ArrayValue);
 
     ~ArrayValue() override = default;
 
