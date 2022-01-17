@@ -145,20 +145,25 @@ void PreparePandaFile(ItemContainer *container)
     line_number_program_item->EmitAdvancePc(constant_pool, 1);
     line_number_program_item->EmitAdvanceLine(constant_pool, 1);
     line_number_program_item->EmitSpecialOpcode(0, 0);
+    line_number_program_item->EmitColumn(constant_pool, 0, 5);
     // Line 4
     line_number_program_item->EmitStartLocal(constant_pool, 1, local_variable_name_0, local_variable_type_i32);
     line_number_program_item->EmitSpecialOpcode(1, 1);
+    line_number_program_item->EmitColumn(constant_pool, 0, 6);
     // Line 5
     line_number_program_item->EmitSpecialOpcode(1, 1);
+    line_number_program_item->EmitColumn(constant_pool, 0, 7);
     // Line 6
     line_number_program_item->EmitStartLocalExtended(constant_pool, 2U, local_variable_name_1, local_variable_type_i32,
                                                      local_variable_sig_type_i32);
     line_number_program_item->EmitEndLocal(1);
     line_number_program_item->EmitSpecialOpcode(1, 2U);
+    line_number_program_item->EmitColumn(constant_pool, 0, 8);
     // Line 8
     line_number_program_item->EmitStartLocal(constant_pool, 3U, local_variable_name_2, local_variable_type_i32);
     line_number_program_item->EmitAdvanceLine(constant_pool, 2U);
     line_number_program_item->EmitSpecialOpcode(0, 0);
+    line_number_program_item->EmitColumn(constant_pool, 0, 9);
     // Line 10
     line_number_program_item->EmitEnd();
 
@@ -173,6 +178,7 @@ void PreparePandaFile(ItemContainer *container)
     line_number_program_item_bar->EmitAdvancePc(constant_pool_bar, 1);
     line_number_program_item_bar->EmitAdvanceLine(constant_pool_bar, 1);
     line_number_program_item_bar->EmitSpecialOpcode(0, 0);
+    line_number_program_item_bar->EmitColumn(constant_pool_bar, 0, 10);
     line_number_program_item_bar->EmitEnd();
 
     debug_info_item_bar->AddParameter(param_string_item_bar1);
@@ -187,6 +193,7 @@ void PreparePandaFile(ItemContainer *container)
     line_number_program_item_baz->EmitAdvancePc(constant_pool_baz, 1);
     line_number_program_item_baz->EmitAdvanceLine(constant_pool_baz, 1);
     line_number_program_item_baz->EmitSpecialOpcode(0, 0);
+    line_number_program_item_baz->EmitColumn(constant_pool_baz, 0, 11);
     line_number_program_item_baz->EmitEnd();
 
     debug_info_item_baz->AddParameter(param_string_item_baz1);
@@ -371,4 +378,20 @@ TEST_F(ExtractorTest, DebugInfoTestNonStaticWithRefArg)
     EXPECT_EQ(vars.size(), 0);
 }
 
+TEST_F(ExtractorTest, DebugInfoTestColumnNumber)
+{
+    const panda_file::File *pf = panda_file.get();
+    ASSERT_TRUE(pf != nullptr);
+    DebugInfoExtractor extractor(pf);
+
+    auto methods = extractor.GetMethodIdList();
+    constexpr uint32_t column_start = 5;
+    uint32_t i = column_start;
+    for (auto const &method_id : methods) {
+        auto &cnt = extractor.GetColumnNumberTable(method_id);
+        for (auto const &col : cnt) {
+            EXPECT_EQ(col.column, i++);
+        }
+    }
+}
 }  // namespace panda::panda_file::test
