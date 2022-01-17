@@ -1665,6 +1665,30 @@ void Function::EmitColumnNumber(panda_file::LineNumberProgramItem *program, std:
     }
 }
 
+bool EcmaNotThrow(Ins ins)
+{
+    switch (ins.opcode) {
+        case Opcode::ECMA_LDNAN:
+        case Opcode::ECMA_LDINFINITY:
+        case Opcode::ECMA_LDGLOBALTHIS:
+        case Opcode::ECMA_LDUNDEFINED:
+        case Opcode::ECMA_LDNULL:
+        case Opcode::ECMA_LDSYMBOL:
+        case Opcode::ECMA_LDGLOBAL:
+        case Opcode::ECMA_LDTRUE:
+        case Opcode::ECMA_LDFALSE:
+        case Opcode::ECMA_TYPEOFDYN:
+        case Opcode::ECMA_LDHOLE:
+        case Opcode::ECMA_RETURNUNDEFINED:
+        case Opcode::ECMA_CREATEEMPTYOBJECT:
+        case Opcode::ECMA_CREATEEMPTYARRAY:
+        case Opcode::ECMA_LDHOMEOBJECT:
+            return true;
+        default:
+            return false;
+    }
+}
+
 void Function::BuildLineNumberProgram(panda_file::DebugInfoItem *debug_item, const std::vector<uint8_t> &bytecode,
                                       ItemContainer *container, std::vector<uint8_t> *constant_pool,
                                       bool emit_debug_info) const
@@ -1694,7 +1718,7 @@ void Function::BuildLineNumberProgram(panda_file::DebugInfoItem *debug_item, con
             EmitLineNumber(program, constant_pool, prev_line_number, pc_inc, i);
         }
 
-        if (language == pandasm::extensions::Language::ECMASCRIPT && ins[i].CanThrow()) {
+        if (language == pandasm::extensions::Language::ECMASCRIPT && !EcmaNotThrow(ins[i])) {
             EmitColumnNumber(program, constant_pool, prev_column_number, pc_inc, i);
         }
 
