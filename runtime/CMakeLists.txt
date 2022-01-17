@@ -293,6 +293,8 @@ panda_gen(
 )
 
 add_library(arkruntime_static STATIC ${SOURCES} ${CORE_VM_SOURCES} ${VERIFIER_SOURCES} $<TARGET_OBJECTS:arkruntime_interpreter_impl>)
+target_compile_options(arkruntime_static PUBLIC -Wno-unused-parameter)
+
 set_property(TARGET arkruntime_static PROPERTY POSITION_INDEPENDENT_CODE ON)
 
 add_library(arkruntime SHARED $<TARGET_OBJECTS:arkruntime_interpreter_impl>)
