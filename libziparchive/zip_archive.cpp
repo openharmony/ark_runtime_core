@@ -18,11 +18,6 @@
 #include "utils/logger.h"
 
 #include <securec.h>
-#include <sys/stat.h>
-#include <sys/types.h>
-#include <iostream>
-#include <cstdio>
-#include <memory>
 
 namespace panda {
 
@@ -34,200 +29,159 @@ bool IsZipMagic(uint32_t magic)
     return (('P' == ((magic >> 0U) & ZIP_MAGIC_MASK)) && ('K' == ((magic >> ZIP_MAGIC_OFFSET) & ZIP_MAGIC_MASK)));
 }
 
-int32_t OpenArchive(const char *zip_filename, ZipArchiveHandle *handle)
+int OpenArchive(ZipArchiveHandle &handle, const char *path)
 {
-    if (handle == nullptr || memset_s(*handle, sizeof(ZipArchive), 0, sizeof(ZipArchive)) != EOK) {
-        LOG(ERROR, ZIPARCHIVE) << "ZipArchiveHandle handle should not be nullptr";
-        return -1;
+    handle = unzOpen(path);
+    if (handle == nullptr) {
+        LOG(ERROR, ZIPARCHIVE) << "OpenArchive failed, filename is " << path;
+        return ZIPARCHIVE_ERR;
     }
-
-    if (mz_zip_reader_init_file(*handle, zip_filename, 0) == 0) {
-        LOG(ERROR, ZIPARCHIVE) << "mz_zip_reader_init_file() failed!";
-        return -1;
-    }
-
-    return 0;
+    return ZIPARCHIVE_OK;
 }
 
-int32_t OpenArchiveFILE(FILE *fp, ZipArchiveHandle *handle)
+int OpenArchiveFile(ZipArchiveHandle &handle, FILE *fp)
 {
-    if (handle == nullptr || memset_s(*handle, sizeof(ZipArchive), 0, sizeof(ZipArchive)) != EOK) {
-        LOG(ERROR, ZIPARCHIVE) << "ZipArchiveHandle handle should not be nullptr";
-        return -1;
+    handle = unzOpenFile(fp);
+    if (handle == nullptr) {
+        LOG(ERROR, ZIPARCHIVE) << "OpenArchive failed from FILE *fp";
+        return ZIPARCHIVE_ERR;
     }
-
-    auto file = std::make_unique<os::file::File>(fileno(fp));
-    if (file == nullptr) {
-        LOG(ERROR, ZIPARCHIVE) << "Failed to get get file\n";
-        return -1;
-    }
-
-    auto res = file->GetFileSize();
-    if (!res) {
-        LOG(ERROR, ZIPARCHIVE) << "Failed to get size of panda file\n";
-        return -1;
-    }
-
-    size_t file_size = res.Value();
-    if (mz_zip_reader_init_cfile(*handle, fp, file_size, 0) == 0) {
-        LOG(ERROR, ZIPARCHIVE) << "mz_zip_reader_init_cfile() failed!\n";
-        return -1;
-    }
-
-    return 0;
+    return ZIPARCHIVE_OK;
 }
 
-bool CloseArchive(ZipArchiveHandle *handle)
+int CloseArchive(ZipArchiveHandle &handle)
 {
     if (handle == nullptr) {
         LOG(ERROR, ZIPARCHIVE) << "ZipArchiveHandle handle should not be nullptr";
-        return false;
+        return ZIPARCHIVE_ERR;
     }
-    return mz_zip_reader_end(*handle) != 0;
+    int err = unzClose(handle);
+    if (err != UNZ_OK) {
+        LOG(ERROR, ZIPARCHIVE) << "unzClose with error: " << err;
+        return ZIPARCHIVE_ERR;
+    }
+    return ZIPARCHIVE_OK;
 }
 
-int32_t FindEntry(ZipArchiveHandle *handle, EntryFileStat *entry, const char *entryname, const char *pcomment)
+int CloseArchiveFile(ZipArchiveHandle &handle)
 {
     if (handle == nullptr) {
         LOG(ERROR, ZIPARCHIVE) << "ZipArchiveHandle handle should not be nullptr";
-        return -1;
+        return ZIPARCHIVE_ERR;
     }
-    int32_t index = LocateFileIndex(handle, entryname, pcomment);
-    if (index == -1) {
-        LOG(INFO, ZIPARCHIVE) << "LocateFileIndex() failed!";
-        return -1;
+    int err = unzCloseFile(handle);
+    if (err != UNZ_OK) {
+        LOG(ERROR, ZIPARCHIVE) << "unzCloseFile with error: " << err;
+        return ZIPARCHIVE_ERR;
     }
-
-    if (!StatFileWithIndex(handle, entry, static_cast<unsigned int>(index))) {
-        LOG(INFO, ZIPARCHIVE) << "StatFileWithIndex() failed!";
-        return -1;
-    }
-
-    return 0;
+    return ZIPARCHIVE_OK;
 }
 
-int32_t GetFileCount(ZipArchiveHandle *handle)
+int GetGlobalFileInfo(ZipArchiveHandle &handle, GlobalStat *gstat)
 {
-    if (handle == nullptr) {
-        LOG(ERROR, ZIPARCHIVE) << "ZipArchiveHandle handle should not be nullptr";
-        return -1;
+    int err = unzGetGlobalInfo(handle, &gstat->ginfo);
+    if (err != UNZ_OK) {
+        LOG(ERROR, ZIPARCHIVE) << "GetGlobalFileInfo with error: " << err;
+        return ZIPARCHIVE_ERR;
     }
-    return static_cast<int>(mz_zip_reader_get_num_files(*handle));
+    return ZIPARCHIVE_OK;
 }
 
-int32_t LocateFileIndex(ZipArchiveHandle *handle, const char *filename, const char *comment)
+int GoToNextFile(ZipArchiveHandle &handle)
 {
-    if (handle == nullptr) {
-        LOG(ERROR, ZIPARCHIVE) << "ZipArchiveHandle handle should not be nullptr";
-        return -1;
+    int err = unzGoToNextFile(handle);
+    if (err != UNZ_OK) {
+        LOG(ERROR, ZIPARCHIVE) << "GoToNextFile with error: " << err;
+        return ZIPARCHIVE_ERR;
     }
-    return static_cast<int32_t>(mz_zip_reader_locate_file(*handle, filename, comment, MZ_ZIP_FLAG_CASE_SENSITIVE));
+    return ZIPARCHIVE_OK;
 }
 
-bool StatFileWithIndex(ZipArchiveHandle *handle, EntryFileStat *entry, unsigned int index)
+int LocateFile(ZipArchiveHandle &handle, const char *filename)
 {
-    if (handle == nullptr) {
-        LOG(ERROR, ZIPARCHIVE) << "ZipArchiveHandle handle should not be nullptr";
-        return false;
+    int err = unzLocateFile2(handle, filename, 0);
+    if (err != UNZ_OK) {
+        LOG(ERROR, ZIPARCHIVE) << filename << " is not found in the zipfile";
+        return ZIPARCHIVE_ERR;
     }
-    if (mz_zip_reader_file_stat(*handle, index, &(entry->file_stat)) == 0) {
-        LOG(ERROR, ZIPARCHIVE) << "mz_zip_reader_file_stat() failed!";
-        return false;
-    }
-
-    if (mz_zip_reader_file_ofs(*handle, &(entry->file_stat), &(entry->offset)) == 0) {
-        LOG(ERROR, ZIPARCHIVE) << "mz_zip_reader_file_offset() failed!";
-        return false;
-    }
-
-    return true;
+    return ZIPARCHIVE_OK;
 }
 
-bool IsFileDirectory(ZipArchiveHandle *handle, unsigned int index)
+int GetCurrentFileInfo(ZipArchiveHandle &handle, EntryFileStat *entry)
 {
-    if (handle == nullptr) {
-        LOG(ERROR, ZIPARCHIVE) << "ZipArchiveHandle handle should not be nullptr";
-        return false;
+    int err = unzGetCurrentFileInfo(handle, &entry->file_stat, nullptr, 0, nullptr, 0, nullptr, 0);
+    if (err != UNZ_OK) {
+        LOG(ERROR, ZIPARCHIVE) << "unzGetCurrentFileInfo failed!";
+        return ZIPARCHIVE_ERR;
     }
-    return mz_zip_reader_is_file_a_directory(*handle, index) != 0;
+    return ZIPARCHIVE_OK;
 }
 
-int32_t ExtractToMemory(ZipArchiveHandle *handle, EntryFileStat *entry, void *buf, size_t buf_size)
+int OpenCurrentFile(ZipArchiveHandle &handle)
 {
-    if (handle == nullptr) {
-        LOG(ERROR, ZIPARCHIVE) << "ZipArchiveHandle handle should not be nullptr";
-        return -1;
+    int err = unzOpenCurrentFile(handle);
+    if (err != UNZ_OK) {
+        LOG(ERROR, ZIPARCHIVE) << "OpenCurrentFile failed!";
+        return ZIPARCHIVE_ERR;
     }
-    if (mz_zip_reader_extract_to_mem(*handle, entry->GetIndex(), buf, buf_size, 0) == 0) {
-        LOG(ERROR, ZIPARCHIVE) << "mz_zip_reader_extract_to_mem() failed!\n";
-        return -1;
-    }
-    return 0;
+    return ZIPARCHIVE_OK;
 }
 
-void *ExtractToHeap(ZipArchiveHandle *handle, const char *filename, size_t *puncomp_size)
+void GetCurrentFileOffset(ZipArchiveHandle &handle, EntryFileStat *entry)
 {
-    if (handle == nullptr) {
-        LOG(ERROR, ZIPARCHIVE) << "ZipArchiveHandle handle should not be nullptr";
-        return nullptr;
-    }
-    void *heap_buf = mz_zip_reader_extract_file_to_heap(*handle, filename, puncomp_size, 0);
-    if (heap_buf == nullptr) {
-        LOG(ERROR, ZIPARCHIVE) << "mz_zip_reader_extract_file_to_heap() failed!\n";
-        return nullptr;
-    }
-    return heap_buf;
+    entry->offset = static_cast<uint32_t>(unzGetCurrentFileZStreamPos64(handle));
 }
 
-void FreeHeap(void *heapbuf)
+int CloseCurrentFile(ZipArchiveHandle &handle)
 {
-    mz_free(heapbuf);
+    int err = unzCloseCurrentFile(handle);
+    if (err != UNZ_OK) {
+        LOG(ERROR, ZIPARCHIVE) << "CloseCurrentFile failed!";
+        return ZIPARCHIVE_ERR;
+    }
+    return ZIPARCHIVE_OK;
 }
 
-int32_t CreateOrAddFileIntoZip(const char *zip_filename, const char *filename, const void *pbuf, size_t buf_size,
-                               const void *pcomment, mz_uint16 comment_size)
+int ExtractToMemory(ZipArchiveHandle &handle, void *buf, size_t buf_size)
 {
-    if (mz_zip_add_mem_to_archive_file_in_place(zip_filename, filename, pbuf, buf_size, pcomment, comment_size,
-                                                MZ_BEST_COMPRESSION) == 0) {
-        LOG(ERROR, ZIPARCHIVE) << "mz_zip_add_mem_to_archive_file_in_place failed!\n";
-        return -1;
+    int size = unzReadCurrentFile(handle, buf, buf_size);
+    if (size < 0) {
+        LOG(ERROR, ZIPARCHIVE) << "ExtractToMemory failed!";
+        return ZIPARCHIVE_ERR;
     }
-    return 0;
+    LOG(INFO, ZIPARCHIVE) << "ExtractToMemory size is " << size;
+    return ZIPARCHIVE_OK;
 }
 
-int32_t CreateOrAddUncompressedFileIntoZip(const char *zip_filename, const char *filename, const void *pbuf,
-                                           size_t buf_size, const void *pcomment, mz_uint16 comment_size)
+int CreateOrAddFileIntoZip(const char *zipname, const char *filename, const void *pbuf, size_t buf_size, int append,
+                           int level)
 {
-    if (mz_zip_add_mem_to_archive_file_in_place(zip_filename, filename, pbuf, buf_size, pcomment, comment_size,
-                                                MZ_NO_COMPRESSION) == 0) {
-        LOG(ERROR, ZIPARCHIVE) << "mz_zip_add_mem_to_archive_file_in_place failed!\n";
-        return -1;
+    zipFile zfile = nullptr;
+    zfile = zipOpen(zipname, append);
+    if (zfile == nullptr) {
+        LOG(ERROR, ZIPARCHIVE) << "CreateArchive failed, zipname is " << zipname;
+        return ZIPARCHIVE_ERR;
     }
-    return 0;
+    int success = ZIPARCHIVE_OK;
+    int err = zipOpenNewFileInZip(zfile, filename, nullptr, nullptr, 0, nullptr, 0, nullptr,
+                                  (level != 0) ? Z_DEFLATED : 0, level);
+    if (err != UNZ_OK) {
+        LOG(ERROR, ZIPARCHIVE) << "zipOpenNewFileInZip failed!, zipname is" << zipname << ", filename is " << filename;
+        return ZIPARCHIVE_ERR;
+    }
+    err = zipWriteInFileInZip(zfile, pbuf, buf_size);
+    if (err != UNZ_OK) {
+        LOG(ERROR, ZIPARCHIVE) << "zipWriteInFileInZip failed!, zipname is" << zipname << ", filename is " << filename;
+        success = ZIPARCHIVE_ERR;
+    }
+    err = zipCloseFileInZip(zfile);
+    if (err != UNZ_OK) {
+        LOG(ERROR, ZIPARCHIVE) << "zipCloseFileInZip failed!, zipname is" << zipname << ", filename is " << filename;
+    }
+    err = zipClose(zfile, nullptr);
+    if (err != UNZ_OK) {
+        LOG(ERROR, ZIPARCHIVE) << "CloseArcive failed!, zipname is" << zipname;
+    }
+    return success;
 }
-
-bool GetArchiveFileEntry(FILE *inputfile, const char *archive_filename, EntryFileStat *entry)
-{
-    panda::ZipArchive archive_holder;
-    panda::ZipArchiveHandle handle = &archive_holder;
-    fseek(inputfile, 0, SEEK_SET);
-    auto open_error = panda::OpenArchiveFILE(inputfile, &handle);
-    if (open_error != 0) {
-        LOG(ERROR, ZIPARCHIVE) << "Can't open archive\n";
-        return false;
-    }
-
-    auto find_error = panda::FindEntry(&handle, entry, archive_filename);
-    if (!panda::CloseArchive(&handle)) {
-        LOG(ERROR, ZIPARCHIVE) << "CloseArchive failed!";
-        return false;
-    }
-    fseek(inputfile, 0, SEEK_SET);
-    if (find_error != 0) {
-        LOG(INFO, ZIPARCHIVE) << "Can't find entry with name '" << archive_filename << "'";
-        return false;
-    }
-    return true;
-}
-
 }  // namespace panda
