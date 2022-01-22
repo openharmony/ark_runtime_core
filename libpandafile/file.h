@@ -28,6 +28,10 @@
 #include <string>
 #include <string_view>
 
+namespace panda {
+struct EntryFileStat;
+}  // namespace panda
+
 namespace panda::panda_file {
 
 class PandaCache;
@@ -351,34 +355,12 @@ std::unique_ptr<const File> OpenPandaFile(std::string_view location, std::string
                                           panda_file::File::OpenMode open_mode = panda_file::File::READ_ONLY);
 
 /*
- * OpenPandaFileFromZip from location which specicify the name.
- */
-std::unique_ptr<const panda_file::File> OpenPandaFileFromZip(std::string_view location);
-
-/*
- * Open Archive file.
- */
-std::unique_ptr<const panda_file::File> HandleArchive(
-    FILE *fp, std::string_view location, std::string_view archive_filename = "",
-    panda_file::File::OpenMode open_mode = panda_file::File::READ_ONLY);
-
-/*
- * OpenPandaFileFromZip from FILE* inputfile
- */
-std::unique_ptr<const panda_file::File> OpenPandaFileFromZipFILE(FILE *inputfile, std::string_view location,
-                                                                 std::string_view archive_filename);
-
-/*
  * Check ptr point valid panda file: magic
  */
 bool CheckHeader(const os::mem::ConstBytePtr &ptr, const std::string_view &filename = "");
 
 // NOLINTNEXTLINE(readability-identifier-naming)
 extern const char *ARCHIVE_FILENAME;
-
-// NOLINTNEXTLINE(readability-identifier-naming)
-extern const char *ARCHIVE_FILENAME_ABC;
-
 }  // namespace panda::panda_file
 
 #endif  // PANDA_LIBPANDAFILE_FILE_H_
