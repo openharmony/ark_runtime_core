@@ -18,7 +18,6 @@
 
 #include <string>
 #include "file_items.h"
-#include "helpers.h"
 #include "literal_data_accessor.h"
 #include "utils/utf.h"
 
@@ -92,10 +91,7 @@ inline void LiteralDataAccessor::EnumerateLiteralVals(File::EntityId id, const C
 template <class Callback>
 inline void LiteralDataAccessor::EnumerateLiteralVals(size_t index, const Callback &cb)
 {
-    ASSERT(index < literal_num_);
-    auto l_sp = literal_data_sp_.SubSpan(index * ID_SIZE);
-    auto id = File::EntityId(static_cast<uint32_t>(helpers::Read<sizeof(uint32_t)>(&l_sp)));
-    EnumerateLiteralVals(id, cb);
+    EnumerateLiteralVals(GetLiteralArrayId(index), cb);
 }
 
 }  // namespace panda::panda_file
