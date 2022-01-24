@@ -18,6 +18,7 @@
 
 #include "field_data_accessor.h"
 #include "file.h"
+#include "helpers.h"
 #include "utils/span.h"
 
 namespace panda::panda_file {
@@ -81,6 +82,13 @@ public:
     File::EntityId GetLiteralDataId() const
     {
         return literal_data_id_;
+    }
+
+    File::EntityId GetLiteralArrayId(size_t index) const
+    {
+        ASSERT(index < literal_num_);
+        auto l_sp = literal_data_sp_.SubSpan(index * ID_SIZE);
+        return File::EntityId(static_cast<uint32_t>(helpers::Read<sizeof(uint32_t)>(&l_sp)));
     }
 
     using LiteralValue = std::variant<bool, void *, uint8_t, uint16_t, uint32_t, uint64_t, float, double, StringData>;
