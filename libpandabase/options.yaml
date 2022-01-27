@@ -1,0 +1,80 @@
+# Copyright (c) 2021 Huawei Device Co., Ltd.
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+module:
+  name: arkbase
+  # It is better to name this namespace simply "panda::base", but there is already namespace "ecmascript::base", which
+  # is used just as "base", hence it conflicts with this namespace. I fixed it by renaming base->ecmascript::base in
+  # this repository, but there is the external repository ark_js_runtime, which uses us as an external library and has
+  # the same problem with "ecmascript::base". So, I've gave up and renamed it to "base_options".
+  namespace: panda::base_options
+
+options:
+- name: log-level
+  type: std::string
+  default: error
+  possible_values:
+  - debug
+  - info
+  - warning
+  - error
+  - fatal
+  description: Log level
+
+- name: log-stream
+  type: std::string
+  default: std
+  possible_values:
+  - std
+  - file
+  - fast-file
+  - dummy
+  description: Log level
+
+- name: log-file
+  type: std::string
+  default: ""
+  description: File name for file-logger
+
+- name: log-components
+  type: arg_list_t
+  default:
+  - all
+  possible_values:
+  - all
+  - alloc
+  - alloc-obj
+  - classlinker
+  - common
+  - core
+  - gc
+  - gc_trigger
+  - reference_processor
+  - interpreter
+  - compiler
+  - pandafile
+  - memorypool
+  - runtime
+  - trace
+  - debugger
+  - interop
+  - jni
+  - verifier
+  - compilation_queue
+  - jvmti
+  - aot
+  - events
+  - ecmascript
+  - scheduler
+  description: Enable logs from specified components
+  delimiter: ":"

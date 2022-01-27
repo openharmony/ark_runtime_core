@@ -53,6 +53,7 @@ group("arkruntime_header_deps") {
     ":isa_gen_libarkruntime_unimplemented_handlers-inl_h",
     ":libarkruntime_options_gen_h",
     ":libarkruntime_shorty_values_h",
+    "$ark_root/libpandabase:base_options_h",
     "$ark_root/verification/gen:isa_gen_verification_gen_abs_int_inl_gen_h",
     "$ark_root/verification/gen:isa_gen_verification_gen_cflow_iterate_inl_gen_h",
     "$ark_root/verification/gen:isa_gen_verification_gen_job_fill_gen_h",

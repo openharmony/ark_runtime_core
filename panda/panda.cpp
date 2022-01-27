@@ -26,6 +26,7 @@
 
 #include "libpandabase/os/mutex.h"
 #include "libpandabase/os/native_stack.h"
+#include "generated/base_options.h"
 
 #include "mem/mem_stats.h"
 
@@ -176,6 +177,7 @@ int Main(const int argc, const char **argv)
     BlockSignals();
     Span<const char *> sp(argv, argc);
     RuntimeOptions runtime_options(sp[0]);
+    base_options::Options base_options(sp[0]);
 
     panda::PandArg<bool> help("help", false, "Print this message and exit");
     panda::PandArg<bool> options("options", false, "Print compiler and runtime options");
@@ -185,6 +187,7 @@ int Main(const int argc, const char **argv)
     panda::PandArgParser pa_parser;
 
     runtime_options.AddOptions(&pa_parser);
+    base_options.AddOptions(&pa_parser);
 
     pa_parser.Add(&help);
     pa_parser.Add(&options);
@@ -203,6 +206,8 @@ int Main(const int argc, const char **argv)
         std::cerr << pa_parser.GetHelpString() << std::endl;
         return 1;
     }
+
+    Logger::Initialize(base_options);
 
     arg_list_t arguments = pa_parser.GetRemainder();
 

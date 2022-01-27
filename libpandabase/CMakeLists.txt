@@ -248,6 +248,8 @@ if(PANDA_TARGET_32)
     )
 endif()
 
+panda_gen_options(TARGET arkbase YAML_FILE options.yaml GENERATED_HEADER base_options.h)
+
 panda_add_sanitizers(TARGET arkbase SANITIZERS ${PANDA_SANITIZERS_LIST})
 
 if (PANDA_ENABLE_AFL)
