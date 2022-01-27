@@ -26,6 +26,7 @@ public:
     VerifierTest()
     {
         RuntimeOptions options;
+        Logger::InitializeDummyLogging();
         options.SetShouldLoadBootPandaFiles(false);
         options.SetShouldInitializeIntrinsics(false);
         options.SetHeapSizeLimit(64_MB);

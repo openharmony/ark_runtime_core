@@ -81,8 +81,6 @@ public:
     LanguageContext GetLanguageContext(panda_file::ClassDataAccessor *cda);
     LanguageContext GetLanguageContext(panda_file::SourceLang lang);
 
-    static void InitializeLogger(const RuntimeOptions &options);
-
     static bool CreateInstance(const RuntimeOptions &options, mem::InternalAllocatorPtr internal_allocator,
                                const std::vector<LanguageContextBase *> &ctxs);
 

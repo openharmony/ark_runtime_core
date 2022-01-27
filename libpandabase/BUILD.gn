@@ -21,6 +21,13 @@ config("arkbase_public_config") {
   ]
 }
 
+ark_gen_file("base_options_h") {
+  template_file = "../templates/options/options.h.erb"
+  data_file = "options.yaml"
+  requires = [ "../templates/common.rb" ]
+  output_file = "$target_gen_dir/generated/base_options.h"
+}
+
 ark_gen_file("events_gen") {
   template_file = "events/events_gen.h.erb"
   data_file = "events/events.yaml"
@@ -110,6 +117,7 @@ libarkbase_configs = [
 ]
 
 libarkbase_deps = [
+  ":base_options_h",
   ":events_gen",
   sdk_libc_secshared_dep,
 ]

@@ -27,6 +27,7 @@
 
 #include "verification/job_queue/job_queue.h"
 #include "verification/cache/results_cache.h"
+#include "generated/base_options.h"
 
 #include "utils/span.h"
 

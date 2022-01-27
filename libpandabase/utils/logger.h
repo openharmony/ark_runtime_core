@@ -80,6 +80,10 @@ extern FUNC_MOBILE_LOG_PRINT mlog_buf_print;
     D(COMMON, 0x00, "common")     \
     D(SIGNAL, 0x01, "signal")
 
+namespace base_options {
+class Options;
+}  // namespace base_options
+
 class Logger {
 public:
     enum Component : uint32_t {
@@ -142,11 +146,13 @@ public:
         NO_MOVE_SEMANTIC(Message);
     };
 
+    static void Initialize(const base_options::Options &options);
+
     static void InitializeFileLogging(const std::string &log_file, Level level, ComponentMask component_mask);
 
     static void InitializeStdLogging(Level level, ComponentMask component_mask);
 
-    static void InitializeDummyLogging(Level level, ComponentMask component_mask);
+    static void InitializeDummyLogging(Level level = Level::DEBUG, ComponentMask component_mask = 0);
 
     static void Destroy();
 
@@ -241,6 +247,12 @@ public:
         logger->level_ = level;
     }
 
+    static Level GetLevel()
+    {
+        ASSERT(IsInitialized());
+        return logger->level_;
+    }
+
     static void EnableComponent(Component component)
     {
         ASSERT(IsInitialized());
@@ -279,12 +291,12 @@ public:
 
     static void ProcessLogComponentsFromString(std::string_view s);
 
-protected:
     static bool IsInitialized()
     {
         return logger != nullptr;
     }
 
+protected:
     Logger(Level level, ComponentMask component_mask) : level_(level), component_mask_(component_mask) {}
 
     virtual void LogLineInternal(Level level, Component component, const std::string &str) = 0;

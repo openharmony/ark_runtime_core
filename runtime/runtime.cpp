@@ -197,26 +197,6 @@ LanguageContext Runtime::GetLanguageContext(const std::string &runtime_type)
 }
 
 /* static */
-void Runtime::InitializeLogger(const RuntimeOptions &options)
-{
-    panda::Logger::ComponentMask component_mask;
-    for (const auto &s : options.GetLogComponents()) {
-        component_mask |= Logger::ComponentMaskFromString(s);
-    }
-
-    if (options.GetLogStream() == "std") {
-        Logger::InitializeStdLogging(Logger::LevelFromString(options.GetLogLevel()), component_mask);
-    } else if (options.GetLogStream() == "file") {
-        const std::string &file_name = options.GetLogFile();
-        Logger::InitializeFileLogging(file_name, Logger::LevelFromString(options.GetLogLevel()), component_mask);
-    } else if (options.GetLogStream() == "dummy") {
-        Logger::InitializeDummyLogging(Logger::LevelFromString(options.GetLogLevel()), component_mask);
-    } else {
-        UNREACHABLE();
-    }
-}
-
-/* static */
 bool Runtime::CreateInstance(const RuntimeOptions &options, mem::InternalAllocatorPtr internal_allocator,
                              const std::vector<LanguageContextBase *> &ctxs)
 {
@@ -261,8 +241,6 @@ bool Runtime::Create(const RuntimeOptions &options, const std::vector<LanguageCo
     BlockSignals();
 
     CreateDfxController(options);
-
-    InitializeLogger(options);
 
     CreateInstance(options, internal_allocator, ctxs);
 
@@ -485,8 +463,9 @@ Runtime::~Runtime()
 
 bool Runtime::IsEnableMemoryHooks() const
 {
-    auto log_level = options_.GetLogLevel();
-    return options_.IsLimitStandardAlloc() && (log_level == "fatal" || log_level == "error") &&
+    auto log_level = Logger::IsInitialized() ? Logger::GetLevel() : Logger::Level::DEBUG;
+    return options_.IsLimitStandardAlloc() &&
+           (log_level == Logger::Level::FATAL || log_level == Logger::Level::ERROR) &&
            (!options_.UseMallocForInternalAllocations());
 }
 

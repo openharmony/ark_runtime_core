@@ -28,6 +28,10 @@ class Option < SimpleDelegator
     'Set' + name.split(Regexp.union(['-', '.'])).map(&:capitalize).join
   end
 
+  def deprecated?
+    respond_to?(:deprecated) && deprecated
+  end
+
   def default_value
     return default_constant_name if need_default_constant
     return '{' + default.map { |e| expand_string(e) }.join(', ') + '}' if type == 'arg_list_t'
@@ -37,6 +41,7 @@ class Option < SimpleDelegator
 
   def full_description
     full_desc = description
+    full_desc.prepend("[DEPRECATED] ") if deprecated?
     if defined? possible_values
       full_desc += '. Possible values: ' + possible_values.inspect
     end
