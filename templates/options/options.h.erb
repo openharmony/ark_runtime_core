@@ -44,20 +44,30 @@ public:
 
     void AddOptions(PandArgParser *parser) {
 % Common::options.each do |op|
+%   next if op.deprecated?
         parser->Add(&<%= op.field_name %>);
 % end
     }
 
 % Common::options.each do |op|
     <%= op.type %> <%= op.getter_name %>() const {
+%   if op.deprecated?
+       std::cerr << "WARNING: Option '<%= op.name %>' is deprecated and should not be used\n";
+%   end
         return <%= op.field_name %>.GetValue();
     }
 
     void <%= op.setter_name %>(<%= op.type %> value) {
+%   if op.deprecated?
+        std::cerr << "WARNING: Option '<%= op.name %>' is deprecated and should not be used\n";
+%   end
         <%= op.field_name %>.SetValue(<%= op.type == 'std::string' || op.type == 'arg_list_t' ? 'std::move(value)' : 'value' %>);
     }
 
     bool WasSet<%= op.name.split(Regexp.union(['-','.'])).map(&:capitalize).join %>() const {
+%   if op.deprecated?
+       std::cerr << "WARNING: Option '<%= op.name %>' is deprecated and should not be used\n";
+%   end
         return <%= op.field_name %>.WasSet();
     }
 

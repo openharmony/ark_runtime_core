@@ -16,6 +16,7 @@
 #include "logger.h"
 #include "os/thread.h"
 #include "string_helpers.h"
+#include "generated/base_options.h"
 
 #include <cstdarg>
 #include <cstdlib>
@@ -30,6 +31,25 @@ namespace panda {
 Logger *Logger::logger = nullptr;
 os::memory::Mutex Logger::mutex;  // NOLINT(fuchsia-statically-constructed-objects)
 FUNC_MOBILE_LOG_PRINT mlog_buf_print = nullptr;
+
+void Logger::Initialize(const base_options::Options &options)
+{
+    panda::Logger::ComponentMask component_mask;
+    for (const auto &s : options.GetLogComponents()) {
+        component_mask |= Logger::ComponentMaskFromString(s);
+    }
+
+    if (options.GetLogStream() == "std") {
+        Logger::InitializeStdLogging(Logger::LevelFromString(options.GetLogLevel()), component_mask);
+    } else if (options.GetLogStream() == "file" || options.GetLogStream() == "fast-file") {
+        const std::string &file_name = options.GetLogFile();
+        Logger::InitializeFileLogging(file_name, Logger::LevelFromString(options.GetLogLevel()), component_mask);
+    } else if (options.GetLogStream() == "dummy") {
+        Logger::InitializeDummyLogging(Logger::LevelFromString(options.GetLogLevel()), component_mask);
+    } else {
+        UNREACHABLE();
+    }
+}
 
 Logger::Message::~Message()
 {

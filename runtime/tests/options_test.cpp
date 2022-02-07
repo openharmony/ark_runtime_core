@@ -66,7 +66,6 @@ void RuntimeOptionsTest::LoadCorrectOptionsList()
     AddTestingOption("sigquit-flag", "1234");
     AddTestingOption("dfx-log", "1234");
     AddTestingOption("gc-dump-heap", "true");
-    AddTestingOption("log-file", "string");
     AddTestingOption("start-as-zygote", "true");
     AddTestingOption("verification-enabled", "true");
     AddTestingOption("pre-gc-heap-verify-enabled", "true");

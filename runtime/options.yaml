@@ -131,8 +131,9 @@ options:
     - events
     - ecmascript
     - scheduler
-  description: Enable logs from specified components
+  description: '[DEPRECATED] Option was moved to libpandabase/options.yaml, use base_options::Options instead of runtime options.'
   delimiter: ":"
+  deprecated: true
 
 - name: reference-dump
   type: uint64_t
@@ -271,7 +272,8 @@ options:
     - info
     - error
     - fatal
-  description: Log level
+  description: '[DEPRECATED] Option was moved to libpandabase/options.yaml, use base_options::Options instead of runtime options.'
+  deprecated: true
 
 - name: log-stream
   type: std::string
@@ -280,12 +282,14 @@ options:
     - std
     - file
     - dummy
-  description: Log level
+  description: '[DEPRECATED] Option was moved to libpandabase/options.yaml, use base_options::Options instead of runtime options.'
+  deprecated: true
 
 - name: log-file
   type: std::string
   default: ""
-  description: File name for file-logger
+  description: '[DEPRECATED] Option was moved to libpandabase/options.yaml, use base_options::Options instead of runtime options.'
+  deprecated: true
 
 - name: gc-enable-tracing
 
