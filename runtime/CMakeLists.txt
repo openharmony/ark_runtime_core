@@ -306,6 +306,8 @@ panda_gen_options(
     GENERATED_HEADER runtime_options_gen.h
 )
 
+add_dependencies(arkruntime_static_options arkbase_options)
+
 panda_add_to_clang_tidy(TARGET arkruntime_static)
 
 add_subdirectory(asm_defines)
