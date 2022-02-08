@@ -16,7 +16,7 @@
 #include <random>
 
 #include "gtest/gtest.h"
-#include "runtime/include/thread.h"
+#include "runtime/include/managed_thread.h"
 #include "runtime/mark_word.cpp"
 
 namespace panda {

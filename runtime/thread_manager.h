@@ -24,7 +24,7 @@
 #include "runtime/include/coretypes/array-inl.h"
 #include "runtime/include/mem/panda_containers.h"
 #include "runtime/include/mem/panda_smart_pointers.h"
-#include "runtime/include/thread.h"
+#include "runtime/include/mtmanaged_thread.h"
 #include "runtime/include/thread_status.h"
 #include "runtime/include/locks.h"
 

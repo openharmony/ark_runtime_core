@@ -19,6 +19,7 @@
 #include "libpandafile/panda_cache.h"
 #include "runtime/include/class_linker.h"
 #include "runtime/include/runtime.h"
+#include "runtime/include/mtmanaged_thread.h"
 
 namespace panda {
 
