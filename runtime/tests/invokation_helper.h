@@ -20,7 +20,7 @@
 #include <type_traits>
 
 #include "bridge/bridge.h"
-#include "include/thread.h"
+#include "include/managed_thread.h"
 #include "arch/helpers.h"
 #include "libpandafile/shorty_iterator.h"
 

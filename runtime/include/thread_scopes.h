@@ -16,7 +16,7 @@
 #ifndef PANDA_RUNTIME_INCLUDE_THREAD_SCOPES_H_
 #define PANDA_RUNTIME_INCLUDE_THREAD_SCOPES_H_
 
-#include "thread.h"
+#include "mtmanaged_thread.h"
 
 namespace panda {
 
