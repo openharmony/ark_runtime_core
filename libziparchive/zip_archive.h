@@ -16,38 +16,27 @@
 #ifndef PANDA_LIBZIPARCHIVE_ZIP_ARCHIVE_H_
 #define PANDA_LIBZIPARCHIVE_ZIP_ARCHIVE_H_
 
-#include "miniz.h"
+#include <cstdint>
+#include "unzip.h"
+#include "zip.h"
 
 namespace panda {
 
-using ZipArchive = mz_zip_archive;
-using ZipArchiveHandle = mz_zip_archive *;
+constexpr int ZIPARCHIVE_OK = 0;
+constexpr int ZIPARCHIVE_ERR = 1;
+
+using ZipArchiveHandle = unzFile;
 
 struct EntryFileStat {
 public:
-    const char *GetFileName() const
-    {
-        return file_stat.m_filename;
-    }
-
-    const char *GetComment() const
-    {
-        return file_stat.m_comment;
-    }
-
     uint32_t GetUncompressedSize() const
     {
-        return (uint32_t)file_stat.m_uncomp_size;
+        return (uint32_t)file_stat.uncompressed_size;
     }
 
     uint32_t GetCompressedSize() const
     {
-        return (uint32_t)file_stat.m_comp_size;
-    }
-
-    uint32_t GetIndex() const
-    {
-        return file_stat.m_file_index;
+        return (uint32_t)file_stat.compressed_size;
     }
 
     inline uint32_t GetOffset() const
@@ -55,13 +44,22 @@ public:
         return offset;
     }
 
-    inline bool IsCompressed()
+    inline bool IsCompressed() const
     {
-        return mz_zip_reader_file_is_compressed(&file_stat);
+        return file_stat.compression_method != 0;
     }
 
-    mz_zip_archive_file_stat file_stat;
+    unz_file_info file_stat;
     uint32_t offset;
+};
+
+struct GlobalStat {
+public:
+    uint32_t GetNumberOfEntry() const
+    {
+        return (uint32_t)ginfo.number_entry;
+    }
+    unz_global_info ginfo;
 };
 
 /*
@@ -70,101 +68,103 @@ public:
 bool IsZipMagic(uint32_t magic);
 
 /*
- * Open a Zip archive, and set handle for the file.
+ * Open a Zip archive from filename path, and sets handle for the file.
  * This handle must be released by calling CloseArchive with this handle.
- * CloseArchive will close the file zip_filename opened.
+ * CloseArchive will close the file opened.
  *
- * Returns 0 on success, and -1 on failure.
+ * Returns 0 on success, and 1 on failure.
  */
-int32_t OpenArchive(const char *zip_filename, ZipArchiveHandle *handle);
+int OpenArchive(ZipArchiveHandle &handle, const char *path);
 
 /*
- * Open a Zip archive FILE, and set handle for the file.
- * This handle must be released by calling CloseArchive with this handle.
- * CloseArchive will not close the fp. It is the caller's responsibility.
+ * Close archive opened with OpenArchive, releasing internal resources associated with it.
+ */
+int CloseArchive(ZipArchiveHandle &handle);
+
+/*
+ * Open a Zip archive from opened file FILE* fp, and sets handle for the file.
+ * This handle must be released by calling CloseArchiveFile with this handle.
+ * CloseArchiveFile will not close the fp. It is the caller's responsibility.
  *
- * Returns 0 on success, and -1 on failure.
+ * Returns 0 on success, and 1 on failure.
  */
-int32_t OpenArchiveFILE(FILE *fp, ZipArchiveHandle *handle);
+int OpenArchiveFile(ZipArchiveHandle &handle, FILE *fp);
 
 /*
- * Close archive, releasing internal resources associated with it.
- */
-bool CloseArchive(ZipArchiveHandle *handle);
-
-/*
- * Find an entry in the Zip archive by entryname as well as comment name.
- * comment name defaultly is nullptr.
+ * Close archive opened with OpenArchiveFile, releasing internal resources associated with it.
  *
- * stat must point to a writeable memory location (e.g. new/malloc).
+ * Returns 0 on success, and 1 on failure.
+ */
+int CloseArchiveFile(ZipArchiveHandle &handle);
+
+/*
+ * Write the info about the ZipFile into *gstat structure.
  *
- * Return 0 if an entry is found, and populate stat with information about this entry,
- * Return -1 otherwise.
+ * Returns 0 on success, and 1 on failure.
  */
-int32_t FindEntry(ZipArchiveHandle *handle, EntryFileStat *entry, const char *entryname,
-                  const char *pcomment = nullptr);
+int GetGlobalFileInfo(ZipArchiveHandle &handle, GlobalStat *gstat);
 
 /*
- * Return the total number of files in the archive.
+ * Set the current file of the zipfile to the next file.
+ *
+ * Returns 0 on success, and 1 on failure.
  */
-int32_t GetFileCount(ZipArchiveHandle *handle);
+int GoToNextFile(ZipArchiveHandle &handle);
 
 /*
- * Attempt to locate a file in the archive's central directory.
- * Return the index if file be found, otherwise -1.
+ * Try locate the file filename in the zipfile.
+ *
+ * Returns 0 on success, and 1 on failure.
  */
-int32_t LocateFileIndex(ZipArchiveHandle *handle, const char *filename, const char *comment = nullptr);
+int LocateFile(ZipArchiveHandle &handle, const char *filename);
 
 /*
- * Return detailed information about an archive file entry according to index.
+ * Get Info about the current file within ZipFile and write info into the *entry structure.
+ * No preparation of the structure is needed
+ *
+ * Returns 0 on success, and 1 on failure.
  */
-bool StatFileWithIndex(ZipArchiveHandle *handle, EntryFileStat *entry, unsigned int index);
+int GetCurrentFileInfo(ZipArchiveHandle &handle, EntryFileStat *entry);
 
 /*
- * Return true if the archive file entry index is a directory, otherwise false
+ * Open for reading data the current file in the zipfile.
+ * This handle must be released by calling CloseCurrentFile with this handle.
+ *
+ * Returns 0 on success, and 1 on failure.
  */
-bool IsFileDirectory(ZipArchiveHandle *handle, unsigned int index);
+int OpenCurrentFile(ZipArchiveHandle &handle);
 
 /*
- * Uncompress a given zip entry to the memory buf of size |buf_size|.
+ * Get the current file offset opened with OpenCurrentFile. The offset will be stored into entry->offset.
+ */
+void GetCurrentFileOffset(ZipArchiveHandle &handle, EntryFileStat *entry);
+
+/*
+ * Close the file in zip opened with unzOpenCurrentFile
+ *
+ * Returns 0 on success, and 1 on failure.
+ */
+int CloseCurrentFile(ZipArchiveHandle &handle);
+
+/*
+ * Uncompress a given zip archive represented with handle to buf of size |buf_size|.
  * This size is expected to be equal or larger than the uncompressed length of the zip entry.
- * Returns 0 on success and -1 on failure.
+ *
+ * Returns 0 on success and 1 on failure.
  */
-int32_t ExtractToMemory(ZipArchiveHandle *handle, EntryFileStat *entry, void *buf, size_t buf_size);
+int ExtractToMemory(ZipArchiveHandle &handle, void *buf, size_t buf_size);
 
 /*
- * Uncompress a given filename in zip to heap memory.
- * The corresponding uncompressed_size is returned in puncomp_size by pointer.
- * Returns the heap address on success and nullptr on failure.
+ * Add a new file filename(resident in memory pbuf which has size of size |buf_size|) to the archive zipname,
+ * append takes value from APPEND_STATUS_CREATE(which will create the archive zipname for first time) and
+ * APPEND_STATUS_ADDINZIP(which willappend filename into exsisted zip archive zipname).
+ * level takes value from Z_BEST_COMPRESSION(which will deflate the pbuf with best compression effect) and
+ * Z_NO_COMPRESSION(which will store the pbuf into zipname without compression).
+ *
+ * Returns 0 on success and 1 on failure.
  */
-void *ExtractToHeap(ZipArchiveHandle *handle, const char *filename, size_t *puncomp_size);
-
-/*
- * Release a block allocated from the heap.
- */
-void FreeHeap(void *heapbuf);
-
-/*
- * Add a new file (in memory) to the archive. Note this is an IN-PLACE operation,
- * so if it fails your archive is probably hosed (its central directory may not be complete) but it should be
- * recoverable using zip -F or -FF. So use this with caution.
- */
-int32_t CreateOrAddFileIntoZip(const char *zip_filename, const char *filename, const void *pbuf, size_t buf_size,
-                               const void *pcomment = nullptr, mz_uint16 comment_size = 0);
-
-/*
- * Add a new file (in memory) to the archive without compression. Note this is an IN-PLACE operation,
- * so if it fails your archive is probably hosed (its central directory may not be complete) but it should be
- * recoverable using zip -F or -FF. So use this with caution.
- */
-int32_t CreateOrAddUncompressedFileIntoZip(const char *zip_filename, const char *filename, const void *pbuf,
-                                           size_t buf_size, const void *pcomment, mz_uint16 comment_size);
-
-/*
- * GetArchiveFileEntry from FILE* inputfile
- */
-bool GetArchiveFileEntry(FILE *inputfile, const char *archive_filename, EntryFileStat *entry);
-
+int CreateOrAddFileIntoZip(const char *zipname, const char *filename, const void *pbuf, size_t buf_size,
+                           int append = APPEND_STATUS_CREATE, int level = Z_BEST_COMPRESSION);
 }  // namespace panda
 
 #endif  // PANDA_LIBZIPARCHIVE_ZIP_ARCHIVE_H_

@@ -23,7 +23,10 @@ config("arkfile_public_config") {
   ]
 
   if (!ark_standalone_build) {
-    include_dirs += [ "//third_party/miniz/amalgamation" ]
+    include_dirs += [
+      "//third_party/zlib",
+      "//third_party/zlib/contrib/minizip",
+    ]
   } else {
     include_dirs += [ "$ark_third_party_root/miniz" ]
   }
