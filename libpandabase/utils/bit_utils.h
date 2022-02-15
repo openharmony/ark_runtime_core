@@ -172,7 +172,7 @@ inline uint8_t GetByteFrom(T value, uint64_t index)
 inline uint16_t ReverseBytes(uint16_t value)
 {
     constexpr uint32_t OFFSET_0 = 8;
-    return (value << OFFSET_0) | (value >> OFFSET_0);  // NOLINT(hicpp-signed-bitwise)
+    return static_cast<uint16_t>(value << OFFSET_0) | static_cast<uint16_t>(value >> OFFSET_0);
 }
 
 inline uint32_t ReverseBytes(uint32_t value)

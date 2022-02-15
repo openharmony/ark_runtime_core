@@ -84,7 +84,7 @@ bool operator!=(const ValueUnit &lhs, const ValueUnit &rhs)
 std::ostream &operator<<(std::ostream &os, const ValueUnit &element)
 {
     if (element.GetValue().index() == 0U) {
-        os << std::fixed << std::setprecision(element.GetPrecision()) << element.GetDoubleValue()
+        os << std::fixed << std::setprecision(static_cast<int>(element.GetPrecision()))  << element.GetDoubleValue()
            << std::setprecision(-1);
     } else {
         os << element.GetUint64Value();
