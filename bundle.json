@@ -1,0 +1,35 @@
+{
+    "name": "@ohos/ark_runtime_core",
+    "version": "",
+    "description": "方舟运行时的公共组件",
+    "homePage": "https://gitee.com/openharmony",
+    "license": "Apache Liscense 2.0",
+    "publishAs": "code-segment",
+    "scripts": {},
+    "dirs": {},
+    "segment": {
+        "destPath": "ark/runtime_core"
+    },
+    "component": {
+        "name": "ark",
+        "subsystem": "ark",
+        "syscap": [],
+        "features": [],
+        "adapted_system_type": [
+            "standard"
+        ],
+        "rom": "",
+        "ram": "",
+        "deps": {
+            "components": [],
+            "third_party": []
+        },
+        "build": {
+            "sub_component": [
+                "//ark/runtime_core:ark_packages"
+            ],
+            "inner_kits": [],
+            "test": []
+        }
+    }
+}
