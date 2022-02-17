@@ -246,7 +246,7 @@ void ThrowIllegalAccessException(const PandaString &msg)
     auto *thread = ManagedThread::GetCurrent();
     auto ctx = GetLanguageContext(thread);
 
-    ThrowException(ctx, thread, ctx.GetIllegalArgumentExceptionClassDescriptor(), utf::CStringAsMutf8(msg.c_str()));
+    ThrowException(ctx, thread, ctx.GetIllegalAccessExceptionClassDescriptor(), utf::CStringAsMutf8(msg.c_str()));
 }
 
 void ThrowOutOfMemoryError(ManagedThread *thread, const PandaString &msg)
