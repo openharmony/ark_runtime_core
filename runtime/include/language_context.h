@@ -92,6 +92,8 @@ public:
 
     virtual const uint8_t *GetIllegalArgumentExceptionClassDescriptor() const = 0;
 
+    virtual const uint8_t *GetIllegalAccessExceptionClassDescriptor() const = 0;
+
     virtual const uint8_t *GetOutOfMemoryErrorClassDescriptor() const = 0;
 
     virtual const uint8_t *GetNoClassDefFoundErrorDescriptor() const = 0;
@@ -358,6 +360,11 @@ public:
     const uint8_t *GetIllegalArgumentExceptionClassDescriptor() const
     {
         return base_->GetIllegalArgumentExceptionClassDescriptor();
+    }
+
+    const uint8_t *GetIllegalAccessExceptionClassDescriptor() const
+    {
+        return base_->GetIllegalAccessExceptionClassDescriptor();
     }
 
     const uint8_t *GetOutOfMemoryErrorClassDescriptor() const
