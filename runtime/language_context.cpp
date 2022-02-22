@@ -80,4 +80,10 @@ PandaUniquePtr<tooling::PtLangExt> LanguageContextBase::CreatePtLangExt() const
     return nullptr;
 }
 
+void LanguageContextBase::SetExceptionToVReg(
+    [[maybe_unused]] Frame::VRegister &vreg,  // NOLINTNEXTLINE(google-runtime-references)
+    [[maybe_unused]] ObjectHeader *obj) const
+{
+}
+
 }  // namespace panda
