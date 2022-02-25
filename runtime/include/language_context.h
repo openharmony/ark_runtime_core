@@ -127,7 +127,7 @@ public:
 
     virtual void SetExceptionToVReg(
         [[maybe_unused]] Frame::VRegister &vreg,  // NOLINTNEXTLINE(google-runtime-references)
-        [[maybe_unused]] ObjectHeader *obj) const = 0;
+        [[maybe_unused]] ObjectHeader *obj) const;
 
     virtual uint64_t GetTypeTag(interpreter::TypeTag tag) const
     {
