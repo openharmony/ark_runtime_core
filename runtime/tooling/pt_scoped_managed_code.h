@@ -16,7 +16,7 @@
 #ifndef PANDA_RUNTIME_TOOLING_PT_SCOPED_MANAGED_CODE_H_
 #define PANDA_RUNTIME_TOOLING_PT_SCOPED_MANAGED_CODE_H_
 
-#include "runtime/include/thread.h"
+#include "runtime/include/mtmanaged_thread.h"
 
 namespace panda::tooling {
 // NOLINTNEXTLINE(cppcoreguidelines-pro-type-member-init)

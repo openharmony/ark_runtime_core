@@ -17,6 +17,7 @@
 
 #include "libpandafile/bytecode_instruction-inl.h"
 #include "runtime/entrypoints/entrypoints.h"
+#include "runtime/include/managed_thread.h"
 #include "runtime/interpreter/interpreter.h"
 #include "bytecode_instruction.h"
 #include "bytecode_instruction-inl.h"

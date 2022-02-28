@@ -24,7 +24,7 @@
 #include "runtime/include/mem/panda_containers.h"
 #include "runtime/include/mem/panda_string.h"
 #include "runtime/include/runtime.h"
-#include "runtime/include/thread.h"
+#include "runtime/include/managed_thread.h"
 
 namespace panda {
 
