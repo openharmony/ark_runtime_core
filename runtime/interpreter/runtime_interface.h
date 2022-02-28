@@ -26,6 +26,7 @@
 #include "runtime/include/coretypes/string.h"
 #include "runtime/include/exceptions.h"
 #include "runtime/include/field.h"
+#include "runtime/include/managed_thread.h"
 #include "runtime/include/method.h"
 #include "runtime/include/runtime.h"
 #include "runtime/mem/gc/gc.h"

@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-#include "runtime/include/thread.h"
+#include "runtime/include/managed_thread.h"
 #include "runtime/include/method.h"
 
 #include <gtest/gtest.h>

@@ -18,7 +18,7 @@
 
 #include "libpandabase/macros.h"
 #include "runtime/handle_base.h"
-#include "runtime/include/thread.h"
+#include "runtime/include/managed_thread.h"
 #include "runtime/handle_scope.h"
 
 namespace panda {

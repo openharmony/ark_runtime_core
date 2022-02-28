@@ -18,7 +18,7 @@
 
 #include "runtime/include/tooling/debug_interface.h"
 #include "os/mutex.h"
-#include "runtime/include/thread.h"
+#include "runtime/include/managed_thread.h"
 #include "pt_thread_info.h"
 #include "pt_hook_type_info.h"
 
