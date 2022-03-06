@@ -211,7 +211,7 @@ bool JsonObject::Parser::GetValue()
 
     // Save source string of parsed value:
     auto pos_end = istream_.tellg();
-    size_t size = pos_end - pos_start;
+    auto size = static_cast<size_t>(pos_end - pos_start);
     string_temp_.resize(size, '\0');
     istream_.seekg(pos_start);
     istream_.read(&string_temp_[0], size);

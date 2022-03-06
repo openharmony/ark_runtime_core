@@ -175,8 +175,8 @@ struct timespec ConvertTime(uint64_t ms, uint64_t ns, bool is_absolute)
     if (!is_absolute) {
         clock_gettime(CLOCK_REALTIME, &abs_time);
     }
-    time_t seconds = ms / MILLISECONDS_PER_SEC;
-    time_t nanoseconds = (ms % MILLISECONDS_PER_SEC) * NANOSECONDS_PER_MILLISEC + ns;
+    auto seconds = static_cast<time_t>(ms / MILLISECONDS_PER_SEC);
+    auto nanoseconds = static_cast<time_t>((ms % MILLISECONDS_PER_SEC) * NANOSECONDS_PER_MILLISEC + ns);
     abs_time.tv_sec += seconds;
     abs_time.tv_nsec += nanoseconds;
     if (abs_time.tv_nsec >= NANOSECONDS_PER_SEC) {
