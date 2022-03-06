@@ -47,7 +47,7 @@ int SetFdNonblocking(const UniqueFd &fd)
     if (res < 0) {
         flags = 0;
     } else {
-        flags = res;
+        flags = static_cast<size_t>(res);
     }
     // NOLINTNEXTLINE(cppcoreguidelines-pro-type-vararg, hicpp-signed-bitwise)
     return fcntl(fd.Get(), F_SETFL, flags | O_NONBLOCK);
@@ -91,7 +91,7 @@ Expected<size_t, Error> WaitForEvent(const UniqueFd *handles, size_t size, Event
     std::vector<pollfd> pollfds(size);
     for (size_t i = 0; i < size; i++) {
         pollfds[i].fd = handles[i].Get();  // NOLINT(cppcoreguidelines-pro-bounds-pointer-arithmetic)
-        pollfds[i].events = poll_events;
+        pollfds[i].events = static_cast<int16_t>(poll_events);
     }
 
     while (true) {

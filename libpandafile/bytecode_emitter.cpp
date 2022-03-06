@@ -245,11 +245,11 @@ void BytecodeEmitter::Jcmpz(BytecodeInstruction::Opcode opcode, const Label &lab
  */
 BytecodeEmitter::ErrorCode BytecodeEmitter::ReserveSpaceForOffsets()
 {
-    int32_t bias = 0;
+    uint32_t bias = 0;
     std::map<uint32_t, Label> new_branches;
     auto it = branches_.begin();
     while (it != branches_.end()) {
-        uint32_t insn_pc = it->first + bias;
+        auto insn_pc = static_cast<uint32_t>(it->first + bias);
         auto label = it->second;
 
         auto opcode = static_cast<Opcode>(bytecode_[insn_pc]);
@@ -375,7 +375,7 @@ BytecodeEmitter::ErrorCode BytecodeEmitter::UpdateBranches()
     return ErrorCode::SUCCESS;
 }
 
-void BytecodeEmitter::UpdateLabelTargets(uint32_t pc, int32_t bias)
+void BytecodeEmitter::UpdateLabelTargets(uint32_t pc, size_t bias)
 {
     pc_list_.push_front(pc);
     Label fake(pc_list_.begin());

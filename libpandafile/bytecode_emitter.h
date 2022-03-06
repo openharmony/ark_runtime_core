@@ -109,7 +109,7 @@ private:
     ErrorCode DoReserveSpaceForOffset(BytecodeInstruction::Opcode opcode, uint32_t insn_pc,
                                       BitImmSize expected_imm_size, size_t *extra_bytes_ptr, uint32_t *target_ptr);
     ErrorCode UpdateBranches();
-    void UpdateLabelTargets(uint32_t pc, int32_t bias);
+    void UpdateLabelTargets(uint32_t pc, size_t bias);
     int32_t EstimateMaxDistance(uint32_t insn_pc, uint32_t target_pc, uint32_t bias) const;
     ErrorCode CheckLabels() const;
 

@@ -207,7 +207,7 @@ static std::array<SignalHook, _NSIG + 1> signal_hooks;
 
 void SignalHook::CallOldAction(int signo, siginfo_t *siginfo, void *ucontext_raw)
 {
-    size_t handler_flags = signal_hooks[signo].old_action_.sa_flags;
+    auto handler_flags = static_cast<size_t>(signal_hooks[signo].old_action_.sa_flags);
     sigset_t mask = signal_hooks[signo].old_action_.sa_mask;
     real_sigprocmask(SIG_SETMASK, &mask, nullptr);
 
