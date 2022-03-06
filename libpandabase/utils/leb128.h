@@ -121,8 +121,7 @@ inline size_t EncodeSigned(T data, uint8_t *out)
     bool more = true;
 
     while (more) {
-        // NOLINTNEXTLINE(hicpp-signed-bitwise)
-        uint8_t byte = data & PAYLOAD_MASK;
+        auto byte = static_cast<uint8_t>(static_cast<size_t>(data) & PAYLOAD_MASK);
         // NOLINTNEXTLINE(hicpp-signed-bitwise)
         data >>= PAYLOAD_WIDTH;
         more = !((data == 0 && (byte & SIGN_BIT) == 0) || (data == -1 && (byte & SIGN_BIT) != 0));

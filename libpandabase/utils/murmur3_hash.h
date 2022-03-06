@@ -121,7 +121,7 @@ private:
             // Get ((uint8_t*)tail)[i - 1]:
             uintptr_t block_pointer = tail + sizeof(uint8_t) * (i - 1);
             uint8_t block = *reinterpret_cast<uint8_t *>(block_pointer);
-            uint32_t temp = (block << (TAIL_SHIFT * (i - 1U)));
+            uint32_t temp = static_cast<uint32_t>(block << (TAIL_SHIFT * (i - 1U)));
             k1 ^= temp;
             if (i == 1) {
                 k1 = Rotl(k1, TAIL_LAST_SHIFT);
@@ -180,7 +180,7 @@ private:
         uint32_t k1 = 0;
         for (size_t i = tail_len; i > 0; i--) {
             uint8_t block = memblock[i - 1U];
-            uint32_t temp = (block << (TAIL_SHIFT * (i - 1U)));
+            uint32_t temp = static_cast<uint32_t>(block << (TAIL_SHIFT * (i - 1U)));
             k1 ^= temp;
             if (i == 1) {
                 k1 = Rotl(k1, TAIL_LAST_SHIFT);

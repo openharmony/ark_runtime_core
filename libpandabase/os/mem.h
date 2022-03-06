@@ -167,6 +167,7 @@ public:
         size_ = other.size_;
         deleter_ = other.deleter_;
         other.ptr_ = nullptr;
+        other.deleter_ = nullptr;
     }
 
     MapPtr &operator=(MapPtr &&other) noexcept
@@ -176,6 +177,7 @@ public:
         size_ = other.size_;
         deleter_ = other.deleter_;
         other.ptr_ = nullptr;
+        other.deleter_ = nullptr;
         return *this;
     }
 
@@ -229,6 +231,9 @@ public:
      */
     ~MapPtr()
     {
+        if (ptr_ == nullptr) {
+            return;
+        }
         uintptr_t addr = reinterpret_cast<uintptr_t>(ptr_) - page_offset_;
         // LINTNEXTLINE(cppcoreguidelines-pro-bounds-pointer-arithmetic)
         size_t size = size_ + page_offset_;

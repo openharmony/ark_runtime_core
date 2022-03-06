@@ -99,7 +99,7 @@ std::optional<Error> MakeMemReadOnly(void *mem, size_t size)
 
 uintptr_t AlignDownToPageSize(uintptr_t addr)
 {
-    const size_t SYS_PAGE_SIZE = sysconf(_SC_PAGESIZE);
+    const auto SYS_PAGE_SIZE = static_cast<size_t>(sysconf(_SC_PAGESIZE));
     addr &= ~(SYS_PAGE_SIZE - 1);
     return addr;
 }
