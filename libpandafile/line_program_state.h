@@ -34,7 +34,7 @@ public:
 
     void AdvanceLine(int32_t v)
     {
-        line_ += v;
+        line_ += static_cast<size_t>(v);
     }
 
     void AdvancePc(uint32_t v)
@@ -44,7 +44,7 @@ public:
 
     void SetColumn(int32_t c)
     {
-        column_ = c;
+        column_ = static_cast<size_t>(c);
     }
 
     size_t GetColumn() const

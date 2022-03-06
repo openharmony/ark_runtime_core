@@ -44,7 +44,7 @@ AnnotationDataAccessor::Tag AnnotationDataAccessor::GetTag(size_t i) const
 {
     ASSERT(i < count_);
     auto sp = elements_tags_.SubSpan(i * TYPE_TAG_SIZE);
-    char item = helpers::Read<TYPE_TAG_SIZE>(&sp);
+    auto item = static_cast<char>(helpers::Read<TYPE_TAG_SIZE>(&sp));
     return AnnotationDataAccessor::Tag(item);
 }
 
