@@ -354,7 +354,8 @@ void Parser::ParseResetFunctionLabelsAndParams()
         for (const auto &v : t.second) {
             if (!curr_func_->ins.empty() && curr_func_->ins.size() >= v.first &&
                 !curr_func_->ins[v.first - 1].regs.empty()) {
-                curr_func_->ins[v.first - 1].regs[v.second] += curr_func_->value_of_first_param + 1;
+                curr_func_->ins[v.first - 1].regs[v.second] +=
+                    static_cast<uint16_t>(curr_func_->value_of_first_param + 1);
                 size_t max_reg_number = (1 << curr_func_->ins[v.first - 1].MaxRegEncodingWidth());
                 if (curr_func_->ins[v.first - 1].regs[v.second] >= max_reg_number) {
                     const auto &debug = curr_func_->ins[v.first - 1].ins_debug;
@@ -393,7 +394,7 @@ void Parser::ParseResetFunctionTable()
 
                 bool is_initobj = insn_it->opcode == Opcode::INITOBJ || insn_it->opcode == Opcode::INITOBJ_SHORT ||
                                   insn_it->opcode == Opcode::INITOBJ_RANGE;
-                auto diff = is_initobj ? 0 : 1;
+                size_t diff = is_initobj ? 0 : 1;
                 if (insn_it->OperandListLength() - diff < program_.function_table.at(insn_it->ids[0]).GetParamsNum()) {
                     auto insn_idx = std::distance(k.second.ins.begin(), insn_it);
                     const auto &debug = curr_func_->ins[insn_idx].ins_debug;
@@ -924,16 +925,16 @@ bool Parser::ParseOperandVreg()
 
     if (p[0] == 'v') {
         p.remove_prefix(1);
-        int64_t number = ToNumber(p);
+        int64_t number = static_cast<int64_t>(ToNumber(p));
 
         if (number > *(context_.max_value_of_reg)) {
             *(context_.max_value_of_reg) = number;
         }
 
-        curr_ins_->regs.push_back(number);
+        curr_ins_->regs.push_back(static_cast<uint16_t>(number));
     } else if (p[0] == 'a') {
         p.remove_prefix(1);
-        curr_ins_->regs.push_back(ToNumber(p));
+        curr_ins_->regs.push_back(static_cast<uint16_t>(ToNumber(p)));
         context_.function_arguments_list->emplace_back(context_.ins_number, curr_ins_->regs.size() - 1);
     }
 

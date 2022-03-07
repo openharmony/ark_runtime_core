@@ -104,9 +104,9 @@ private:
                           int8_t shift = 0, int token_shift = 0, const std::string &add_mess = "") const
     {
         return Error(mess, line_stric_, err, add_mess,
-                     context_.tokens[context_.number + token_shift - 1].bound_left + shift,
-                     context_.tokens[context_.number + token_shift - 1].bound_right,
-                     context_.tokens[context_.number + token_shift - 1].whole_line);
+                     context_.tokens[static_cast<int>(context_.number) + token_shift - 1].bound_left + shift,
+                     context_.tokens[static_cast<int>(context_.number) + token_shift - 1].bound_right,
+                     context_.tokens[static_cast<int>(context_.number) + token_shift - 1].whole_line);
     }
 
     inline void GetWarning(const std::string &mess = "", Error::ErrorType err = Error::ErrorType::ERR_NONE,
