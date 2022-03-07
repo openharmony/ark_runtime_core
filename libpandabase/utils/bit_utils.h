@@ -292,7 +292,7 @@ inline To bit_cast(const From &src) noexcept  // NOLINT(readability-identifier-n
 {
     static_assert(sizeof(To) == sizeof(From), "size of the types must be equal");
     To dst;
-    memcpy(&dst, &src, sizeof(To));
+    memcpy_s(&dst, sizeof(To), &src, sizeof(To));
     return dst;
 }
 
@@ -301,7 +301,7 @@ inline To down_cast(const From &src) noexcept  // NOLINT(readability-identifier-
 {
     static_assert(sizeof(To) <= sizeof(From), "size of the types must be lesser");
     To dst;
-    memcpy(&dst, &src, sizeof(To));
+    memcpy_s(&dst, sizeof(To), &src, sizeof(To));
     return dst;
 }
 
