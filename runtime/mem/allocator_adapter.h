@@ -143,13 +143,13 @@ public:
     }
 
     template <typename U>
-    bool operator==(const AllocatorAdapter<U> &other)
+    bool operator==(const AllocatorAdapter<U> &other) const
     {
         return this->allocator_ == other.allocator_;
     }
 
     template <typename U>
-    bool operator!=(const AllocatorAdapter<U> &other)
+    bool operator!=(const AllocatorAdapter<U> &other) const
     {
         return this->allocator_ != other.allocator_;
     }
