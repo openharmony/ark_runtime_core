@@ -196,7 +196,7 @@ inline size_t ToNumber(std::string_view p)
 
     for (char i : p) {
         if (isdigit(i) != 0) {
-            sum = sum * DEC_BASE + (i - '0');
+            sum = sum * DEC_BASE + static_cast<size_t>(i - '0');
         } else {
             return MAX_DWORD;
         }

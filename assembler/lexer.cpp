@@ -345,13 +345,15 @@ void Lexer::LexPreprocess()
 
     // Searching for comment marker located outside of the string literals.
     inside_str_lit = curr_line_->buffer.size() > 0 && curr_line_->buffer[0] == '\"';
-    cmt_pos = -1;
-    while ((cmt_pos = curr_line_->buffer.find_first_of("\"#", cmt_pos + 1)) != std::string::npos) {
-        if (cmt_pos != 0 && curr_line_->buffer[cmt_pos - 1] != '\\' && curr_line_->buffer[cmt_pos] == '\"') {
-            inside_str_lit = !inside_str_lit;
-        } else if (curr_line_->buffer[cmt_pos] == PARSE_COMMENT_MARKER && !inside_str_lit) {
-            break;
-        }
+    cmt_pos = curr_line_->buffer.find_first_of("\"#", 0);
+    if (cmt_pos != std::string::npos) {
+        do {
+            if (cmt_pos != 0 && curr_line_->buffer[cmt_pos - 1] != '\\' && curr_line_->buffer[cmt_pos] == '\"') {
+                inside_str_lit = !inside_str_lit;
+            } else if (curr_line_->buffer[cmt_pos] == PARSE_COMMENT_MARKER && !inside_str_lit) {
+                break;
+            }
+        } while ((cmt_pos = curr_line_->buffer.find_first_of("\"#", cmt_pos + 1)) != std::string::npos);
     }
 
     if (cmt_pos != std::string::npos) {
