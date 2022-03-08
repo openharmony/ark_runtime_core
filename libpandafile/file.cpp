@@ -46,12 +46,9 @@ constexpr int EOK = 0;
 #endif  // EOK
 
 // NOLINTNEXTLINE(readability-identifier-naming, modernize-avoid-c-arrays)
-const char *ARCHIVE_FILENAME = "classes.aex";
+const char *ARCHIVE_FILENAME = "classes.abc";
 // NOLINTNEXTLINE(readability-identifier-naming, modernize-avoid-c-arrays)
 const char *ARCHIVE_SPLIT = "!/";
-
-// NOLINTNEXTLINE(readability-identifier-naming, modernize-avoid-c-arrays)
-const char *ARCHIVE_FILENAME_ABC = "classes.abc";
 
 const std::array<uint8_t, File::MAGIC_SIZE> File::MAGIC {'P', 'A', 'N', 'D', 'A', '\0', '\0', '\0'};
 
@@ -108,38 +105,77 @@ std::unique_ptr<const File> OpenPandaFileOrZip(std::string_view location, panda_
     return OpenPandaFile(location, archive_filename, open_mode);
 }
 
-std::unique_ptr<const panda_file::File> HandleArchive(FILE *fp, std::string_view location,
-                                                      std::string_view archive_filename,
-                                                      panda_file::File::OpenMode open_mode)
+// NOLINTNEXTLINE(google-runtime-references)
+void OpenPandaFileFromZipErrorHandler(ZipArchiveHandle &handle)
 {
-    EntryFileStat entry = EntryFileStat();
-    std::string archive_fn = std::string(archive_filename);
-    if (!archive_fn.empty()) {
-        if (!GetArchiveFileEntry(fp, archive_fn.c_str(), &entry)) {
-            LOG(ERROR, PANDAFILE) << "Can't find entry with name '" << archive_fn << "'";
-            return nullptr;
-        }
-    } else {
-        if (!GetArchiveFileEntry(fp, ARCHIVE_FILENAME, &entry)) {
-            if (!GetArchiveFileEntry(fp, ARCHIVE_FILENAME_ABC, &entry)) {
-                LOG(ERROR, PANDAFILE) << "Can't find entry with name '" << ARCHIVE_FILENAME << "' or '"
-                                      << ARCHIVE_FILENAME_ABC << "'";
-                return nullptr;
-            }
+    if (handle != nullptr) {
+        if (panda::CloseArchiveFile(handle) != ZIPARCHIVE_OK) {
+            LOG(ERROR, PANDAFILE) << "CloseArchiveFile failed!";
         }
     }
+}
 
+std::unique_ptr<const panda_file::File> OpenPandaFileFromZipFile(ZipArchiveHandle &handle, std::string_view location,
+                                                                 EntryFileStat &entry, std::string_view archive_name)
+{
+    uint32_t uncompressed_length = entry.GetUncompressedSize();
+    if (uncompressed_length == 0) {
+        CloseCurrentFile(handle);
+        OpenPandaFileFromZipErrorHandler(handle);
+        LOG(ERROR, PANDAFILE) << "Panda file has zero length!";
+        return nullptr;
+    }
+
+    size_t size_to_mmap = AlignUp(uncompressed_length, panda::os::mem::GetPageSize());
+    void *mem = os::mem::MapRWAnonymousRaw(size_to_mmap, false);
+    if (mem == nullptr) {
+        CloseCurrentFile(handle);
+        OpenPandaFileFromZipErrorHandler(handle);
+        LOG(ERROR, PANDAFILE) << "Can't mmap anonymous!";
+        return nullptr;
+    }
+    os::mem::BytePtr ptr(reinterpret_cast<std::byte *>(mem), size_to_mmap, os::mem::MmapDeleter);
+    std::stringstream ss;
+    ss << ANONMAPNAME_PERFIX << archive_name << " extracted in memory from " << location;
+    auto it = AnonMemSet::GetInstance().Insert(std::string(location), ss.str());
+    auto ret = os::mem::TagAnonymousMemory(reinterpret_cast<void *>(ptr.Get()), size_to_mmap, it->second.c_str());
+    if (ret.has_value()) {
+        CloseCurrentFile(handle);
+        OpenPandaFileFromZipErrorHandler(handle);
+        LOG(ERROR, PANDAFILE) << "Can't tag mmap anonymous!";
+        return nullptr;
+    }
+
+    auto extract_error = ExtractToMemory(handle, reinterpret_cast<uint8_t *>(ptr.Get()), size_to_mmap);
+    if (extract_error != 0) {
+        CloseCurrentFile(handle);
+        OpenPandaFileFromZipErrorHandler(handle);
+        LOG(ERROR, PANDAFILE) << "Can't extract!";
+        return nullptr;
+    }
+
+    os::mem::ConstBytePtr ConstPtr = ptr.ToConst();
+    return panda_file::File::OpenFromMemory(std::move(ConstPtr), location);
+}
+
+// NOLINTNEXTLINE(google-runtime-references)
+std::unique_ptr<const panda_file::File> HandleArchive(ZipArchiveHandle &handle, FILE *fp, std::string_view location,
+                                                      EntryFileStat &entry, std::string_view archive_filename,
+                                                      panda_file::File::OpenMode open_mode)
+{
     std::unique_ptr<const panda_file::File> file;
     // compressed or not 4 aligned, use anonymous memory
     if (entry.IsCompressed() || (entry.GetOffset() & 0x3U) != 0) {
-        file = OpenPandaFileFromZipFILE(fp, location, archive_filename);
+        file = OpenPandaFileFromZipFile(handle, location, entry, archive_filename);
     } else {
+        LOG(INFO, PANDAFILE) << "Pandafile is uncompressed and 4 bytes aligned";
         file = panda_file::File::OpenUncompressedArchive(fileno(fp), location, entry.GetUncompressedSize(),
                                                          entry.GetOffset(), open_mode);
     }
     return file;
 }
 
+// CODECHECK-NOLINTNEXTLINE(C_RULE_ID_FUNCTION_SIZE)
 std::unique_ptr<const panda_file::File> OpenPandaFile(std::string_view location, std::string_view archive_filename,
                                                       panda_file::File::OpenMode open_mode)
 {
@@ -166,7 +202,48 @@ std::unique_ptr<const panda_file::File> OpenPandaFile(std::string_view location,
     fseek(fp, 0, SEEK_SET);
     std::unique_ptr<const panda_file::File> file;
     if (IsZipMagic(magic)) {
-        file = HandleArchive(fp, location, archive_filename, open_mode);
+        // Open Zipfile and do the extraction.
+        ZipArchiveHandle zipfile = nullptr;
+        auto open_error = OpenArchiveFile(zipfile, fp);
+        if (open_error != ZIPARCHIVE_OK) {
+            LOG(ERROR, PANDAFILE) << "Can't open archive " << location;
+            return nullptr;
+        }
+        bool try_default = archive_filename.empty();
+        if (!try_default) {
+            if (LocateFile(zipfile, archive_filename.data()) != ZIPARCHIVE_OK) {
+                LOG(INFO, PANDAFILE) << "Can't find entry with name '" << archive_filename << "', will try "
+                                     << ARCHIVE_FILENAME;
+                try_default = true;
+            }
+        }
+        if (try_default) {
+            if (LocateFile(zipfile, ARCHIVE_FILENAME) != ZIPARCHIVE_OK) {
+                OpenPandaFileFromZipErrorHandler(zipfile);
+                LOG(ERROR, PANDAFILE) << "Can't find entry with " << ARCHIVE_FILENAME;
+                fclose(fp);
+                return nullptr;
+            }
+        }
+        EntryFileStat entry = EntryFileStat();
+        if (GetCurrentFileInfo(zipfile, &entry) != ZIPARCHIVE_OK) {
+            OpenPandaFileFromZipErrorHandler(zipfile);
+            LOG(ERROR, PANDAFILE) << "GetCurrentFileInfo error";
+            return nullptr;
+        }
+        if (OpenCurrentFile(zipfile) != ZIPARCHIVE_OK) {
+            CloseCurrentFile(zipfile);
+            OpenPandaFileFromZipErrorHandler(zipfile);
+            LOG(ERROR, PANDAFILE) << "Can't OpenCurrentFile!";
+            return nullptr;
+        }
+        GetCurrentFileOffset(zipfile, &entry);
+        file = HandleArchive(zipfile, fp, location, entry, archive_filename, open_mode);
+        CloseCurrentFile(zipfile);
+        if (panda::CloseArchiveFile(zipfile) != 0) {
+            LOG(ERROR, PANDAFILE) << "CloseArchive failed!";
+            return nullptr;
+        }
     } else {
         file = panda_file::File::Open(location, open_mode);
     }
@@ -174,143 +251,9 @@ std::unique_ptr<const panda_file::File> OpenPandaFile(std::string_view location,
     return file;
 }
 
-// NOLINTNEXTLINE(google-runtime-references)
-void OpenPandaFileFromZipErrorHandler(ZipArchiveHandle &handle, const char *message)
-{
-    if (handle != nullptr) {
-        if (!panda::CloseArchive(&handle)) {
-            LOG(ERROR, PANDAFILE) << "CloseArchive failed!";
-        }
-    }
-    LOG(ERROR, PANDAFILE) << message;
-}
-
-std::unique_ptr<const panda_file::File> OpenPandaFileFromZip(std::string_view location)
-{
-    trace::ScopedTrace scoped_trace("Panda file open Zip " + std::string(location));
-    panda::ZipArchive archive_holder;
-    panda::ZipArchiveHandle handle = &archive_holder;
-    auto open_error = panda::OpenArchive(std::string(location).c_str(), &handle);
-    if (open_error != 0) {
-        LOG(ERROR, PANDAFILE) << "Can't open archive\n";
-        return nullptr;
-    }
-
-    auto entry = std::make_unique<EntryFileStat>();
-
-    const char *filename = ARCHIVE_FILENAME;
-    if (panda::FindEntry(&handle, entry.get(), filename) != 0) {
-        filename = ARCHIVE_FILENAME_ABC;
-        auto find_error = panda::FindEntry(&handle, entry.get(), filename);
-        if (find_error != 0) {
-            OpenPandaFileFromZipErrorHandler(handle, "Can't find entry!");
-            return nullptr;
-        }
-    }
-    uint32_t uncompressed_length = entry->GetUncompressedSize();
-    if (entry->GetUncompressedSize() == 0) {
-        OpenPandaFileFromZipErrorHandler(handle, "Panda file has zero length!");
-        return nullptr;
-    }
-
-    size_t size_to_mmap = AlignUp(uncompressed_length, panda::os::mem::GetPageSize());
-    // NB! This mem is mapped in OpenPandaFileFromZip, we want to use it otherwhere, better unposion it!
-    void *mem = os::mem::MapRWAnonymousRaw(size_to_mmap, false);
-    if (mem == nullptr) {
-        OpenPandaFileFromZipErrorHandler(handle, "Can't mmap anonymous!");
-        return nullptr;
-    }
-
-    std::stringstream ss;
-    ss << ANONMAPNAME_PERFIX << ARCHIVE_FILENAME << " extracted in memory from " << location;
-    auto it = AnonMemSet::GetInstance().Insert(std::string(location), ss.str());
-    auto ret = os::mem::TagAnonymousMemory(mem, size_to_mmap, it->second.c_str());
-    if (ret.has_value()) {
-        return nullptr;
-    }
-
-    auto extract_error = panda::ExtractToMemory(&handle, entry.get(), reinterpret_cast<uint8_t *>(mem), size_to_mmap);
-    if (extract_error != 0) {
-        os::mem::UnmapRaw(mem, size_to_mmap);
-        OpenPandaFileFromZipErrorHandler(handle, "Can't extract!");
-        return nullptr;
-    }
-
-    if (!panda::CloseArchive(&handle)) {
-        LOG(ERROR, PANDAFILE) << "CloseArchive failed!";
-        return nullptr;
-    }
-
-    os::mem::ConstBytePtr ptr(reinterpret_cast<std::byte *>(mem), size_to_mmap, os::mem::MmapDeleter);
-    return panda_file::File::OpenFromMemory(std::move(ptr), location);
-}
-
-std::unique_ptr<const panda_file::File> OpenPandaFileFromZipFILE(FILE *inputfile, std::string_view location,
-                                                                 std::string_view archive_filename)
-{
-    panda::ZipArchive archive_holder;
-    panda::ZipArchiveHandle handle = &archive_holder;
-    auto open_error = panda::OpenArchiveFILE(inputfile, &handle);
-    if (open_error != 0) {
-        LOG(ERROR, PANDAFILE) << "Can't open archive\n";
-        return nullptr;
-    }
-
-    auto entry = std::make_unique<EntryFileStat>();
-
-    std::string archive_fn = std::string(archive_filename);
-    const char *filename = archive_fn.empty() ? ARCHIVE_FILENAME : archive_fn.c_str();
-    if (panda::FindEntry(&handle, entry.get(), filename) != 0) {
-        filename = ARCHIVE_FILENAME_ABC;
-        auto find_error = panda::FindEntry(&handle, entry.get(), filename);
-        if (find_error != 0) {
-            OpenPandaFileFromZipErrorHandler(handle, "Can't find entry!");
-            return nullptr;
-        }
-    }
-    uint32_t uncompressed_length = entry->GetUncompressedSize();
-    if (entry->GetUncompressedSize() == 0) {
-        OpenPandaFileFromZipErrorHandler(handle, "Panda file has zero length!");
-        return nullptr;
-    }
-
-    size_t size_to_mmap = AlignUp(uncompressed_length, panda::os::mem::GetPageSize());
-    // NB! This mem is mapped in OpenPandaFileFromZip, we want to use it otherwhere, better unposion it!
-    void *mem = os::mem::MapRWAnonymousRaw(size_to_mmap, false);
-    if (mem == nullptr) {
-        OpenPandaFileFromZipErrorHandler(handle, "Can't mmap anonymous!");
-        return nullptr;
-    }
-
-    std::stringstream ss;
-    ss << ANONMAPNAME_PERFIX << ARCHIVE_FILENAME << " extracted in memory from " << location;
-    auto it = AnonMemSet::GetInstance().Insert(std::string(location), ss.str());
-    auto ret = os::mem::TagAnonymousMemory(mem, size_to_mmap, it->second.c_str());
-    if (ret.has_value()) {
-        OpenPandaFileFromZipErrorHandler(handle, "Can't tag mmap anonymous!");
-        return nullptr;
-    }
-
-    auto extract_error = panda::ExtractToMemory(&handle, entry.get(), reinterpret_cast<uint8_t *>(mem), size_to_mmap);
-    if (extract_error != 0) {
-        os::mem::UnmapRaw(mem, size_to_mmap);
-        OpenPandaFileFromZipErrorHandler(handle, "Can't extract!");
-        return nullptr;
-    }
-
-    if (!panda::CloseArchive(&handle)) {
-        LOG(ERROR, PANDAFILE) << "CloseArchive failed!";
-        return nullptr;
-    }
-
-    os::mem::ConstBytePtr ptr(reinterpret_cast<std::byte *>(mem), size_to_mmap, os::mem::MmapDeleter);
-    return panda_file::File::OpenFromMemory(std::move(ptr), location);
-}
-
 std::unique_ptr<const File> OpenPandaFileFromMemory(const void *buffer, size_t size)
 {
     size_t size_to_mmap = AlignUp(size, panda::os::mem::GetPageSize());
-    // NB! This mem is mapped in OpenPandaFileFromZip, we want to use it otherwhere, better unposion it!
     void *mem = os::mem::MapRWAnonymousRaw(size_to_mmap, false);
     if (mem == nullptr) {
         return nullptr;
