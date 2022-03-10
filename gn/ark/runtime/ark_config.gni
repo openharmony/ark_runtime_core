@@ -39,11 +39,14 @@ if (ark_standalone_build) {
     sdk_libc_secshared_dep = "$ark_third_party_root/securec:libc_secstatic"
   }
 } else {
-  sdk_libc_secshared_dep = "//utils/native/base:utilsecurec_shared"
-  sdk_libc_secshared_config = "//utils/native/base:utils_config"
+  sdk_libc_secshared_dep =
+      "$ark_third_party_root/bounds_checking_function:libsec_shared"
+  sdk_libc_secshared_config =
+      "$ark_third_party_root/bounds_checking_function:libsec_public_config"
 
   if (is_mingw || is_mac || is_linux) {
-    sdk_libc_secshared_dep = "//utils/native/base:utilsecurec"
+    sdk_libc_secshared_dep =
+        "$ark_third_party_root/bounds_checking_function:libsec_static"
   }
 }
 
