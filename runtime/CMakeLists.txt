@@ -128,8 +128,6 @@ set(SOURCES
     object_accessor.cpp
     arch/asm_support.cpp
     signal_handler.cpp
-    profilesaver/profile_saver.cpp
-    profilesaver/profile_dump_info.cpp
     runtime_helpers.cpp
     handle_scope.cpp
     file_manager.cpp
