@@ -38,7 +38,6 @@ class CFrameTest;
 class StackWalkerTest;
 class PandaRunner;
 class CompilerQueueTest;
-class ProfileSaverTest;
 class DynObjectsTest;
 class JSObjectTest;
 class JSFunctionTest;
@@ -312,7 +311,6 @@ private:
     friend class panda::test::PandaRunner;
     friend class verifier::test::VerifierTest;
     friend class panda::Logger;
-    friend class test::ProfileSaverTest;
     friend class panda::test::DynObjectsTest;
     friend class panda::test::JSObjectTest;
     friend class panda::test::JSFunctionTest;
