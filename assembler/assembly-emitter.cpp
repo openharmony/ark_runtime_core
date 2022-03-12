@@ -592,9 +592,9 @@ AnnotationItem *AsmEmitter::CreateAnnotationItem(ItemContainer *container, const
 
         if (value_type == Value::Type::ARRAY && !value->GetAsArray()->GetValues().empty()) {
             auto array_element_type = value->GetAsArray()->GetComponentType();
-            tag_type = Value::GetArrayTypeAsChar(array_element_type);
+            tag_type = static_cast<uint8_t>(Value::GetArrayTypeAsChar(array_element_type));
         } else {
-            tag_type = Value::GetTypeAsChar(value_type);
+            tag_type = static_cast<uint8_t>(Value::GetTypeAsChar(value_type));
         }
 
         ASSERT(tag_type != '0');
@@ -1409,8 +1409,8 @@ bool AsmEmitter::EmitFunctions(ItemContainer *items, const Program &program,
         code->SetNumVregs(func.regs_num);
         code->SetNumArgs(func.GetParamsNum());
 
-        size_t num_ins =
-            std::count_if(func.ins.begin(), func.ins.end(), [](auto it) { return it.opcode != Opcode::INVALID; });
+        size_t num_ins = static_cast<size_t>(
+            std::count_if(func.ins.begin(), func.ins.end(), [](auto it) { return it.opcode != Opcode::INVALID; }));
         code->SetNumInstructions(num_ins);
 
         auto *bytes = code->GetInstructions();
@@ -1618,12 +1618,12 @@ void Function::EmitLocalVariable(panda_file::LineNumberProgramItem *program, Ite
 
 size_t Function::GetLineNumber(size_t i) const
 {
-    return static_cast<int32_t>(ins[i].ins_debug.line_number);
+    return ins[i].ins_debug.line_number;
 }
 
 size_t Function::GetColumnNumber(size_t i) const
 {
-    return static_cast<int32_t>(ins[i].ins_debug.column_number);
+    return ins[i].ins_debug.column_number;
 }
 
 void Function::EmitNumber(panda_file::LineNumberProgramItem *program, std::vector<uint8_t> *constant_pool,
@@ -1646,9 +1646,9 @@ void Function::EmitNumber(panda_file::LineNumberProgramItem *program, std::vecto
 void Function::EmitLineNumber(panda_file::LineNumberProgramItem *program, std::vector<uint8_t> *constant_pool,
                               int32_t &prev_line_number, uint32_t &pc_inc, size_t instruction_number) const
 {
-    int32_t line_inc = GetLineNumber(instruction_number) - prev_line_number;
+    int32_t line_inc = static_cast<int32_t>(GetLineNumber(instruction_number)) - prev_line_number;
     if (line_inc) {
-        prev_line_number = GetLineNumber(instruction_number);
+        prev_line_number = static_cast<int32_t>(GetLineNumber(instruction_number));
         EmitNumber(program, constant_pool, pc_inc, line_inc);
         pc_inc = 0;
     }
@@ -1657,7 +1657,7 @@ void Function::EmitLineNumber(panda_file::LineNumberProgramItem *program, std::v
 void Function::EmitColumnNumber(panda_file::LineNumberProgramItem *program, std::vector<uint8_t> *constant_pool,
                                 int32_t &prev_column_number, uint32_t &pc_inc, size_t instruction_number) const
 {
-    int32_t cn = GetColumnNumber(instruction_number);
+    auto cn = static_cast<int32_t>(GetColumnNumber(instruction_number));
     if (cn != prev_column_number) {
         program->EmitColumn(constant_pool, pc_inc, cn);
         pc_inc = 0;
@@ -1677,8 +1677,8 @@ void Function::BuildLineNumberProgram(panda_file::DebugInfoItem *debug_item, con
     }
 
     uint32_t pc_inc = 0;
-    int32_t prev_line_number = GetLineNumber(0);
-    int32_t prev_column_number = GetColumnNumber(0);
+    auto prev_line_number = static_cast<int32_t>(GetLineNumber(0));
+    auto prev_column_number = static_cast<int32_t>(GetColumnNumber(0));
     BytecodeInstruction bi(bytecode.data());
     debug_item->SetLineNumber(static_cast<uint32_t>(prev_line_number));
 
