@@ -138,8 +138,6 @@ ohos_static_library("libarkruntime_static") {
     "object_accessor.cpp",
     "object_header.cpp",
     "panda_vm.cpp",
-    "profilesaver/profile_dump_info.cpp",
-    "profilesaver/profile_saver.cpp",
     "runtime.cpp",
     "runtime_helpers.cpp",
     "signal_handler.cpp",
