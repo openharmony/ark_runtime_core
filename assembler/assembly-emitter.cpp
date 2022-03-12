@@ -1678,7 +1678,7 @@ void Function::BuildLineNumberProgram(panda_file::DebugInfoItem *debug_item, con
 
     uint32_t pc_inc = 0;
     auto prev_line_number = static_cast<int32_t>(GetLineNumber(0));
-    auto prev_column_number = static_cast<int32_t>(GetColumnNumber(0));
+    auto prev_column_number = -1;
     BytecodeInstruction bi(bytecode.data());
     debug_item->SetLineNumber(static_cast<uint32_t>(prev_line_number));
 
