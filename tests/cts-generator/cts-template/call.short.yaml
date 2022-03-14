@@ -261,7 +261,7 @@ tests:
             - sig: call.short method_id, v1:in:top, v2:in:top
               acc: out:top
               format: [op_v1_4_v2_4_id_16]
-        description: Check 'call.short' when arguments of function and instuction parameters mismatch.
+        description: Check 'call.short' when arguments of function and instruction parameters mismatch.
         header-template: []
         code-template: |
           .function void f1(%s) {
@@ -301,7 +301,7 @@ tests:
             - sig: call.short method_id, v1:in:top, v2:in:top
               acc: out:top
               format: [op_v1_4_v2_4_id_16]
-        description: Check 'call.short' when argument type of function and instuction mismatch.
+        description: Check 'call.short' when argument type of function and instruction mismatch.
         header-template: []
         code-template: |
           %s

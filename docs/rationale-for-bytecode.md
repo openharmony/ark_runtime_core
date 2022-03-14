@@ -165,8 +165,8 @@ instruction lacks a wide-range form, we can prepare operands for it with moves t
 needed forms. In this way, we save opcode space without compromising encoding size (on average).
 
 With such approach, we can carefully introduce various "overloads" for instruction when it could
-be beneficial. For example, we have three types of instructions for integer-sized arithmetics
-(acc-reg-reg, acc-reg, acc-imm) and integer-based jumps, but not for floating-point arithmetics
+be beneficial. For example, we have three types of instructions for integer-sized arithmetic
+(acc-reg-reg, acc-reg, acc-imm) and integer-based jumps, but not for floating-point arithmetic
 (which is rare) and which is supposed to have only acc-reg form. Another good choice for
 overloads are calls (different number of operands) and calls are the most popular instructions in
 applications (thus we again save encoding space).

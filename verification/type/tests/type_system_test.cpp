@@ -135,7 +135,7 @@ TEST_F(VerifierTest, TypeSystemClosureAtTheEnd)
     i8 << (i16 | i32) << i64;
     (u8 | u16) << (u32 | u64);
 
-    // bofore closure all methods are unrelated
+    // before closure all methods are unrelated
     EXPECT_FALSE(method2 <= method1);
     EXPECT_FALSE(method1 <= method2);
 

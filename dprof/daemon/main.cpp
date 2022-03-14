@@ -216,7 +216,7 @@ static void SetupSignals()
     };
     PLOG_IF(::memset_s(&sa, sizeof(sa), 0, sizeof(sa)) != EOK, FATAL, DPROF) << "memset_s failed";
     sa.sa_handler = SignalHandler;  // NOLINT(cppcoreguidelines-pro-type-union-access)
-    PLOG_IF(::sigemptyset(&sa.sa_mask) == -1, FATAL, DPROF) << "sigemptyset() faild";
+    PLOG_IF(::sigemptyset(&sa.sa_mask) == -1, FATAL, DPROF) << "sigemptyset() failed";
 
     PLOG_IF(::sigaction(SIGINT, &sa, nullptr) == -1, FATAL, DPROF) << "sigaction(SIGINT) failed";
     PLOG_IF(::sigaction(SIGHUP, &sa, nullptr) == -1, FATAL, DPROF) << "sigaction(SIGHUP) failed";

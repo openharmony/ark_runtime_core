@@ -193,7 +193,7 @@ public:
     template <bool cross_region = false>
     static Region *AddrToRegion(const void *addr, size_t mask = DEFAULT_REGION_MASK)
     {
-        // if it is possible that (object adress - region start addr) larger than region alignment,
+        // if it is possible that (object address - region start addr) larger than region alignment,
         // we should get the region start address from mmappool which records it in allocator info
         if constexpr (cross_region) {  // NOLINTNEXTLINE(readability-braces-around-statements)
             auto region_addr = PoolManager::GetMmapMemPool()->GetStartAddrPoolForAddr(const_cast<void *>(addr));

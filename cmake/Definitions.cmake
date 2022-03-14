@@ -86,13 +86,13 @@ endif()
 # Clang 8.0.0 doesn't support all necessary options -ffixed-<reg>. Gcc 7.5.0 freezes
 # when compiling release interpreter.
 #
-# Also calling conventions of funtions that use global register variables are different:
+# Also calling conventions of functions that use global register variables are different:
 # clang stores and restores registers that are used for global variables in the prolog
 # and epilog of such functions and gcc doesn't do it. So it's necessary to inline all
 # function that refers to global register variables to interpreter loop.
 
 # For this reason we disable global register variables usage for clang debug builds as
-# ALWAYS_INLINE macro expands to nothing in this mode and we cannot garantee that all
+# ALWAYS_INLINE macro expands to nothing in this mode and we cannot guarantee that all
 # necessary function will be inlined.
 #
 if(PANDA_TARGET_ARM64 AND ((CMAKE_CXX_COMPILER_ID STREQUAL "Clang"

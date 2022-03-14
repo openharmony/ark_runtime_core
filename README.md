@@ -12,7 +12,7 @@
 
 As a common module of ARK runtime, Runtime Core consists of some basic language-irrelevant runtime libraries, including ARK File, Tooling, and ARK Base. ARK File provides bytecodes and information required for executing bytecodes. Tooling supports Debugger. ARK Base is responsible for implementing platform related utilities.
 
-For more infomation, see: [ARK Runtime Subsystem](https://gitee.com/openharmony/docs/blob/master/en/readme/ARK-Runtime-Subsystem.md).
+For more information, see: [ARK Runtime Subsystem](https://gitee.com/openharmony/docs/blob/master/en/readme/ARK-Runtime-Subsystem.md).
 
 ## Directory Structure<a name="section161941989596"></a>
 
@@ -141,7 +141,7 @@ Input file: ARK bytecodes in binary format
 Output file: ARK bytecodes in text format
 
 
-For more infomation, please see: [ARK Runtime Usage Guide](https://gitee.com/openharmony/ark_js_runtime/blob/master/docs/ARK-Runtime-Usage-Guide.md).
+For more information, please see: [ARK Runtime Usage Guide](https://gitee.com/openharmony/ark_js_runtime/blob/master/docs/ARK-Runtime-Usage-Guide.md).
 
 ## Repositories Involved<a name="section1371113476307"></a>
 

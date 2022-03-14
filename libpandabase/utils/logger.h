@@ -404,7 +404,7 @@ private:
     MERGE_WORDS(log_once_helper, __LINE__).IsFirstCall() && LOG(level, component)
 
 // Explicit namespace is specified to allow using the logger out of panda namespace.
-// For exmaple, in the main function.
+// For example, in the main function.
 // NOLINTNEXTLINE(cppcoreguidelines-macro-usage)
 #define _LOG(level, component, p)                                                                          \
     panda::Logger::IsLoggingOnOrAbort(panda::Logger::Level::level, panda::Logger::Component::component) && \

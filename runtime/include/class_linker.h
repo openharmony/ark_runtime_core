@@ -170,7 +170,7 @@ public:
                 if (founded) {
                     os << "|Parent class loader: #" << parent_index << "\n";
                 } else {
-                    os << "|Parent class loader: unknow\n";
+                    os << "|Parent class loader: unknown\n";
                 }
             } else {
                 os << "|Parent class loader: empty\n";

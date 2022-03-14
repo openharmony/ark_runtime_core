@@ -67,7 +67,7 @@
 // The macro works with the stack prepared by 'PrepareArgStack' procedure
 // It takes an argument in arg_reg and stores it to the corresponding stack space
 // depends on its type.
-// After the arg gets storeg the macro advances the correponding pointer
+// After the arg gets storeg the macro advances the corresponding pointer
 // The macro assumes x9 contains base address for gpr and fpr args
 
 .macro PUSH_ARG arg_ptr, gpr_ptr, fpr_ptr, stack_ptr, tmp1, tmp2, next_label
