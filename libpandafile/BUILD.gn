@@ -80,6 +80,7 @@ ohos_shared_library("libarkfile") {
   }
   output_extension = "so"
   subsystem_name = "ark"
+  part_name = "ark"
 }
 
 ohos_static_library("libarkfile_frontend_static") {
@@ -99,6 +100,9 @@ ohos_static_library("libarkfile_frontend_static") {
     "$ark_root/libziparchive:libarkziparchive_frontend_static",
     sdk_libc_secshared_dep,
   ]
+
+  part_name = "ark"
+  subsystem_name = "ark"
 }
 
 ark_gen_file("libarkfile_type_gen_h") {

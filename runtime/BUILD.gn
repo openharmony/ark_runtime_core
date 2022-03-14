@@ -252,6 +252,7 @@ ohos_static_library("libarkruntime_static") {
 
   output_extension = "a"
   subsystem_name = "ark"
+  part_name = "ark"
 }
 
 ohos_shared_library("libarkruntime") {
@@ -262,6 +263,7 @@ ohos_shared_library("libarkruntime") {
     relative_install_dir = "ark"
   }
   subsystem_name = "ark"
+  part_name = "ark"
 }
 
 config("arkruntime_interpreter_impl_config") {
@@ -317,6 +319,9 @@ ohos_static_library("arkruntime_interpreter_impl") {
     "$ark_root/libpandabase:libarkbase",
     "$ark_root/libpandafile:libarkfile",
   ]
+
+  subsystem_name = "ark"
+  part_name = "ark"
 }
 
 template("gen_intrinsics_yaml") {

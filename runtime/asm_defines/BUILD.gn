@@ -41,6 +41,8 @@ ohos_static_library("asm_defines") {
     "$ark_root/runtime:arkruntime_gen_intrinsics_unimplemented_intrinsics-inl_cpp",
     sdk_libc_secshared_dep,
   ]
+  subsystem_name = "ark"
+  part_name = "ark"
 }
 
 action("asm_defines_generator") {
