@@ -134,6 +134,7 @@ ohos_shared_library("libarkbase") {
     relative_install_dir = "ark"
   }
   subsystem_name = "ark"
+  part_name = "ark"
 }
 
 ohos_static_library("libarkbase_frontend_static") {
@@ -142,4 +143,7 @@ ohos_static_library("libarkbase_frontend_static") {
   configs = libarkbase_configs
 
   deps = libarkbase_deps
+
+  subsystem_name = "ark"
+  part_name = "ark"
 }

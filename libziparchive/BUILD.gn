@@ -54,6 +54,7 @@ ohos_shared_library("libarkziparchive") {
   }
   output_extension = "so"
   subsystem_name = "ark"
+  part_name = "ark"
 }
 
 ohos_static_library("libarkziparchive_frontend_static") {
@@ -75,4 +76,7 @@ ohos_static_library("libarkziparchive_frontend_static") {
   } else {
     deps += [ "$ark_third_party_root/miniz:libminiz" ]
   }
+
+  subsystem_name = "ark"
+  part_name = "ark"
 }
