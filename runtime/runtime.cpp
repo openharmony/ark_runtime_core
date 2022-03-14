@@ -58,7 +58,6 @@
 #include "runtime/mem/internal_allocator-inl.h"
 #include "runtime/core/core_class_linker_extension.h"
 #include "runtime/include/panda_vm.h"
-#include "runtime/profilesaver/profile_saver.h"
 #include "runtime/tooling/debugger.h"
 #include "runtime/tooling/pt_lang_ext_private.h"
 #include "runtime/include/file_manager.h"
@@ -306,12 +305,6 @@ bool Runtime::Destroy()
 
     trace::ScopedTrace scoped_trace("Runtime shutdown");
     instance->GetPandaVM()->StopGC();
-
-    // NB! stop the profile saver thread before deleting the thread list to avoid dead loop here.
-    // the following WaitForThreadStop makes sure profile saver can be shut down.
-    if (instance->SaveProfileInfo()) {
-        ProfileSaver::Stop(false);
-    }
 
     instance->GetPandaVM()->UninitializeThreads();
 
@@ -883,9 +876,6 @@ void Runtime::RegisterAppInfo(const PandaVector<PandaString> &code_paths, const 
     }(profile_output_filename);
 
     StartDProfiler(app_name);
-
-    // this is exactly the place where start the profile saver
-    ProfileSaver::Start(profile_output_filename, code_paths, PandaString(app_name));
 }
 
 int Runtime::StartDProfiler(std::string_view app_name)
