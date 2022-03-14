@@ -70,6 +70,7 @@ ohos_shared_library("libarkassembler") {
   }
   output_extension = "so"
   subsystem_name = "ark"
+  part_name = "ark"
 }
 
 ohos_static_library("libarkassembler_frontend_static") {
@@ -90,6 +91,9 @@ ohos_static_library("libarkassembler_frontend_static") {
     "$ark_root/libpandafile:libarkfile_frontend_static",
     sdk_libc_secshared_dep,
   ]
+
+  subsystem_name = "ark"
+  part_name = "ark"
 }
 
 ohos_executable("ark_asm") {

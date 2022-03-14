@@ -37,4 +37,7 @@ ohos_static_library("libdprof") {
   ]
 
   deps = [ "$ark_root/libpandabase:libarkbase" ]
+
+  subsystem_name = "ark"
+  part_name = "ark"
 }
