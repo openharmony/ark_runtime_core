@@ -57,6 +57,7 @@ ohos_shared_library("arkdisassembler") {
   }
   output_extension = "so"
   subsystem_name = "ark"
+  part_name = "ark"
 }
 
 ohos_static_library("arkdisassembler_frontend_static") {
@@ -76,6 +77,9 @@ ohos_static_library("arkdisassembler_frontend_static") {
     "$ark_root/libpandafile:libarkfile_frontend_static",
     sdk_libc_secshared_dep,
   ]
+
+  subsystem_name = "ark"
+  part_name = "ark"
 }
 
 ohos_executable("ark_disasm") {
@@ -104,6 +108,7 @@ ohos_executable("ark_disasm") {
 
   install_enable = true
   subsystem_name = "ark"
+  part_name = "ark"
 }
 
 ark_isa_gen("isa_gen_ark_disam") {
