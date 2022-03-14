@@ -276,7 +276,7 @@ tests:
             - sig: call.range method_id, v:in:top
               acc: out:top
               format: [op_v_8_id_16]
-        description: Check 'call.range' when argument type of function and instuction mismatch.
+        description: Check 'call.range' when argument type of function and instruction mismatch.
         header-template: []
         code-template: |
           %s

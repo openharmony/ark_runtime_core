@@ -42,13 +42,13 @@ void AllowlistMethodIdCalculationHandler(uint32_t class_hash, uint32_t method_ha
         if (static_cast<AllowlistKind>(k) == AllowlistKind::CLASS) {
             if (name_hash_local[k]->count(class_hash) > 0) {
                 LOG(DEBUG, VERIFIER) << "Method with class hash 0x" << std::hex << class_hash << ", id 0x" << id
-                                     << " was succesfully added to allowlist";
+                                     << " was successfully added to allowlist";
                 id_local[k]->insert(id);
             }
         } else {
             if (name_hash_local[k]->count(method_hash) > 0) {
                 LOG(DEBUG, VERIFIER) << "Method with hash 0x" << std::hex << method_hash << ", id 0x" << id
-                                     << " was succesfully added to allowlist";
+                                     << " was successfully added to allowlist";
                 id_local[k]->insert(id);
             }
         }

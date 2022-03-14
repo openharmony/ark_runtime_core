@@ -13,7 +13,7 @@
 
 # 32-bits pointers optimization in Panda for objects => addresses usage low 4GB
 # We need use linker scripts for section replacement above 4GB
-# Note: AdressSanitizer reserves (mmap) addresses for its own needs,
+# Note: AddressSanitizer reserves (mmap) addresses for its own needs,
 #       so we have difference start addresses for asan and default buildings
 function(panda_add_executable target)
     # When using rapidcheck we should use linker scripts with
@@ -38,7 +38,7 @@ function(panda_add_executable target)
             endif()
         endif()
         # We need use specific options for AMD64 building with Clang compiler
-        # because it is neccessary for placement of sections above 4GB
+        # because it is necessary for placement of sections above 4GB
         if(CMAKE_CXX_COMPILER_ID STREQUAL "Clang" AND PANDA_TARGET_AMD64)
             set(LINKER_SCRIPT_ARG "${LINKER_SCRIPT_ARG} -pie")
             # -mcmodel=large with clang and asan on x64 leads to bugs in rapidcheck with high-mem mappings
@@ -53,7 +53,7 @@ function(panda_add_executable target)
 endfunction()
 
 # This function need for non-SHARED libraries
-# It is neccessary for 32-bits pointers via amd64 building with Clang compiler
+# It is necessary for 32-bits pointers via amd64 building with Clang compiler
 function(panda_set_lib_32bit_property target)
     if(PANDA_USE_32_BIT_POINTER AND PANDA_TARGET_AMD64 AND CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
         set_property(TARGET ${target} PROPERTY POSITION_INDEPENDENT_CODE ON)

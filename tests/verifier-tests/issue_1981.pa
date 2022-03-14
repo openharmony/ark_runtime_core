@@ -16,7 +16,7 @@
 .function void A.constructor(A a0) <ctor> {
     return.void
 }
-# Defenitions for all set of tests
+# Definitions for all set of tests
 .record panda.String <external>
 .record panda.Object <external>
 

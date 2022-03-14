@@ -260,7 +260,7 @@ tests:
             - sig: call method_id, v1:in:top, v2:in:top, v3:in:top, v4:in:top
               acc: out:top
               format: [op_v1_4_v2_4_v3_4_v4_4_id_16]
-        description: Check 'call' when arguments of function and instuction parameters mismatch.
+        description: Check 'call' when arguments of function and instruction parameters mismatch.
         header-template: []
         code-template: |
           .function void f1(%s) {
@@ -305,7 +305,7 @@ tests:
             - sig: call method_id, v1:in:top, v2:in:top, v3:in:top, v4:in:top
               acc: out:top
               format: [op_v1_4_v2_4_v3_4_v4_4_id_16]
-        description: Check 'call' when argument type of function and instuction mismatch.
+        description: Check 'call' when argument type of function and instruction mismatch.
         header-template: []
         code-template: |
           %s

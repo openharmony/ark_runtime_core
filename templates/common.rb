@@ -55,9 +55,9 @@ class Option < SimpleDelegator
     @expansion_map.each do |k, v|
       ret = ""
       if s.include?(k)
-        splitted = s.split(k);
-        for i in 1..splitted.length() - 1
-          ret += v + ' + ' + Common::to_raw(splitted[i])+ ' + '
+        split = s.split(k);
+        for i in 1..split.length() - 1
+          ret += v + ' + ' + Common::to_raw(split[i])+ ' + '
         end
         return ret.delete_suffix(' + ')
       end
