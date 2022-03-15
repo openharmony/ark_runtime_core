@@ -261,7 +261,7 @@ int CompareMUtf8ToMUtf8(const uint8_t *mutf8_1, const uint8_t *mutf8_2)
     auto [c1p1, c1p2] = SplitUtf16Pair(c1);
     auto [c2p1, c2p2] = SplitUtf16Pair(c2);
 
-    int result = c1p1 - c2p1;
+    auto result = static_cast<int>(c1p1 - c2p1);
     if (result != 0) {
         return result;
     }
@@ -308,7 +308,7 @@ int CompareUtf8ToUtf8(const uint8_t *utf8_1, size_t utf8_1_length, const uint8_t
     auto [c1p1, c1p2] = SplitUtf16Pair(c1);
     auto [c2p1, c2p2] = SplitUtf16Pair(c2);
 
-    int result = c1p1 - c2p1;
+    auto result = static_cast<int>(c1p1 - c2p1);
     if (result != 0) {
         return result;
     }
