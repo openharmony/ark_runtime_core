@@ -12,7 +12,7 @@ For simplicity, literals without parens are Sorts and with parens are Types.
 ## Sorts
 
 Sorts are denoted by indices (just numbers) internally, and there is a separate class to hold their names.
-For type_system description technical details can be ommitted and Sorts will be understood in this
+For type_system description technical details can be omitted and Sorts will be understood in this
 text just as literals.
 
 ## Types

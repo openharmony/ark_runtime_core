@@ -83,7 +83,7 @@ Following constraints apply:
 
 In all cases where annotations can be optionally used, `optional_annotation` marker is used in this document.
 
-There are keys that indicate bool values. For example, weither a function must have an implementation.
+There are keys that indicate bool values. For example, whether a function must have an implementation.
 The absence of these keys is treated as false. Metadata containing such keys are called `lonely metadata`.
 
 ### Function metadata annotations
@@ -106,7 +106,7 @@ A declaration of a function is assumed.
 | `noimpl` | Marks a function without implementation. Does not require value. |
 | `static` | Marks a function as static. Does not require value. |
 | `ctor`   | Marks a function as object constructor. It will be renamed in binary file according to particular language rules (`.ctor` for Panda Assembly and `<init>` for Java). |
-| `cctor`  | Marks a function as static constructor. It will be renamed in binary file according to partucular language rules (`.cctor` for Panda Assembly and `<clinit>` for Java). |
+| `cctor`  | Marks a function as static constructor. It will be renamed in binary file according to particular language rules (`.cctor` for Panda Assembly and `<clinit>` for Java). |
 
 ### Record metadata annotations
 
@@ -267,7 +267,7 @@ By convention, all arguments are named `a0`, ... `aN` and all local variables ar
 
 ### Function Body
 
-If a function has a body, it consists of optionally labeled sequence of bytecode instructions, one instruction defined per line. Intsruction opcodes and formats follow [Bytecode ISA Specification](isa/isa.yaml).
+If a function has a body, it consists of optionally labeled sequence of bytecode instructions, one instruction defined per line. Instruction opcodes and formats follow [Bytecode ISA Specification](isa/isa.yaml).
 
 ### Static and virtual functions
 

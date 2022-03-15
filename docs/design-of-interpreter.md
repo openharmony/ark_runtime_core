@@ -103,7 +103,7 @@ Please find the specification [here](file_format.md).
 1. Interpreter should run no slower than state of the art interpreters.
 1. Interpreter should be portable enough to run on targets from IoT devices
    to high-end mobile phones.
-1. Interpreter should not create extra preassure on the host system.
+1. Interpreter should not create extra pressure on the host system.
 
 ### Key Design Decisions
 
@@ -196,7 +196,7 @@ Please find the reference implementation [here](../runtime/interpreter/frame.h).
 1. A compliance test suite for the Panda Assembly language is created. The core part of the suite
    are small chunks of hand-written Panda Assembly covering corner cases, while the majority of
    cases are covered by automatically generated chunks.
-1. A set of benchmarks is ported to Panda Assembly and maintaned as a part of the source tree.
+1. A set of benchmarks is ported to Panda Assembly and maintained as a part of the source tree.
 
 ### Specification / Implementation
 
