@@ -166,7 +166,7 @@ Please find the reference implementation [here](../runtime/interpreter).
 
 1. Although tagged virtual registers occupy more memory (especially on 64-bit architectures),
    redundant memory consumption is cheaper than ongoing runtime penalties on garbage collector
-   trying to distiguish between objects from non-objects on an "imprecise" stack.
+   trying to distinguish between objects from non-objects on an "imprecise" stack.
 1. Where does 128 come from? It is `128 = 64 + 64`. The first 64 is either `sizeof(long int)`
    or `sizeof(double)` or `sizeof(void *)` on a 64-bit architecture (i.e. theoretical maximum
    size of the payload we are required to store in a virtual register). The second 64 is for tag

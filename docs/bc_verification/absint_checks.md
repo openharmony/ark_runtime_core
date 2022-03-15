@@ -16,7 +16,7 @@ Or access to wrong fields of object.
 
 ### Checks of subtyping
 
-This type of checks ensure compatibily of objects in arguments to instructions and actual parameters to methos.
+This type of checks ensure compatibility of objects in arguments to instructions and actual parameters to methods.
 
 The checks eliminate calls of methods with incorrect this, wrong access to arrays, etc.
 

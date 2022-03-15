@@ -134,7 +134,7 @@ function(panda_add_to_clang_tidy)
         "-hicpp-member-init" # alias for cppcoreguidelines-pro-type-member-init
         "-hicpp-move-const-arg" # alias for performance-move-const-arg
         # explicitly disabled checks
-        "-bugprone-macro-parentheses"  # disabled because it is hard to write macroses with types with it
+        "-bugprone-macro-parentheses"  # disabled because it is hard to write macros with types with it
         "-llvm-header-guard"  # disabled because of incorrect root prefix
         "-llvm-include-order"  # disabled because conflicts with the clang-format
         "-readability-identifier-naming" # disabled because we will use little-hump-style

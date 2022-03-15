@@ -10,7 +10,7 @@ Panda as a platform is multilingual and flexible by design:
 
 * Panda Assembly should not "favor" by any means any existing programming language that is (or intended to be) supported by the platform. Instead, Panda Assembly can be thought as a separate close-to-byte-code language with a minimal feature set. All language-specific "traits" that should be supported to generate valid executable binaries with respect to the higher-level semantics should be implemented via metadata annotations (see below).
 * Panda Assembly should not focus on a certain programming paradigm. For example, concepts such as "class", "object", and "method" should not be enforced at the assembly language level because a language that does not implement classic OOP might be supported.
-* When Panda assembler generates a binary excutable file, it is not expected to check for language semantics. This responsibility is delegated to "source to binaries" compilers and runtime.
+* When Panda assembler generates a binary executable file, it is not expected to check for language semantics. This responsibility is delegated to "source to binaries" compilers and runtime.
 * Panda assembler should not impose any limitations on the quantity and internal structure of source code files written in Panda Assembly language. It should process as many input source code files as the developer specifies.
 * Panda assembler should not follow any implicit conventions about the name of the entry point.
 
@@ -356,7 +356,7 @@ more precise verification of control flows in bytecode verifier.
 ```
 
 They are identical to .catch and .catchall except that the end label of the
-exception handler needs to be specified. An end label is the label that immediatly follows the last instruction of the
+exception handler needs to be specified. An end label is the label that immediately follows the last instruction of the
 exception handler.
 
 ## Pseudo-BNF
@@ -364,8 +364,8 @@ exception handler.
 Instruction flow is omitted for simplicity:
 
 ```
-# Literals are represnted in double-quotes as "literal value".
-# Free-form descriptions are represneted as "<description here>"
+# Literals are represented in double-quotes as "literal value".
+# Free-form descriptions are represented as "<description here>"
 # Empty symbol is represented as E.
 
 defs          := defs def | E

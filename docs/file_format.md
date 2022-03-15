@@ -21,7 +21,7 @@ for addressing fields, methods, classes, etc.
 The format uses [TaggedValue](#taggedvalue), which stores only information we have,
 avoiding 0 offsets for absent information and saving more space.
 
-However, to achive more compactness, 16-bit indexes are used to refer classes, methods and fields in
+However, to achieve more compactness, 16-bit indexes are used to refer classes, methods and fields in
 the bytecode and some metadata. The file can contain multiple indexes, each one which covers part of
 the file and is described by [RegionHeader](#regionheader).
 
@@ -64,7 +64,7 @@ structures should be located relatively to each other.
 
 The binary file format supports future changes via version number.
 The version field in the header is 4 bytes long and is encoded as a byte array to
-avoid misinterpretation on platforms with different endianess.
+avoid misinterpretation on platforms with different endianness.
 
 Any tool which supports format version `N` must support format version `N - 1` too.
 
@@ -239,7 +239,7 @@ Constraint: Size of header must be > 16 bytes. [FieldType](#fieldType) uses this
 
 ### RegionHeader
 
-To address file structures using 16-bit indexes file is splitted into regions. Each region has class, method, field and proto indexes and is described by `RegionHeader` structure.
+To address file structures using 16-bit indexes file is split into regions. Each region has class, method, field and proto indexes and is described by `RegionHeader` structure.
 
 Alignment: 4 bytes
 

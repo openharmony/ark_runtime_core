@@ -138,7 +138,7 @@ using ExceptionWrapper = std::string;
 // NOLINTNEXTLINE(cppcoreguidelines-pro-type-member-init)
 struct ThreadInfo {
     char *name;
-    size_t name_lenght;
+    size_t name_length;
     int32_t priority;
     bool is_daemon;
     threadGroup thread_group;

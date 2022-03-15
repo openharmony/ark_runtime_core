@@ -252,7 +252,7 @@ public:
     ObjectStatus MarkChecker(const ObjectHeader *object) const
     {
         if constexpr (!reversed_mark) {  // NOLINTNEXTLINE(readability-braces-around-statements)
-            // If ClassAddr is not setted - it means object header initialization is in progress now
+            // If ClassAddr is not set - it means object header initialization is in progress now
             if (object->AtomicClassAddr<Class>() == nullptr) {
                 return ObjectStatus::ALIVE_OBJECT;
             }

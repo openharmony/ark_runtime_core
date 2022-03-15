@@ -248,7 +248,7 @@ bool MTManagedThread::IsInNativeCode() const
 
 void MTManagedThread::ManagedCodeBegin()
 {
-    // thread_frame_states_ should not be accessed without MutatorLock (as runtime could have been destoryed)
+    // thread_frame_states_ should not be accessed without MutatorLock (as runtime could have been destroyed)
     UpdateStatus(RUNNING);
     is_managed_scope_ = true;
     LOG_IF(HasClearStack(), FATAL, RUNTIME) << "stack should be not empty";

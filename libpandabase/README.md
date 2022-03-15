@@ -37,7 +37,7 @@ Constructor can accept:
 There is description for them:
 - Argument name, is a name, which will appear in a command line.
 - Default value is a value argument will have regardless was it parsed or not.
-- Argument description will be used to form a help messsage.
+- Argument description will be used to form a help message.
 - Delimiter is a character or string that separates the different value if the single argument list.
 - Min value is the number that the integer argument cannot be less than.
 - Max value is the number that the integer argument cannot be greater than.

@@ -470,7 +470,7 @@ private:
             if (no_flags && stor_32_.fts_.as_atomic.compare_exchange_weak(
                 // NOLINTNEXTLINE(cppcoreguidelines-pro-type-union-access)
                 old_fts.as_nonvolatile_int, new_fts.as_nonvolatile_int, std::memory_order_release)) {
-                // If CAS succeeded, we set new status and no request occured here, safe to proceed.
+                // If CAS succeeded, we set new status and no request occurred here, safe to proceed.
                 break;
             }
             // clang-format on
