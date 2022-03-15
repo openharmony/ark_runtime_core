@@ -8,7 +8,7 @@
 
 1. Runtime doesn't patch apps' bytecode on the fly. Instead, it notifies the listeners when the PC of bytecode is changed.
 
-1. Runtime and debugger work in the same process. Debugger functionality is provided via shared library, the runtime loads when working in debugg mode. Debugger works in its own thread and is responsible for thread management rely on it. Runtime doesn't create/destroy threads.
+1. Runtime and debugger work in the same process. Debugger functionality is provided via shared library, the runtime loads when working in debug mode. Debugger works in its own thread and is responsible for thread management rely on it. Runtime doesn't create/destroy threads.
 
 ### Rationale
 
@@ -18,7 +18,7 @@
 
 ### Specification / Implementation
 
-To start runtime in debug mode, thef `Runtime::StartDebugger()` method is used. This method loads the debug library and calls the `StartDebugger` function from it. It takes pointer to [`debug::Debugger`](../runtime/tooling/debugger.h) object that implements [debug interface](../runtime/include/tooling/debug_interface.h) - point of interaction with the runtime.
+To start runtime in debug mode, the `Runtime::StartDebugger()` method is used. This method loads the debug library and calls the `StartDebugger` function from it. It takes pointer to [`debug::Debugger`](../runtime/tooling/debugger.h) object that implements [debug interface](../runtime/include/tooling/debug_interface.h) - point of interaction with the runtime.
 Also it takes a TCP port number and a reserved argument.
 
 Runtime provides [`RuntimeNotificationManager`](../runtime/include/runtime_notification.h) class that allows to subscribe to different events:

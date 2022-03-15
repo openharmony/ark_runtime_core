@@ -182,7 +182,7 @@ static bool CheckJmpOutExcHandler(CflowCheckFlags options, const CflowMethodInfo
             prev_handler_info = &handler_info;
         }
 
-        // finally check jumps in the hanlder with built inst_map
+        // finally check jumps in the handler with built inst_map
         if (handler_info.Info.JmpsMap.IsConflictingWith(inst_map)) {
             const uint8_t *jmp_pc = nullptr;
             const uint8_t *tgt_pc = nullptr;
