@@ -349,7 +349,7 @@ void Parser::ParseResetFunctionLabelsAndParams()
 
     for (const auto &t : context_.function_arguments_lists) {
         curr_func_ = &(program_.function_table.at(t.first));
-        curr_func_->regs_num = curr_func_->value_of_first_param + 1;
+        curr_func_->regs_num = static_cast<size_t>(curr_func_->value_of_first_param + 1);
 
         for (const auto &v : t.second) {
             if (!curr_func_->ins.empty() && curr_func_->ins.size() >= v.first &&

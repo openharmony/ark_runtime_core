@@ -440,8 +440,8 @@ const int64_t NANOSECONDS_PER_SEC = 1000000000;
 struct timespec ConvertTime(uint64_t ms, uint64_t ns)
 {
     struct timespec time = {0, 0};
-    time_t seconds = ms / MILLISECONDS_PER_SEC;
-    time_t nanoseconds = (ms % MILLISECONDS_PER_SEC) * NANOSECONDS_PER_MILLISEC + ns;
+    auto seconds = static_cast<time_t>(ms / MILLISECONDS_PER_SEC);
+    auto nanoseconds = static_cast<time_t>((ms % MILLISECONDS_PER_SEC) * NANOSECONDS_PER_MILLISEC + ns);
     time.tv_sec += seconds;
     time.tv_nsec += nanoseconds;
     if (time.tv_nsec >= NANOSECONDS_PER_SEC) {
