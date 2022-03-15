@@ -12,6 +12,7 @@
 # limitations under the License.
 
 import("//ark/runtime_core/ark_config.gni")
+import("//build/config/arm.gni")
 import("//build/ohos.gni")
 import("$ark_root/verification/verification.gni")
 
@@ -159,11 +160,26 @@ ohos_static_library("libarkruntime_static") {
   if (current_cpu == "arm") {
     sources += [
       "arch/arm/interpreter_support.S",
-      "bridge/arch/arm/compiled_code_to_interpreter_bridge_arm.S",
       "bridge/arch/arm/compiled_code_to_interpreter_bridge_dyn_arm.S",
-      "bridge/arch/arm/interpreter_to_compiled_code_bridge_arm.S",
       "bridge/arch/arm/interpreter_to_compiled_code_bridge_dyn_arm.S",
     ]
+    if (arm_float_abi == "softfp") {
+      sources += [
+        "bridge/arch/arm/compiled_code_to_interpreter_bridge_arm.S",
+        "bridge/arch/arm/interpreter_to_compiled_code_bridge_arm.S",
+      ]
+    } else if (arm_float_abi == "hard") {
+      sources += [
+        "bridge/arch/arm/compiled_code_to_interpreter_bridge_armhf.S",
+        "bridge/arch/arm/interpreter_to_compiled_code_bridge_armhf.S",
+      ]
+    } else {
+      print("Unsupported arm float abi type")
+      sources += [
+        "bridge/arch/arm/compiled_code_to_interpreter_bridge_armsf.S",
+        "bridge/arch/arm/interpreter_to_compiled_code_bridge_arm.S",
+      ]
+    }
   } else if (current_cpu == "arm64") {
     sources += [
       "arch/aarch64/interpreter_support.S",
