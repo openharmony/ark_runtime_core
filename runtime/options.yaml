@@ -421,7 +421,7 @@ options:
 - name: profilesaver-delta-number-threshold
   type: uint64_t
   default: 0
-  description: delta number threashold of newly added method or class for profile saver
+  description: delta number threshold of newly added method or class for profile saver
 
 - name: profilesaver-enabled
   type: bool

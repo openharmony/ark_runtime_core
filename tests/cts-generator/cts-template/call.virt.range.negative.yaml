@@ -498,7 +498,7 @@ tests:
         description: >
           Verifier should report when register type does not match function argument type.
         code-template: |
-            # Defenitions for all set of tests
+            # Definitions for all set of tests
             .record panda.String <external>
             .record panda.Object <external>
 
@@ -624,7 +624,7 @@ tests:
         description: >
           Verifier should report when register type does not match function argument type.
         code-template: |
-            # Defenitions for all set of tests
+            # Definitions for all set of tests
             .record panda.String <external>
             .record panda.Object <external>
 

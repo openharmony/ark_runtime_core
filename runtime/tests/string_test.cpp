@@ -268,7 +268,7 @@ TEST_F(StringTest, DifferentLengthStringCompareTest)
     ASSERT_EQ(String::StringsAreEqual(first_string, second_string), false);
 }
 
-TEST_F(StringTest, ForeignLenghtAndCopyTest1b0)
+TEST_F(StringTest, ForeignLengthAndCopyTest1b0)
 {
     std::vector<uint8_t> data {'a', 'b', 'c', 'd', 'z', 0xc0, 0x80, 0x00};
     uint32_t utf16_length = data.size();
@@ -285,7 +285,7 @@ TEST_F(StringTest, ForeignLenghtAndCopyTest1b0)
     ASSERT_EQ(out16, res16);
 }
 
-TEST_F(StringTest, ForeignLenghtAndCopyTest1b)
+TEST_F(StringTest, ForeignLengthAndCopyTest1b)
 {
     std::vector<uint8_t> data {'a', 'b', 'c', 'd', 'z', 0x7f, 0x00};
     uint32_t utf16_length = data.size();
@@ -302,7 +302,7 @@ TEST_F(StringTest, ForeignLenghtAndCopyTest1b)
     ASSERT_EQ(out16, res16);
 }
 
-TEST_F(StringTest, ForeignLenghtAndCopyTest2b)
+TEST_F(StringTest, ForeignLengthAndCopyTest2b)
 {
     std::vector<uint8_t> data {0xc2, 0xa7, 0x33, 0x00};  // UTF-16 size is 2
     String *string = String::CreateFromMUtf8(data.data(), 2, GetLanguageContext(), Runtime::GetCurrent()->GetPandaVM());
@@ -317,7 +317,7 @@ TEST_F(StringTest, ForeignLenghtAndCopyTest2b)
     ASSERT_EQ(out16, res16);
 }
 
-TEST_F(StringTest, ForeignLenghtAndCopyTest3b)
+TEST_F(StringTest, ForeignLengthAndCopyTest3b)
 {
     std::vector<uint8_t> data {0xef, 0xbf, 0x83, 0x33, 0x00};  // UTF-16 size is 2
     String *string = String::CreateFromMUtf8(data.data(), 2, GetLanguageContext(), Runtime::GetCurrent()->GetPandaVM());
@@ -332,7 +332,7 @@ TEST_F(StringTest, ForeignLenghtAndCopyTest3b)
     ASSERT_EQ(out16, res16);
 }
 
-TEST_F(StringTest, ForeignLenghtAndCopyTest6b)
+TEST_F(StringTest, ForeignLengthAndCopyTest6b)
 {
     std::vector<uint8_t> data {0xed, 0xa0, 0x81, 0xed, 0xb0, 0xb7, 0x20, 0x00};  // UTF-16 size is 3
     // We support 4-byte utf-8 sequences, so {0xd801, 0xdc37} is encoded to 4 bytes instead of 6
@@ -580,7 +580,7 @@ TEST_F(StringTest, CompareTest)
     ASSERT_EQ(string6->Compare(string7), 0);
     ASSERT_EQ(string7->Compare(string6), 0);
 
-    // comapre with self
+    // compare with self
     ASSERT_EQ(string1->Compare(string1), 0);
     ASSERT_EQ(string2->Compare(string2), 0);
     ASSERT_EQ(string3->Compare(string3), 0);

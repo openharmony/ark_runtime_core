@@ -29,7 +29,7 @@ std::optional<Metadata::Error> Metadata::ValidateSize(std::string_view value) co
     constexpr size_t SIZE = 10;
 
     if (!std::all_of(value.cbegin(), value.cend(), ::isdigit)) {
-        return Error("Unsigned interger value expected", Error::Type::INVALID_VALUE);
+        return Error("Unsigned integer value expected", Error::Type::INVALID_VALUE);
     }
 
     strtoul(value.data(), nullptr, SIZE);

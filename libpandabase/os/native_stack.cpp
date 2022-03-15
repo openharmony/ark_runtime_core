@@ -50,7 +50,7 @@ bool WriterOsFile([[maybe_unused]] const void *buffer, [[maybe_unused]] size_t c
 
 std::string ChangeJaveStackFormat([[maybe_unused]] const char *descriptor)
 {
-    return "unknow";
+    return "unknown";
 }
 #endif  // PANDA_TARGET_UNIX
 

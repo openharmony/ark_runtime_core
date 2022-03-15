@@ -51,7 +51,7 @@ tests:
       description: Get length of an array and put it into accumulator.
     commands:
       - file-name: "prim_array"
-        description: Check 'lenarr' returns correct array lenght with array of primitives.
+        description: Check 'lenarr' returns correct array length with array of primitives.
         isa:
           instructions:
             - sig: lenarr v:in:top[]
@@ -83,7 +83,7 @@ tests:
           - values: [0x100000]
 
       - file-name: "ref_array_p"
-        description: Check 'lenarr' returns correct array lenght with array of objects in Panda Assembly context.
+        description: Check 'lenarr' returns correct array length with array of objects in Panda Assembly context.
         isa:
           instructions:
             - sig: lenarr v:in:top[]
