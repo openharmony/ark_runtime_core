@@ -149,7 +149,7 @@ set(PANDA_WITH_BENCHMARKS true)
 set(PANDA_DEFAULT_LIB_TYPE "SHARED")
 set(DONT_USE_RAPIDCHECK true)
 
-option(PANDA_ARK_JS_VM "Build with C intepreter in ecmascript folder" OFF)
+option(PANDA_ARK_JS_VM "Build with C interpreter in ecmascript folder" OFF)
 
 if(PANDA_TARGET_WINDOWS)
     set(PANDA_WITH_BENCHMARKS false)

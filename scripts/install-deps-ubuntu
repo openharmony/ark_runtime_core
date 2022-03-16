@@ -94,7 +94,7 @@ function install_qemu
     local qemu_name="qemu-$needed_version"
     local archive_name="$src_dir/$qemu_name.tar.xz"
 
-    echo "Dowloading qemu sources to $archive_name"
+    echo "Downloading qemu sources to $archive_name"
     curl --progress https://download.qemu.org/$qemu_name.tar.xz --output "$archive_name"
 
     echo "Extracting $archive_name"

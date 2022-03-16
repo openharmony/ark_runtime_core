@@ -30,7 +30,7 @@ the file and is described by [RegionHeader](#regionheader).
 Binary file format should support fast access to information. It means that
 redundant references should be avoided. Also, if it is possible, binary file format should avoid data
 indexes (like sorted list of strings). However, the described binary file format supports one index:
-a sorted list of offsets to classes. This index is compact and allows quicky location of a type definition,
+a sorted list of offsets to classes. This index is compact and allows quick location of a type definition,
 which is requested frequently by runtime during application launch time.
 
 All classes, fields and methods are separated into 2 groups: foreign and local.
@@ -535,7 +535,7 @@ Format:
 
 | Name               | Format        | Description |
 | ----               | ------        | ----------- |
-| `type_idx`         | `uleb128`     | Index + 1 of the exception's type the block handles in a [`ClassRegionIndex`](#classregionindex) structure or 0 in case of `catch all` block. Corresponding index entry must be an offset to a [ForeignClass](#foreignclass) or to a [Class](#class). When the indes is 0, it is a `catch all` block that catches all exceptions. |
+| `type_idx`         | `uleb128`     | Index + 1 of the exception's type the block handles in a [`ClassRegionIndex`](#classregionindex) structure or 0 in case of `catch all` block. Corresponding index entry must be an offset to a [ForeignClass](#foreignclass) or to a [Class](#class). When the index is 0, it is a `catch all` block that catches all exceptions. |
 | `handler_pc`       | `uleb128`     | `pc` of the first instruction of the exception handler. |
 | `code_size`        | `uleb128`     | Handler's code size in bytes |
 
