@@ -333,7 +333,7 @@ Logical GC spaces:
 
 Garbage collector (GC) automatically recycles memory that will never be used again.
 
-GC is developped iteratively.
+GC is developed iteratively.
 
 Common requirements:
 - precise GC (see [glossary](./glossary.md#memory-management-terms))
@@ -441,7 +441,7 @@ Minor GC (only for young regions - STW):
 1. Marking young generation + Reference processor + moving alive objects to the tenured space
 1. Sweep + finalizers
 
-The size of the young space to be selected shoud satisfy:
+The size of the young space to be selected should satisfy:
 
 Mixed GC - Minor GC + some tenured regions added to the young generation regions after the concurrent marking.
 Concurrent marking (triggered when the tenured generation size reaches the set threshold):

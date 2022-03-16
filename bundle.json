@@ -3,7 +3,7 @@
     "version": "",
     "description": "方舟运行时的公共组件",
     "homePage": "https://gitee.com/openharmony",
-    "license": "Apache Liscense 2.0",
+    "license": "Apache License 2.0",
     "publishAs": "code-segment",
     "scripts": {},
     "dirs": [],
