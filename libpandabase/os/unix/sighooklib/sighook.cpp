@@ -265,7 +265,7 @@ void SignalHook::Handler(int signo, siginfo_t *siginfo, void *ucontext_raw)
     }
 
     // Call user handler
-    size_t handler_flags = signal_hooks[signo].user_action_.sa_flags;
+    auto handler_flags = static_cast<size_t>(signal_hooks[signo].user_action_.sa_flags);
     auto *ucontext = static_cast<ucontext_t *>(ucontext_raw);
     sigset_t mask;
     sigemptyset(&mask);

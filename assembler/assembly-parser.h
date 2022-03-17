@@ -112,7 +112,8 @@ private:
     inline void GetWarning(const std::string &mess = "", Error::ErrorType err = Error::ErrorType::ERR_NONE,
                            int8_t shift = 0, const std::string &add_mess = "")
     {
-        war_.emplace_back(mess, line_stric_, err, add_mess, context_.tokens[context_.number - 1].bound_left + shift,
+        war_.emplace_back(mess, line_stric_, err, add_mess,
+                          context_.tokens[context_.number - 1].bound_left + static_cast<size_t>(shift),
                           context_.tokens[context_.number - 1].bound_right,
                           context_.tokens[context_.number - 1].whole_line, Error::ErrorClass::WARNING);
     }
