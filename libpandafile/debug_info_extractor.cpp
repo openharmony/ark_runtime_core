@@ -224,7 +224,8 @@ private:
 
         auto adjust_opcode = static_cast<uint8_t>(static_cast<uint8_t>(opcode) - LineNumberProgramItem::OPCODE_BASE);
         auto pc_offset = static_cast<uint32_t>(adjust_opcode / LineNumberProgramItem::LINE_RANGE);
-        int32_t line_offset = adjust_opcode % LineNumberProgramItem::LINE_RANGE + LineNumberProgramItem::LINE_BASE;
+        int32_t line_offset =
+            static_cast<int32_t>(adjust_opcode) % LineNumberProgramItem::LINE_RANGE + LineNumberProgramItem::LINE_BASE;
         state_.AdvancePc(pc_offset);
         state_.AdvanceLine(line_offset);
         lnt_.push_back({state_.GetAddress(), state_.GetLine()});
