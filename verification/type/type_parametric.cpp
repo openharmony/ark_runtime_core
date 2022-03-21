@@ -56,7 +56,7 @@ void ParametricType::ForAll(Handler &&handler) const
     GetTypeSystem().ForAllTypes([this, &handler](const Type &type) {
         if (type.Sort() == Sort_) {
             return handler(type);
-        };
+        }
         return true;
     });
 }

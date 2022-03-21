@@ -42,7 +42,9 @@ enum class PandArgType : uint8_t { STRING, INTEGER, DOUBLE, BOOL, LIST, UINT32, 
 class PandArgBase {
 public:
     explicit PandArgBase(std::string name, std::string desc, PandArgType type = PandArgType::NOTYPE)
-        : name_(std::move(name)), desc_(std::move(desc)), type_(type) {};
+        : name_(std::move(name)), desc_(std::move(desc)), type_(type)
+    {
+    }
 
     PandArgType GetType() const
     {
@@ -71,7 +73,9 @@ template <typename T,
 class PandArg : public PandArgBase {
 public:
     explicit PandArg(const std::string &name, T default_val, const std::string &desc)
-        : PandArgBase(name, desc, this->EvalType()), default_val_(default_val), real_val_(default_val) {};
+        : PandArgBase(name, desc, this->EvalType()), default_val_(default_val), real_val_(default_val)
+    {
+    }
 
     explicit PandArg(const std::string &name, int default_val, const std::string &desc, T min_val, T max_val)
         : PandArgBase(name, desc, this->EvalType()),
@@ -86,7 +90,7 @@ public:
         : PandArgBase(name, desc, PandArgType::LIST),
           default_val_(default_val),
           real_val_(default_val),
-          delimiter_(std::move(delimiter)) {};
+          delimiter_(std::move(delimiter)) {}
 
     T GetValue() const
     {
@@ -797,7 +801,7 @@ private:
             param_str_index = pos;
             param_str_index = param_str.find_first_not_of(delimiter, param_str_index);
             pos = param_str.find_first_of(delimiter, param_str_index);
-        };
+        }
 
         value.push_back(param_str.substr(param_str_index, pos - param_str_index));
         arg->SetValue(value);

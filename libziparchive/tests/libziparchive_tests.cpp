@@ -31,7 +31,6 @@
 
 #include <climits>
 #include <cstdlib>
-#include <sys/stat.h>
 #include <fcntl.h>
 #include <sys/stat.h>
 

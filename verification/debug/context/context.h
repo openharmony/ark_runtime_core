@@ -19,7 +19,6 @@
 #include "verification/debug/breakpoint/breakpoint_private.h"
 #include "verification/debug/allowlist/allowlist_private.h"
 #include "verification/debug/config/config.h"
-#include "verification/debug/config/config.h"
 #include "verification/util/callable.h"
 #include "verification/util/synchronized.h"
 

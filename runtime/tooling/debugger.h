@@ -35,7 +35,6 @@
 #include "runtime/include/panda_vm.h"
 #include "runtime/include/tooling/debug_interface.h"
 #include "runtime/thread_manager.h"
-#include "pt_hooks_wrapper.h"
 
 namespace panda::tooling {
 // NOLINTNEXTLINE(cppcoreguidelines-pro-type-member-init)

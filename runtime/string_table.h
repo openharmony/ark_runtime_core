@@ -91,6 +91,7 @@ protected:
         // NOLINTNEXTLINE(misc-non-private-member-variables-in-classes)
         PandaUnorderedMultiMap<uint32_t, coretypes::String *> table_ GUARDED_BY(table_lock_) {};
         os::memory::RWLock table_lock_;  // NOLINT(misc-non-private-member-variables-in-classes)
+        
     private:
         NO_COPY_SEMANTIC(Table);
         NO_MOVE_SEMANTIC(Table);

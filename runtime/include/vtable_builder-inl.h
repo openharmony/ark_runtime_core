@@ -50,7 +50,7 @@ void VTableBuilderImpl<SearchBySignature, OverridePred>::BuildForInterface(Span<
         }
 
         ++num_vmethods_;
-    };
+    }
 }
 
 template <class SearchBySignature, class OverridePred>

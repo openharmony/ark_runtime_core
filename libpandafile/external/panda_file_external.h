@@ -103,7 +103,7 @@ public:
     ~PandaFileWrapper() = default;
 
 private:
-    explicit PandaFileWrapper(PandaFileExt *pf_ext) : pf_ext_(pf_ext) {};
+    explicit PandaFileWrapper(PandaFileExt *pf_ext) : pf_ext_(pf_ext) {}
     PandaFileExt *pf_ext_;
 
     // callback
