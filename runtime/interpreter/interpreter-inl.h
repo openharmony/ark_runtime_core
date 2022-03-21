@@ -2383,7 +2383,7 @@ public:
             default:
                 UNREACHABLE();
                 break;
-        };
+        }
     }
 
     template <class F, class T>
@@ -2431,7 +2431,7 @@ public:
             default:
                 UNREACHABLE();
                 break;
-        };
+        }
     }
 
     template <class T, class R>
@@ -2483,7 +2483,7 @@ public:
                 UNREACHABLE();
                 break;
             }
-        };
+        }
     }
 
     template <class T>
@@ -2535,7 +2535,7 @@ public:
                 UNREACHABLE();
                 break;
             }
-        };
+        }
     }
 
     template <BytecodeInstruction::Format format, class T>
@@ -2753,7 +2753,7 @@ public:
                 break;
             default:
                 UNREACHABLE();
-        };
+        }
     }
 
     template <BytecodeInstruction::Format format>
@@ -2797,7 +2797,7 @@ public:
                 break;
             default:
                 UNREACHABLE();
-        };
+        }
     }
 
     template <BytecodeInstruction::Format format>

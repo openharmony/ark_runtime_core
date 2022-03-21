@@ -36,7 +36,6 @@
 #include "runtime/mem/heap_manager.h"
 #include "runtime/mem/gc/reference-processor/reference_processor.h"
 #include "runtime/include/panda_vm.h"
-#include "runtime/assert_gc_scope.h"
 #include "runtime/include/object_accessor-inl.h"
 #include "runtime/include/coretypes/class.h"
 #include "runtime/thread_manager.h"

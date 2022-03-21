@@ -53,10 +53,6 @@ MemoryManager *MemoryManager::Create(LanguageContext ctx, InternalAllocatorPtr i
                                      const HeapOptions &heap_options)
 {
     std::unique_ptr<MemStatsType> mem_stats = std::make_unique<MemStatsType>();
-    if (mem_stats == nullptr) {
-        LOG(ERROR, RUNTIME) << "Failed to allocate MemStatsType";
-        return nullptr;
-    }
 
     HeapManager *heap_manager = CreateHeapManager(internal_allocator, heap_options, gc_type, mem_stats.get());
     if (heap_manager == nullptr) {

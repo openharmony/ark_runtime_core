@@ -50,7 +50,7 @@ void CoreClassLinkerExtension::ErrorHandler::OnError(ClassLinker::Error error, c
         default:
             LOG(FATAL, CLASS_LINKER) << "Unhandled error (" << static_cast<size_t>(error) << "): " << message;
             break;
-    };
+    }
 }
 
 // CODECHECK-NOLINTNEXTLINE(C_RULE_ID_FUNCTION_SIZE)

@@ -37,9 +37,9 @@ public:
     virtual void TrackAlloc(void *addr, size_t size, SpaceType space) = 0;
     virtual void TrackFree(void *addr) = 0;
 
-    virtual void Dump() {};
-    virtual void Dump([[maybe_unused]] std::ostream &out) {};
-    virtual void DumpMemLeaks([[maybe_unused]] std::ostream &out) {};
+    virtual void Dump() {}
+    virtual void Dump([[maybe_unused]] std::ostream &out) {}
+    virtual void DumpMemLeaks([[maybe_unused]] std::ostream &out) {}
 
     NO_COPY_SEMANTIC(AllocTracker);
     NO_MOVE_SEMANTIC(AllocTracker);
