@@ -63,14 +63,15 @@ static std::vector<uint8_t> GetEmptyPandaFileBytes()
     return data;
 }
 
-int CreateOrAddZipPandaFile(std::vector<uint8_t> *data, const char *zip_archive_name, const char *filename)
+int CreateOrAddZipPandaFile(std::vector<uint8_t> *data, const char *zip_archive_name, const char *filename, int append,
+                            int level)
 {
-    return CreateOrAddFileIntoZip(zip_archive_name, filename, (*data).data(), (*data).size());
+    return CreateOrAddFileIntoZip(zip_archive_name, filename, (*data).data(), (*data).size(), append, level);
 }
 
 bool CheckAnonMemoryName([[maybe_unused]] const char *zip_archive_name)
 {
-    // check if [annon:panda-classes.aex extracted in memory from /xx/__OpenPandaFileFromZip__.zip]
+    // check if [annon:panda-classes.abc extracted in memory from /xx/__OpenPandaFileFromZip__.zip]
 #ifdef PANDA_TARGET_MOBILE
     bool result = false;
     const char *prefix = "[anon:panda-";
@@ -135,65 +136,82 @@ TEST(File, GetClassByName)
     }
 }
 
-TEST(File, OpenPandaFileFromZip)
+TEST(File, OpenPandaFile)
 {
-    {
-        // Create ZIP
-        auto data = GetEmptyPandaFileBytes();
-        int ret;
-        const char *zip_filename = "__OpenPandaFileFromZip__.zip";
-        const char *filename1 = ARCHIVE_FILENAME;
-        const char *filename2 = "classses2.aex";  // just for testing.
-        ret = CreateOrAddZipPandaFile(&data, zip_filename, filename1);
-        ASSERT_EQ(ret, 0);
-        ret = CreateOrAddZipPandaFile(&data, zip_filename, filename2);
-        ASSERT_EQ(ret, 0);
+    // Create ZIP
+    auto data = GetEmptyPandaFileBytes();
+    int ret;
+    const char *zip_filename = "__OpenPandaFile__.zip";
+    const char *filename1 = ARCHIVE_FILENAME;
+    const char *filename2 = "classses2.abc";  // just for testing.
+    ret = CreateOrAddZipPandaFile(&data, zip_filename, filename1, APPEND_STATUS_CREATE, Z_BEST_COMPRESSION);
+    ASSERT_EQ(ret, 0);
+    ret = CreateOrAddZipPandaFile(&data, zip_filename, filename2, APPEND_STATUS_ADDINZIP, Z_BEST_COMPRESSION);
+    ASSERT_EQ(ret, 0);
 
-        // Open from ZIP
-        auto pf = OpenPandaFile(zip_filename);
-        EXPECT_NE(pf, nullptr);
-        EXPECT_STREQ((pf->GetFilename()).c_str(), zip_filename);
-    }
-}
-
-TEST(File, OpenPandaFileABCFromZip)
-{
-    {
-        // Create ZIP
-        auto data = GetEmptyPandaFileBytes();
-        int ret;
-        const char *zip_filename = "__OpenPandaFileABCFromZip__.zip";
-        const char *filename1 = ARCHIVE_FILENAME_ABC;
-        const char *filename2 = "classses2.aex";  // just for testing.
-        ret = CreateOrAddZipPandaFile(&data, zip_filename, filename1);
-        ASSERT_EQ(ret, 0);
-        ret = CreateOrAddZipPandaFile(&data, zip_filename, filename2);
-        ASSERT_EQ(ret, 0);
-
-        // Open from ZIP
-        auto pf = OpenPandaFile(zip_filename);
-        EXPECT_NE(pf, nullptr);
-        EXPECT_STREQ((pf->GetFilename()).c_str(), zip_filename);
-    }
+    // Open from ZIP
+    auto pf = OpenPandaFile(zip_filename);
+    EXPECT_NE(pf, nullptr);
+    EXPECT_STREQ((pf->GetFilename()).c_str(), zip_filename);
+    remove(zip_filename);
 }
 
 TEST(File, OpenPandaFileFromZipNameAnonMem)
 {
-    {
-        // Create ZIP
-        auto data = GetEmptyPandaFileBytes();
-        int ret;
-        const char *zip_filename = "__OpenPandaFileFromZip__.zip";
-        const char *filename1 = ARCHIVE_FILENAME;
-        ret = CreateOrAddZipPandaFile(&data, zip_filename, filename1);
-        ASSERT_EQ(ret, 0);
+    // Create ZIP
+    auto data = GetEmptyPandaFileBytes();
+    int ret;
+    const char *zip_filename = "__OpenPandaFileFromZipNameAnonMem__.zip";
+    const char *filename1 = ARCHIVE_FILENAME;
+    ret = CreateOrAddZipPandaFile(&data, zip_filename, filename1, APPEND_STATUS_CREATE, Z_BEST_COMPRESSION);
+    ASSERT_EQ(ret, 0);
 
-        // Open from ZIP
-        auto pf = OpenPandaFile(zip_filename);
-        EXPECT_NE(pf, nullptr);
-        EXPECT_STREQ((pf->GetFilename()).c_str(), zip_filename);
-        ASSERT_TRUE(CheckAnonMemoryName(zip_filename));
-    }
+    // Open from ZIP
+    auto pf = OpenPandaFile(zip_filename);
+    EXPECT_NE(pf, nullptr);
+    EXPECT_STREQ((pf->GetFilename()).c_str(), zip_filename);
+    ASSERT_TRUE(CheckAnonMemoryName(zip_filename));
+    remove(zip_filename);
 }
 
+TEST(File, OpenPandaFileOrZip)
+{
+    // Create ZIP
+    auto data = GetEmptyPandaFileBytes();
+    int ret;
+    const char *zip_filename = "__OpenPandaFileOrZip__.zip";
+    const char *filename1 = ARCHIVE_FILENAME;
+    const char *filename2 = "classes2.abc";  // just for testing.
+    ret = CreateOrAddZipPandaFile(&data, zip_filename, filename1, APPEND_STATUS_CREATE, Z_BEST_COMPRESSION);
+    ASSERT_EQ(ret, 0);
+    ret = CreateOrAddZipPandaFile(&data, zip_filename, filename2, APPEND_STATUS_ADDINZIP, Z_BEST_COMPRESSION);
+    ASSERT_EQ(ret, 0);
+
+    // Open from ZIP
+    auto pf = OpenPandaFileOrZip(zip_filename);
+    EXPECT_NE(pf, nullptr);
+    EXPECT_STREQ((pf->GetFilename()).c_str(), zip_filename);
+    remove(zip_filename);
+}
+
+TEST(File, OpenPandaFileUncompressed)
+{
+    // Create ZIP
+    auto data = GetEmptyPandaFileBytes();
+    std::cout << "pandafile size = " << data.size() << std::endl;
+    int ret;
+    const char *zip_filename = "__OpenPandaFileUncompressed__.zip";
+    const char *filename1 = ARCHIVE_FILENAME;
+    const char *filename2 = "class.abc";  // just for testing.
+    ret = CreateOrAddZipPandaFile(&data, zip_filename, filename2, APPEND_STATUS_CREATE, Z_NO_COMPRESSION);
+    ASSERT_EQ(ret, 0);
+    ret = CreateOrAddZipPandaFile(&data, zip_filename, filename1, APPEND_STATUS_ADDINZIP, Z_NO_COMPRESSION);
+    ASSERT_EQ(ret, 0);
+
+    // Open from ZIP
+    auto pf = OpenPandaFileOrZip(zip_filename);
+    EXPECT_NE(pf, nullptr);
+    EXPECT_STREQ((pf->GetFilename()).c_str(), zip_filename);
+    remove(zip_filename);
+}
 }  // namespace panda::panda_file::test

@@ -14,7 +14,7 @@
  */
 
 #include "file_writer.h"
-#include "miniz.h"
+#include "zlib.h"
 
 namespace panda::panda_file {
 

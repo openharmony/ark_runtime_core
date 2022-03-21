@@ -21,7 +21,10 @@ config("arkziparchive_config") {
   ]
 
   if (!ark_standalone_build) {
-    include_dirs += [ "//third_party/miniz/amalgamation" ]
+    include_dirs += [
+      "//third_party/zlib",
+      "//third_party/zlib/contrib/minizip",
+    ]
   } else {
     include_dirs += [ "$ark_third_party_root/miniz" ]
   }
@@ -42,7 +45,7 @@ ohos_shared_library("libarkziparchive") {
   ]
 
   if (!ark_standalone_build) {
-    deps += [ "//third_party/miniz/amalgamation:libminiz" ]
+    deps += [ "//third_party/zlib:libz" ]
   } else {
     deps += [ "$ark_third_party_root/miniz:libminiz" ]
   }
@@ -68,7 +71,7 @@ ohos_static_library("libarkziparchive_frontend_static") {
   ]
 
   if (!ark_standalone_build) {
-    deps += [ "//third_party/miniz/amalgamation:libminiz" ]
+    deps += [ "//third_party/zlib:libz" ]
   } else {
     deps += [ "$ark_third_party_root/miniz:libminiz" ]
   }
