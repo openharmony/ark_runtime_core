@@ -1,4 +1,4 @@
-/*
+/**
  * Copyright (c) 2021 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,926 +29,498 @@
 #include <memory>
 #include <securec.h>
 
+#include <climits>
+#include <cstdlib>
+#include <sys/stat.h>
+#include <fcntl.h>
+#include <sys/stat.h>
+
 namespace panda::test {
 
-using std::unique_ptr;
+constexpr int ZIP_FILENAME_LEN = 64;
+constexpr int ZIP_BUFFER_LEN = 2048;
 
-TEST(LIBZIPARCHIVE, ZipTest)
+static void GenerateZipfile(const char *data, const char *archivename, int N, char *buf, char *archive_filename, int &i,
+                            int &ret, std::vector<uint8_t> &pf_data, int level = Z_BEST_COMPRESSION)
 {
-    using uint16 = unsigned short;
-
-    // The string to compress.
-    static const char *s_pTest_str =
-        "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Cras feugiat et odio ac sollicitudin. Maecenas "
-        "lobortis ultrices eros sed pharetra. Phasellus in tortor rhoncus, aliquam augue ac, gravida elit. Sed "
-        "molestie dolor a vulputate tincidunt. Proin a tellus quam. Suspendisse id feugiat elit, non ornare lacus. "
-        "Mauris arcu ex, pretium quis dolor ut, porta iaculis eros. Vestibulum sagittis placerat diam, vitae efficitur "
-        "turpis ultrices sit amet. Etiam elementum bibendum congue. In sit amet dolor ultricies, suscipit arcu ac, "
-        "molestie urna. Mauris ultrices volutpat massa quis ultrices. Suspendisse rutrum lectus sit amet metus "
-        "laoreet, non porta sapien venenatis. Fusce ut massa et purus elementum lacinia. Sed tempus bibendum pretium.";
-
-    // The comment
-    static const char *s_pComment = "This is a comment";
-
-    // The zip filename
-    static const char *s_Test_archive_filename = "__LIBZIPARCHIVE__ZipTest__.zip";
-
-    int i, ret;
-    const int N = 3;
-    char data[2048];
-    char archive_filename[64];
-    assert((strlen(s_pTest_str) + 64) < sizeof(data));
-
-    ZipArchive object;  // on stack, but this is tmp obj as we will CloseArchive this.
-    ZipArchiveHandle zip_archive_handler = &object;
-
     // Delete the test archive, so it doesn't keep growing as we run this test
-    remove(s_Test_archive_filename);
+    (void)remove(archivename);
 
-    // ************* Create Zip file *************
+    // Create and append a directory entry for testing
+    ret = CreateOrAddFileIntoZip(archivename, "directory/", NULL, 0, APPEND_STATUS_CREATE, level);
+    if (ret != 0) {
+        printf("CreateOrAddFileIntoZip for directory failed!\n");
+        ASSERT_EQ(1, 0);
+        return;
+    }
+
     // Append a bunch of text files to the test archive
     for (i = (N - 1); i >= 0; --i) {
-        (void)sprintf_s(archive_filename, 64, "%u.txt", i);
-        (void)sprintf_s(data, 2048, "%u %s %u", (N - 1) - i, s_pTest_str, i);
-        ret = CreateOrAddFileIntoZip(s_Test_archive_filename, archive_filename, data, strlen(data) + 1, s_pComment,
-                                     static_cast<uint16>(strlen(s_pComment)));
+        (void)sprintf_s(archive_filename, ZIP_FILENAME_LEN, "%d.txt", i);
+        (void)sprintf_s(buf, ZIP_BUFFER_LEN, "%d %s %d", (N - 1) - i, data, i);
+        ret = CreateOrAddFileIntoZip(archivename, archive_filename, buf, strlen(buf) + 1,
+                                     APPEND_STATUS_ADDINZIP, level);
         if (ret != 0) {
-            printf("CreateOrAddFileIntoZip failed!\n");
+            printf("CreateOrAddFileIntoZip for %d.txt failed!\n", i);
             ASSERT_EQ(1, 0);
             return;
         }
     }
 
-    // Add a directory entry for testing
-    ret = CreateOrAddFileIntoZip(s_Test_archive_filename, "directory/", NULL, 0, "no comment",
-                                 static_cast<uint16>(strlen("no comment")));
+    // Append a file into directory entry for testing
+    (void)sprintf_s(buf, ZIP_BUFFER_LEN, "%d %s %d", N, data, N);
+    ret = CreateOrAddFileIntoZip(archivename, "directory/indirectory.txt", buf, strlen(buf) + 1,
+                                 APPEND_STATUS_ADDINZIP, level);
     if (ret != 0) {
-        printf("CreateOrAddFileIntoZip failed!\n");
-        ASSERT_EQ(1, 0);
-        return;
-    }
-
-    // Add a file into directory entry for testing
-    (void)sprintf_s(data, 2048, "%u %s %u", N, s_pTest_str, N);
-    ret = CreateOrAddFileIntoZip(s_Test_archive_filename, "directory/indirectory.txt", data, strlen(data) + 1,
-                                 s_pComment, static_cast<uint16>(strlen(s_pComment)));
-    if (ret != 0) {
-        printf("CreateOrAddFileIntoZip failed!\n");
-        ASSERT_EQ(1, 0);
-        return;
-    }
-
-    // Now try to open the archive.
-    ret = OpenArchive(s_Test_archive_filename, &zip_archive_handler);
-    if (ret != 0) {
-        printf("OpenArchive failed!\n");
-        ASSERT_EQ(1, 0);
-        return;
-    }
-
-    // Get and print information about each file in the archive.
-    for (i = 0; i < GetFileCount(&zip_archive_handler); i++) {
-        EntryFileStat file_stat;
-        if (!StatFileWithIndex(&zip_archive_handler, &file_stat, i)) {
-            printf("StatFileWithIndex() failed!\n");
-            CloseArchive(&zip_archive_handler);
-            ASSERT_EQ(1, 0);
-            return;
-        }
-
-        printf("Filename: \"%s\", Comment: \"%s\", Uncompressed size: %u, Compressed size: %u, Is Dir: %u\n",
-               file_stat.GetFileName(), file_stat.GetComment(), file_stat.GetUncompressedSize(),
-               static_cast<uint>(file_stat.GetCompressedSize()), IsFileDirectory(&zip_archive_handler, i));
-
-        if (!strcmp(file_stat.GetFileName(), "directory/")) {
-            if (!IsFileDirectory(&zip_archive_handler, i)) {
-                printf("IsFileDirectory() didn't return the expected results!\n");
-                CloseArchive(&zip_archive_handler);
-                ASSERT_EQ(1, 0);
-                return;
-            }
-        }
-    }
-
-    // Close the archive, freeing any resources it was using
-    CloseArchive(&zip_archive_handler);
-}
-
-TEST(LIBZIPARCHIVE, UnzipWithHeapTest)
-{
-    using uint16 = unsigned short;
-    using uint = unsigned int;
-
-    // The string to compress.
-    static const char *s_pTest_str =
-        "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Cras feugiat et odio ac sollicitudin. Maecenas "
-        "lobortis ultrices eros sed pharetra. Phasellus in tortor rhoncus, aliquam augue ac, gravida elit. Sed "
-        "molestie dolor a vulputate tincidunt. Proin a tellus quam. Suspendisse id feugiat elit, non ornare lacus. "
-        "Mauris arcu ex, pretium quis dolor ut, porta iaculis eros. Vestibulum sagittis placerat diam, vitae efficitur "
-        "turpis ultrices sit amet. Etiam elementum bibendum congue. In sit amet dolor ultricies, suscipit arcu ac, "
-        "molestie urna. Mauris ultrices volutpat massa quis ultrices. Suspendisse rutrum lectus sit amet metus "
-        "laoreet, non porta sapien venenatis. Fusce ut massa et purus elementum lacinia. Sed tempus bibendum pretium.";
-
-    // The comment
-    static const char *s_pComment = "This is a comment";
-
-    // The zip filename
-    static const char *s_Test_archive_filename = "__LIBZIPARCHIVE__UnzipWithHeapTest__.zip";
-
-    int i, ret;
-    const int N = 3;
-    char data[2048];
-    char archive_filename[64];
-    assert((strlen(s_pTest_str) + 64) < sizeof(data));
-
-    ZipArchive object;  // on stack, but this is tmp obj as we will CloseArchive this.
-    ZipArchiveHandle zip_archive_handler = &object;
-
-    // Delete the test archive, so it doesn't keep growing as we run this test
-    remove(s_Test_archive_filename);
-
-    // ************* Create Zip file *************
-    // Append a bunch of text files to the test archive
-    for (i = (N - 1); i >= 0; --i) {
-        (void)sprintf_s(archive_filename, 64, "%u.txt", i);
-        (void)sprintf_s(data, 2048, "%u %s %u", (N - 1) - i, s_pTest_str, i);
-        ret = CreateOrAddFileIntoZip(s_Test_archive_filename, archive_filename, data, strlen(data) + 1, s_pComment,
-                                     static_cast<uint16>(strlen(s_pComment)));
-        if (ret != 0) {
-            printf("CreateOrAddFileIntoZip failed!\n");
-            ASSERT_EQ(1, 0);
-            return;
-        }
-    }
-
-    // Add a directory entry for testing
-    ret = CreateOrAddFileIntoZip(s_Test_archive_filename, "directory/", NULL, 0, "no comment",
-                                 static_cast<uint16>(strlen("no comment")));
-    if (ret != 0) {
-        printf("CreateOrAddFileIntoZip failed!\n");
-        ASSERT_EQ(1, 0);
-        return;
-    }
-
-    // Add a file into directory entry for testing
-    (void)sprintf_s(data, 2048, "%u %s %u", N, s_pTest_str, N);
-    ret = CreateOrAddFileIntoZip(s_Test_archive_filename, "directory/indirectory.txt", data, strlen(data) + 1,
-                                 s_pComment, static_cast<uint16>(strlen(s_pComment)));
-    if (ret != 0) {
-        printf("CreateOrAddFileIntoZip failed!\n");
-        ASSERT_EQ(1, 0);
-        return;
-    }
-
-    // Now try to open the archive.
-    ret = OpenArchive(s_Test_archive_filename, &zip_archive_handler);
-    if (ret != 0) {
-        printf("OpenArchive failed!\n");
-        ASSERT_EQ(1, 0);
-        return;
-    }
-
-    // Get and print information about each file in the archive.
-    for (i = 0; i < GetFileCount(&zip_archive_handler); i++) {
-        EntryFileStat file_stat;
-        if (!StatFileWithIndex(&zip_archive_handler, &file_stat, i)) {
-            printf("StatFileWithIndex() failed!\n");
-            CloseArchive(&zip_archive_handler);
-            ASSERT_EQ(1, 0);
-            return;
-        }
-
-        printf("Filename: \"%s\", Comment: \"%s\", Uncompressed size: %u, Compressed size: %u, Is Dir: %u\n",
-               file_stat.GetFileName(), file_stat.GetComment(), file_stat.GetUncompressedSize(),
-               static_cast<uint>(file_stat.GetCompressedSize()), IsFileDirectory(&zip_archive_handler, i));
-
-        if (!strcmp(file_stat.GetFileName(), "directory/")) {
-            if (!IsFileDirectory(&zip_archive_handler, i)) {
-                printf("IsFileDirectory() didn't return the expected results!\n");
-                CloseArchive(&zip_archive_handler);
-                ASSERT_EQ(1, 0);
-                return;
-            }
-        }
-    }
-
-    // Close the archive, freeing any resources it was using
-    CloseArchive(&zip_archive_handler);
-
-    // ************* Unzip *************
-    // Now verify the compressed data
-    ret = OpenArchive(s_Test_archive_filename, &zip_archive_handler);
-    if (ret != 0) {
-        printf("OpenArchive failed!\n");
-        ASSERT_EQ(ret, 0);
-        return;
-    }
-
-    void *p;
-    size_t uncomp_size;
-    for (i = 0; i < N; i++) {
-        (void)sprintf_s(archive_filename, 64, "%u.txt", i);
-        (void)sprintf_s(data, 2048, "%u %s %u", (N - 1) - i, s_pTest_str, i);
-
-        // Try to extract all the files to the heap.
-        p = ExtractToHeap(&zip_archive_handler, archive_filename, &uncomp_size);
-        if (!p) {
-            printf("ExtractToHeap() failed!\n");
-            CloseArchive(&zip_archive_handler);
-            ASSERT_EQ(1, 0);
-            return;
-        }
-
-        // Make sure the extraction really succeeded.
-        size_t dlen = strlen(data);
-        if ((uncomp_size != (dlen + 1)) || (memcmp(p, data, dlen))) {
-            printf("ExtractToHeap() failed to extract the proper data\n");
-            FreeHeap(p);
-            CloseArchive(&zip_archive_handler);
-            ASSERT_EQ(1, 0);
-            return;
-        }
-
-        printf("Successfully extracted file \"%s\", size %u\n", archive_filename, static_cast<uint>(uncomp_size));
-
-        // We're done.
-        FreeHeap(p);
-    }
-
-    (void)sprintf_s(archive_filename, 64, "directory/indirectory.txt");
-    (void)sprintf_s(data, 2048, "%u %s %u", N, s_pTest_str, N);
-
-    // Try to extract all the files to the heap.
-    p = ExtractToHeap(&zip_archive_handler, archive_filename, &uncomp_size);
-    if (!p) {
-        printf("ExtractToHeap() failed!\n");
-        CloseArchive(&zip_archive_handler);
-        ASSERT_EQ(1, 0);
-        return;
-    }
-
-    // Make sure the extraction really succeeded.
-    size_t dlen = strlen(data);
-    if ((uncomp_size != (dlen + 1)) || (memcmp(p, data, dlen))) {
-        printf("ExtractToHeap() failed to extract the proper data\n");
-        FreeHeap(p);
-        CloseArchive(&zip_archive_handler);
-        ASSERT_EQ(1, 0);
-        return;
-    }
-
-    printf("Successfully extracted file \"%s\", size %u\n", archive_filename, static_cast<uint>(uncomp_size));
-
-    // We're done.
-    FreeHeap(p);
-
-    CloseArchive(&zip_archive_handler);
-
-    printf("Success.\n");
-}
-
-TEST(LIBZIPARCHIVE, UnzipWithMemBufferTest)
-{
-    using uint16 = unsigned short;
-    using uint = unsigned int;
-
-    // The string to compress.
-    static const char *s_pTest_str =
-        "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Cras feugiat et odio ac sollicitudin. Maecenas "
-        "lobortis ultrices eros sed pharetra. Phasellus in tortor rhoncus, aliquam augue ac, gravida elit. Sed "
-        "molestie dolor a vulputate tincidunt. Proin a tellus quam. Suspendisse id feugiat elit, non ornare lacus. "
-        "Mauris arcu ex, pretium quis dolor ut, porta iaculis eros. Vestibulum sagittis placerat diam, vitae efficitur "
-        "turpis ultrices sit amet. Etiam elementum bibendum congue. In sit amet dolor ultricies, suscipit arcu ac, "
-        "molestie urna. Mauris ultrices volutpat massa quis ultrices. Suspendisse rutrum lectus sit amet metus "
-        "laoreet, non porta sapien venenatis. Fusce ut massa et purus elementum lacinia. Sed tempus bibendum pretium.";
-
-    // The comment
-    static const char *s_pComment = "This is a comment";
-
-    // The zip filename
-    static const char *s_Test_archive_filename = "__LIBZIPARCHIVE__UnzipWithMemBufferTest__.zip";
-
-    int i, ret;
-    const int N = 3;
-    char data[2048];
-    char archive_filename[64];
-    assert((strlen(s_pTest_str) + 64) < sizeof(data));
-
-    ZipArchive object;  // on stack, but this is tmp obj as we will CloseArchive this.
-    ZipArchiveHandle zip_archive_handler = &object;
-
-    // Delete the test archive, so it doesn't keep growing as we run this test
-    remove(s_Test_archive_filename);
-
-    // ************* Create Zip file *************
-    // Append a bunch of text files to the test archive
-    for (i = (N - 1); i >= 0; --i) {
-        (void)sprintf_s(archive_filename, 64, "%u.txt", i);
-        (void)sprintf_s(data, 2048, "%u %s %u", (N - 1) - i, s_pTest_str, i);
-        ret = CreateOrAddFileIntoZip(s_Test_archive_filename, archive_filename, data, strlen(data) + 1, s_pComment,
-                                     static_cast<uint16>(strlen(s_pComment)));
-        if (ret != 0) {
-            printf("CreateOrAddFileIntoZip failed!\n");
-            ASSERT_EQ(1, 0);
-            return;
-        }
-    }
-
-    // Add a directory entry for testing
-    ret = CreateOrAddFileIntoZip(s_Test_archive_filename, "directory/", NULL, 0, "no comment",
-                                 static_cast<uint16>(strlen("no comment")));
-    if (ret != 0) {
-        printf("CreateOrAddFileIntoZip failed!\n");
-        ASSERT_EQ(1, 0);
-        return;
-    }
-
-    // Add a file into directory entry for testing
-    (void)sprintf_s(data, 2048, "%u %s %u", N, s_pTest_str, N);
-    ret = CreateOrAddFileIntoZip(s_Test_archive_filename, "directory/indirectory.txt", data, strlen(data) + 1,
-                                 s_pComment, static_cast<uint16>(strlen(s_pComment)));
-    if (ret != 0) {
-        printf("CreateOrAddFileIntoZip failed!\n");
-        ASSERT_EQ(1, 0);
-        return;
-    }
-
-    // Now try to open the archive.
-    ret = OpenArchive(s_Test_archive_filename, &zip_archive_handler);
-    if (ret != 0) {
-        printf("OpenArchive failed!\n");
-        ASSERT_EQ(1, 0);
-        return;
-    }
-
-    // Get and print information about each file in the archive.
-    for (i = 0; i < GetFileCount(&zip_archive_handler); i++) {
-        EntryFileStat file_stat;
-        if (!StatFileWithIndex(&zip_archive_handler, &file_stat, i)) {
-            printf("StatFileWithIndex() failed!\n");
-            CloseArchive(&zip_archive_handler);
-            ASSERT_EQ(1, 0);
-            return;
-        }
-
-        printf("Filename: \"%s\", Comment: \"%s\", Uncompressed size: %u, Compressed size: %u, Is Dir: %u\n",
-               file_stat.GetFileName(), file_stat.GetComment(), file_stat.GetUncompressedSize(),
-               static_cast<uint>(file_stat.GetCompressedSize()), IsFileDirectory(&zip_archive_handler, i));
-
-        if (!strcmp(file_stat.GetFileName(), "directory/")) {
-            if (!IsFileDirectory(&zip_archive_handler, i)) {
-                printf("IsFileDirectory() didn't return the expected results!\n");
-                CloseArchive(&zip_archive_handler);
-                ASSERT_EQ(1, 0);
-                return;
-            }
-        }
-    }
-
-    // Close the archive, freeing any resources it was using
-    CloseArchive(&zip_archive_handler);
-
-    // ************* Unzip *************
-    ret = OpenArchive(s_Test_archive_filename, &zip_archive_handler);
-    if (ret != 0) {
-        printf("Can't open archive\n");
-        ASSERT_EQ(ret, 0);
-        return;
-    }
-
-    i = 1;
-    (void)sprintf_s(data, 2048, "%u %s %u", (N - 1) - i, s_pTest_str, i);
-
-    // Find entry info.
-    const char *myname = "1.txt";
-    const char *mycomment = "This is a comment";
-
-    EntryFileStat *entry = new EntryFileStat;
-    ret = FindEntry(&zip_archive_handler, entry, myname, mycomment);
-    if (ret != 0) {
-        CloseArchive(&zip_archive_handler);
-        delete entry;
-        printf("FindEntry() can't find entry: %s!\n", myname);
-        ASSERT_EQ(1, 0);
-        return;
-    }
-    uint32_t uncompressed_length = entry->GetUncompressedSize();
-    if (entry->GetUncompressedSize() == 0) {
-        panda::CloseArchive(&zip_archive_handler);
-        delete entry;
-        printf("Entry file has zero length! Readed bad data!\n");
-        ASSERT_EQ(1, 0);
-        return;
-    }
-
-    printf("Filename: \"%s\", Comment: \"%s\", Uncompressed size: %u, Compressed size: %u, Is Dir: %u\n",
-           entry->GetFileName(), entry->GetComment(), uncompressed_length,
-           static_cast<uint>(entry->GetCompressedSize()),
-           IsFileDirectory(&zip_archive_handler, static_cast<uint>(entry->GetIndex())));
-
-    // Extract to mem buffer accroding to entry info.
-    uint32_t page_size = os::mem::GetPageSize();
-    uint32_t min_pages = uncompressed_length / page_size;
-    uint32_t size_to_mmap = uncompressed_length % page_size == 0 ? min_pages * page_size : (min_pages + 1) * page_size;
-    // we will use mem in memcmp, so donnot poision it!
-    void *mem = os::mem::MapRWAnonymousRaw(size_to_mmap, false);
-    if (mem == nullptr) {
-        CloseArchive(&zip_archive_handler);
-        delete entry;
-        printf("Can't mmap anonymous!\n");
-        ASSERT_EQ(1, 0);
-        return;
-    }
-    ret = ExtractToMemory(&zip_archive_handler, entry, reinterpret_cast<uint8_t *>(mem), size_to_mmap);
-    if (ret != 0) {
-        os::mem::UnmapRaw(mem, size_to_mmap);
-        panda::CloseArchive(&zip_archive_handler);
-        delete entry;
-        printf("Can't extract!\n");
-        ASSERT_EQ(1, 0);
-        return;
-    }
-
-    // Make sure the extraction really succeeded.
-    size_t dlen = strlen(data);
-    if ((uncompressed_length != (dlen + 1)) || (memcmp(mem, data, dlen))) {
-        os::mem::UnmapRaw(mem, size_to_mmap);
-        CloseArchive(&zip_archive_handler);
-        delete entry;
-        printf("ExtractToMemory() failed to extract the proper data\n");
-        ASSERT_EQ(1, 0);
-        return;
-    }
-
-    printf("Successfully extracted file \"%s\", size %u\n", myname, static_cast<uint>(uncompressed_length));
-
-    // CloseArchive and release resource.
-    os::mem::UnmapRaw(mem, size_to_mmap);
-    panda::CloseArchive(&zip_archive_handler);
-    delete entry;
-
-    printf("Success.\n");
-}
-
-TEST(LIBZIPARCHIVE, UnzipForPandafileTest)
-{
-    using uint16 = unsigned short;
-    using uint = unsigned int;
-
-    // The string to compress.
-    static const char *s_pTest_str =
-        "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Cras feugiat et odio ac sollicitudin. Maecenas "
-        "lobortis ultrices eros sed pharetra. Phasellus in tortor rhoncus, aliquam augue ac, gravida elit. Sed "
-        "molestie dolor a vulputate tincidunt. Proin a tellus quam. Suspendisse id feugiat elit, non ornare lacus. "
-        "Mauris arcu ex, pretium quis dolor ut, porta iaculis eros. Vestibulum sagittis placerat diam, vitae efficitur "
-        "turpis ultrices sit amet. Etiam elementum bibendum congue. In sit amet dolor ultricies, suscipit arcu ac, "
-        "molestie urna. Mauris ultrices volutpat massa quis ultrices. Suspendisse rutrum lectus sit amet metus "
-        "laoreet, non porta sapien venenatis. Fusce ut massa et purus elementum lacinia. Sed tempus bibendum pretium.";
-
-    // The comment
-    static const char *s_pComment = "This is a comment";
-
-    /*
-     * creating an empty pandafile
-     */
-    pandasm::Parser p;
-
-    auto source = R"()";
-
-    std::string src_filename = "src.pa";
-    auto res = p.Parse(source, src_filename);
-    ASSERT_EQ(p.ShowError().err, pandasm::Error::ErrorType::ERR_NONE);
-
-    auto pf = pandasm::AsmEmitter::Emit(res.Value());
-    ASSERT_NE(pf, nullptr);
-
-    std::vector<uint8_t> pf_data {};
-    const auto header_ptr = reinterpret_cast<const uint8_t *>(pf->GetHeader());
-    pf_data.assign(header_ptr, header_ptr + sizeof(panda_file::File::Header));
-
-    // The zip filename
-    static const char *s_Test_archive_filename = "__LIBZIPARCHIVE__UnzipForPandafileTest__.zip";
-
-    int i, ret;
-    const int N = 3;
-    char data[2048];
-    char archive_filename[64];
-    assert((strlen(s_pTest_str) + 64) < sizeof(data));
-
-    ZipArchive object;  // on stack, but this is tmp obj as we will CloseArchive this.
-    ZipArchiveHandle zip_archive_handler = &object;
-
-    // Delete the test archive, so it doesn't keep growing as we run this test
-    remove(s_Test_archive_filename);
-
-    // ************* Create Zip file *************
-    // Append a bunch of text files to the test archive
-    for (i = (N - 1); i >= 0; --i) {
-        (void)sprintf_s(archive_filename, 64, "%u.txt", i);
-        (void)sprintf_s(data, 2048, "%u %s %u", (N - 1) - i, s_pTest_str, i);
-        ret = CreateOrAddFileIntoZip(s_Test_archive_filename, archive_filename, data, strlen(data) + 1, s_pComment,
-                                     static_cast<uint16>(strlen(s_pComment)));
-        if (ret != 0) {
-            printf("CreateOrAddFileIntoZip failed!\n");
-            ASSERT_EQ(1, 0);
-            return;
-        }
-    }
-
-    // Add a directory entry for testing
-    ret = CreateOrAddFileIntoZip(s_Test_archive_filename, "directory/", NULL, 0, "no comment",
-                                 static_cast<uint16>(strlen("no comment")));
-    if (ret != 0) {
-        printf("CreateOrAddFileIntoZip failed!\n");
-        ASSERT_EQ(1, 0);
-        return;
-    }
-
-    // Add a file into directory entry for testing
-    (void)sprintf_s(data, 2048, "%u %s %u", N, s_pTest_str, N);
-    ret = CreateOrAddFileIntoZip(s_Test_archive_filename, "directory/indirectory.txt", data, strlen(data) + 1,
-                                 s_pComment, static_cast<uint16>(strlen(s_pComment)));
-    if (ret != 0) {
-        printf("CreateOrAddFileIntoZip failed!\n");
+        printf("CreateOrAddFileIntoZip for directory/indirectory.txt failed!\n");
         ASSERT_EQ(1, 0);
         return;
     }
 
     // Add a pandafile into zip for testing
-    ret = CreateOrAddFileIntoZip(s_Test_archive_filename, "classes.aex", pf_data.data(), pf_data.size(), s_pComment,
-                                 static_cast<uint16>(strlen(s_pComment)));
+    ret = CreateOrAddFileIntoZip(archivename, "classes.abc", pf_data.data(), pf_data.size(),
+                                 APPEND_STATUS_ADDINZIP, level);
     if (ret != 0) {
-        printf("CreateOrAddFileIntoZip failed!\n");
+        printf("CreateOrAddFileIntoZip for classes.abc failed!\n");
+        ASSERT_EQ(1, 0);
+        return;
+    }
+}
+
+static void UnzipFileCheckDirectory(const char *archivename, char *filename, int level = Z_BEST_COMPRESSION)
+{
+    (void)sprintf_s(filename, ZIP_FILENAME_LEN, "directory/");
+
+    ZipArchiveHandle zipfile = nullptr;
+    FILE *myfile = fopen(archivename, "rbe");
+
+    if (OpenArchiveFile(zipfile, myfile) != 0) {
+        (void)fclose(myfile);
+        printf("OpenArchiveFILE error.\n");
+        ASSERT_EQ(1, 0);
+        return;
+    }
+    if (LocateFile(zipfile, filename) != 0) {
+        CloseArchiveFile(zipfile);
+        (void)fclose(myfile);
+        printf("LocateFile error.\n");
+        ASSERT_EQ(1, 0);
+        return;
+    }
+    EntryFileStat entry = EntryFileStat();
+    if (GetCurrentFileInfo(zipfile, &entry) != 0) {
+        CloseArchiveFile(zipfile);
+        (void)fclose(myfile);
+        printf("GetCurrentFileInfo test error.\n");
+        ASSERT_EQ(1, 0);
+        return;
+    }
+    if (OpenCurrentFile(zipfile) != 0) {
+        CloseCurrentFile(zipfile);
+        CloseArchiveFile(zipfile);
+        (void)fclose(myfile);
+        printf("OpenCurrentFile test error.\n");
         ASSERT_EQ(1, 0);
         return;
     }
 
-    // Now try to open the archive.
-    ret = OpenArchive(s_Test_archive_filename, &zip_archive_handler);
-    if (ret != 0) {
-        printf("OpenArchive failed!\n");
-        ASSERT_EQ(1, 0);
-        return;
+    GetCurrentFileOffset(zipfile, &entry);
+
+    uint32_t uncompressed_length = entry.GetUncompressedSize();
+
+    ASSERT_GT(entry.GetOffset(), 0);
+    if (level == Z_NO_COMPRESSION) {
+        ASSERT_EQ(entry.IsCompressed(), false);
+    } else {
+        ASSERT_EQ(entry.IsCompressed(), true);
     }
 
-    // Get and print information about each file in the archive.
-    for (i = 0; i < GetFileCount(&zip_archive_handler); i++) {
-        EntryFileStat file_stat;
-        if (!StatFileWithIndex(&zip_archive_handler, &file_stat, i)) {
-            printf("StatFileWithIndex() failed!\n");
-            CloseArchive(&zip_archive_handler);
+    printf("Filename: \"%s\", Uncompressed size: %u, Compressed size: %u, , Compressed(): %d, entry offset: %u\n",
+           filename, static_cast<uint>(uncompressed_length), (uint)entry.GetCompressedSize(), entry.IsCompressed(),
+           (uint)entry.GetOffset());
+
+    CloseCurrentFile(zipfile);
+    CloseArchiveFile(zipfile);
+    (void)fclose(myfile);
+}
+
+static void UnzipFileCheckTxt(const char *archivename, char *filename, const char *data, int N, char *buf, int &ret,
+                              int level = Z_BEST_COMPRESSION)
+{
+    for (int i = 0; i < N; i++) {
+        (void)sprintf_s(filename, ZIP_FILENAME_LEN, "%d.txt", i);
+        (void)sprintf_s(buf, ZIP_BUFFER_LEN, "%d %s %d", (N - 1) - i, data, i);
+
+        ZipArchiveHandle zipfile = nullptr;
+        FILE *myfile = fopen(archivename, "rbe");
+
+        if (OpenArchiveFile(zipfile, myfile) != 0) {
+            (void)fclose(myfile);
+            printf("OpenArchiveFILE error.\n");
+            ASSERT_EQ(1, 0);
+            return;
+        }
+        if (LocateFile(zipfile, filename) != 0) {
+            CloseArchiveFile(zipfile);
+            (void)fclose(myfile);
+            printf("LocateFile error.\n");
+            ASSERT_EQ(1, 0);
+            return;
+        }
+        EntryFileStat entry = EntryFileStat();
+        if (GetCurrentFileInfo(zipfile, &entry) != 0) {
+            CloseArchiveFile(zipfile);
+            (void)fclose(myfile);
+            printf("GetCurrentFileInfo test error.\n");
+            ASSERT_EQ(1, 0);
+            return;
+        }
+        if (OpenCurrentFile(zipfile) != 0) {
+            CloseCurrentFile(zipfile);
+            CloseArchiveFile(zipfile);
+            (void)fclose(myfile);
+            printf("OpenCurrentFile test error.\n");
             ASSERT_EQ(1, 0);
             return;
         }
 
-        printf("Filename: \"%s\", Comment: \"%s\", Uncompressed size: %u, Compressed size: %u, Is Dir: %u\n",
-               file_stat.GetFileName(), file_stat.GetComment(), file_stat.GetUncompressedSize(),
-               static_cast<uint>(file_stat.GetCompressedSize()), IsFileDirectory(&zip_archive_handler, i));
+        GetCurrentFileOffset(zipfile, &entry);
 
-        if (!strcmp(file_stat.GetFileName(), "directory/")) {
-            if (!IsFileDirectory(&zip_archive_handler, i)) {
-                printf("IsFileDirectory() didn't return the expected results!\n");
-                CloseArchive(&zip_archive_handler);
+        uint32_t uncompressed_length = entry.GetUncompressedSize();
+        if (uncompressed_length == 0) {
+            CloseCurrentFile(zipfile);
+            CloseArchiveFile(zipfile);
+            (void)fclose(myfile);
+            printf("Entry file has zero length! Readed bad data!\n");
+            ASSERT_EQ(1, 0);
+            return;
+        }
+        ASSERT_GT(entry.GetOffset(), 0);
+        ASSERT_EQ(uncompressed_length, strlen(buf) + 1);
+        if (level == Z_NO_COMPRESSION) {
+            ASSERT_EQ(uncompressed_length, entry.GetCompressedSize());
+            ASSERT_EQ(entry.IsCompressed(), false);
+        } else {
+            ASSERT_GE(uncompressed_length, entry.GetCompressedSize());
+            ASSERT_EQ(entry.IsCompressed(), true);
+        }
+
+        printf("Filename: \"%s\", Uncompressed size: %u, Compressed size: %u, , Compressed(): %d, entry offset: %u\n",
+               filename, static_cast<uint>(uncompressed_length), (uint)entry.GetCompressedSize(), entry.IsCompressed(),
+               (uint)entry.GetOffset());
+
+        {
+            // Extract to mem buffer accroding to entry info.
+            uint32_t page_size = os::mem::GetPageSize();
+            uint32_t min_pages = uncompressed_length / page_size;
+            uint32_t size_to_mmap =
+                uncompressed_length % page_size == 0 ? min_pages * page_size : (min_pages + 1) * page_size;
+            // we will use mem in memcmp, so donnot poision it!
+            void *mem = os::mem::MapRWAnonymousRaw(size_to_mmap, false);
+            if (mem == nullptr) {
+                CloseCurrentFile(zipfile);
+                CloseArchiveFile(zipfile);
+                (void)fclose(myfile);
+                printf("Can't mmap anonymous!\n");
                 ASSERT_EQ(1, 0);
                 return;
             }
+
+            ret = ExtractToMemory(zipfile, reinterpret_cast<uint8_t *>(mem), size_to_mmap);
+            if (ret != 0) {
+                os::mem::UnmapRaw(mem, size_to_mmap);
+                CloseCurrentFile(zipfile);
+                CloseArchiveFile(zipfile);
+                (void)fclose(myfile);
+                printf("Can't extract!\n");
+                ASSERT_EQ(1, 0);
+                return;
+            }
+
+            // Make sure the extraction really succeeded.
+            size_t dlen = strlen(buf);
+            if (uncompressed_length != (dlen + 1)) {
+                os::mem::UnmapRaw(mem, size_to_mmap);
+                CloseCurrentFile(zipfile);
+                CloseArchive(zipfile);
+                printf("ExtractToMemory() failed!, uncompressed_length is %u, original strlen is %u\n",
+                       static_cast<uint>(uncompressed_length) - 1, static_cast<uint>(dlen));
+                ASSERT_EQ(1, 0);
+                return;
+            }
+
+            if (memcmp(mem, buf, dlen)) {
+                os::mem::UnmapRaw(mem, size_to_mmap);
+                CloseCurrentFile(zipfile);
+                CloseArchive(zipfile);
+                printf("ExtractToMemory() memcmp failed!");
+                ASSERT_EQ(1, 0);
+                return;
+            }
+
+            printf("Successfully extracted file \"%s\" from \"%s\", size %u\n", filename, archivename,
+                   static_cast<uint>(uncompressed_length));
+
+            os::mem::UnmapRaw(mem, size_to_mmap);
         }
+
+        CloseCurrentFile(zipfile);
+        CloseArchiveFile(zipfile);
+        (void)fclose(myfile);
     }
+}
 
-    // Close the archive, freeing any resources it was using
-    CloseArchive(&zip_archive_handler);
-
-    // ************* Unzip *************
-    ret = OpenArchive(s_Test_archive_filename, &zip_archive_handler);
-    if (ret != 0) {
-        printf("Can't open archive\n");
-        ASSERT_EQ(ret, 0);
-        return;
-    }
-
-    // Find entry info.
-    const char *myname = "classes.aex";
-    const char *mycomment = "This is a comment";
-
-    EntryFileStat *entry = new EntryFileStat;
-    ret = FindEntry(&zip_archive_handler, entry, myname, mycomment);
-    if (ret != 0) {
-        CloseArchive(&zip_archive_handler);
-        delete entry;
-        printf("FindEntry() can't find entry: %s!\n", myname);
-        ASSERT_EQ(1, 0);
-        return;
-    }
-    uint32_t uncompressed_length = entry->GetUncompressedSize();
-    if (entry->GetUncompressedSize() == 0) {
-        panda::CloseArchive(&zip_archive_handler);
-        delete entry;
-        printf("Entry file has zero length! Readed bad data!\n");
-        ASSERT_EQ(1, 0);
-        return;
-    }
-
-    printf("Filename: \"%s\", Comment: \"%s\", Uncompressed size: %u, Compressed size: %u, Is Dir: %u\n",
-           entry->GetFileName(), entry->GetComment(), uncompressed_length,
-           static_cast<uint>(entry->GetCompressedSize()),
-           IsFileDirectory(&zip_archive_handler, static_cast<uint>(entry->GetIndex())));
-
-    // Extract to mem buffer accroding to entry info.
-    uint32_t page_size = os::mem::GetPageSize();
-    uint32_t min_pages = uncompressed_length / page_size;
-    uint32_t size_to_mmap = uncompressed_length % page_size == 0 ? min_pages * page_size : (min_pages + 1) * page_size;
-    // we will using mem in memcmp, so donnot poision it!
-    void *mem = os::mem::MapRWAnonymousRaw(size_to_mmap, false);
-    if (mem == nullptr) {
-        CloseArchive(&zip_archive_handler);
-        delete entry;
-        printf("Can't mmap anonymous!\n");
-        ASSERT_EQ(1, 0);
-        return;
-    }
-    ret = ExtractToMemory(&zip_archive_handler, entry, reinterpret_cast<uint8_t *>(mem), size_to_mmap);
-    if (ret != 0) {
-        os::mem::UnmapRaw(mem, size_to_mmap);
-        panda::CloseArchive(&zip_archive_handler);
-        delete entry;
-        printf("Can't extract!\n");
-        ASSERT_EQ(1, 0);
-        return;
-    }
-
-    // Make sure the extraction really succeeded.
-    if ((uncompressed_length != pf_data.size()) || (memcmp(mem, pf_data.data(), pf_data.size()))) {
-        os::mem::UnmapRaw(mem, size_to_mmap);
-        CloseArchive(&zip_archive_handler);
-        delete entry;
-        printf("ExtractToMemory() failed to extract the proper data\n");
-        ASSERT_EQ(1, 0);
-        return;
-    }
-
-    printf("Successfully extracted file \"%s\", size %u\n", myname, static_cast<uint>(uncompressed_length));
-
-    // Testing with OpenFromMemory ...
+static void UnzipFileCheckPandaFile(const char *archivename, char *filename, std::vector<uint8_t> &pf_data, int &ret,
+                                    int level = Z_BEST_COMPRESSION)
+{
     {
-        os::mem::ConstBytePtr ptr(reinterpret_cast<std::byte *>(mem), size_to_mmap, os::mem::MmapDeleter);
-        auto ofm_pf = panda_file::File::OpenFromMemory(std::move(ptr), myname);
-        if (ofm_pf == nullptr) {
-            panda::CloseArchive(&zip_archive_handler);
-            delete entry;
-            printf("OpenFromMemory() failed!\n");
+        ZipArchiveHandle zipfile = nullptr;
+        FILE *myfile = fopen(archivename, "rbe");
+
+        if (OpenArchiveFile(zipfile, myfile) != 0) {
+            (void)fclose(myfile);
+            printf("OpenArchiveFILE error.\n");
             ASSERT_EQ(1, 0);
             return;
         }
-        EXPECT_STREQ((ofm_pf->GetFilename()).c_str(), myname);
-    }
-
-    // CloseArchive and release resource.
-    panda::CloseArchive(&zip_archive_handler);
-    delete entry;
-
-    printf("Success.\n");
-}
-
-TEST(LIBZIPARCHIVE, OpenArchiveFILE)
-{
-    using uint16 = unsigned short;
-    using uint = unsigned int;
-
-    // The string to compress.
-    static const char *s_pTest_str =
-        "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Cras feugiat et odio ac sollicitudin. Maecenas "
-        "lobortis ultrices eros sed pharetra. Phasellus in tortor rhoncus, aliquam augue ac, gravida elit. Sed "
-        "molestie dolor a vulputate tincidunt. Proin a tellus quam. Suspendisse id feugiat elit, non ornare lacus. "
-        "Mauris arcu ex, pretium quis dolor ut, porta iaculis eros. Vestibulum sagittis placerat diam, vitae efficitur "
-        "turpis ultrices sit amet. Etiam elementum bibendum congue. In sit amet dolor ultricies, suscipit arcu ac, "
-        "molestie urna. Mauris ultrices volutpat massa quis ultrices. Suspendisse rutrum lectus sit amet metus "
-        "laoreet, non porta sapien venenatis. Fusce ut massa et purus elementum lacinia. Sed tempus bibendum pretium.";
-
-    // The comment
-    static const char *s_pComment = "This is a comment";
-
-    /*
-     * creating an empty pandafile
-     */
-    pandasm::Parser p;
-
-    auto source = R"()";
-
-    std::string src_filename = "src.pa";
-    auto res = p.Parse(source, src_filename);
-    ASSERT_EQ(p.ShowError().err, pandasm::Error::ErrorType::ERR_NONE);
-
-    auto pf = pandasm::AsmEmitter::Emit(res.Value());
-    ASSERT_NE(pf, nullptr);
-
-    std::vector<uint8_t> pf_data {};
-    const auto header_ptr = reinterpret_cast<const uint8_t *>(pf->GetHeader());
-    pf_data.assign(header_ptr, header_ptr + sizeof(panda_file::File::Header));
-
-    // The zip filename
-    static const char *s_Test_archive_filename = "__LIBZIPARCHIVE__OpenArchiveFILE__.zip";
-
-    int i, ret;
-    const int N = 3;
-    char data[2048];
-    char archive_filename[64];
-    assert((strlen(s_pTest_str) + 64) < sizeof(data));
-
-    ZipArchive object;  // on stack, but this is tmp obj as we will CloseArchive this.
-    ZipArchiveHandle zip_archive_handler = &object;
-
-    // Delete the test archive, so it doesn't keep growing as we run this test
-    remove(s_Test_archive_filename);
-
-    // ************* Create Zip file *************
-    // Append a bunch of text files to the test archive
-    for (i = (N - 1); i >= 0; --i) {
-        (void)sprintf_s(archive_filename, 64, "%u.txt", i);
-        (void)sprintf_s(data, 2048, "%u %s %u", (N - 1) - i, s_pTest_str, i);
-        ret = CreateOrAddFileIntoZip(s_Test_archive_filename, archive_filename, data, strlen(data) + 1, s_pComment,
-                                     static_cast<uint16>(strlen(s_pComment)));
-        if (ret != 0) {
-            printf("CreateOrAddFileIntoZip failed!\n");
+        if (LocateFile(zipfile, filename) != 0) {
+            CloseArchiveFile(zipfile);
+            (void)fclose(myfile);
+            printf("LocateFile error.\n");
             ASSERT_EQ(1, 0);
             return;
         }
-    }
-
-    // Add a directory entry for testing
-    ret = CreateOrAddFileIntoZip(s_Test_archive_filename, "directory/", NULL, 0, "no comment",
-                                 static_cast<uint16>(strlen("no comment")));
-    if (ret != 0) {
-        printf("CreateOrAddFileIntoZip failed!\n");
-        ASSERT_EQ(1, 0);
-        return;
-    }
-
-    // Add a file into directory entry for testing
-    (void)sprintf_s(data, 2048, "%u %s %u", N, s_pTest_str, N);
-    ret = CreateOrAddFileIntoZip(s_Test_archive_filename, "directory/indirectory.txt", data, strlen(data) + 1,
-                                 s_pComment, static_cast<uint16>(strlen(s_pComment)));
-    if (ret != 0) {
-        printf("CreateOrAddFileIntoZip failed!\n");
-        ASSERT_EQ(1, 0);
-        return;
-    }
-
-    // Add a pandafile into zip for testing
-    ret = CreateOrAddFileIntoZip(s_Test_archive_filename, "classes.aex", pf_data.data(), pf_data.size(), s_pComment,
-                                 static_cast<uint16>(strlen(s_pComment)));
-    if (ret != 0) {
-        printf("CreateOrAddFileIntoZip failed!\n");
-        ASSERT_EQ(1, 0);
-        return;
-    }
-
-    // Now try to open the archive.
-    ret = OpenArchive(s_Test_archive_filename, &zip_archive_handler);
-    if (ret != 0) {
-        printf("OpenArchive failed!\n");
-        ASSERT_EQ(1, 0);
-        return;
-    }
-
-    // Get and print information about each file in the archive.
-    for (i = 0; i < GetFileCount(&zip_archive_handler); i++) {
-        EntryFileStat file_stat;
-        if (!StatFileWithIndex(&zip_archive_handler, &file_stat, i)) {
-            printf("StatFileWithIndex() failed!\n");
-            CloseArchive(&zip_archive_handler);
+        EntryFileStat entry = EntryFileStat();
+        if (GetCurrentFileInfo(zipfile, &entry) != 0) {
+            CloseArchiveFile(zipfile);
+            (void)fclose(myfile);
+            printf("GetCurrentFileInfo test error.\n");
+            ASSERT_EQ(1, 0);
+            return;
+        }
+        if (OpenCurrentFile(zipfile) != 0) {
+            CloseCurrentFile(zipfile);
+            CloseArchiveFile(zipfile);
+            (void)fclose(myfile);
+            printf("OpenCurrentFile test error.\n");
             ASSERT_EQ(1, 0);
             return;
         }
 
-        printf("Filename: \"%s\", Comment: \"%s\", Uncompressed size: %u, Compressed size: %u, Is Dir: %u\n",
-               file_stat.GetFileName(), file_stat.GetComment(), file_stat.GetUncompressedSize(),
-               static_cast<uint>(file_stat.GetCompressedSize()), IsFileDirectory(&zip_archive_handler, i));
+        GetCurrentFileOffset(zipfile, &entry);
 
-        if (!strcmp(file_stat.GetFileName(), "directory/")) {
-            if (!IsFileDirectory(&zip_archive_handler, i)) {
-                printf("IsFileDirectory() didn't return the expected results!\n");
-                CloseArchive(&zip_archive_handler);
+        uint32_t uncompressed_length = entry.GetUncompressedSize();
+        if (uncompressed_length == 0) {
+            CloseCurrentFile(zipfile);
+            CloseArchiveFile(zipfile);
+            (void)fclose(myfile);
+            printf("Entry file has zero length! Readed bad data!\n");
+            ASSERT_EQ(1, 0);
+            return;
+        }
+        ASSERT_GT(entry.GetOffset(), 0);
+        ASSERT_EQ(uncompressed_length, pf_data.size());
+        if (level == Z_NO_COMPRESSION) {
+            ASSERT_EQ(uncompressed_length, entry.GetCompressedSize());
+            ASSERT_EQ(entry.IsCompressed(), false);
+        } else {
+            ASSERT_GE(uncompressed_length, entry.GetCompressedSize());
+            ASSERT_EQ(entry.IsCompressed(), true);
+        }
+        printf("Filename: \"%s\", Uncompressed size: %u, Compressed size: %u, , Compressed(): %d, entry offset: %u\n",
+               filename, static_cast<uint>(uncompressed_length), (uint)entry.GetCompressedSize(), entry.IsCompressed(),
+               (uint)entry.GetOffset());
+
+        {
+            // Extract to mem buffer accroding to entry info.
+            uint32_t page_size = os::mem::GetPageSize();
+            uint32_t min_pages = uncompressed_length / page_size;
+            uint32_t size_to_mmap =
+                uncompressed_length % page_size == 0 ? min_pages * page_size : (min_pages + 1) * page_size;
+            // we will use mem in memcmp, so donnot poision it!
+            void *mem = os::mem::MapRWAnonymousRaw(size_to_mmap, false);
+            if (mem == nullptr) {
+                CloseCurrentFile(zipfile);
+                CloseArchiveFile(zipfile);
+                (void)fclose(myfile);
+                printf("Can't mmap anonymous!\n");
                 ASSERT_EQ(1, 0);
                 return;
             }
+
+            ret = ExtractToMemory(zipfile, reinterpret_cast<uint8_t *>(mem), size_to_mmap);
+            if (ret != 0) {
+                os::mem::UnmapRaw(mem, size_to_mmap);
+                CloseCurrentFile(zipfile);
+                CloseArchiveFile(zipfile);
+                (void)fclose(myfile);
+                printf("Can't extract!\n");
+                ASSERT_EQ(1, 0);
+                return;
+            }
+
+            // Make sure the extraction really succeeded.
+            if (uncompressed_length != pf_data.size()) {
+                os::mem::UnmapRaw(mem, size_to_mmap);
+                CloseCurrentFile(zipfile);
+                CloseArchiveFile(zipfile);
+                (void)fclose(myfile);
+                printf("ExtractToMemory() failed!, uncompressed_length is %u, original pf_data size is %u\n",
+                       static_cast<uint>(uncompressed_length) - 1, (uint)pf_data.size());
+                ASSERT_EQ(1, 0);
+                return;
+            }
+
+            if (memcmp(mem, pf_data.data(), pf_data.size())) {
+                os::mem::UnmapRaw(mem, size_to_mmap);
+                CloseCurrentFile(zipfile);
+                CloseArchiveFile(zipfile);
+                (void)fclose(myfile);
+                printf("ExtractToMemory() memcmp failed!");
+                ASSERT_EQ(1, 0);
+                return;
+            }
+
+            printf("Successfully extracted file \"%s\" from \"%s\", size %u\n", filename, archivename,
+                   static_cast<uint>(uncompressed_length));
+
+            os::mem::UnmapRaw(mem, size_to_mmap);
         }
+        CloseCurrentFile(zipfile);
+        CloseArchiveFile(zipfile);
+        (void)fclose(myfile);
     }
+}
 
-    // Close the archive, freeing any resources it was using
-    CloseArchive(&zip_archive_handler);
-
-    // ************* Unzip *************
-    FILE *myfile = fopen(s_Test_archive_filename, "rbe");
-    ret = OpenArchiveFILE(myfile, &zip_archive_handler);
-    if (ret != 0) {
-        CloseArchive(&zip_archive_handler);
-        printf("Can't open archive\n");
-        ASSERT_EQ(ret, 0);
-        return;
-    }
-
-    // Find entry info.
-    const char *myname = "classes.aex";
-    const char *mycomment = "This is a comment";
-
-    EntryFileStat *entry = new EntryFileStat;
-    ret = FindEntry(&zip_archive_handler, entry, myname, mycomment);
-    if (ret != 0) {
-        CloseArchive(&zip_archive_handler);
-        delete entry;
-        printf("FindEntry() can't find entry: %s!\n", myname);
-        ASSERT_EQ(1, 0);
-        return;
-    }
-    uint32_t uncompressed_length = entry->GetUncompressedSize();
-    if (entry->GetUncompressedSize() == 0) {
-        panda::CloseArchive(&zip_archive_handler);
-        delete entry;
-        printf("Entry file has zero length! Readed bad data!\n");
-        ASSERT_EQ(1, 0);
-        return;
-    }
-
-    printf(
-        "Filename: \"%s\", Comment: \"%s\", Uncompressed size: %u, Compressed size: %u, Compressed(): %d, "
-        "Is Dir: %u, m_method %d \n",
-        entry->GetFileName(), entry->GetComment(), uncompressed_length, static_cast<uint>(entry->GetCompressedSize()),
-        entry->IsCompressed(), IsFileDirectory(&zip_archive_handler, static_cast<uint>(entry->GetIndex())),
-        entry->file_stat.m_method);
-
-    if (entry->IsCompressed() == 0) {
-        panda::CloseArchive(&zip_archive_handler);
-        delete entry;
-        printf("%s Compressed Entry file %s entry->IsCompressed() == 0!\n", s_Test_archive_filename, myname);
-        ASSERT_EQ(1, 0);
-        return;
-    }
-
-    // Extract to mem buffer accroding to entry info.
-    uint32_t page_size = os::mem::GetPageSize();
-    uint32_t min_pages = uncompressed_length / page_size;
-    uint32_t size_to_mmap = uncompressed_length % page_size == 0 ? min_pages * page_size : (min_pages + 1) * page_size;
-    // We will use mem in memcmp, so don not poision it.
-    void *mem = os::mem::MapRWAnonymousRaw(size_to_mmap, false);
-    if (mem == nullptr) {
-        CloseArchive(&zip_archive_handler);
-        delete entry;
-        printf("Can't mmap anonymous!\n");
-        ASSERT_EQ(1, 0);
-        return;
-    }
-    ret = ExtractToMemory(&zip_archive_handler, entry, reinterpret_cast<uint8_t *>(mem), size_to_mmap);
-    if (ret != 0) {
-        os::mem::UnmapRaw(mem, size_to_mmap);
-        panda::CloseArchive(&zip_archive_handler);
-        delete entry;
-        printf("Can't extract!\n");
-        ASSERT_EQ(1, 0);
-        return;
-    }
-
-    // Make sure the extraction really succeeded.
-    if ((uncompressed_length != pf_data.size()) || (memcmp(mem, pf_data.data(), pf_data.size()))) {
-        os::mem::UnmapRaw(mem, size_to_mmap);
-        CloseArchive(&zip_archive_handler);
-        delete entry;
-        printf("ExtractToMemory() failed to extract the proper data\n");
-        ASSERT_EQ(1, 0);
-        return;
-    }
-
-    printf("Successfully extracted file \"%s\", size %u\n", myname, static_cast<uint>(uncompressed_length));
-
-    // Testing with OpenFromMemory ...
+static void UnzipFileCheckInDirectory(const char *archivename, char *filename, const char *data, int N, char *buf,
+                                      int &ret, int level = Z_BEST_COMPRESSION)
+{
     {
-        os::mem::ConstBytePtr ptr(reinterpret_cast<std::byte *>(mem), size_to_mmap, os::mem::MmapDeleter);
-        auto ofm_pf = panda_file::File::OpenFromMemory(std::move(ptr), myname);
-        if (ofm_pf == nullptr) {
-            fclose(myfile);
-            panda::CloseArchive(&zip_archive_handler);
-            delete entry;
-            printf("OpenFromMemory() failed!\n");
+        (void)sprintf_s(filename, ZIP_FILENAME_LEN, "directory/indirectory.txt");
+        (void)sprintf_s(buf, ZIP_BUFFER_LEN, "%d %s %d", N, data, N);
+
+        // Unzip Check
+        ZipArchiveHandle zipfile = nullptr;
+        FILE *myfile = fopen(archivename, "rbe");
+
+        if (OpenArchiveFile(zipfile, myfile) != 0) {
+            (void)fclose(myfile);
+            printf("OpenArchiveFILE error.\n");
             ASSERT_EQ(1, 0);
             return;
         }
-        EXPECT_STREQ((ofm_pf->GetFilename()).c_str(), myname);
+        if (LocateFile(zipfile, filename) != 0) {
+            CloseArchiveFile(zipfile);
+            (void)fclose(myfile);
+            printf("LocateFile error.\n");
+            ASSERT_EQ(1, 0);
+            return;
+        }
+        EntryFileStat entry = EntryFileStat();
+        if (GetCurrentFileInfo(zipfile, &entry) != 0) {
+            CloseArchiveFile(zipfile);
+            (void)fclose(myfile);
+            printf("GetCurrentFileInfo test error.\n");
+            ASSERT_EQ(1, 0);
+            return;
+        }
+        if (OpenCurrentFile(zipfile) != 0) {
+            CloseCurrentFile(zipfile);
+            CloseArchiveFile(zipfile);
+            (void)fclose(myfile);
+            printf("OpenCurrentFile test error.\n");
+            ASSERT_EQ(1, 0);
+            return;
+        }
+
+        GetCurrentFileOffset(zipfile, &entry);
+
+        uint32_t uncompressed_length = entry.GetUncompressedSize();
+        if (uncompressed_length == 0) {
+            CloseCurrentFile(zipfile);
+            CloseArchiveFile(zipfile);
+            (void)fclose(myfile);
+            printf("Entry file has zero length! Readed bad data!\n");
+            ASSERT_EQ(1, 0);
+            return;
+        }
+        ASSERT_GT(entry.GetOffset(), 0);
+        ASSERT_EQ(uncompressed_length, strlen(buf) + 1);
+        if (level == Z_NO_COMPRESSION) {
+            ASSERT_EQ(uncompressed_length, entry.GetCompressedSize());
+            ASSERT_EQ(entry.IsCompressed(), false);
+        } else {
+            ASSERT_GE(uncompressed_length, entry.GetCompressedSize());
+            ASSERT_EQ(entry.IsCompressed(), true);
+        }
+        printf("Filename: \"%s\", Uncompressed size: %u, Compressed size: %u, , Compressed(): %d, entry offset: %u\n",
+               filename, static_cast<uint>(uncompressed_length), (uint)entry.GetCompressedSize(), entry.IsCompressed(),
+               (uint)entry.GetOffset());
+
+        {
+            // Extract to mem buffer accroding to entry info.
+            uint32_t page_size = os::mem::GetPageSize();
+            uint32_t min_pages = uncompressed_length / page_size;
+            uint32_t size_to_mmap =
+                uncompressed_length % page_size == 0 ? min_pages * page_size : (min_pages + 1) * page_size;
+            // we will use mem in memcmp, so donnot poision it!
+            void *mem = os::mem::MapRWAnonymousRaw(size_to_mmap, false);
+            if (mem == nullptr) {
+                CloseCurrentFile(zipfile);
+                CloseArchiveFile(zipfile);
+                (void)fclose(myfile);
+                printf("Can't mmap anonymous!\n");
+                ASSERT_EQ(1, 0);
+                return;
+            }
+
+            ret = ExtractToMemory(zipfile, reinterpret_cast<uint8_t *>(mem), size_to_mmap);
+            if (ret != 0) {
+                os::mem::UnmapRaw(mem, size_to_mmap);
+                CloseCurrentFile(zipfile);
+                CloseArchiveFile(zipfile);
+                (void)fclose(myfile);
+                printf("Can't extract!\n");
+                ASSERT_EQ(1, 0);
+                return;
+            }
+
+            // Make sure the extraction really succeeded.
+            size_t dlen = strlen(buf);
+            if (uncompressed_length != (dlen + 1)) {
+                os::mem::UnmapRaw(mem, size_to_mmap);
+                CloseCurrentFile(zipfile);
+                CloseArchive(zipfile);
+                printf("ExtractToMemory() failed!, uncompressed_length is %u, original strlen is %u\n",
+                       static_cast<uint>(uncompressed_length) - 1, static_cast<uint>(dlen));
+                ASSERT_EQ(1, 0);
+                return;
+            }
+
+            if (memcmp(mem, buf, dlen)) {
+                os::mem::UnmapRaw(mem, size_to_mmap);
+                CloseCurrentFile(zipfile);
+                CloseArchive(zipfile);
+                printf("ExtractToMemory() memcmp failed!");
+                ASSERT_EQ(1, 0);
+                return;
+            }
+
+            printf("Successfully extracted file \"%s\" from \"%s\", size %u\n", filename, archivename,
+                   static_cast<uint>(uncompressed_length));
+
+            os::mem::UnmapRaw(mem, size_to_mmap);
+        }
+
+        CloseCurrentFile(zipfile);
+        CloseArchiveFile(zipfile);
+        (void)fclose(myfile);
     }
-
-    // CloseArchive and release resource.
-    fclose(myfile);
-    panda::CloseArchive(&zip_archive_handler);
-    delete entry;
-
-    printf("Success.\n");
 }
 
-TEST(LIBZIPARCHIVE, OpenUncompressedArchiveFILE)
+TEST(LIBZIPARCHIVE, ZipFile)
 {
-    using uint16 = unsigned short;
-    using uint = unsigned int;
-
-    // The string to compress.
-    static const char *s_pTest_str =
+    static const char *data =
         "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Cras feugiat et odio ac sollicitudin. Maecenas "
         "lobortis ultrices eros sed pharetra. Phasellus in tortor rhoncus, aliquam augue ac, gravida elit. Sed "
         "molestie dolor a vulputate tincidunt. Proin a tellus quam. Suspendisse id feugiat elit, non ornare lacus. "
@@ -957,156 +529,126 @@ TEST(LIBZIPARCHIVE, OpenUncompressedArchiveFILE)
         "molestie urna. Mauris ultrices volutpat massa quis ultrices. Suspendisse rutrum lectus sit amet metus "
         "laoreet, non porta sapien venenatis. Fusce ut massa et purus elementum lacinia. Sed tempus bibendum pretium.";
 
-    // The comment
-    static const char *s_pComment = "This is a comment";
-
     /*
      * creating an empty pandafile
      */
-    pandasm::Parser p;
-
-    auto source = R"()";
-
-    std::string src_filename = "src.pa";
-    auto res = p.Parse(source, src_filename);
-    ASSERT_EQ(p.ShowError().err, pandasm::Error::ErrorType::ERR_NONE);
-
-    auto pf = pandasm::AsmEmitter::Emit(res.Value());
-    ASSERT_NE(pf, nullptr);
-
     std::vector<uint8_t> pf_data {};
-    const auto header_ptr = reinterpret_cast<const uint8_t *>(pf->GetHeader());
-    pf_data.assign(header_ptr, header_ptr + sizeof(panda_file::File::Header));
+    {
+        pandasm::Parser p;
 
-    // The zip filename
-    static const char *s_Test_archive_filename = "__LIBZIPARCHIVE__OpenUncompressedArchiveFILE__.zip";
+        auto source = R"()";
 
-    int i, ret;
-    const int N = 3;
-    char data[2048];
-    char archive_filename[64];
-    assert((strlen(s_pTest_str) + 64) < sizeof(data));
+        std::string src_filename = "src.pa";
+        auto res = p.Parse(source, src_filename);
+        ASSERT_EQ(p.ShowError().err, pandasm::Error::ErrorType::ERR_NONE);
 
-    ZipArchive object;  // on stack, but this is tmp obj as we will CloseArchive this.
-    ZipArchiveHandle zip_archive_handler = &object;
+        auto pf = pandasm::AsmEmitter::Emit(res.Value());
+        ASSERT_NE(pf, nullptr);
 
-    // ZipArchiveHandle zip_archive_handler = new ZipArchive;
-
-    // Delete the test archive, so it doesn't keep growing as we run this test
-    remove(s_Test_archive_filename);
-
-    // ************* Create Zip file *************
-    // Append a bunch of text files to the test archive
-    for (i = (N - 1); i >= 0; --i) {
-        (void)sprintf_s(archive_filename, 64, "%u.txt", i);
-        (void)sprintf_s(data, 2048, "%u %s %u", (N - 1) - i, s_pTest_str, i);
-        ret = CreateOrAddUncompressedFileIntoZip(s_Test_archive_filename, archive_filename, data, strlen(data) + 1,
-                                                 s_pComment, static_cast<uint16>(strlen(s_pComment)));
-        ASSERT_EQ(ret, 0) << "CreateOrAddUncompressedFileIntoZip failed!";
+        const auto header_ptr = reinterpret_cast<const uint8_t *>(pf->GetHeader());
+        pf_data.assign(header_ptr, header_ptr + sizeof(panda_file::File::Header));
     }
 
-    // Add a directory entry for testing
-    ret = CreateOrAddUncompressedFileIntoZip(s_Test_archive_filename, "directory/", NULL, 0, "no comment",
-                                             static_cast<uint16>(strlen("no comment")));
-    ASSERT_EQ(ret, 0) << "CreateOrAddUncompressedFileIntoZip failed!";
+    static const char *archivename = "__LIBZIPARCHIVE__ZipFile__.zip";
+    const int N = 3;
+    char buf[ZIP_BUFFER_LEN];
+    char archive_filename[ZIP_FILENAME_LEN];
+    int i = 0;
+    int ret = 0;
 
-    // Add a file into directory entry for testing
-    (void)sprintf_s(data, 2048, "%u %s %u", N, s_pTest_str, N);
-    ret = CreateOrAddUncompressedFileIntoZip(s_Test_archive_filename, "directory/indirectory.txt", data,
-                                             strlen(data) + 1, s_pComment, static_cast<uint16>(strlen(s_pComment)));
-    ASSERT_EQ(ret, 0) << "CreateOrAddUncompressedFileIntoZip failed!";
+    GenerateZipfile(data, archivename, N, buf, archive_filename, i, ret, pf_data);
 
-    // Add a pandafile into zip for testing
-    ret = CreateOrAddUncompressedFileIntoZip(s_Test_archive_filename, "classes.aex", pf_data.data(), pf_data.size(),
-                                             s_pComment, static_cast<uint16>(strlen(s_pComment)));
-    ASSERT_EQ(ret, 0) << "CreateOrAddUncompressedFileIntoZip failed!";
+    // Quick Check
+    ZipArchiveHandle zipfile = nullptr;
+    if (OpenArchive(zipfile, archivename) != 0) {
+        printf("OpenArchive error.\n");
+        ASSERT_EQ(1, 0);
+        return;
+    }
 
-    // Now try to open the archive.
-    ret = OpenArchive(s_Test_archive_filename, &zip_archive_handler);
-    ASSERT_EQ(ret, 0) << "OpenArchive failed!\n";
-
-    // Get and print information about each file in the archive.
-    for (i = 0; i < GetFileCount(&zip_archive_handler); i++) {
+    GlobalStat gi = GlobalStat();
+    if (GetGlobalFileInfo(zipfile, &gi) != 0) {
+        printf("GetGlobalFileInfo error.\n");
+        ASSERT_EQ(1, 0);
+        return;
+    }
+    for (i = 0; i < (int)gi.GetNumberOfEntry(); ++i) {
         EntryFileStat file_stat;
-        if (!StatFileWithIndex(&zip_archive_handler, &file_stat, i)) {
-            printf("StatFileWithIndex() failed!\n");
-            CloseArchive(&zip_archive_handler);
+        if (GetCurrentFileInfo(zipfile, &file_stat) != 0) {
+            CloseArchive(zipfile);
+            printf("GetCurrentFileInfo error. Current index i = %d \n", i);
             ASSERT_EQ(1, 0);
             return;
         }
-
-        printf(
-            "Filename: \"%s\", Comment: \"%s\", Uncompressed size: %u, Compressed size: %u, Is Dir: %u, Offset: %u\n",
-            file_stat.GetFileName(), file_stat.GetComment(), file_stat.GetUncompressedSize(),
-            static_cast<uint>(file_stat.GetCompressedSize()), IsFileDirectory(&zip_archive_handler, i),
-            file_stat.offset);
-
-        if (!strcmp(file_stat.GetFileName(), "directory/")) {
-            if (!IsFileDirectory(&zip_archive_handler, i)) {
-                printf("IsFileDirectory() didn't return the expected results!\n");
-                CloseArchive(&zip_archive_handler);
+        printf("Index: \"%u\", Uncompressed size: %u, Compressed size: %u, Compressed(): %d\n", i,
+               (uint)file_stat.GetUncompressedSize(), file_stat.GetCompressedSize(), file_stat.IsCompressed());
+        if ((i + 1) < (int)gi.GetNumberOfEntry()) {
+            if (GoToNextFile(zipfile) != 0) {
+                CloseArchive(zipfile);
+                printf("GoToNextFile error. Current index i = %d \n", i);
                 ASSERT_EQ(1, 0);
                 return;
             }
         }
     }
 
-    // Close the archive, freeing any resources it was using
-    CloseArchive(&zip_archive_handler);
-
-    // ************* Unzip *************
-    FILE *tmpfile = fopen(s_Test_archive_filename, "rbe");
-    ret = OpenArchiveFILE(tmpfile, &zip_archive_handler);
-    ASSERT_EQ(ret, 0) << "Can't open archive\n";
-
-    // Find entry info.
-    const char *myname = "classes.aex";
-    const char *mycomment = "This is a comment";
-
-    unique_ptr<EntryFileStat> fileentry = std::make_unique<EntryFileStat>();
-    EntryFileStat *entry = fileentry.get();
-    unique_ptr<FILE, void (*)(FILE *)> myfile(tmpfile, [](FILE *file) { fclose(file); });
-    unique_ptr<ZipArchiveHandle, bool (*)(ZipArchiveHandle *)> zfile(&zip_archive_handler, CloseArchive);
-    ret = FindEntry(&zip_archive_handler, entry, myname, mycomment);
-
-    ASSERT_EQ(ret, 0) << "FindEntry() can't find entry: " << myname << "!" << std::endl;
-
-    std::cout << "Filename: \"" << entry->GetFileName() << "\", Comment: \"" << entry->GetComment()
-              << "\", Uncompressed size: " << entry->GetUncompressedSize()
-              << ", Compressed size: " << entry->GetCompressedSize() << ", IsCompressed(): " << entry->IsCompressed()
-              << ", Is Dir: " << IsFileDirectory(&zip_archive_handler, static_cast<uint>(entry->GetIndex()))
-              << ", archive offset: " << entry->GetOffset() << std::endl;
-
-    ASSERT_NE(entry->GetUncompressedSize(), 0);
-
-    ASSERT_EQ(entry->GetUncompressedSize(), entry->GetCompressedSize())
-        << "Uncompressed archive:" << myname << "GetUncompressedSize():" << entry->GetUncompressedSize()
-        << " GetCompressedSize():" << entry->GetCompressedSize() << std::endl;
-    ASSERT_NE(entry->GetOffset(), 0) << "Uncompressed archive:" << myname << " entry->GetOffset()=0" << std::endl;
-
-    ASSERT_NE(entry->IsCompressed(), 1) << s_Test_archive_filename << " Compressed Entry file " << myname
-                                        << " entry->IsCompressed() == 0!" << std::endl;
-
-    zfile.reset();
-    CloseArchive(&zip_archive_handler);
-
-    std::string_view filename(s_Test_archive_filename);
-
-    std::cout << "HandleArchivee filename: " << filename.data() << std::endl;
-    std::unique_ptr<const panda_file::File> file = panda_file::HandleArchive(tmpfile, filename);
-    ASSERT_NE(file, nullptr) << "Fail to map " << s_Test_archive_filename << " archive " << entry->GetFileName()
-                             << " GetOffset()=" << entry->GetOffset() << std::endl;
-
-    ASSERT_EQ(pf_data.size(), entry->GetUncompressedSize())
-        << "pf_data.size()=" << pf_data.size() << " GetUncompressedSize=" << entry->GetUncompressedSize() << std::endl;
-
-    for (uint32_t j = 0; j < entry->GetUncompressedSize(); j++) {
-        ASSERT_EQ(pf_data[j], *(file->GetBase() + j))
-            << "Fail to map " << s_Test_archive_filename << " archive " << entry->GetFileName() << ", pf[" << j
-            << "]=" << pf_data[j] << ", file[" << j << "]=" << *(file->GetBase() + j) << std::endl;
-    }
-
+    CloseArchive(zipfile);
+    (void)remove(archivename);
     printf("Success.\n");
 }
 
+TEST(LIBZIPARCHIVE, UnZipFile)
+{
+    static const char *data =
+        "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Cras feugiat et odio ac sollicitudin. Maecenas "
+        "lobortis ultrices eros sed pharetra. Phasellus in tortor rhoncus, aliquam augue ac, gravida elit. Sed "
+        "molestie dolor a vulputate tincidunt. Proin a tellus quam. Suspendisse id feugiat elit, non ornare lacus. "
+        "Mauris arcu ex, pretium quis dolor ut, porta iaculis eros. Vestibulum sagittis placerat diam, vitae efficitur "
+        "turpis ultrices sit amet. Etiam elementum bibendum congue. In sit amet dolor ultricies, suscipit arcu ac, "
+        "molestie urna. Mauris ultrices volutpat massa quis ultrices. Suspendisse rutrum lectus sit amet metus "
+        "laoreet, non porta sapien venenatis. Fusce ut massa et purus elementum lacinia. Sed tempus bibendum pretium.";
+
+    /*
+     * creating an empty pandafile
+     */
+    std::vector<uint8_t> pf_data {};
+    {
+        pandasm::Parser p;
+
+        auto source = R"()";
+
+        std::string src_filename = "src.pa";
+        auto res = p.Parse(source, src_filename);
+        ASSERT_EQ(p.ShowError().err, pandasm::Error::ErrorType::ERR_NONE);
+
+        auto pf = pandasm::AsmEmitter::Emit(res.Value());
+        ASSERT_NE(pf, nullptr);
+
+        const auto header_ptr = reinterpret_cast<const uint8_t *>(pf->GetHeader());
+        pf_data.assign(header_ptr, header_ptr + sizeof(panda_file::File::Header));
+    }
+
+    // The zip filename
+    static const char *archivename = "__LIBZIPARCHIVE__UnZipFile__.zip";
+    const int N = 3;
+    char buf[ZIP_BUFFER_LEN];
+    char archive_filename[ZIP_FILENAME_LEN];
+    char filename[ZIP_FILENAME_LEN];
+    int i = 0;
+    int ret = 0;
+
+    GenerateZipfile(data, archivename, N, buf, archive_filename, i, ret, pf_data);
+
+    UnzipFileCheckDirectory(archivename, filename);
+
+    UnzipFileCheckTxt(archivename, filename, data, N, buf, ret);
+
+    UnzipFileCheckInDirectory(archivename, filename, data, N, buf, ret);
+
+    (void)sprintf_s(filename, ZIP_FILENAME_LEN, "classes.abc");
+    UnzipFileCheckPandaFile(archivename, filename, pf_data, ret);
+
+    (void)remove(archivename);
+    printf("Success.\n");
+}
 }  // namespace panda::test
