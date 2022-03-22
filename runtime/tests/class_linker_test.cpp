@@ -723,7 +723,7 @@ public:
 
 private:
     const uint8_t *descriptor_;
-    bool need_copy_descriptor_;
+    bool need_copy_descriptor_ {};
     Class *klass_;
     bool is_success_ {false};
 };

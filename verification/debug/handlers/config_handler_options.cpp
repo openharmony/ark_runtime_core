@@ -78,19 +78,23 @@ static bool Verify(const Section &section, const FlagsSection &flags)
             std::vector<PandaString> c;
             const char *start = i.c_str();
             const char *end = i.c_str() + i.length();  // NOLINT
+
             if (!LiteralsParser<std::vector, PandaString>()(c, start, end)) {
                 LOG_VERIFIER_DEBUG_CONFIG_WRONG_OPTIONS_LINE(i);
                 return false;
             }
-            if (!c.empty()) {
-                for (const auto &l : c) {
-                    if (section_flags.count(l) == 0) {
-                        LOG_VERIFIER_DEBUG_CONFIG_WRONG_OPTION_FOR_SECTION(l, s.name, GetKeys(section_flags));
-                        return false;
-                    }
-                    section_flags.at(l).of(verif_opts) = true;
-                    LOG_VERIFIER_DEBUG_CONFIG_OPTION_IS_ACTIVE_INFO(s.name, l);
+
+            if (c.empty()) {
+                continue;
+            }
+
+            for (const auto &l : c) {
+                if (section_flags.count(l) == 0) {
+                    LOG_VERIFIER_DEBUG_CONFIG_WRONG_OPTION_FOR_SECTION(l, s.name, GetKeys(section_flags));
+                    return false;
                 }
+                section_flags.at(l).of(verif_opts) = true;
+                LOG_VERIFIER_DEBUG_CONFIG_OPTION_IS_ACTIVE_INFO(s.name, l);
             }
         }
     }

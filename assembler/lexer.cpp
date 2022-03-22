@@ -340,12 +340,9 @@ void Lexer::LexPreprocess()
                           << std::string_view(&*(curr_line_->buffer.begin() + curr_line_->pos),
                                               curr_line_->end - curr_line_->pos);
 
-    size_t cmt_pos;
-    bool inside_str_lit;
-
     // Searching for comment marker located outside of the string literals.
-    inside_str_lit = curr_line_->buffer.size() > 0 && curr_line_->buffer[0] == '\"';
-    cmt_pos = curr_line_->buffer.find_first_of("\"#", 0);
+    bool inside_str_lit = curr_line_->buffer.size() > 0 && curr_line_->buffer[0] == '\"';
+    size_t cmt_pos = curr_line_->buffer.find_first_of("\"#", 0);
     if (cmt_pos != std::string::npos) {
         do {
             if (cmt_pos != 0 && curr_line_->buffer[cmt_pos - 1] != '\\' && curr_line_->buffer[cmt_pos] == '\"') {
