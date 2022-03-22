@@ -333,21 +333,6 @@ void ReferenceStorage::UpdateMovedRefs()
     }
 }
 
-void SortVector(PandaVector<std::pair<PandaString, int>> &info_vec)  // NOLINT
-{
-    size_t vec_size = info_vec.size();
-    if (vec_size == 0) {
-        return;
-    }
-    for (size_t i = 0; i < vec_size - 1; i++) {
-        for (size_t j = vec_size - 1; j > 0; j--) {
-            if (info_vec[j].second > info_vec[j - 1].second) {
-                std::swap(info_vec[j], info_vec[j - 1]);
-            }
-        }
-    }
-}
-
 void ReferenceStorage::DumpLocalRefClasses()
 {
     PandaMap<PandaString, int> classes_info;
@@ -361,11 +346,13 @@ void ReferenceStorage::DumpLocalRefClasses()
             classes_info[cls_name]++;
         }
     }
-    PandaVector<std::pair<PandaString, int>> info_vec(classes_info.begin(), classes_info.end());
-    SortVector(info_vec);
-    int size = info_vec.size() > MAX_DUMP_LOCAL_NUMS ? MAX_DUMP_LOCAL_NUMS : info_vec.size();
+    using InfoPair = std::pair<PandaString, int>;
+    PandaVector<InfoPair> info_vec(classes_info.begin(), classes_info.end());
+    size_t size = std::min(MAX_DUMP_LOCAL_NUMS, info_vec.size());
+    std::partial_sort(info_vec.begin(), info_vec.begin() + size, info_vec.end(),
+                      [](const InfoPair &lhs, const InfoPair &rhs) { return lhs.second < rhs.second; });
     LOG(ERROR, RUNTIME) << "The top " << size << " classes of local references are:";
-    for (int i = 0; i < size; i++) {
+    for (size_t i = 0; i < size; i++) {
         LOG(ERROR, RUNTIME) << "\t" << info_vec[i].first << ": " << info_vec[i].second;
     }
 }
