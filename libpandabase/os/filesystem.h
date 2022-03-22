@@ -22,7 +22,7 @@
 #if defined(PANDA_TARGET_WINDOWS)
 #include <fileapi.h>
 #ifndef NAME_MAX
-#define NAME_MAX 255
+constexpr size_t NAME_MAX = 255;
 #endif  // NAME_MAX
 #elif defined(USE_STD_FILESYSTEM)
 #include <filesystem>

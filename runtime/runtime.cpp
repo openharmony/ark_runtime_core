@@ -243,6 +243,11 @@ bool Runtime::Create(const RuntimeOptions &options, const std::vector<LanguageCo
 
     CreateInstance(options, internal_allocator, ctxs);
 
+    if (instance == nullptr) {
+        LOG(ERROR, RUNTIME) << "Failed to create runtime instance";
+        return false;
+    }
+
     if (!instance->Initialize()) {
         LOG(ERROR, RUNTIME) << "Failed to initialize runtime";
         delete instance;
