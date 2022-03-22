@@ -238,11 +238,11 @@ TEST(emittertests, debuginfo)
 
         EXPECT_THAT(opcodes, ::testing::ElementsAreArray(program, opcodes.size()));
 
-        size_t size;
-        bool is_full;
+        size_t size {};
+        bool is_full {};
         size_t constant_pool_offset = 0;
 
-        uint32_t offset;
+        uint32_t offset {};
 
         std::tie(offset, size, is_full) = leb128::DecodeUnsigned<uint32_t>(&constant_pool[constant_pool_offset]);
         constant_pool_offset += size;

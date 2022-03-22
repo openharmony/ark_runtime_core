@@ -60,22 +60,30 @@ public:
     void StoreCurrentRegContextForAddr(const uint8_t *addr, Reporter reporter)
     {
         if (HasContext(addr)) {
-            RegContext &ctx = RegContextOnCheckPoint_[addr];
-            auto lub = ctx & CurrentRegContext_;
-
-            if (lub.HasInconsistentRegs()) {
-                for (int reg_idx : lub.InconsistentRegsNums()) {
-                    if (!reporter(reg_idx, CurrentRegContext_[reg_idx], ctx[reg_idx])) {
-                        break;
-                    }
-                }
-            }
-            ctx &= CurrentRegContext_;
-            if (ctx.HasInconsistentRegs()) {
-                ctx.RemoveInconsistentRegs();
-            }
+            StoreCurrentRegContextForAddrIfHasContext(addr, reporter);
         } else if (IsCheckPoint(addr)) {
             RegContextOnCheckPoint_[addr] = CurrentRegContext_;
+        }
+    }
+
+    template <typename Reporter>
+    void StoreCurrentRegContextForAddrIfHasContext(const uint8_t *addr, Reporter reporter)
+    {
+        RegContext &ctx = RegContextOnCheckPoint_[addr];
+        auto lub = ctx & CurrentRegContext_;
+
+        if (lub.HasInconsistentRegs()) {
+            for (int reg_idx : lub.InconsistentRegsNums()) {
+                if (!reporter(reg_idx, CurrentRegContext_[reg_idx], ctx[reg_idx])) {
+                    break;
+                }
+            }
+        }
+
+        ctx &= CurrentRegContext_;
+
+        if (ctx.HasInconsistentRegs()) {
+            ctx.RemoveInconsistentRegs();
         }
     }
 

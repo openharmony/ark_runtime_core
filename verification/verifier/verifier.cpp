@@ -82,23 +82,28 @@ bool VerifierProcessFile(const std::string &filename)
             klass = class_linker.GetExtension(ctx)->GetClass(*file, class_id);
         }
 
-        if (klass != nullptr) {
-            auto *panda_file = klass->GetPandaFile();
-            bool is_system_class = panda_file == nullptr || verifier::JobQueue::IsSystemFile(panda_file);
-            if (is_system_class) {
-                continue;
-            }
-            if (is_default_context) {
-                ctx = Runtime::GetCurrent()->GetLanguageContext(*klass);
-                is_default_context = true;
-            }
-            for (auto &method : klass->GetMethods()) {
-                // we need AccessToManagedObjectsScope for Verify() since it can allocate objects
-                ScopedManagedCodeThread sj(MTManagedThread::GetCurrent());
-                result = method.Verify();
-                if (!result) {
-                    return result;
-                }
+        if (klass == nullptr) {
+            continue;
+        }
+
+        auto *panda_file = klass->GetPandaFile();
+        bool is_system_class = panda_file == nullptr || verifier::JobQueue::IsSystemFile(panda_file);
+
+        if (is_system_class) {
+            continue;
+        }
+
+        if (is_default_context) {
+            ctx = Runtime::GetCurrent()->GetLanguageContext(*klass);
+            is_default_context = true;
+        }
+
+        for (auto &method : klass->GetMethods()) {
+            // we need AccessToManagedObjectsScope for Verify() since it can allocate objects
+            ScopedManagedCodeThread sj(MTManagedThread::GetCurrent());
+            result = method.Verify();
+            if (!result) {
+                return result;
             }
         }
     }
