@@ -16,6 +16,8 @@
 #include <cstring>
 #include <string>
 
+#include "securec.h"
+
 namespace panda::terminate {
 
 #ifndef FUZZING_EXIT_ON_FAILED_ASSERT_FOR
