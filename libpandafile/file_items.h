@@ -115,7 +115,7 @@ public:
 
     virtual size_t CalculateSize() const = 0;
 
-    virtual void ComputeLayout() {};
+    virtual void ComputeLayout() {}
 
     virtual size_t Alignment()
     {

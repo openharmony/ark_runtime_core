@@ -116,12 +116,12 @@ private:
     friend ConditionVariable;
 
 protected:
-    explicit Mutex(bool recursive) : recursive_mutex_(recursive) {};
+    explicit Mutex(bool recursive) : recursive_mutex_(recursive) {}
 };
 
 class CAPABILITY("mutex") RecursiveMutex : public Mutex {
 public:
-    RecursiveMutex() : Mutex(true) {};
+    RecursiveMutex() : Mutex(true) {}
 
     ~RecursiveMutex() = default;
 

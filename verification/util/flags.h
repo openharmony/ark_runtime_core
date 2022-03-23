@@ -91,6 +91,7 @@ public:
         return {mask, flags_};
     }
 #endif
+
 protected:
     constexpr static UInt mask = static_cast<UInt>(1);
     UInt flags_ {0};

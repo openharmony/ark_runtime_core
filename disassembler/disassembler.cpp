@@ -1258,7 +1258,7 @@ pandasm::extensions::Language Disassembler::PFLangToPandasmLang(
 
 std::string Disassembler::StringDataToString(panda_file::File::StringData sd) const
 {
-    std::string res((char *)sd.data);
+    std::string res(reinterpret_cast<char *>(const_cast<uint8_t *>(sd.data)));
     return res;
 }
 

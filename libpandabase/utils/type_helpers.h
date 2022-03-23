@@ -56,7 +56,7 @@ __extension__ using int128 = __int128;
 #include <cstdint>
 using int128 = struct int128_type {
     constexpr int128_type() = default;
-    constexpr explicit int128_type(std::int64_t v) : lo(v) {};
+    constexpr explicit int128_type(std::int64_t v) : lo(v) {}
     std::int64_t hi {0};
     std::int64_t lo {0};
     bool operator==(std::int64_t v) const

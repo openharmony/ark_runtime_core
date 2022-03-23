@@ -199,17 +199,17 @@ public:
                 case TypeVariance::INVARIANT:
                     if (!TypingRel_.IsInIsoRelation(*lhs_it, *rhs_it)) {
                         return false;
-                    };
+                    }
                     break;
                 case TypeVariance::COVARIANT:
                     if (!TypingRel_.IsInDirectRelation(*lhs_it, *rhs_it)) {
                         return false;
-                    };
+                    }
                     break;
                 case TypeVariance::CONTRVARIANT:
                     if (!TypingRel_.IsInInverseRelation(*lhs_it, *rhs_it)) {
                         return false;
-                    };
+                    }
                     break;
                 default:
                     break;

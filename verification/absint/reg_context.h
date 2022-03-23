@@ -208,7 +208,7 @@ public:
             result += abs_type_val.template Image<PandaString>(img);
             if (comma) {
                 log_string += ", ";
-            };
+            }
             log_string += result;
             comma = true;
             return true;

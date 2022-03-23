@@ -267,19 +267,19 @@ public:
     {
         for (size_t pos = 0; pos < size_in_words(); ++pos) {
             data_[pos] = 0;
-        };
+        }
     }
     void set()
     {
         for (size_t pos = 0; pos < size_in_words(); ++pos) {
             data_[pos] = MAX_WORD;
-        };
+        }
     }
     void invert()
     {
         for (size_t pos = 0; pos < size_in_words(); ++pos) {
             data_[pos] = ~data_[pos];
-        };
+        }
     }
     void Clr(size_t idx)
     {

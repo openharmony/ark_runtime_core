@@ -20,9 +20,8 @@
 #include "libpandabase/utils/expected.h"
 #include "runtime/include/mem/panda_smart_pointers.h"
 #include "runtime/include/mem/panda_string.h"
-#include "runtime/mem/gc/gc_phase.h"
-#include "runtime/mem/refstorage/reference.h"
 #include "runtime/include/panda_vm.h"
+#include "runtime/mem/gc/gc_phase.h"
 #include "runtime/mem/refstorage/reference.h"
 
 namespace panda {

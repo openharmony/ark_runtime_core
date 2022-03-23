@@ -244,7 +244,7 @@ public:
                 default:
                     result += "<unknown>";
                     break;
-            };
+            }
             return true;
         });
         result += "\n";
@@ -263,7 +263,7 @@ public:
                 default:
                     result += "<unknown>";
                     break;
-            };
+            }
             return true;
         });
 
@@ -319,7 +319,7 @@ private:
                     default:
                         result += "<unknown>";
                         break;
-                };
+                }
                 return true;
             });
             result += "\n";

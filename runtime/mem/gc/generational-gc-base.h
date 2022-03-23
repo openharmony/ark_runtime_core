@@ -27,6 +27,7 @@ namespace panda::mem {
 template <class LanguageConfig>
 class GenerationalGC : public GCLang<LanguageConfig> {
 public:
+
 protected:
     GenerationalGC(ObjectAllocatorBase *object_allocator, const GCSettings &settings)
         : GCLang<LanguageConfig>(object_allocator, settings)

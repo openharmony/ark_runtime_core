@@ -68,7 +68,7 @@ Class *Field::ResolveTypeClass(ClassLinkerErrorHandler *error_handler) const
                                  error_handler);
         default:
             UNREACHABLE();
-    };
+    }
 }
 
 }  // namespace panda

@@ -3930,7 +3930,7 @@ private:
             END_SHOW_MSG();
             SET_STATUS_FOR_MSG(BadAccumulatorType);
             return false;
-        };
+        }
 
         MoveToNextInst<format>();
         return true;
