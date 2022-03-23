@@ -113,8 +113,8 @@ TEST_F(DebuggerTest, Frame)
     frame->SetBytecodeOffset(BYTECODE_OFFSET);
 
     struct VRegValue {
-        uint64_t value;
-        bool is_ref;
+        uint64_t value {};
+        bool is_ref {};
     };
 
     std::vector<VRegValue> regs {{0x1111111122222222, false},

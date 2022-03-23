@@ -305,20 +305,20 @@ MTManagedThread *ThreadManager::SuspendAndWaitThreadByInternalThreadId(uint32_t 
             ScopedManagedCodeThread sa(current);
             os::memory::LockHolder lock(thread_lock_);
             auto *thread = GetThreadByInternalThreadIdWithLockHeld(thread_id);
-            if (thread != nullptr) {
-                ASSERT(current != thread);
-                // CODECHECK-NOLINTNEXTLINE(C_RULE_ID_FUNCTION_NESTING_LEVEL)
-                if (current->IsSuspended()) {
-                    // Unsafe to suspend as other thread may be waiting for this thread to suspend;
-                    // Should get suspended on ScopedManagedCodeThread
-                    continue;
-                }
-                thread->SuspendImpl(true);
-                suspended = thread;
-            } else {
+
+            if (thread == nullptr) {
                 // no thread found, exit
                 return nullptr;
             }
+
+            ASSERT(current != thread);
+            if (current->IsSuspended()) {
+                // Unsafe to suspend as other thread may be waiting for this thread to suspend;
+                // Should get suspended on ScopedManagedCodeThread
+                continue;
+            }
+            thread->SuspendImpl(true);
+            suspended = thread;
         } else if (suspended->GetStatus() != ThreadStatus::RUNNING) {
             // Thread is suspended now
             return suspended;
