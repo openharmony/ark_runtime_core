@@ -76,16 +76,21 @@ void RefBlock::UpdateMovedRefs()
             continue;
         }
         for (size_t index = 0; index < REFS_IN_BLOCK; index++) {
-            if (block->IsBusyIndex(index)) {
-                auto object_pointer = block->refs_[index];
-                auto *object = object_pointer.ReinterpretCast<ObjectHeader *>();
-                auto obj = reinterpret_cast<ObjectHeader *>(object);
-                if (obj->IsForwarded()) {
-                    LOG(DEBUG, GC) << " Update pointer for obj: " << mem::GetDebugInfoAboutObject(obj);
-                    ObjectHeader *forward_address = GetForwardAddress(obj);
-                    block->refs_[index] = reinterpret_cast<ObjectHeader *>(forward_address);
-                }
+            if (!block->IsBusyIndex(index)) {
+                continue;
             }
+
+            auto object_pointer = block->refs_[index];
+            auto *object = object_pointer.ReinterpretCast<ObjectHeader *>();
+            auto obj = reinterpret_cast<ObjectHeader *>(object);
+
+            if (!obj->IsForwarded()) {
+                continue;
+            }
+
+            LOG(DEBUG, GC) << " Update pointer for obj: " << mem::GetDebugInfoAboutObject(obj);
+            ObjectHeader *forward_address = GetForwardAddress(obj);
+            block->refs_[index] = reinterpret_cast<ObjectHeader *>(forward_address);
         }
     }
 }

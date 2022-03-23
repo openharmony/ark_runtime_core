@@ -128,7 +128,6 @@ Solutions:
 */
 
 namespace panda::verifier {
-namespace {
 template <typename Handler>
 PandaVector<Type> FilterItems(const PandaVector<Type> &items, Handler &&handler)
 {
@@ -151,7 +150,6 @@ bool IsItemPresent(const PandaVector<Type> &items, Handler &&handler)
     }
     return false;
 }
-}  // namespace
 
 class AbsIntInstructionHandler {
     using CachedClass = CacheOfRuntimeThings::CachedClass;

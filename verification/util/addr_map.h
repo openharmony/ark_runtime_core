@@ -122,13 +122,14 @@ public:
                     start = reinterpret_cast<PtrType>(addr);
                 }
             } else {
-                if (!BitMap_[bit_offset]) {
-                    end = reinterpret_cast<PtrType>(addr - 1);
-                    if (!cb(start, end)) {
-                        return;
-                    }
-                    start = nullptr;
+                if (BitMap_[bit_offset]) {
+                    continue;
                 }
+                end = reinterpret_cast<PtrType>(addr - 1);
+                if (!cb(start, end)) {
+                    return;
+                }
+                start = nullptr;
             }
         }
         if (start != nullptr) {
