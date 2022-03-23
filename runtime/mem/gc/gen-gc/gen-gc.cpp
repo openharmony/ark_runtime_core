@@ -24,7 +24,6 @@
 #include "runtime/mem/refstorage/global_object_storage.h"
 #include "runtime/mem/rendezvous.h"
 #include "runtime/include/panda_vm.h"
-#include "runtime/include/hclass.h"
 #include "runtime/mem/gc/card_table-inl.h"
 #include "runtime/timing.h"
 #include "runtime/include/exceptions.h"

@@ -172,7 +172,7 @@ public:
 #undef D
             default:
                 break;
-        };
+        }
 
         UNREACHABLE();
         return 0;

@@ -74,7 +74,7 @@ public:
     using VarIdx = size_t;
 
     Variables() = default;
-    Variables(TypeSystemKind) {};
+    Variables(TypeSystemKind) {}
     Variables(const Variables &) = default;
     Variables(Variables &&) = default;
     Variables &operator=(const Variables &) = default;

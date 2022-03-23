@@ -216,10 +216,10 @@
 #define NO_THREAD_SANITIZE __attribute__((no_sanitize("thread"))) // NOLINT(cppcoreguidelines-macro-usage)
 // NOLINTNEXTLINE(cppcoreguidelines-macro-usage)
 #define TSAN_ANNOTATE_HAPPENS_BEFORE(addr) \
-    AnnotateHappensBefore(__FILE__, __LINE__, (void*)(addr))
+    AnnotateHappensBefore(__FILE__, __LINE__, reinterpret_cast<void *>(addr))
 // NOLINTNEXTLINE(cppcoreguidelines-macro-usage)
 #define TSAN_ANNOTATE_HAPPENS_AFTER(addr) \
-    AnnotateHappensAfter(__FILE__, __LINE__, (void*)(addr))
+    AnnotateHappensAfter(__FILE__, __LINE__, reinterpret_cast<void *>(addr))
 // NOLINTNEXTLINE(cppcoreguidelines-macro-usage)
 // NOLINTNEXTLINE(cppcoreguidelines-macro-usage)
 #define TSAN_ANNOTATE_IGNORE_WRITES_BEGIN() \
@@ -243,10 +243,10 @@ extern "C" void AnnotateIgnoreWritesEnd(const char* f, int l);
 #define NO_THREAD_SANITIZE __attribute__((no_sanitize("thread"))) // NOLINT(cppcoreguidelines-macro-usage)
 // NOLINTNEXTLINE(cppcoreguidelines-macro-usage)
 #define TSAN_ANNOTATE_HAPPENS_BEFORE(addr) \
-    AnnotateHappensBefore(__FILE__, __LINE__, (void*)(addr))
+    AnnotateHappensBefore(__FILE__, __LINE__, reinterpret_cast<void *>(addr))
 // NOLINTNEXTLINE(cppcoreguidelines-macro-usage)
 #define TSAN_ANNOTATE_HAPPENS_AFTER(addr) \
-    AnnotateHappensAfter(__FILE__, __LINE__, (void*)(addr))
+    AnnotateHappensAfter(__FILE__, __LINE__, reinterpret_cast<void *>(addr))
 // NOLINTNEXTLINE(cppcoreguidelines-macro-usage)
 // NOLINTNEXTLINE(cppcoreguidelines-macro-usage)
 #define TSAN_ANNOTATE_IGNORE_WRITES_BEGIN() \

@@ -91,7 +91,7 @@ public:
     {
         // Loop until lock is taken
         while (lock_.test_and_set(std::memory_order_seq_cst)) {
-        };
+        }
         if (string_ != nullptr) {
             ASSERT_EQ(string_, string);
         } else {

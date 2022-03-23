@@ -34,7 +34,6 @@
 #include "runtime/include/stack_walker.h"
 #include "runtime/include/language_context.h"
 #include "runtime/include/locks.h"
-#include "runtime/include/language_context.h"
 #include "runtime/include/thread_status.h"
 #include "runtime/interpreter/cache.h"
 #include "runtime/interpreter/frame.h"

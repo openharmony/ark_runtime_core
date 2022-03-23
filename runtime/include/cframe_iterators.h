@@ -21,7 +21,6 @@
 #include "runtime/arch/helpers.h"
 #include "runtime/include/cframe.h"
 #include "runtime/include/method.h"
-#include "libpandafile/shorty_iterator.h"
 #include "utils/bit_utils.h"
 
 namespace panda {

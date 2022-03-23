@@ -15,7 +15,6 @@
 
 #include "assembly-emitter.h"
 
-#include <cctype>
 #include <algorithm>
 #include <cctype>
 #include <iostream>

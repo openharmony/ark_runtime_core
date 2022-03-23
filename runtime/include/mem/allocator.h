@@ -569,6 +569,7 @@ class ObjectAllocatorNoGen final : public ObjectAllocatorBase {
     using ObjectAllocator = RunSlotsAllocator<ObjectAllocConfig>;       // Allocator used for middle size allocations
     using LargeObjectAllocator = FreeListAllocator<ObjectAllocConfig>;  // Allocator used for large objects
     using HumongousObjectAllocator = HumongousObjAllocator<ObjectAllocConfig>;  // Allocator used for humongous objects
+    
 public:
     NO_MOVE_SEMANTIC(ObjectAllocatorNoGen);
     NO_COPY_SEMANTIC(ObjectAllocatorNoGen);
