@@ -64,6 +64,30 @@ module Util
   end
 end
 
+module FreezeMixin
+  class << self
+    def included(base)
+      base.extend ClassMethods
+    end
+  end
+
+  module ClassMethods
+    def freeze_defined_methods
+      @frozen = instance_methods.map { |m| [m, true] }.to_h
+    end
+
+    def frozen?(name)
+      defined?(@frozen) && @frozen[name]
+    end
+
+    def method_added(name)
+      raise "Method '#{name}' has been already defined" if frozen?(name)
+
+      super
+    end
+  end
+end
+
 # Methods for YAML instructions
 # 'Instruction' instances are created for every format of every isa.yaml
 # instruction and inherit properties of its instruction group.
@@ -204,6 +228,9 @@ class Invalid
   def handler_name
     'INVALID'
   end
+
+  include FreezeMixin
+  freeze_defined_methods
 end
 
 # Methods over format names
@@ -254,6 +281,9 @@ class Format
   cached def pretty_helper
     name.sub('op_', '')
   end
+
+  include FreezeMixin
+  freeze_defined_methods
 end
 
 # Operand types and encoding
@@ -303,6 +333,9 @@ class Operand
   def size
     @type[1..-1].to_i
   end
+
+  include FreezeMixin
+  freeze_defined_methods
 end
 
 # Helper class for generating dispatch tables
@@ -492,13 +525,23 @@ module Panda
     hash
   end
 
+  private_class_method def merge_group_and_insn(group, insn)
+    props = group.to_h
+    props.delete(:instructions)
+    props.merge(insn.to_h) do |_, old, new|
+      if old.is_a?(Array) && new.is_a?(Array)
+        old | new # extend array-like properties instead of overriding
+      else
+        new
+      end
+    end
+  end
+
   private_class_method def each_data_instruction
     # create separate instance for every instruction format and inherit group properties
     @each_data_instruction ||= groups.each_with_object([]) do |g, obj|
       g.instructions.each do |i|
-        props = g.to_h
-        props.delete(:instructions)
-        data_insn = props.merge(i.to_h) # instruction may override group props
+        data_insn = merge_group_and_insn(g, i)
         if data_insn[:opcode_idx] && (data_insn[:opcode_idx].size != data_insn[:format].size)
           raise 'format and opcode_idx arrays should have equal size'
         end
