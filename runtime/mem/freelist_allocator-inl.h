@@ -748,7 +748,7 @@ bool FreeListAllocator<AllocConfigT, LockConfigT>::ContainObject(const ObjectHea
 template <typename AllocConfigT, typename LockConfigT>
 bool FreeListAllocator<AllocConfigT, LockConfigT>::IsLive(const ObjectHeader *obj)
 {
-    ASSERT(ContainObject(obj) == true);
+    ASSERT(ContainObject(obj));
     void *obj_mem = static_cast<void *>(const_cast<ObjectHeader *>(obj));
     // Get start address of pool via PoolManager for input object
     // for avoid iteration over all pools in allocator

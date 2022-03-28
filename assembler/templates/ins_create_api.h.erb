@@ -41,7 +41,7 @@ inline Ins Create_<%= insn.asm_token %>(<%= signature_str %>)
 %   end
 %   format.each_with_index do |o, i|
 %       if o.name.start_with?('imm')
-%          if insn.jump? == true
+%          if insn.jump?
     <%=group.first.emitter_name%>_.ids.push_back(label);
 %          else
     <%=group.first.emitter_name%>_.imms.emplace_back(<%= o.name %>);

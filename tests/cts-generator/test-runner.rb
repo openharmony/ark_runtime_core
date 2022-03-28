@@ -254,7 +254,7 @@ if $CONCURRENCY > 1
       end
 
       # We have active treads, kill them
-      if has_active_tread == true
+      if has_active_tread
         runner_threads.each do |t|
           status = t.status
           if status != false

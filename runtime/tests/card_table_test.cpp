@@ -160,7 +160,7 @@ TEST_F(CardTableTest, ClearTest)
     while (addrSet.size() <= kAllocCount) {
         uintptr_t addr;
         addr = GetRandomCardAddress();
-        if (addrSet.insert(addr).second == false) {
+        if (!addrSet.insert(addr).second) {
             continue;
         }
         card_table_->MarkCard(addr);
@@ -190,7 +190,7 @@ TEST_F(CardTableTest, ClearAllTest)
     while (addrSet.size() < kAllocCount) {
         uintptr_t addr;
         addr = GetRandomCardAddress();
-        if (addrSet.insert(addr).second == false) {
+        if (!addrSet.insert(addr).second) {
             continue;
         }
         card_table_->MarkCard(addr);
