@@ -31,8 +31,6 @@ void ExecuteImpl(ManagedThread* thread, const uint8_t *pc, Frame* frame) {
 #pragma GCC diagnostic ignored "-Wpedantic"
 #endif
 
-#define INSTRUMENT_FRAME() do { if (enable_instrumentation && (handler.GetFrame()->IsForcePop() || handler.GetFrame()->IsRetryInstruction())) { goto INSTRUMENT_FRAME_HANDLER; } } while (0)
-
     ASSERT(!thread->IsCurrentFrameCompiled());
 
     EVENT_METHOD_ENTER(frame->GetMethod()->GetFullName(), events::MethodEnterKind::INTERP, thread->RecordMethodEnter());
@@ -70,7 +68,9 @@ HANDLE_<%= i.handler_name %>: {
 #ifdef PANDA_WITH_<%= i.namespace.upcase %>
 % end
     <%= namespace %>InstructionHandler<RuntimeIfaceT, enable_instrumentation> handler(&state);
-    INSTRUMENT_FRAME();
+    if (enable_instrumentation && (handler.GetFrame()->IsForcePop() || handler.GetFrame()->IsRetryInstruction())) {
+        goto INSTRUMENT_FRAME_HANDLER; 
+    }
     handler.DumpVRegs();
     handler.InstrumentInstruction();
     handler.template Handle<%= mnemonic %><BytecodeInstruction::Format::<%= i.format.pretty.upcase %>>();
