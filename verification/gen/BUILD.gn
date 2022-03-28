@@ -1,4 +1,4 @@
-# Copyright (c) 2021 Huawei Device Co., Ltd.
+# Copyright (c) 2021-2022 Huawei Device Co., Ltd.
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -37,9 +37,7 @@ ark_isa_gen("isa_gen_verification_gen") {
   ]
   sources = "templates"  ## ark_root/templates
   destination = "$target_gen_dir/include"  ## target_gen_dir/include
-  extra_dependencies = [
-    ":verification_abs_int_inl_compat_checks_h",
-  ]
+  extra_dependencies = [ ":verification_abs_int_inl_compat_checks_h" ]
 }
 
 ark_gen_file("verification_verifier_messages_h") {
