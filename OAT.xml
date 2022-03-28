@@ -13,22 +13,22 @@
      See the License for the specific language governing permissions and
      limitations under the License.
 -->
-<!-- OAT(OSS Audit Tool) configuration guide:
-basedir: Root dir, the basedir + project path is the real source file location.
+<!-- OSS Audit Tool (OAT) configuration guide:
+basedir: Root dirictory. The basedir + project path is the real source file location.
 licensefile:
-1.If the project don't have "LICENSE" in root dir, please define all the license files in this project in , OAT will check license files according to this rule.
+1.If the project does not have "LICENSE" in root dir, please define all the license files in this project. OAT will check license files according to this rule.
 
-tasklist(only for batch mode):
-1. task: Define oat check thread, each task will start a new thread.
-2. task name: Only an name, no practical effect.
-3. task policy: Default policy for projects under this task, this field is required and the specified policy must defined in policylist.
-4. task filter: Default filefilter for projects under this task, this field is required and the specified filefilter must defined in filefilterlist.
-5. task project: Projects to be checked, the path field define the source root dir of the project.
+tasklist(for batch mode only):
+1. task: OAT check task. Each task will start a new thread.
+2. task name: Name of the OAT check task.
+3. task policy: Default policy for projects under this task. This field is mandatory and the specified policy must be defined in policylist.
+4. task filter: Default filefilter for projects under this task. This field is mandatory and the specified filefilter must be defined in filefilterlist.
+5. task project: Project to be checked. The source root dir of the project is defined by the path field.
 
 
 policyList:
-1. policy: All policyitems will be merged to default OAT.xml rules, the name of policy doesn't affect OAT check process.
-2. policyitem: The fields type, name, path, desc is required, and the fields rule, group, filefilter is optional,the default value is:
+1. policy: All policyitems will be merged to default rules in OAT.xml. The policy name doesn't affect the OAT check process.
+2. policyitem: The fields type, name, path and desc are mandatory, and the fields rule, group and filefilter are optional. The default value is:
 <policyitem type="" name="" path="" desc="" rule="may" group="defaultGroup" filefilter="defaultPolicyFilter"/>
 3. policyitem type:
     "compatibility" is used to check license compatibility in the specified path;
@@ -38,13 +38,13 @@ policyList:
     "filetype" is used to check file type in the specified path, supported file types: archive, binary
     "filename" is used to check whether the specified file exists in the specified path(support projectroot in default OAT.xml), supported file names: LICENSE, README, README.OpenSource
 
-4. policyitem name: This field is used for define the license, copyright, "*" means match all, the "!" prefix means could not match this value. For example, "!GPL" means can not use GPL license.
-5. policyitem path: This field is used for define the source file scope to apply this policyitem, the "!" prefix means exclude the files. For example, "!.*/lib/.*" means files in lib dir will be exclude while process this policyitem.
-6. policyitem rule and group: These two fields are used together to merge policy results. "may" policyitems in the same group means any one in this group passed, the result will be passed.
-7. policyitem filefilter: Used to bind filefilter which define filter rules.
-8. filefilter: Filter rules, the type filename is used to filter file name, the type filepath is used to filter file path.
+4. policyitem name: This field is used to define the license and copyright. Wherein, "*" means to match all, the "!" prefix means a failure to match this value. For example, "!GPL" means a failure to use GPL license.
+5. policyitem path: This field is used to define the source file scope to apply this policyitem. The "!" prefix means to exclude the files. For example, "!.*/lib/.*" means to exclude the files in lib while processing this policyitem.
+6. policyitem rule and group: These two fields are used together to merge policy results. "may" policyitems in the same group means that the result will be passed if any policyitem in this group is passed,
+7. policyitem filefilter: This field is used to bind file filters, which define filter rules.
+8. filefilter: This field is used to define filter rules. Wherein, filename is used to filter the file names; filepath is used to filter file paths.
 
-Note:If the text contains special characters, please escape them according to the following rules:
+Note: If the text contains special characters, please escape them according to the following rules:
 " == &gt;
 & == &gt;
 ' == &gt;
@@ -57,57 +57,57 @@ Note:If the text contains special characters, please escape them according to th
 		<policyitem type="compatibility" name="Apache" path="ark/runtime_core" rule="may" group="defaultGroup" filefilter="defaultPolicyFilter" desc=""/>
         </policy>
         <filefilterlist>
-            <filefilter name="binaryFileTypePolicyFilter" desc="二进制文件校验策略的过滤条件" >
-                <filteritem type="filepath" name="docs/images/cfi_hack_bridges.png" desc="自造的二进制图片"/>
-                <filteritem type="filepath" name="docs/images/panda-mm-overview.png" desc="自造的二进制图片"/>
+            <filefilter name="binaryFileTypePolicyFilter" desc="Filer rules of the binary file verification policy" >
+                <filteritem type="filepath" name="docs/images/cfi_hack_bridges.png" desc="Example binary images"/>
+                <filteritem type="filepath" name="docs/images/panda-mm-overview.png" desc="Example binary images"/>
             </filefilter>
-            <filefilter name="copyrightPolicyFilter" desc="copyright文件头校验策略的过滤条件" >
-                <filteritem type="filepath" name="AUTHORS" desc="开发者名单"/>
-                <filteritem type="filepath" name="scripts/dep-lists/ubuntu-18-04-arm-dev" desc="ubuntu构建依赖软件清单"/>
-                <filteritem type="filepath" name="scripts/dep-lists/ubuntu-18-04-build" desc="ubuntu构建依赖软件清单"/>
-                <filteritem type="filepath" name="scripts/dep-lists/ubuntu-18-04-ci" desc="ubuntu构建依赖软件清单"/>
-                <filteritem type="filepath" name="scripts/dep-lists/ubuntu-18-04-cross-arm-all" desc="ubuntu构建依赖软件清单"/>
-                <filteritem type="filepath" name="scripts/dep-lists/ubuntu-18-04-cross-windows" desc="ubuntu构建依赖软件清单"/>
-                <filteritem type="filepath" name="scripts/dep-lists/ubuntu-18-04-cross-x86" desc="ubuntu构建依赖软件清单"/>
-                <filteritem type="filepath" name="scripts/dep-lists/ubuntu-18-04-dev" desc="ubuntu构建依赖软件清单"/>
-                <filteritem type="filepath" name="scripts/dep-lists/ubuntu-18-04-fuzzing" desc="ubuntu构建依赖软件清单"/>
-                <filteritem type="filepath" name="scripts/dep-lists/ubuntu-20-04-build" desc="ubuntu构建依赖软件清单"/>
-                <filteritem type="filepath" name="scripts/dep-lists/ubuntu-20-04-ci" desc="ubuntu构建依赖软件清单"/>
-                <filteritem type="filepath" name="scripts/dep-lists/ubuntu-20-04-cross-arm-all" desc="ubuntu构建依赖软件清单"/>
-                <filteritem type="filepath" name="scripts/dep-lists/ubuntu-20-04-cross-windows" desc="ubuntu构建依赖软件清单"/>
-                <filteritem type="filepath" name="scripts/dep-lists/ubuntu-20-04-cross-x86" desc="ubuntu构建依赖软件清单"/>
-                <filteritem type="filepath" name="scripts/dep-lists/ubuntu-20-04-dev" desc="ubuntu构建依赖软件清单"/>
-                <filteritem type="filepath" name="scripts/dep-lists/ubuntu-20-04-fuzzing" desc="ubuntu构建依赖软件清单"/>
-                <filteritem type="filepath" name="scripts/dep-lists/ubuntu-build" desc="ubuntu构建依赖软件清单"/>
-                <filteritem type="filepath" name="scripts/dep-lists/ubuntu-cross-arm-all" desc="ubuntu构建依赖软件清单"/>
-                <filteritem type="filepath" name="scripts/dep-lists/ubuntu-cross-windows" desc="ubuntu构建依赖软件清单"/>
-                <filteritem type="filepath" name="scripts/dep-lists/ubuntu-cross-x86" desc="ubuntu构建依赖软件清单"/>
-                <filteritem type="filepath" name="scripts/dep-lists/ubuntu-dev" desc="ubuntu构建依赖软件清单"/>
-                <filteritem type="filepath" name="scripts/dep-lists/ubuntu-fuzzing" desc="ubuntu构建依赖软件清单"/>
+            <filefilter name="copyrightPolicyFilter" desc="Filter rules of the copyright file header verification policy" >
+                <filteritem type="filepath" name="AUTHORS" desc="Authors list"/>
+                <filteritem type="filepath" name="scripts/dep-lists/ubuntu-18-04-arm-dev" desc="Ubuntu build dependencies"/>
+                <filteritem type="filepath" name="scripts/dep-lists/ubuntu-18-04-build" desc="Ubuntu build dependencies"/>
+                <filteritem type="filepath" name="scripts/dep-lists/ubuntu-18-04-ci" desc="Ubuntu build dependencies"/>
+                <filteritem type="filepath" name="scripts/dep-lists/ubuntu-18-04-cross-arm-all" desc="Ubuntu build dependencies"/>
+                <filteritem type="filepath" name="scripts/dep-lists/ubuntu-18-04-cross-windows" desc="Ubuntu build dependencies"/>
+                <filteritem type="filepath" name="scripts/dep-lists/ubuntu-18-04-cross-x86" desc="Ubuntu build dependencies"/>
+                <filteritem type="filepath" name="scripts/dep-lists/ubuntu-18-04-dev" desc="Ubuntu build dependencies"/>
+                <filteritem type="filepath" name="scripts/dep-lists/ubuntu-18-04-fuzzing" desc="Ubuntu build dependencies"/>
+                <filteritem type="filepath" name="scripts/dep-lists/ubuntu-20-04-build" desc="Ubuntu build dependencies"/>
+                <filteritem type="filepath" name="scripts/dep-lists/ubuntu-20-04-ci" desc="Ubuntu build dependencies"/>
+                <filteritem type="filepath" name="scripts/dep-lists/ubuntu-20-04-cross-arm-all" desc="Ubuntu build dependencies"/>
+                <filteritem type="filepath" name="scripts/dep-lists/ubuntu-20-04-cross-windows" desc="Ubuntu build dependencies"/>
+                <filteritem type="filepath" name="scripts/dep-lists/ubuntu-20-04-cross-x86" desc="Ubuntu build dependencies"/>
+                <filteritem type="filepath" name="scripts/dep-lists/ubuntu-20-04-dev" desc="Ubuntu build dependencies"/>
+                <filteritem type="filepath" name="scripts/dep-lists/ubuntu-20-04-fuzzing" desc="Ubuntu build dependencies"/>
+                <filteritem type="filepath" name="scripts/dep-lists/ubuntu-build" desc="Ubuntu build dependencies"/>
+                <filteritem type="filepath" name="scripts/dep-lists/ubuntu-cross-arm-all" desc="Ubuntu build dependencies"/>
+                <filteritem type="filepath" name="scripts/dep-lists/ubuntu-cross-windows" desc="Ubuntu build dependencies"/>
+                <filteritem type="filepath" name="scripts/dep-lists/ubuntu-cross-x86" desc="Ubuntu build dependencies"/>
+                <filteritem type="filepath" name="scripts/dep-lists/ubuntu-dev" desc="Ubuntu build dependencies"/>
+                <filteritem type="filepath" name="scripts/dep-lists/ubuntu-fuzzing" desc="Ubuntu build dependencies"/>
             </filefilter>
-            <filefilter name="defaultPolicyFilter" desc="根目录LICENSE文件校验策略的过滤条件xxx" >
+            <filefilter name="defaultPolicyFilter" desc="Filter rules of the verification policy for the license file in the root directory" >
                 <filteritem type="filepath" name="AUTHORS" desc="开发者名单"/>
-                <filteritem type="filepath" name="scripts/dep-lists/ubuntu-18-04-arm-dev" desc="ubuntu构建依赖软件清单"/>
-                <filteritem type="filepath" name="scripts/dep-lists/ubuntu-18-04-build" desc="ubuntu构建依赖软件清单"/>
-                <filteritem type="filepath" name="scripts/dep-lists/ubuntu-18-04-ci" desc="ubuntu构建依赖软件清单"/>
-                <filteritem type="filepath" name="scripts/dep-lists/ubuntu-18-04-cross-arm-all" desc="ubuntu构建依赖软件清单"/>
-                <filteritem type="filepath" name="scripts/dep-lists/ubuntu-18-04-cross-windows" desc="ubuntu构建依赖软件清单"/>
-                <filteritem type="filepath" name="scripts/dep-lists/ubuntu-18-04-cross-x86" desc="ubuntu构建依赖软件清单"/>
-                <filteritem type="filepath" name="scripts/dep-lists/ubuntu-18-04-dev" desc="ubuntu构建依赖软件清单"/>
-                <filteritem type="filepath" name="scripts/dep-lists/ubuntu-18-04-fuzzing" desc="ubuntu构建依赖软件清单"/>
-                <filteritem type="filepath" name="scripts/dep-lists/ubuntu-20-04-build" desc="ubuntu构建依赖软件清单"/>
-                <filteritem type="filepath" name="scripts/dep-lists/ubuntu-20-04-ci" desc="ubuntu构建依赖软件清单"/>
-                <filteritem type="filepath" name="scripts/dep-lists/ubuntu-20-04-cross-arm-all" desc="ubuntu构建依赖软件清单"/>
-                <filteritem type="filepath" name="scripts/dep-lists/ubuntu-20-04-cross-windows" desc="ubuntu构建依赖软件清单"/>
-                <filteritem type="filepath" name="scripts/dep-lists/ubuntu-20-04-cross-x86" desc="ubuntu构建依赖软件清单"/>
-                <filteritem type="filepath" name="scripts/dep-lists/ubuntu-20-04-dev" desc="ubuntu构建依赖软件清单"/>
-                <filteritem type="filepath" name="scripts/dep-lists/ubuntu-20-04-fuzzing" desc="ubuntu构建依赖软件清单"/>
-                <filteritem type="filepath" name="scripts/dep-lists/ubuntu-build" desc="ubuntu构建依赖软件清单"/>
-                <filteritem type="filepath" name="scripts/dep-lists/ubuntu-cross-arm-all" desc="ubuntu构建依赖软件清单"/>
-                <filteritem type="filepath" name="scripts/dep-lists/ubuntu-cross-windows" desc="ubuntu构建依赖软件清单"/>
-                <filteritem type="filepath" name="scripts/dep-lists/ubuntu-cross-x86" desc="ubuntu构建依赖软件清单"/>
-                <filteritem type="filepath" name="scripts/dep-lists/ubuntu-dev" desc="ubuntu构建依赖软件清单"/>
-                <filteritem type="filepath" name="scripts/dep-lists/ubuntu-fuzzing" desc="ubuntu构建依赖软件清单"/>
+                <filteritem type="filepath" name="scripts/dep-lists/ubuntu-18-04-arm-dev" desc="Ubuntu build dependencies"/>
+                <filteritem type="filepath" name="scripts/dep-lists/ubuntu-18-04-build" desc="Ubuntu build dependencies"/>
+                <filteritem type="filepath" name="scripts/dep-lists/ubuntu-18-04-ci" desc="Ubuntu build dependencies"/>
+                <filteritem type="filepath" name="scripts/dep-lists/ubuntu-18-04-cross-arm-all" desc="Ubuntu build dependencies"/>
+                <filteritem type="filepath" name="scripts/dep-lists/ubuntu-18-04-cross-windows" desc="Ubuntu build dependencies"/>
+                <filteritem type="filepath" name="scripts/dep-lists/ubuntu-18-04-cross-x86" desc="Ubuntu build dependencies"/>
+                <filteritem type="filepath" name="scripts/dep-lists/ubuntu-18-04-dev" desc="Ubuntu build dependencies"/>
+                <filteritem type="filepath" name="scripts/dep-lists/ubuntu-18-04-fuzzing" desc="Ubuntu build dependencies"/>
+                <filteritem type="filepath" name="scripts/dep-lists/ubuntu-20-04-build" desc="Ubuntu build dependencies"/>
+                <filteritem type="filepath" name="scripts/dep-lists/ubuntu-20-04-ci" desc="Ubuntu build dependencies"/>
+                <filteritem type="filepath" name="scripts/dep-lists/ubuntu-20-04-cross-arm-all" desc="Ubuntu build dependencies"/>
+                <filteritem type="filepath" name="scripts/dep-lists/ubuntu-20-04-cross-windows" desc="Ubuntu build dependencies"/>
+                <filteritem type="filepath" name="scripts/dep-lists/ubuntu-20-04-cross-x86" desc="Ubuntu build dependencies"/>
+                <filteritem type="filepath" name="scripts/dep-lists/ubuntu-20-04-dev" desc="Ubuntu build dependencies"/>
+                <filteritem type="filepath" name="scripts/dep-lists/ubuntu-20-04-fuzzing" desc="Ubuntu build dependencies"/>
+                <filteritem type="filepath" name="scripts/dep-lists/ubuntu-build" desc="Ubuntu build dependencies"/>
+                <filteritem type="filepath" name="scripts/dep-lists/ubuntu-cross-arm-all" desc="Ubuntu build dependencies"/>
+                <filteritem type="filepath" name="scripts/dep-lists/ubuntu-cross-windows" desc="Ubuntu build dependencies"/>
+                <filteritem type="filepath" name="scripts/dep-lists/ubuntu-cross-x86" desc="Ubuntu build dependencies"/>
+                <filteritem type="filepath" name="scripts/dep-lists/ubuntu-dev" desc="Ubuntu build dependencies"/>
+                <filteritem type="filepath" name="scripts/dep-lists/ubuntu-fuzzing" desc="Ubuntu build dependencies"/>
             </filefilter>
         </filefilterlist>
     </oatconfig>
