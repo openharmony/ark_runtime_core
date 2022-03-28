@@ -63,7 +63,7 @@ public:
     template <typename Handler>
     void EnumerateFlags(Handler &&handler) const
     {
-        if (ConstBit {mask, flags_} == true) {
+        if (ConstBit {mask, flags_}) {
             handler(Flag);
         }
     }
@@ -121,7 +121,7 @@ public:
     template <typename Handler>
     void EnumerateFlags(Handler &&handler) const
     {
-        if (typename Base::ConstBit {mask, Base::flags_} == true && !handler(Flag)) {
+        if (typename Base::ConstBit {mask, Base::flags_} && !handler(Flag)) {
             return;
         }
         Base::template EnumerateFlags<Handler>(std::move(handler));

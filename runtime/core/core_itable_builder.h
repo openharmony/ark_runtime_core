@@ -28,7 +28,7 @@ public:
         ASSERT(base->IsObjectClass());
         ASSERT(base->GetITable().Size() == 0);
         ASSERT(class_interfaces.Empty());
-        ASSERT(is_interface == false);
+        ASSERT(!is_interface);
     }
 
     void Resolve([[maybe_unused]] Class *klass) override {};
