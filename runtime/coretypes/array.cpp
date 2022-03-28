@@ -109,6 +109,9 @@ Array *Array::CreateTagged(const PandaVM *vm, panda::BaseClass *array_class, arr
 {
     size_t elem_size = coretypes::TaggedValue::TaggedTypeSize();
     auto *array = AllocateArray(array_class, elem_size, length, space_type, vm);
+    if (array == nullptr) {
+        return nullptr;
+    }
     // Order is matters here: GC can read data before it copied if we set length first.
     // length == 0 is guaranteed by AllocateArray
     for (array_size_t i = 0; i < length; i++) {

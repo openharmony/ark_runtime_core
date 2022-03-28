@@ -222,13 +222,11 @@ std::optional<Error> UnmapRaw(void *mem, size_t size)
 #include <sys/prctl.h>
 
 #ifndef PR_SET_VMA
-// NOLINTNEXTLINE(cppcoreguidelines-macro-usage)
-#define PR_SET_VMA 0x53564d41
+constexpr int PR_SET_VMA = 0x53564d41;
 #endif
 
 #ifndef PR_SET_VMA_ANON_NAME
-// NOLINTNEXTLINE(cppcoreguidelines-macro-usage)
-#define PR_SET_VMA_ANON_NAME 0
+constexpr unsigned long PR_SET_VMA_ANON_NAME = 0;
 #endif
 #endif  // PANDA_TARGET_MOBILE
 

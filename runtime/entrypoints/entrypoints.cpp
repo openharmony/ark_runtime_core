@@ -34,8 +34,7 @@
 
 namespace panda {
 
-// NOLINTNEXTLINE(cppcoreguidelines-macro-usage)
-#define LOG_ENTRYPOINTS 0
+#undef LOG_ENTRYPOINTS
 
 class ScopedLog {
 public:
@@ -55,7 +54,7 @@ private:
     std::string function_;
 };
 
-#if LOG_ENTRYPOINTS
+#ifdef LOG_ENTRYPOINTS
 // NOLINTNEXTLINE(cppcoreguidelines-macro-usage)
 #define LOG_ENTRYPOINT() ScopedLog __log(__FUNCTION__)
 #else
