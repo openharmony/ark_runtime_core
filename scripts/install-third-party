@@ -41,7 +41,7 @@ echo "$MSG_PREFIX Third-party dependencies are not found in $PANDA_THIRD_PARTY_D
 SECUREC_URL="https://gitee.com/openharmony/utils_native.git"
 echo "$MSG_PREFIX Cloning securec from $SECUREC_URL"
 
-git clone --verbose "$SECUREC_URL" "$PANDA_THIRD_PARTY_DIR/utils_native"
+git clone --depth=1 --verbose "$SECUREC_URL" "$PANDA_THIRD_PARTY_DIR/utils_native"
 mkdir "$PANDA_THIRD_PARTY_DIR/securec"
 ln -s "$PANDA_THIRD_PARTY_DIR/utils_native/base/src/securec" "$PANDA_THIRD_PARTY_DIR/securec/src"
 ln -s "$PANDA_THIRD_PARTY_DIR/utils_native/base/include" "$PANDA_THIRD_PARTY_DIR/securec/include"
@@ -49,12 +49,12 @@ ln -s "$PANDA_THIRD_PARTY_DIR/utils_native/base/include" "$PANDA_THIRD_PARTY_DIR
 GOOGLETEST_URL="https://gitee.com/openharmony/third_party_googletest.git"
 echo "$MSG_PREFIX Cloning googletest from $GOOGLETEST_URL"
 
-git clone --verbose "$GOOGLETEST_URL" "$PANDA_THIRD_PARTY_DIR/googletest"
+git clone --depth=1 --verbose "$GOOGLETEST_URL" "$PANDA_THIRD_PARTY_DIR/googletest"
 
 MINIZ_URL="https://gitee.com/openharmony/third_party_miniz.git"
 echo "$MSG_PREFIX Cloning miniz from $MINIZ_URL"
 
-git clone --verbose "$MINIZ_URL" "$PANDA_THIRD_PARTY_DIR/miniz"
+git clone --depth=1 --verbose "$MINIZ_URL" "$PANDA_THIRD_PARTY_DIR/miniz"
 
 echo "$MSG_PREFIX Third-party dependencies cloned"
 exit 0

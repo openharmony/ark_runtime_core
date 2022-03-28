@@ -2478,7 +2478,7 @@ groups:
       Get field value from an object by field id and put it into accumulator.
       For non-object variant, the size of the field is determined by the field_id,
       most significant bits are sign or unsigned extended based on the field type to fit accumulator size.
-      If field type is less than 32, then loaded value is sign or zero extended to i32 depending on field type.
+      If field type size is less than 32, then loaded value is sign or zero extended to i32 depending on field type.
     verification:
       - v1_object
       - field_id_non_static
@@ -2560,7 +2560,7 @@ groups:
       Get field value from an object by field id and put it into register.
       For non-object variant, the size of the field is determined by the field_id,
       most significant bits are sign or unsigned extended based on the field type to fit register size.
-      If field type is less than 32, then loaded value is sign or zero extended to i32 depending on field type.
+      If field type size is less than 32, then loaded value is sign or zero extended to i32 depending on field type.
       If field type is f32, load will implicitly convert value into f64 type.
     verification:
       - v2_object
