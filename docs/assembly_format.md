@@ -29,7 +29,7 @@ Following numeric literals are supported:
 
 ### String Literals
 
-String literal is a sequence of any characters enclosed in `"` characters. Non-printable characters and characters out of Latin-1 character set must be encoded with `mutf8` encoding. For example: `"文范字例"` string literal should be encoded as `"\xe6\x96\x87\xe5\xad\x97\xe8\x8c\x83\xe4\xbe\x8b"`
+String literal is a sequence of any characters enclosed in `"` characters. Non-printable characters and characters out of Latin-1 character set must be encoded with `mutf8` encoding. For example: `"文字范例"` string literal should be encoded as `"\xe6\x96\x87\xe5\xad\x97\xe8\x8c\x83\xe4\xbe\x8b"`
 
 The following escape sequences can be used in string literals:
 

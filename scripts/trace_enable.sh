@@ -90,14 +90,14 @@ fi;
 TIME_TO_WAIT=$2
 
 if [ -z "$2" ]; then
-    echo "Warning: default tracing time is not specified, set to 60 seconds"
+    echo "Warning: tracing time is not specified, set to 60 seconds"
     TIME_TO_WAIT=60
 fi;
 
 BUFF_SIZE=$3
 
 if [ -z "$3" ]; then
-    echo "Warning: default trace buffer size is not specified, set to 8 MB"
+    echo "Warning: trace buffer size is not specified, set to 8 MB"
     BUFF_SIZE=8192
 fi;
 
