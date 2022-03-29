@@ -26,6 +26,8 @@
 #include <type_traits>
 #include <bitset>
 
+#include <securec.h>
+
 #define panda_bit_utils_ctz __builtin_ctz      // NOLINT(cppcoreguidelines-macro-usage)
 #define panda_bit_utils_ctzll __builtin_ctzll  // NOLINT(cppcoreguidelines-macro-usage)
 
@@ -292,7 +294,9 @@ inline To bit_cast(const From &src) noexcept  // NOLINT(readability-identifier-n
 {
     static_assert(sizeof(To) == sizeof(From), "size of the types must be equal");
     To dst;
-    memcpy(&dst, &src, sizeof(To));
+    if (memcpy_s(&dst, sizeof(To), &src, sizeof(To)) != EOK) {
+        UNREACHABLE();
+    }
     return dst;
 }
 
@@ -301,7 +305,9 @@ inline To down_cast(const From &src) noexcept  // NOLINT(readability-identifier-
 {
     static_assert(sizeof(To) <= sizeof(From), "size of the types must be lesser");
     To dst;
-    memcpy(&dst, &src, sizeof(To));
+    if (memcpy_s(&dst, sizeof(To), &src, sizeof(To)) != EOK) {
+        UNREACHABLE();
+    }
     return dst;
 }
 
