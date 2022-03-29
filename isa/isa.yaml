@@ -273,7 +273,7 @@ groups:
     verification:
       - v2_type
     pseudo: |
-     vd = vs
+      vd = vs
     semantics: |-
       raise exception(WrongRegisterValue) if true that Op == "mov" and type_of(@Vs) is not i32;
       raise exception(WrongRegisterValue) if true that Op == "mov.64" and (type_of(@Vs) is not u64 and type_of(@Vs) is not i64);
@@ -557,7 +557,7 @@ groups:
     verification:
       - acc_type
     pseudo: |
-     vd = acc
+      vd = acc
     semantics: |-
       raise exception(WrongRegisterValue) if true that Op == "sta" and type_of(@acc) is not i32;
       raise exception(WrongRegisterValue) if true that Op == "sta.64" and (type_of(@acc) is not i64 and type_of(@acc) is not u64);
