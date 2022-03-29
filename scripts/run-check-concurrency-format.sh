@@ -14,7 +14,7 @@
 
 set -e
 
-FILE=$1
+FILE="$1"
 PATTERNS=(
     '<mutex>' 'pthread' '<shared_mutex>' '<condition_variable>' '<future>' '<stop_token>' 'this_thread'
     'std::mutex' 'recursive_mutex' 'lock_guard'
