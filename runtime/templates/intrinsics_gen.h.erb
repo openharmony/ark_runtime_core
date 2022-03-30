@@ -23,7 +23,7 @@ namespace panda::intrinsics {
 %   params = intrinsic.impl_signature.args.each_with_index.map {|cpp_type, index| cpp_type + " " + "arg#{index}" }
 %   params = params.unshift("[[maybe_unused]] Method* /* unused */")
 %   entrypoint = intrinsic.name + "EntryPoint"
-%     if intrinsic.private == true
+%     if intrinsic.private
 #ifndef PANDA_PRODUCT_BUILD
 %     end
 // NOLINTNEXTLINE(misc-definitions-in-headers)
@@ -37,7 +37,7 @@ namespace panda::intrinsics {
     return <%= intrinsic.impl %>(<%= arg_list %>);
 % end
 }
-%     if intrinsic.private == true
+%     if intrinsic.private
 #endif  // PANDA_PRODUCT_BUILD
 %     end
 
@@ -53,7 +53,7 @@ bool Initialize() {
     std::string_view space;
 
 % Runtime::intrinsics.each do |intrinsic|
-%     if intrinsic.private == true
+%     if intrinsic.private
 #ifndef PANDA_PRODUCT_BUILD
 %     end
     space = std::string_view("<%= intrinsic.space %>");
@@ -88,7 +88,7 @@ bool Initialize() {
 %       entrypoint = intrinsic.name + "EntryPoint"
         method->SetCompiledEntryPoint(reinterpret_cast<const void *>(<%= entrypoint %>));
     }
-%     if intrinsic.private == true
+%     if intrinsic.private
 #endif  // PANDA_PRODUCT_BUILD
 %     end
 % end

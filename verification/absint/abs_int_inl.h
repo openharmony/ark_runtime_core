@@ -289,7 +289,7 @@ public:
         }
         auto &&type = GetRegType(reg);
 
-        if (CheckTypes(type, tgt_types) == true) {
+        if (CheckTypes(type, tgt_types)) {
             return true;
         }
 
