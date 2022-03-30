@@ -49,6 +49,13 @@ def check_option(optparser, options, key)
   exit false
 end
 
+def check_version
+  major, minor, = RUBY_VERSION.split('.').map(&:to_i)
+  major > 2 || (major == 2 && minor >= 5)
+end
+
+raise "Update your ruby version, #{RUBY_VERSION} is not supported" unless check_version
+
 options = OpenStruct.new
 
 optparser = OptionParser.new do |opts|
