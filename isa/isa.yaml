@@ -219,7 +219,7 @@ verification:
   - tag: compatible_arguments
     description: Arguments provided to a method must be of compatible types.
   - tag: method_init_obj
-    description: Method_id must resolve into initializer for a type other than array.
+    description: Method_id must resolve into initializer for a type other than one-dimensional array.
   - tag: branch_target
     description: Branch target should point to a beginning of an instruction of the same method.
   - tag: field_id_non_static
@@ -2109,10 +2109,6 @@ groups:
           raise exception(WrongRegisterValue) if false that type_of(@acc) is u32;
           acc <~ u32toi64(@acc)
         end when
-        when Op == "u32tou64" do
-          raise exception(WrongRegisterValue) if false that type_of(@acc) is u32;
-          acc <~ u32tou64(@acc)
-        end when
         when Op == "u32toi16" do
           raise exception(WrongRegisterValue) if false that type_of(@acc) is u32;
           acc <~ u32toi16(@acc)
@@ -2136,10 +2132,6 @@ groups:
         when Op == "u64tou32" do
           raise exception(WrongRegisterValue) if false that type_of(@acc) is u64;
           acc <~ u64tou32(@acc)
-        end when
-        when Op == "u64tou8" do
-          raise exception(WrongRegisterValue) if false that type_of(@acc) is u64;
-          acc <~ u64tou8(@acc)
         end when
         else raise exception(UndefinedSemantics)
         undefined raise exception(InternalError)
