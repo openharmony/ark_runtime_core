@@ -379,7 +379,7 @@ bool RunSlotsAllocator<AllocConfigT, LockConfigT>::ContainObject(const ObjectHea
 template <typename AllocConfigT, typename LockConfigT>
 bool RunSlotsAllocator<AllocConfigT, LockConfigT>::IsLive(const ObjectHeader *obj)
 {
-    ASSERT(ContainObject(obj) == true);
+    ASSERT(ContainObject(obj));
     uintptr_t runslots_addr = ToUintPtr(obj) >> RUNSLOTS_ALIGNMENT << RUNSLOTS_ALIGNMENT;
     auto run = static_cast<RunSlotsType *>(ToVoidPtr(runslots_addr));
     if (run->IsEmpty()) {

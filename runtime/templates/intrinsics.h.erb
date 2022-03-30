@@ -48,7 +48,7 @@ namespace <%= ns %> {
 
 %   group.each do |i|
 %     impl_name = i.impl.rpartition('::').last
-%     if i.private == true
+%     if i.private
 #ifndef PANDA_PRODUCT_BUILD
 %     end
     extern "C" <%= i.impl_signature.ret %> <%= impl_name %>(<%= i.impl_signature.args.join(', ') %>); // NOLINT(readability-named-parameter)
@@ -56,7 +56,7 @@ namespace <%= ns %> {
 %       impl_name = i.orig_impl.rpartition('::').last
     <%= i.orig_impl_signature.ret %> <%= impl_name %>(<%= i.orig_impl_signature.args.join(', ') %>); // NOLINT(readability-named-parameter)
 %     end
-%     if i.private == true
+%     if i.private
 #endif  // PANDA_PRODUCT_BUILD
 %     end
 %   end

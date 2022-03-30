@@ -319,7 +319,7 @@ TEST_F(CrossingMapTest, InitializeCrosingMapForMemoryTest)
     }
 
     for (size_t i = 0; i < POOL_COUNT; i++) {
-        if (deleted_pools[i] == true) {
+        if (deleted_pools[i]) {
             continue;
         }
         void *pool_addr = ToVoidPtr(aligned_start_addr + i * (POOLS_SIZE * 2 + PANDA_POOL_ALIGNMENT_IN_BYTES));
