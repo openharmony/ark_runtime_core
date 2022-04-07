@@ -489,8 +489,8 @@ public:
         SET_EPILOGUE_BEGIN = 0x08,
         SET_FILE = 0x09,
         SET_SOURCE_CODE = 0x0a,
-        SET_COLUMN = 0X0b, // The SET_COLUMN opcode takes a single unsigned LEB128 operand and
-                           // stores it in the column register of the state machine.
+        SET_COLUMN = 0X0b,  // The SET_COLUMN opcode takes a single unsigned LEB128 operand and
+                            // stores it in the column register of the state machine.
         LAST
     };
 
