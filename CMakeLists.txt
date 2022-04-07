@@ -169,8 +169,8 @@ if(PANDA_WITH_TOOLCHAIN)
     add_subdirectory(${PANDA_THIRD_PARTY_CONFIG_DIR}/securec)
     add_subdirectory(libpandabase)
 
-    set(MINIZ_ROOT ${PANDA_THIRD_PARTY_SOURCES_DIR}/miniz/amalgamation)
-    add_subdirectory(${PANDA_THIRD_PARTY_CONFIG_DIR}/miniz)
+    set(ZLIB_ROOT ${PANDA_THIRD_PARTY_SOURCES_DIR}/zlib)
+    add_subdirectory(${PANDA_THIRD_PARTY_CONFIG_DIR}/zlib)
     add_subdirectory(libziparchive)
 
     add_subdirectory(libpandafile)
