@@ -470,7 +470,7 @@ public:
             val = Val ? val : ~val;
             size_t idx = pos << POS_SHIFT;
             while (val) {
-                size_t i = panda::Ctz(val);
+                auto i = static_cast<size_t>(panda::Ctz(val));
                 idx += i;
                 if (idx >= size()) {
                     return true;
@@ -501,7 +501,7 @@ public:
                     return {};
                 }
                 if (val) {
-                    size_t i = panda::Ctz(val);
+                    auto i = static_cast<size_t>(panda::Ctz(val));
                     idx += i;
                     if (idx > to) {
                         return {};
@@ -535,7 +535,7 @@ public:
         }
         if (last_word_partially_filled) {
             const Word MASK = MaskUpToIndex(size() & POS_MASK);
-            result += panda::Popcount(data_[pos] & MASK);
+            result += static_cast<size_t>(panda::Popcount(data_[pos] & MASK));
         }
         return result;
     }
@@ -655,7 +655,7 @@ public:
                     return {};
                 }
                 if (val) {
-                    size_t i = panda::Ctz(val);
+                    auto i = static_cast<size_t>(panda::Ctz(val));
                     idx += i;
                     if (idx >= size) {
                         return {};

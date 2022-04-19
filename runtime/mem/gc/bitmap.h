@@ -172,7 +172,7 @@ protected:
                 if (bitmap_word == 0) {
                     break;
                 }
-                offset_within_word = Ctz(bitmap_word);
+                offset_within_word = static_cast<size_t>(Ctz(bitmap_word));
                 if (!visitor(offset_word_begin + offset_within_word)) {
                     return;
                 }

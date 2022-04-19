@@ -27,9 +27,9 @@ namespace panda::coretypes {
 template <bool verify>
 inline uint16_t String::At(int32_t index)
 {
-    int32_t length = GetLength();
+    auto length = GetLength();
     if (verify) {
-        if ((index < 0) || (index >= length)) {
+        if ((index < 0) || (index >= static_cast<int32_t>(length))) {
             panda::ThrowStringIndexOutOfBoundsException(index, length);
             return 0;
         }

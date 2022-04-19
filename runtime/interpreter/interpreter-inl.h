@@ -2213,8 +2213,8 @@ public:
     template <BytecodeInstruction::Format format>
     ALWAYS_INLINE void HandleCalliDynRange()
     {
-        uint16_t actual_num_args = this->GetInst().template GetImm<format, 0>();
-        uint16_t first_arg_reg_idx = this->GetInst().template GetVReg<format, 0>();
+        auto actual_num_args = static_cast<uint16_t>(this->GetInst().template GetImm<format, 0>());
+        auto first_arg_reg_idx = static_cast<uint16_t>(this->GetInst().template GetVReg<format, 0>());
 
         LOG_INST() << "calli.dyn.range " << actual_num_args << ", v" << first_arg_reg_idx;
 
@@ -2341,7 +2341,7 @@ public:
     template <class F, class T, class R>
     ALWAYS_INLINE void LoadPrimitiveFieldReg(R &vreg, T *obj, Field *field)
     {
-        int64_t value = obj->template GetFieldPrimitive<F>(*field);
+        auto value = static_cast<int64_t>(obj->template GetFieldPrimitive<F>(*field));
         vreg.SetPrimitive(value);
     }
 
@@ -2389,7 +2389,7 @@ public:
     template <class F, class T>
     ALWAYS_INLINE void LoadPrimitiveField(T *obj, Field *field)
     {
-        int64_t value = obj->template GetFieldPrimitive<F>(*field);
+        auto value = static_cast<int64_t>(obj->template GetFieldPrimitive<F>(*field));
         this->GetAcc().SetPrimitive(value);
     }
 
@@ -2740,7 +2740,7 @@ public:
     ALWAYS_INLINE inline void CopyCallAccShortArguments(Frame &frame, uint32_t num_vregs)
     {
         static_assert(format == BytecodeInstruction::Format::V4_IMM4_ID16, "Invalid call acc short format");
-        size_t acc_position = this->GetInst().template GetImm<format, 0>();
+        auto acc_position = static_cast<size_t>(this->GetInst().template GetImm<format, 0>());
         switch (acc_position) {
             case 0U:
                 frame.GetVReg(num_vregs) = this->GetAcc();
@@ -2760,7 +2760,7 @@ public:
     ALWAYS_INLINE inline void CopyCallAccArguments(Frame &frame, uint32_t num_vregs)
     {
         static_assert(format == BytecodeInstruction::Format::V4_V4_V4_IMM4_ID16, "Invalid call acc format");
-        size_t acc_position = this->GetInst().template GetImm<format, 0>();
+        auto acc_position = static_cast<size_t>(this->GetInst().template GetImm<format, 0>());
         switch (acc_position) {
             case 0U:
                 frame.GetVReg(num_vregs) = this->GetAcc();
@@ -2924,7 +2924,7 @@ public:
         uint32_t nregs;
         if constexpr (is_dynamic) {
             // +1 means function object itself
-            num_actual_args = this->GetInst().template GetImm<format, 0>() + 1;
+            num_actual_args = static_cast<uint32_t>(this->GetInst().template GetImm<format, 0>() + 1);
             frame_size = num_vregs + std::max(num_declared_args, num_actual_args);
             nregs = frame_size;
         } else {
