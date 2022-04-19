@@ -402,7 +402,7 @@ void GCDynamicObjectHelpers::UpdateDynObjectRef(PandaVM *vm, ObjectHeader *objec
                               << ObjectAccessor::GetDynValue<ObjectHeader *>(object, offset) << " to " << addr;
         auto *h_class = field_obj_ref->ClassAddr<HClass>();
         if (is_update_classword && h_class->IsHClass()) {
-            addr += ObjectHeader::ObjectHeaderSize();
+            addr += static_cast<MarkWord::markWordSize>(ObjectHeader::ObjectHeaderSize());
         }
         auto *field_object = reinterpret_cast<ObjectHeader *>(addr);
         if (is_dyn_weak) {

@@ -39,8 +39,8 @@ PandaString GetCurrentTimeString()
 {
     PandaOStringStream result_stream;
     auto time_now = GetCurrentTimeInMillis(true);
-    time_t millisecond = time_now % MILLISECONDS_IN_SECOND;
-    time_t seconds = time_now / MILLISECONDS_IN_SECOND;
+    auto millisecond = static_cast<time_t>(time_now % MILLISECONDS_IN_SECOND);
+    auto seconds = static_cast<time_t>(time_now / MILLISECONDS_IN_SECOND);
 
     constexpr int DATE_BUFFER_SIZE = 16;
     PandaString date_buffer;

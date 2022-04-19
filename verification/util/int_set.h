@@ -497,7 +497,7 @@ private:
         size_t Insert(T x, size_t lower_bound)
         {
             auto iter = std::lower_bound(repr_.begin() + lower_bound, repr_.end(), x);
-            size_t new_lower_bound = iter - repr_.begin();
+            auto new_lower_bound = static_cast<size_t>(iter - repr_.begin());
             if (iter == repr_.end()) {
                 repr_.push_back(x);
             } else if (*iter != x) {

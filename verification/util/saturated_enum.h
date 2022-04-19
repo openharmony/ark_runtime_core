@@ -130,7 +130,7 @@ public:
 protected:
     bool Check(Enum e, bool prev_set) const
     {
-        prev_set |= Base::value_ == E;
+        prev_set = prev_set || (Base::value_ == E);
         if (e == E) {
             return prev_set;
         }
@@ -152,7 +152,7 @@ protected:
     template <typename Handler>
     void Enumerate(Handler &&handler, bool prev_set) const
     {
-        prev_set |= Base::value_ == E;
+        prev_set = prev_set || (Base::value_ == E);
         if (prev_set && !handler(E)) {
             return;
         }

@@ -96,7 +96,8 @@ uint64_t MemStatsAdditionalInfo::GetAverageGCPhaseTime(GCPhase phase)
 {
     os::memory::LockHolder lk(phase_lock_);
     return phase_count_[ToIndex(phase)] != 0
-               ? std::chrono::duration_cast<std::chrono::milliseconds>(sum_phase_time_[ToIndex(phase)]).count() /
+               ? static_cast<uint64_t>(
+                     std::chrono::duration_cast<std::chrono::milliseconds>(sum_phase_time_[ToIndex(phase)]).count()) /
                      phase_count_[ToIndex(phase)]
                : 0;
 }

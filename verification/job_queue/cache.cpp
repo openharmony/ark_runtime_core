@@ -977,7 +977,7 @@ CacheOfRuntimeThings::CachedMethod &FastAPIClassRW::Link<CacheOfRuntimeThings::C
     };
 
     for (auto &arg : cached_method.signature) {
-        cached_method.linked &= resolve_arg(arg);
+        cached_method.linked = resolve_arg(arg) && cached_method.linked;
     }
 
     LinkCatchBlocks(cached_method);

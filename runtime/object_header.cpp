@@ -161,7 +161,7 @@ ObjectHeader *ObjectHeader::ShallowCopy(ObjectHeader *src)
     std::size_t words_to_copy = bytes_to_copy / WORD_SIZE;
     std::size_t remaining_offset = ObjectHeader::ObjectHeaderSize() + WORD_SIZE * words_to_copy;
     // copy words
-    for (std::size_t i = ObjectHeader::ObjectHeaderSize(); i < remaining_offset; i += WORD_SIZE) {
+    for (std::size_t i = static_cast<size_t>(ObjectHeader::ObjectHeaderSize()); i < remaining_offset; i += WORD_SIZE) {
         reinterpret_cast<std::atomic<uintptr_t> *>(&dst_sp[i])
             ->store(reinterpret_cast<std::atomic<uintptr_t> *>(&src_sp[i])->load(std::memory_order_relaxed),
                     std::memory_order_relaxed);
