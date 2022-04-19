@@ -238,17 +238,17 @@ private:
                 // Due to hyerarhical structure, we need to conjunct types
                 bool target_type = false;
                 if ((mask & static_cast<unsigned int>(EnumerationFlag::JAVA_THREAD)) != 0) {
-                    target_type |= t->IsJavaThread();
+                    target_type = target_type || t->IsJavaThread();
                 }
                 if ((mask & static_cast<unsigned int>(EnumerationFlag::JS_THREAD)) != 0) {
-                    target_type |= t->IsJSThread();
+                    target_type = target_type || t->IsJSThread();
                 }
-                target &= target_type;
+                target = target && target_type;
             }
         }
 
         if ((mask & static_cast<unsigned int>(EnumerationFlag::VM_THREAD)) != 0) {
-            target |= t->IsVMThread();
+            target = target || t->IsVMThread();
         }
 
         return target;

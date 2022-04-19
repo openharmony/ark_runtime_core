@@ -257,7 +257,7 @@ public:
         }
 
         infoPtr->is_daemon = mt_managed_thread->IsDaemon();
-        infoPtr->priority = mt_managed_thread->GetThreadPriority();
+        infoPtr->priority = static_cast<int32_t>(mt_managed_thread->GetThreadPriority());
         /* fields that didn't still implemented (we don't support it):
          * infoPtr->thread_group
          * infoPtr->context_class_loader

@@ -69,7 +69,7 @@ public:
     void ExtendToInclude(int idx)
     {
         if (idx >= end_index()) {
-            Base::resize(Base::size() + (idx - end_index() + 1));
+            Base::resize(Base::size() + static_cast<size_t>(idx - end_index() + 1));
         }
     }
 };

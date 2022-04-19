@@ -54,7 +54,7 @@ struct bit_ashr : public std::binary_function<T, T, T> {  // NOLINT(readability-
         using unsigned_type = std::make_unsigned_t<T>;
         size_t mask = std::numeric_limits<unsigned_type>::digits - 1;
         size_t shift = static_cast<unsigned_type>(y) & mask;
-        return x >> shift;  // NOLINT(hicpp-signed-bitwise)
+        return static_cast<T>(static_cast<unsigned_type>(x) >> shift);
     }
 };
 
