@@ -30,7 +30,7 @@ public:
 
     void AdvanceLine(int32_t v)
     {
-        line_ += v;
+        line_ += static_cast<size_t>(v);
     }
 
     void AdvancePc(uint32_t v)
@@ -75,7 +75,7 @@ public:
 
     void SetColumn(int32_t c)
     {
-        column_ = c;
+        column_ = static_cast<size_t>(c);
     }
 
     size_t GetColumn() const
@@ -275,8 +275,8 @@ private:
     {
         ASSERT(static_cast<uint8_t>(opcode) >= LineNumberProgramItem::OPCODE_BASE);
 
-        auto adjust_opcode = static_cast<uint8_t>(opcode) - LineNumberProgramItem::OPCODE_BASE;
-        uint32_t pc_offset = adjust_opcode / LineNumberProgramItem::LINE_RANGE;
+        auto adjust_opcode = static_cast<int32_t>(static_cast<uint8_t>(opcode) - LineNumberProgramItem::OPCODE_BASE);
+        auto pc_offset = static_cast<uint32_t>(adjust_opcode / LineNumberProgramItem::LINE_RANGE);
         int32_t line_offset = adjust_opcode % LineNumberProgramItem::LINE_RANGE + LineNumberProgramItem::LINE_BASE;
         return handler_->HandleSpecialOpcode(pc_offset, line_offset);
     }

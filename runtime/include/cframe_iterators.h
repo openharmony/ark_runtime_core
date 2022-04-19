@@ -258,7 +258,7 @@ public:
         ++shorty_it_;
 
         // Update slots
-        ptrdiff_t inc = GetSlotsCountForType(vreg_type_);
+        auto inc = static_cast<ptrdiff_t>(GetSlotsCountForType(vreg_type_));
         ASSERT(inc == 1 || inc == 2);  // 1 or 2 slots
         if (inc == 1) {
             if constexpr (arch::ExtArchTraits<Arch::AARCH32>::HARDFP) {
@@ -374,7 +374,7 @@ private:
     CFrameJniMethodIterator &HandleHardDouble()
     {
         ASSERT(vreg_type_ == VRegInfo::Type::FLOAT64);
-        fp_current_slot_ = RoundDown(static_cast<uintptr_t>(fp_current_slot_) + 1, 2U) - 1;
+        fp_current_slot_ = static_cast<ptrdiff_t>(RoundDown(static_cast<uintptr_t>(fp_current_slot_) + 1, 2U) - 1);
         if (fp_current_slot_ > fp_end_slot_) {
             current_slot_ = fp_current_slot_;
             fp_current_slot_ -= 2U;

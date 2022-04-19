@@ -264,8 +264,8 @@ int32_t String::Compare(String *rstr)
     if (lstr == rstr) {
         return 0;
     }
-    int32_t lstr_leng = lstr->GetLength();
-    int32_t rstr_leng = rstr->GetLength();
+    auto lstr_leng = static_cast<int32_t>(lstr->GetLength());
+    auto rstr_leng = static_cast<int32_t>(rstr->GetLength());
     int32_t leng_ret = lstr_leng - rstr_leng;
     int32_t min_count = (leng_ret < 0) ? lstr_leng : rstr_leng;
     if (!lstr->IsUtf16() && !rstr->IsUtf16()) {
@@ -334,8 +334,8 @@ int32_t String::IndexOf(String *rhs, int32_t pos)
         return -1;
     }
     String *lhs = this;
-    int32_t lhs_count = lhs->GetLength();
-    int32_t rhs_count = rhs->GetLength();
+    auto lhs_count = static_cast<int32_t>(lhs->GetLength());
+    auto rhs_count = static_cast<int32_t>(rhs->GetLength());
 
     if (rhs_count == 0) {
         return pos;
@@ -617,13 +617,13 @@ uint32_t String::ComputeHashcode()
     uint32_t hash;
     if (compressed_strings_enabled) {
         if (!IsUtf16()) {
-            hash = ComputeHashForData(GetDataMUtf8(), GetLength());
+            hash = static_cast<uint32_t>(ComputeHashForData(GetDataMUtf8(), GetLength()));
         } else {
-            hash = ComputeHashForData(GetDataUtf16(), GetLength());
+            hash = static_cast<uint32_t>(ComputeHashForData(GetDataUtf16(), GetLength()));
         }
     } else {
         ASSERT(static_cast<size_t>(GetLength()) > (std::numeric_limits<size_t>::max() >> 1U));
-        hash = ComputeHashForData(GetDataUtf16(), GetLength());
+        hash = static_cast<uint32_t>(ComputeHashForData(GetDataUtf16(), GetLength()));
     }
     return hash;
 }
@@ -639,12 +639,12 @@ uint32_t String::ComputeHashcodeMutf8(const uint8_t *mutf8_data, uint32_t utf16_
 {
     uint32_t hash;
     if (can_be_compressed) {
-        hash = ComputeHashForMutf8(mutf8_data);
+        hash = static_cast<uint32_t>(ComputeHashForMutf8(mutf8_data));
     } else {
         auto allocator = Runtime::GetCurrent()->GetInternalAllocator();
         auto tmp_buffer = allocator->AllocArray<uint16_t>(utf16_length);
         utf::ConvertMUtf8ToUtf16(mutf8_data, utf::Mutf8Size(mutf8_data), tmp_buffer);
-        hash = ComputeHashForData(tmp_buffer, utf16_length);
+        hash = static_cast<uint32_t>(ComputeHashForData(tmp_buffer, utf16_length));
         allocator->Delete(tmp_buffer);
     }
     return hash;
@@ -659,7 +659,7 @@ uint32_t String::ComputeHashcodeUtf16(uint16_t *utf16_data, uint32_t length)
 /* static */
 String *String::DoReplace(String *src, uint16_t old_c, uint16_t new_c, LanguageContext ctx, PandaVM *vm)
 {
-    int32_t length = src->GetLength();
+    auto length = src->GetLength();
     bool can_be_compressed = IsASCIICharacter(new_c);
     if (src->IsUtf16()) {
         can_be_compressed = can_be_compressed && CanBeCompressedUtf16(src->GetDataUtf16(), length, old_c);

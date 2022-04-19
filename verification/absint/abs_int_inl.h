@@ -3497,7 +3497,7 @@ public:
         LOG_INST();
         DBGBRK();
         uint16_t vs1 = inst_.GetVReg<format, 0x00>();
-        unsigned acc_pos = inst_.GetImm<format, 0x00>();
+        auto acc_pos = static_cast<unsigned>(inst_.GetImm<format, 0x00>());
         static constexpr auto NUM_ARGS = 2;
         const CachedMethod *method = GetCachedMethod();
         if (method != nullptr) {
@@ -3598,7 +3598,7 @@ public:
     {
         LOG_INST();
         DBGBRK();
-        unsigned acc_pos = inst_.GetImm<format, 0x0>();
+        auto acc_pos = static_cast<unsigned>(inst_.GetImm<format, 0x0>());
         static constexpr auto NUM_ARGS = 4;
         const CachedMethod *method = GetCachedMethod();
         if (method != nullptr) {
@@ -3611,7 +3611,7 @@ public:
             if (i == acc_pos) {
                 regs[i] = ACC;
             } else {
-                regs[i] = inst_.GetVReg(reg_idx++);
+                regs[i] = static_cast<int>(inst_.GetVReg(reg_idx++));
             }
         }
         auto fetcher = LazyFetch(regs);
@@ -3666,7 +3666,7 @@ public:
         LOG_INST();
         DBGBRK();
         uint16_t vs1 = inst_.GetVReg<format, 0x00>();
-        unsigned acc_pos = inst_.GetImm<format, 0x00>();
+        auto acc_pos = static_cast<unsigned>(inst_.GetImm<format, 0x00>());
         static constexpr auto NUM_ARGS = 2;
         const CachedMethod *method = GetCachedMethod();
         if (method != nullptr) {
@@ -3718,7 +3718,7 @@ public:
     {
         LOG_INST();
         DBGBRK();
-        unsigned acc_pos = inst_.GetImm<format, 0x0>();
+        auto acc_pos = static_cast<unsigned>(inst_.GetImm<format, 0x0>());
         static constexpr auto NUM_ARGS = 4;
         const CachedMethod *method = GetCachedMethod();
         if (method != nullptr) {
@@ -3736,7 +3736,7 @@ public:
             if (i == acc_pos) {
                 regs[i] = ACC;
             } else {
-                regs[i] = inst_.GetVReg(reg_idx++);
+                regs[i] = static_cast<int>(inst_.GetVReg(reg_idx++));
             }
         }
         auto fetcher = LazyFetch(regs);

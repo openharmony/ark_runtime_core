@@ -370,7 +370,7 @@ Monitor::State Monitor::Wait(ObjectHeader *obj, ThreadStatus status, uint64_t ti
                 }
 
                 // Use LockHolder inside scope
-                int counter = monitor->recursive_counter_;
+                uint64_t counter = monitor->recursive_counter_;
                 // Wait should be called under the monitor. We checked it in the previous if.
                 // Thus, the operation with queues are thread-safe
                 monitor->waiters_.PushFront(*thread);

@@ -490,7 +490,8 @@ static size_t LayoutFields(Class *klass, PandaList<Field *> *tagged_fields, Pand
     if (is_static) {
         offset = klass->GetStaticFieldsOffset();
     } else {
-        offset = (klass->GetBase() != nullptr) ? klass->GetBase()->GetObjectSize() : ObjectHeader::ObjectHeaderSize();
+        offset = (klass->GetBase() != nullptr) ? klass->GetBase()->GetObjectSize()
+                                               : static_cast<size_t>(ObjectHeader::ObjectHeaderSize());
     }
 
     if (!ref_fields->empty()) {
