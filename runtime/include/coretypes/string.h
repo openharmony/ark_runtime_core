@@ -150,7 +150,8 @@ public:
                 LOG(FATAL, RUNTIME) << __func__ << " length is higher than half of size_t::max";
             }
             // NOLINTNEXTLINE(cppcoreguidelines-pro-bounds-pointer-arithmetic)
-            if (memcpy_s(buf, sizeof(buf) * (max_length + 1), GetDataMUtf8() + start, length) != EOK) {
+            if (memcpy_s(buf, sizeof(uint8_t) * (max_length + 1), GetDataMUtf8() + start, length) !=
+                EOK) {
                 LOG(FATAL, RUNTIME) << __func__ << " length is higher than buf size";
             }
             return length;
@@ -174,7 +175,8 @@ public:
         }
         if (IsUtf16()) {
             // NOLINTNEXTLINE(cppcoreguidelines-pro-bounds-pointer-arithmetic)
-            if (memcpy_s(buf, sizeof(buf) * max_length, GetDataUtf16() + start, ComputeDataSizeUtf16(length)) != EOK) {
+            if (memcpy_s(buf, sizeof(uint16_t) * max_length, GetDataUtf16() + start, ComputeDataSizeUtf16(length)) !=
+                EOK) {
                 LOG(FATAL, RUNTIME) << __func__ << " length is higher than buf size";
             }
             return length;
