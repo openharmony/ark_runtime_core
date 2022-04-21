@@ -44,6 +44,7 @@ public:
 
     panda_file::File::Index AsIndex() const
     {
+        ASSERT(id_ < std::numeric_limits<uint16_t>::max());
         return id_;
     }
 

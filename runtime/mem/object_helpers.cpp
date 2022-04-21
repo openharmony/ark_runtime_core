@@ -88,8 +88,12 @@ void DumpObject([[maybe_unused]] ObjectHeader *object_header,
                 *o_stream << "length = " << std::dec << str_object->GetLength() << std::endl;
                 constexpr size_t BUFF_SIZE = 256;
                 std::array<char, BUFF_SIZE> buff {0};
-                strncpy_s(&buff[0], BUFF_SIZE, reinterpret_cast<const char *>(str_object->GetDataMUtf8()),
-                          static_cast<size_t>(str_object->GetLength()));
+                auto str_res =
+                    strncpy_s(&buff[0], BUFF_SIZE, reinterpret_cast<const char *>(str_object->GetDataMUtf8()),
+                              static_cast<size_t>(str_object->GetLength()));
+                if (UNLIKELY(str_res != EOK)) {
+                    LOG(ERROR, RUNTIME) << "Couldn't copy string by strncpy_s, error code: " << str_res;
+                }
                 *o_stream << "String data: " << &buff[0] << std::endl;
             }
         }
