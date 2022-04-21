@@ -13,13 +13,13 @@
  * limitations under the License.
  */
 
-#include "os/unix/unique_fd.h"
+#include "os/unique_fd.h"
 
 #include <gtest/gtest.h>
 #include <utility>
 #include <unistd.h>
 
-namespace panda::os::unix {
+namespace panda::os::unique_fd {
 
 enum testValue { DEFAULT_VALUE = -1, STDIN_VALUE, STDOUT_VALUE, STDERR_VALUE };
 
@@ -132,4 +132,4 @@ TEST(UniqueFd, Reset)
     EXPECT_EQ(fd_d.Get(), dupDF.stferrValue);
 }
 
-}  // namespace panda::os::unix
+}  // namespace panda::os::unique_fd

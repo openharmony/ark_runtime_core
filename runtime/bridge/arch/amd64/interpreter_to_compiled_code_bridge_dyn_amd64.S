@@ -21,7 +21,7 @@
 //       const Method*,                         %rdx
 //       ManagedThread* thread)                 %rcx
 .global InterpreterToCompiledCodeBridgeDyn
-.type InterpreterToCompiledCodeBridgeDyn, %function
+TYPE_FUNCTION(InterpreterToCompiledCodeBridgeDyn)
 InterpreterToCompiledCodeBridgeDyn:
     CFI_STARTPROC
     CFI_DEF_CFA(rsp, 8)
@@ -125,7 +125,7 @@ InterpreterToCompiledCodeBridgeDyn:
 //       const Method*,                         %rcx
 //       ManagedThread* thread)                 %r8
 .global InvokeCompiledCodeWithArgArrayDyn
-.type InvokeCompiledCodeWithArgArrayDyn, %function
+TYPE_FUNCTION(InvokeCompiledCodeWithArgArrayDyn)
 InvokeCompiledCodeWithArgArrayDyn:
     CFI_STARTPROC
     CFI_DEF_CFA(rsp, 8)

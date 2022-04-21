@@ -22,6 +22,43 @@
 
 namespace panda::test {
 
+void MapDfxOption(std::map<DfxOptionHandler::DfxOption, uint8_t> &option_map, DfxOptionHandler::DfxOption option)
+{
+    switch (option) {
+#ifdef PANDA_TARGET_UNIX
+        case DfxOptionHandler::COMPILER_NULLCHECK:
+            option_map[DfxOptionHandler::COMPILER_NULLCHECK] = 1;
+            break;
+        case DfxOptionHandler::SIGNAL_CATCHER:
+            option_map[DfxOptionHandler::SIGNAL_CATCHER] = 1;
+            break;
+        case DfxOptionHandler::SIGNAL_HANDLER:
+            option_map[DfxOptionHandler::SIGNAL_HANDLER] = 1;
+            break;
+        case DfxOptionHandler::ARK_SIGQUIT:
+            option_map[DfxOptionHandler::ARK_SIGQUIT] = 1;
+            break;
+        case DfxOptionHandler::ARK_SIGUSR1:
+            option_map[DfxOptionHandler::ARK_SIGUSR1] = 1;
+            break;
+        case DfxOptionHandler::ARK_SIGUSR2:
+            option_map[DfxOptionHandler::ARK_SIGUSR2] = 1;
+            break;
+        case DfxOptionHandler::MOBILE_LOG:
+            option_map[DfxOptionHandler::MOBILE_LOG] = 1;
+            break;
+#endif  // PANDA_TARGET_UNIX
+        case DfxOptionHandler::REFERENCE_DUMP:
+            option_map[DfxOptionHandler::REFERENCE_DUMP] = 1;
+            break;
+        case DfxOptionHandler::DFXLOG:
+            option_map[DfxOptionHandler::DFXLOG] = 0;
+            break;
+        default:
+            break;
+    }
+}
+
 TEST(DfxController, Initialization)
 {
     if (DfxController::IsInitialized()) {
@@ -37,38 +74,8 @@ TEST(DfxController, Initialization)
 
     std::map<DfxOptionHandler::DfxOption, uint8_t> option_map;
     for (auto option = DfxOptionHandler::DfxOption(0); option < DfxOptionHandler::END_FLAG;
-         option = DfxOptionHandler::DfxOption(option + 1)) {
-        switch (option) {
-            case DfxOptionHandler::COMPILER_NULLCHECK:
-                option_map[DfxOptionHandler::COMPILER_NULLCHECK] = 1;
-                break;
-            case DfxOptionHandler::REFERENCE_DUMP:
-                option_map[DfxOptionHandler::REFERENCE_DUMP] = 1;
-                break;
-            case DfxOptionHandler::SIGNAL_CATCHER:
-                option_map[DfxOptionHandler::SIGNAL_CATCHER] = 1;
-                break;
-            case DfxOptionHandler::SIGNAL_HANDLER:
-                option_map[DfxOptionHandler::SIGNAL_HANDLER] = 1;
-                break;
-            case DfxOptionHandler::ARK_SIGQUIT:
-                option_map[DfxOptionHandler::ARK_SIGQUIT] = 1;
-                break;
-            case DfxOptionHandler::ARK_SIGUSR1:
-                option_map[DfxOptionHandler::ARK_SIGUSR1] = 1;
-                break;
-            case DfxOptionHandler::ARK_SIGUSR2:
-                option_map[DfxOptionHandler::ARK_SIGUSR2] = 1;
-                break;
-            case DfxOptionHandler::MOBILE_LOG:
-                option_map[DfxOptionHandler::MOBILE_LOG] = 1;
-                break;
-            case DfxOptionHandler::DFXLOG:
-                option_map[DfxOptionHandler::DFXLOG] = 0;
-                break;
-            default:
-                break;
-        }
+        option = DfxOptionHandler::DfxOption(option + 1)) {
+        MapDfxOption(option_map, option);
     }
 
     DfxController::Initialize(option_map);
@@ -117,17 +124,18 @@ TEST(DfxController, TestPrintDfxOptionValues)
 #ifdef PANDA_TARGET_UNIX
     std::string res = helpers::string::Format(
         "[TID %06x] E/dfx: DFX option: compiler-nullcheck, option values: 1\n"
-        "[TID %06x] E/dfx: DFX option: reference-dump, option values: 1\n"
         "[TID %06x] E/dfx: DFX option: signal-catcher, option values: 1\n"
         "[TID %06x] E/dfx: DFX option: signal-handler, option values: 1\n"
         "[TID %06x] E/dfx: DFX option: sigquit, option values: 1\n"
         "[TID %06x] E/dfx: DFX option: sigusr1, option values: 1\n"
         "[TID %06x] E/dfx: DFX option: sigusr2, option values: 1\n"
         "[TID %06x] E/dfx: DFX option: mobile-log, option values: 1\n"
+        "[TID %06x] E/dfx: DFX option: reference-dump, option values: 1\n"
         "[TID %06x] E/dfx: DFX option: dfx-log, option values: 0\n",
         tid, tid, tid, tid, tid, tid, tid, tid, tid, tid);
 #else
-    std::string res = helpers::string::Format("[TID %06x] E/dfx: DFX option: dfx-log, option values: 0\n", tid, tid);
+    std::string res = helpers::string::Format(
+        "[TID %06x] E/dfx: DFX option: dfx-log, option values: 0\n", tid, tid);
 #endif
     EXPECT_EQ(err, res);
 

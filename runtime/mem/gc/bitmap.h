@@ -16,10 +16,7 @@
 #ifndef PANDA_RUNTIME_MEM_GC_BITMAP_H_
 #define PANDA_RUNTIME_MEM_GC_BITMAP_H_
 
-// clash with mingw
-#ifndef PANDA_TARGET_WINDOWS
 #include <securec.h>
-#endif
 #include <cstddef>
 #include <cstdint>
 #include <cstring>
@@ -46,9 +43,7 @@ public:
 
     void ClearAllBits()
     {
-#ifndef PANDA_TARGET_WINDOWS
         (void)memset_s(bitmap_.Data(), bitmap_.SizeBytes(), 0, bitmap_.SizeBytes());
-#endif
     }
 
     Span<BitmapWordType> GetBitMap()
@@ -242,13 +237,11 @@ protected:
     void SetWords([[maybe_unused]] size_t word_begin, [[maybe_unused]] size_t word_end)
     {
         ASSERT(word_begin <= word_end);
-#ifndef PANDA_TARGET_WINDOWS
         if (UNLIKELY(word_begin == word_end)) {
             return;
         }
         (void)memset_s(&bitmap_[word_begin], (word_end - word_begin) * sizeof(BitmapWordType),
                        ~static_cast<unsigned char>(0), (word_end - word_begin) * sizeof(BitmapWordType));
-#endif
     }
 
     /**
@@ -259,13 +252,11 @@ protected:
     void ClearWords([[maybe_unused]] size_t word_begin, [[maybe_unused]] size_t word_end)
     {
         ASSERT(word_begin <= word_end);
-#ifndef PANDA_TARGET_WINDOWS
         if (UNLIKELY(word_begin == word_end)) {
             return;
         }
         (void)memset_s(&bitmap_[word_begin], (word_end - word_begin) * sizeof(BitmapWordType),
                        static_cast<unsigned char>(0), (word_end - word_begin) * sizeof(BitmapWordType));
-#endif
     }
 
     explicit Bitmap(BitmapWordType *bitmap, size_t bitsize)
@@ -299,7 +290,7 @@ private:
     size_t GetBitIdxWithinWord(size_t bit_offset) const
     {
         CheckBitOffset(bit_offset);
-        constexpr auto BIT_INDEX_MASK = static_cast<size_t>((1UL << LOG_BITSPERWORD) - 1);
+        constexpr auto BIT_INDEX_MASK = static_cast<size_t>((1ULL << LOG_BITSPERWORD) - 1);
         return bit_offset & BIT_INDEX_MASK;
     }
 
@@ -310,7 +301,7 @@ private:
      */
     BitmapWordType GetBitMask(size_t bit_offset) const
     {
-        return 1UL << GetBitIdxWithinWord(bit_offset);
+        return 1ULL << GetBitIdxWithinWord(bit_offset);
     }
 
     /**

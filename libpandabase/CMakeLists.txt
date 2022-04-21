@@ -46,13 +46,13 @@ set(UNIX_SOURCES_COMMON
     ${PANDA_ROOT}/libpandabase/os/unix/thread.cpp
     ${PANDA_ROOT}/libpandabase/os/unix/native_stack.cpp
     ${PANDA_ROOT}/libpandabase/os/unix/property.cpp
-    ${PANDA_ROOT}/libpandabase/os/unix/time_unix.cpp
     ${PANDA_ROOT}/libpandabase/os/unix/file.cpp
     ${PANDA_ROOT}/libpandabase/os/unix/filesystem.cpp
     ${PANDA_ROOT}/libpandabase/os/unix/library_loader.cpp
     ${PANDA_ROOT}/libpandabase/os/unix/mem.cpp
+    ${PANDA_ROOT}/libpandabase/os/unix/mem_hooks.cpp
     ${PANDA_ROOT}/libpandabase/trace/unix/trace.cpp
-    ${PANDA_ROOT}/libpandabase/os/unix/sighooklib/sighook.cpp
+    ${PANDA_ROOT}/libpandabase/os/unix/sighook.cpp
 )
 # Handle pthread and futex mutexes
 if(PANDA_USE_FUTEX)
@@ -61,7 +61,7 @@ if(PANDA_USE_FUTEX)
     )
 else()
     set(UNIX_SOURCES_COMMON ${UNIX_SOURCES_COMMON}
-        ${PANDA_ROOT}/libpandabase/os/unix/mutex.cpp
+        ${PANDA_ROOT}/libpandabase/os/mutex.cpp
     )
 endif()
 
@@ -71,18 +71,26 @@ set(WINDOWS_SOURCES
     ${PANDA_ROOT}/libpandabase/utils/dfx.cpp
     ${PANDA_ROOT}/libpandabase/utils/utf.cpp
     ${PANDA_ROOT}/libpandabase/utils/json_parser.cpp
+    ${PANDA_ROOT}/libpandabase/utils/time.cpp
+    ${PANDA_ROOT}/libpandabase/utils/type_converter.cpp
     ${PANDA_ROOT}/libpandabase/os/windows/error.cpp
     ${PANDA_ROOT}/libpandabase/os/windows/file.cpp
     ${PANDA_ROOT}/libpandabase/os/windows/mem.cpp
     ${PANDA_ROOT}/libpandabase/os/windows/thread.cpp
+    ${PANDA_ROOT}/libpandabase/os/windows/library_loader.cpp
+    ${PANDA_ROOT}/libpandabase/os/windows/mem_hooks.cpp
     ${PANDA_ROOT}/libpandabase/trace/windows/trace.cpp
+    ${PANDA_ROOT}/libpandabase/os/dfx_option.cpp
     ${PANDA_ROOT}/libpandabase/os/filesystem.cpp
-    ${PANDA_ROOT}/libpandabase/os/unix/mutex.cpp
+    ${PANDA_ROOT}/libpandabase/os/mutex.cpp
+    ${PANDA_ROOT}/libpandabase/os/time.cpp
+    ${PANDA_ROOT}/libpandabase/mem/alloc_tracker.cpp
     ${PANDA_ROOT}/libpandabase/mem/arena.cpp
     ${PANDA_ROOT}/libpandabase/mem/arena_allocator.cpp
     ${PANDA_ROOT}/libpandabase/mem/pool_manager.cpp
     ${PANDA_ROOT}/libpandabase/mem/pool_map.cpp
     ${PANDA_ROOT}/libpandabase/mem/base_mem_stats.cpp
+    ${PANDA_ROOT}/libpandabase/mem/code_allocator.cpp
     ${PANDA_ROOT}/libpandabase/mem/mem_config.cpp
 )
 
@@ -186,41 +194,45 @@ target_include_directories(arkbase
     PUBLIC ${INCLUDE_DIRECTORIES}
 )
 
+set(ARKBASE_TESTS_SOURCES
+    tests/list_test.cpp
+    tests/bit_helpers_test.cpp
+    tests/bit_memory_region_test.cpp
+    tests/bit_table_test.cpp
+    tests/bit_utils_test.cpp
+    tests/bit_vector_test.cpp
+    tests/string_helpers_test.cpp
+    tests/type_converter_tests.cpp
+    tests/logger_test.cpp
+    tests/dfx_test.cpp
+    tests/leb128_test.cpp
+    tests/utf_test.cpp
+    tests/arena_test.cpp
+    tests/arena_allocator_test.cpp
+    tests/expected_test.cpp
+    tests/code_allocator_test.cpp
+    tests/small_vector_test.cpp
+    tests/span_test.cpp
+    tests/pandargs_test.cpp
+    tests/pool_map_test.cpp
+    tests/hash_test.cpp
+    tests/math_helpers_test.cpp
+    tests/serializer_test.cpp
+    tests/base_mem_stats_test.cpp
+    tests/unique_fd_test.cpp
+    tests/mem_range_test.cpp
+    tests/mmap_fixed_test.cpp
+    tests/mmap_mem_pool_test.cpp
+    tests/native_bytes_from_mallinfo_test.cpp
+    tests/json_parser_test.cpp
+    tests/alloc_tracker_test.cpp
+)
+
 panda_add_gtest(
     NO_CORES
     NAME arkbase_tests
     SOURCES
-        tests/list_test.cpp
-        tests/bit_helpers_test.cpp
-        tests/bit_memory_region_test.cpp
-        tests/bit_table_test.cpp
-        tests/bit_utils_test.cpp
-        tests/bit_vector_test.cpp
-        tests/string_helpers_test.cpp
-        tests/type_converter_tests.cpp
-        tests/logger_test.cpp
-        tests/dfx_test.cpp
-        tests/leb128_test.cpp
-        tests/utf_test.cpp
-        tests/arena_test.cpp
-        tests/arena_allocator_test.cpp
-        tests/expected_test.cpp
-        tests/code_allocator_test.cpp
-        tests/small_vector_test.cpp
-        tests/span_test.cpp
-        tests/pandargs_test.cpp
-        tests/pool_map_test.cpp
-        tests/hash_test.cpp
-        tests/math_helpers_test.cpp
-        tests/serializer_test.cpp
-        tests/base_mem_stats_test.cpp
-        tests/unique_fd_test.cpp
-        tests/mem_range_test.cpp
-        tests/mmap_fixed_test.cpp
-        tests/mmap_mem_pool_test.cpp
-        tests/native_bytes_from_mallinfo_test.cpp
-        tests/json_parser_test.cpp
-        tests/alloc_tracker_test.cpp
+        ${ARKBASE_TESTS_SOURCES}
     LIBRARIES
         arkbase
     SANITIZERS

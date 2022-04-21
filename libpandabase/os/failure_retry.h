@@ -16,8 +16,10 @@
 #ifndef PANDA_LIBPANDABASE_OS_UNIX_FAILURE_RETRY_H_
 #define PANDA_LIBPANDABASE_OS_UNIX_FAILURE_RETRY_H_
 
+#ifdef PANDA_TARGET_UNIX
 // Mac Os' libc doesn't have this macro
 #ifndef TEMP_FAILURE_RETRY
+// NOLINTNEXTLINE(cppcoreguidelines-macro-usage)
 #define TEMP_FAILURE_RETRY(exp)                    \
     (__extension__({                               \
         decltype(exp) _result;                     \
@@ -30,5 +32,11 @@
 
 // NOLINTNEXTLINE(cppcoreguidelines-macro-usage)
 #define PANDA_FAILURE_RETRY(exp) (__extension__ TEMP_FAILURE_RETRY(exp))
+#elif PANDA_TARGET_WINDOWS
+// Windows Os does not support TEMP_FAILURE_RETRY macro
+#define PANDA_FAILURE_RETRY(exp) (exp)
+#else
+#error "Unsupported platform"
+#endif  // PANDA_TARGET_UNIX
 
 #endif  // PANDA_LIBPANDABASE_OS_UNIX_FAILURE_RETRY_H_

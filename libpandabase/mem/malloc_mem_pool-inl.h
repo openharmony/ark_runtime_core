@@ -66,13 +66,7 @@ inline void MallocMemPool::FreeArenaImpl(ArenaT *arena)
     LOG_MALLOC_MEM_POOL(DEBUG) << "Try to free arena with size " << std::dec << arena->GetSize()
                                << " at addr = " << std::hex << arena;
     arena->~Arena();
-#ifdef PANDA_TARGET_WINDOWS
-    // std::free can not work with _aligned_malloc. it will lead to some weird crash
-    _aligned_free(arena);
-#else
-    std::free(arena);  // NOLINT(cppcoreguidelines-no-malloc)
-#endif
-
+    os::mem::AlignedFree(arena);
     LOG_MALLOC_MEM_POOL(DEBUG) << "Free arena call finished";
 }
 

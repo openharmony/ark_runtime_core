@@ -21,7 +21,6 @@
 #include "mem/mem.h"
 #include "os/mem.h"
 #include "utils/asan_interface.h"
-#include <sys/mman.h>
 
 namespace panda {
 
@@ -120,7 +119,8 @@ void HashTest::EndOfPageStringHashTest() const
     constexpr size_t ALLOC_SIZE = PAGE_SIZE * 2;
     void *mem = panda::os::mem::MapRWAnonymousRaw(ALLOC_SIZE);
     ASAN_UNPOISON_MEMORY_REGION(mem, ALLOC_SIZE);
-    mprotect(reinterpret_cast<void *>(reinterpret_cast<uintptr_t>(mem) + PAGE_SIZE), PAGE_SIZE, PROT_NONE);
+    panda::os::mem::MakeMemWithProtFlag(
+        reinterpret_cast<void *>(reinterpret_cast<uintptr_t>(mem) + PAGE_SIZE), PAGE_SIZE, PROT_NONE);
     char *string =
         reinterpret_cast<char *>((reinterpret_cast<uintptr_t>(mem) + PAGE_SIZE) - sizeof(char) * string_size);
     string[0] = 'O';

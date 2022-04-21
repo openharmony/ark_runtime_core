@@ -16,20 +16,27 @@
 #include "os/time.h"
 
 namespace panda::os::time {
-#if !defined(PANDA_TARGET_UNIX)
+/**
+ *  Return current time in nanoseconds
+ */
 uint64_t GetClockTimeInMicro()
 {
-    return 0;
+    return GetClockTime<std::chrono::microseconds>(CLOCK_MONOTONIC);
 }
 
+/**
+ *  Return current time in milliseconds
+ */
 uint64_t GetClockTimeInMilli()
 {
-    return 0;
+    return GetClockTime<std::chrono::milliseconds>(CLOCK_MONOTONIC);
 }
 
+/**
+ *  Return thread CPU time in nanoseconds
+ */
 uint64_t GetClockTimeInThreadCpuTime()
 {
-    return 0;
+    return GetClockTime<std::chrono::nanoseconds>(CLOCK_THREAD_CPUTIME_ID);
 }
-#endif  // PANDA_TARGET_UNIX
 }  // namespace panda::os::time

@@ -20,9 +20,7 @@
 #include "utils/span.h"
 #include "utils/type_helpers.h"
 #include "utils/leb128.h"
-#if !PANDA_TARGET_WINDOWS
 #include "securec.h"
-#endif
 
 #include <cstdint>
 #include <cerrno>

@@ -65,7 +65,7 @@ void MemStatsAdditionalInfo::RecordGCPhaseEnd()
     os::memory::LockHolder lk(phase_lock_);
     ASSERT(current_phase_ != GCPhase::GC_PHASE_LAST);
 
-    uint phase_index = ToIndex(current_phase_);
+    uint64_t phase_index = ToIndex(current_phase_);
     duration phase_time = clock::now() - phase_start_time_;
     if (phase_count_[phase_index] != 0) {
         min_phase_time_[phase_index] = std::min(min_phase_time_[phase_index], phase_time);

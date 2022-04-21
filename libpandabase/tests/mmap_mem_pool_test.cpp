@@ -13,7 +13,6 @@
  * limitations under the License.
  */
 #include "mem/mem.h"
-#include <sys/mman.h>
 #include "mem/mmap_mem_pool-inl.h"
 
 #include "gtest/gtest.h"

@@ -23,9 +23,14 @@ static constexpr uint32_t MMAP_PROT_READ = 1;
 static constexpr uint32_t MMAP_PROT_WRITE = 2;
 static constexpr uint32_t MMAP_PROT_EXEC = 4;
 
+static constexpr uint32_t MMAP_FLAG_SHARED = 1;
 static constexpr uint32_t MMAP_FLAG_PRIVATE = 2;
 static constexpr uint32_t MMAP_FLAG_FIXED = 0x10;
 static constexpr uint32_t MMAP_FLAG_ANONYMOUS = 0x20;
+
+void *mmap([[maybe_unused]] void *addr, size_t len, int prot, uint32_t flags, int fildes, off_t off);
+
+int munmap(void *addr, [[maybe_unused]] size_t len);
 
 }  // namespace panda::os::mem
 

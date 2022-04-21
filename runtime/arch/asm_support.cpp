@@ -38,7 +38,7 @@ static_assert(FRAME_SLOT_OFFSET == 80U);
 static_assert(FRAME_TAG_OFFSET == 88U);
 #endif
 
-extern "C" ManagedThread *GetCurrentThread()
+extern "C" ManagedThread *GetCurrentManagedThread()
 {
     return ManagedThread::GetCurrent();
 }

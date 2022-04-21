@@ -18,6 +18,8 @@
 
 #ifdef PANDA_TARGET_UNIX
 #include "os/unix/library_loader.h"
+#elif PANDA_TARGET_WINDOWS
+#include "os/windows/library_loader.h"
 #else
 #error "Unsupported platform"
 #endif
@@ -28,15 +30,8 @@
 #include <string_view>
 
 namespace panda::os::library_loader {
-
-#ifdef PANDA_TARGET_UNIX
-using LibraryHandle = panda::os::unix::library_loader::LibraryHandle;
-#endif
-
 Expected<LibraryHandle, Error> Load(std::string_view filename);
-
 Expected<void *, Error> ResolveSymbol(const LibraryHandle &handle, std::string_view name);
-
 }  // namespace panda::os::library_loader
 
 #endif  // PANDA_LIBPANDABASE_OS_LIBRARY_LOADER_H_

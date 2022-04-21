@@ -40,21 +40,28 @@ if (is_mingw) {
     "$ark_root/libpandabase/mem/arena.cpp",
     "$ark_root/libpandabase/mem/arena_allocator.cpp",
     "$ark_root/libpandabase/mem/base_mem_stats.cpp",
+    "$ark_root/libpandabase/mem/code_allocator.cpp",
     "$ark_root/libpandabase/mem/mem_config.cpp",
     "$ark_root/libpandabase/mem/pool_manager.cpp",
     "$ark_root/libpandabase/mem/pool_map.cpp",
     "$ark_root/libpandabase/os/dfx_option.cpp",
     "$ark_root/libpandabase/os/filesystem.cpp",
+    "$ark_root/libpandabase/os/mutex.cpp",
+    "$ark_root/libpandabase/os/native_stack.cpp",
     "$ark_root/libpandabase/os/stacktrace_stub.cpp",
-    "$ark_root/libpandabase/os/unix/mutex.cpp",
+    "$ark_root/libpandabase/os/time.cpp",
     "$ark_root/libpandabase/os/windows/error.cpp",
     "$ark_root/libpandabase/os/windows/file.cpp",
+    "$ark_root/libpandabase/os/windows/library_loader.cpp",
     "$ark_root/libpandabase/os/windows/mem.cpp",
+    "$ark_root/libpandabase/os/windows/mem_hooks.cpp",
     "$ark_root/libpandabase/os/windows/thread.cpp",
     "$ark_root/libpandabase/trace/windows/trace.cpp",
     "$ark_root/libpandabase/utils/dfx.cpp",
     "$ark_root/libpandabase/utils/json_parser.cpp",
     "$ark_root/libpandabase/utils/logger.cpp",
+    "$ark_root/libpandabase/utils/time.cpp",
+    "$ark_root/libpandabase/utils/type_converter.cpp",
     "$ark_root/libpandabase/utils/utf.cpp",
   ]
 } else {
@@ -78,10 +85,10 @@ if (is_mingw) {
     "$ark_root/libpandabase/os/unix/filesystem.cpp",
     "$ark_root/libpandabase/os/unix/library_loader.cpp",
     "$ark_root/libpandabase/os/unix/mem.cpp",
+    "$ark_root/libpandabase/os/unix/mem_hooks.cpp",
     "$ark_root/libpandabase/os/unix/native_stack.cpp",
     "$ark_root/libpandabase/os/unix/property.cpp",
     "$ark_root/libpandabase/os/unix/thread.cpp",
-    "$ark_root/libpandabase/os/unix/time_unix.cpp",
     "$ark_root/libpandabase/trace/trace.cpp",
     "$ark_root/libpandabase/trace/unix/trace.cpp",
     "$ark_root/libpandabase/utils/dfx.cpp",
@@ -99,10 +106,10 @@ if (is_mingw) {
       "$ark_root/libpandabase/os/unix/exec.cpp",
       "$ark_root/libpandabase/os/unix/futex/mutex.cpp",
       "$ark_root/libpandabase/os/unix/pipe.cpp",
-      "$ark_root/libpandabase/os/unix/sighooklib/sighook.cpp",
+      "$ark_root/libpandabase/os/unix/sighook.cpp",
     ]
   } else {
-    libarkbase_sources += [ "$ark_root/libpandabase/os/unix/mutex.cpp" ]
+    libarkbase_sources += [ "$ark_root/libpandabase/os/mutex.cpp" ]
   }
 }
 
@@ -130,6 +137,9 @@ ohos_shared_library("libarkbase") {
   deps = libarkbase_deps
 
   output_extension = "so"
+  if (is_mingw) {
+    output_extension = "dll"
+  }
   if (!is_standard_system) {
     relative_install_dir = "ark"
   }

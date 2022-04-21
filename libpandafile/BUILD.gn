@@ -79,6 +79,9 @@ ohos_shared_library("libarkfile") {
     relative_install_dir = "ark"
   }
   output_extension = "so"
+  if (is_mingw) {
+    output_extension = "dll"
+  }
   subsystem_name = "ark"
   part_name = "ark"
 }

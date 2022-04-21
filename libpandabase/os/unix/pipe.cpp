@@ -15,7 +15,7 @@
 
 #include "pipe.h"
 
-#include "failure_retry.h"
+#include "os/failure_retry.h"
 
 #include <vector>
 #include <array>

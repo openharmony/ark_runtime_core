@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021-2022 Huawei Device Co., Ltd.
+ * Copyright (c) 2022 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -13,23 +13,15 @@
  * limitations under the License.
  */
 
-#ifndef PANDA_LIBPANDABASE_OS_TIME_H_
-#define PANDA_LIBPANDABASE_OS_TIME_H_
+#ifndef PANDA_LIBPANDABASE_OS_MEM_HOOKS_H_
+#define PANDA_LIBPANDABASE_OS_MEM_HOOKS_H_
 
 #ifdef PANDA_TARGET_UNIX
-#include "os/unix/time.h"
+#include "os/unix/mem_hooks.h"
 #elif PANDA_TARGET_WINDOWS
-#include "os/windows/time.h"
+#include "os/windows/mem_hooks.h"
 #else
 #error "Unsupported platform"
 #endif  // PANDA_TARGET_UNIX
 
-#include <cstdint>
-
-namespace panda::os::time {
-uint64_t GetClockTimeInMicro();
-uint64_t GetClockTimeInMilli();
-uint64_t GetClockTimeInThreadCpuTime();
-}  // namespace panda::os::time
-
-#endif  // PANDA_LIBPANDABASE_OS_TIME_H_
+#endif  // PANDA_LIBPANDABASE_OS_MEM_HOOKS_H_

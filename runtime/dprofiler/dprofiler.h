@@ -38,7 +38,15 @@ class RuntimeListener;
  */
 class DProfiler final {
 public:
+#ifdef PANDA_TARGET_UNIX
     DProfiler(std::string_view app_name, Runtime *runtime);
+#else
+    DProfiler([[maybe_unused]] std::string_view app_name, [[maybe_unused]] Runtime *runtime)
+    {
+        // Unsupported on windows platform
+        UNREACHABLE();
+    }
+#endif  // PANDA_TARGET_UNIX
     ~DProfiler() = default;
 
     /**
