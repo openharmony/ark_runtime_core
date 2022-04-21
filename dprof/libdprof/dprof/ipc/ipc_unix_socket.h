@@ -16,11 +16,11 @@
 #ifndef PANDA_DPROF_LIBDPROF_DPROF_IPC_IPC_UNIX_SOCKET_H_
 #define PANDA_DPROF_LIBDPROF_DPROF_IPC_IPC_UNIX_SOCKET_H_
 
-#include "os/unix/unique_fd.h"
+#include "os/unique_fd.h"
 
 namespace panda::dprof::ipc {
-os::unix::UniqueFd CreateUnixServerSocket(int backlog);
-os::unix::UniqueFd CreateUnixClientSocket();
+os::unique_fd::UniqueFd CreateUnixServerSocket(int backlog);
+os::unique_fd::UniqueFd CreateUnixClientSocket();
 
 bool WaitDataTimeout(int fd, int timeoutMs);
 bool SendAll(int fd, const void *buf, int len);

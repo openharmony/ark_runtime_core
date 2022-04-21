@@ -47,8 +47,7 @@ void *MallocProxyAllocator<AllocConfigT>::Alloc(size_t size, Alignment align)
         lock_.Lock();
     }
     size_t alignment_in_bytes = GetAlignmentInBytes(align);
-    size_t aligned_size = (size + alignment_in_bytes - 1) & ~(alignment_in_bytes - 1);
-    void *ret = aligned_alloc(alignment_in_bytes, aligned_size);
+    void *ret = os::mem::AlignedAlloc(alignment_in_bytes, size);
     // NOLINTNEXTLINE(readability-braces-around-statements, bugprone-suspicious-semicolon)
     if constexpr (!DUMMY_ALLOC_CONFIG) {
         ASSERT(allocated_memory_.find(ret) == allocated_memory_.end());
@@ -72,7 +71,7 @@ void MallocProxyAllocator<AllocConfigT>::Free(void *mem)
     if constexpr (!DUMMY_ALLOC_CONFIG) {
         lock_.Lock();
     }
-    std::free(mem);  // NOLINT(cppcoreguidelines-no-malloc)
+    os::mem::AlignedFree(mem);
     // NOLINTNEXTLINE(readability-braces-around-statements, bugprone-suspicious-semicolon)
     if constexpr (!DUMMY_ALLOC_CONFIG) {
         auto iterator = allocated_memory_.find(mem);

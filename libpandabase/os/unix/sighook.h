@@ -13,14 +13,13 @@
  * limitations under the License.
  */
 
-#ifndef PANDA_LIBPANDABASE_OS_UNIX_SIGHOOKLIB_SIGHOOK_H_
-#define PANDA_LIBPANDABASE_OS_UNIX_SIGHOOKLIB_SIGHOOK_H_
+#ifndef PANDA_LIBPANDABASE_OS_UNIX_SIGHOOK_H_
+#define PANDA_LIBPANDABASE_OS_UNIX_SIGHOOK_H_
 
 #include <signal.h>  // NOLINTNEXTLINE(modernize-deprecated-headers)
 #include <stdint.h>  // NOLINTNEXTLINE(modernize-deprecated-headers)
 
 namespace panda {
-
 #if PANDA_TARGET_MACOS && !defined _NSIG
 #define _NSIG NSIG
 #endif
@@ -49,7 +48,6 @@ struct SigchainAction {
 extern "C" void AddSpecialSignalHandlerFn(int signal, SigchainAction *sa);
 extern "C" void RemoveSpecialSignalHandlerFn(int signal, bool (*fn)(int, siginfo_t *, void *));
 extern "C" void EnsureFrontOfChain(int signal);
-
 }  // namespace panda
 
-#endif  // PANDA_LIBPANDABASE_OS_UNIX_SIGHOOKLIB_SIGHOOK_H_
+#endif  // PANDA_LIBPANDABASE_OS_UNIX_SIGHOOK_H_

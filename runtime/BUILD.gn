@@ -76,7 +76,6 @@ ohos_static_library("libarkruntime_static") {
     "class_linker_extension.cpp",
     "coretypes/array.cpp",
     "coretypes/string.cpp",
-    "dprofiler/dprofiler.cpp",
     "dyn_class_linker_extension.cpp",
     "entrypoints/entrypoints.cpp",
     "exceptions.cpp",
@@ -118,7 +117,6 @@ ohos_static_library("libarkruntime_static") {
     "mem/heap_manager.cpp",
     "mem/heap_verifier.cpp",
     "mem/internal_allocator.cpp",
-    "mem/mem_hooks.cpp",
     "mem/mem_stats.cpp",
     "mem/mem_stats_additional_info.cpp",
     "mem/mem_stats_default.cpp",
@@ -141,7 +139,6 @@ ohos_static_library("libarkruntime_static") {
     "panda_vm.cpp",
     "runtime.cpp",
     "runtime_helpers.cpp",
-    "signal_handler.cpp",
     "stack_walker.cpp",
     "string_table.cpp",
     "thread.cpp",
@@ -157,6 +154,12 @@ ohos_static_library("libarkruntime_static") {
     "tooling/pt_thread.cpp",
     "vtable_builder.cpp",
   ]
+  if (!is_mingw) {
+    sources += [
+      "dprofiler/dprofiler.cpp",
+      "signal_handler.cpp",
+    ]
+  }
   if (current_cpu == "arm") {
     sources += [
       "arch/arm/interpreter_support.S",
@@ -228,7 +231,6 @@ ohos_static_library("libarkruntime_static") {
   deps = [
     ":arkruntime_header_deps",
     ":arkruntime_interpreter_impl",
-    "$ark_root/dprof:libdprof",
     "$ark_root/libpandabase:libarkbase",
     "$ark_root/libpandafile:libarkfile",
     "$ark_root/libpandafile:libarkfile_type_gen_h",
@@ -236,6 +238,10 @@ ohos_static_library("libarkruntime_static") {
     "$ark_root/runtime/asm_defines:asm_defines_generator",
     sdk_libc_secshared_dep,
   ]
+
+  if (!is_mingw) {
+    deps += [ "$ark_root/dprof:libdprof" ]
+  }
 
   if (is_standard_system) {
     cflags_cc = [ "-fvisibility=hidden" ]

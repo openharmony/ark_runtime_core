@@ -107,7 +107,6 @@ set(SOURCES
     mem/mem_stats.cpp
     mem/internal_allocator.cpp
     mem/panda_string.cpp
-    mem/mem_hooks.cpp
     mem/memory_manager.cpp
     mark_word.cpp
     method.cpp

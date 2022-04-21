@@ -15,7 +15,7 @@
 
 #include "ipc_unix_socket.h"
 
-#include "os/unix/failure_retry.h"
+#include "os/failure_retry.h"
 #include "utils/logger.h"
 #include "securec.h"
 
@@ -29,14 +29,14 @@ namespace panda::dprof::ipc {
 constexpr char SOCKET_NAME[] = "\0dprof.socket";  // NOLINT(modernize-avoid-c-arrays)
 static_assert(sizeof(SOCKET_NAME) <= sizeof(static_cast<sockaddr_un *>(nullptr)->sun_path), "Socket name too large");
 
-os::unix::UniqueFd CreateUnixServerSocket(int backlog)
+os::unique_fd::UniqueFd CreateUnixServerSocket(int backlog)
 {
-    os::unix::UniqueFd sock(PANDA_FAILURE_RETRY(::socket(AF_UNIX, SOCK_STREAM, 0)));
+    os::unique_fd::UniqueFd sock(PANDA_FAILURE_RETRY(::socket(AF_UNIX, SOCK_STREAM, 0)));
 
     int opt = 1;
     if (PANDA_FAILURE_RETRY(::setsockopt(sock.Get(), SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt))) == -1) {
         PLOG(ERROR, DPROF) << "setsockopt() failed";
-        return os::unix::UniqueFd();
+        return os::unique_fd::UniqueFd();
     }
 
     struct sockaddr_un serverAddr {
@@ -53,23 +53,23 @@ os::unix::UniqueFd CreateUnixServerSocket(int backlog)
     if (PANDA_FAILURE_RETRY(::bind(sock.Get(), reinterpret_cast<struct sockaddr *>(&serverAddr), sizeof(serverAddr))) ==
         -1) {
         PLOG(ERROR, DPROF) << "bind() failed";
-        return os::unix::UniqueFd();
+        return os::unique_fd::UniqueFd();
     }
 
     if (::listen(sock.Get(), backlog) == -1) {
         PLOG(ERROR, DPROF) << "listen() failed";
-        return os::unix::UniqueFd();
+        return os::unique_fd::UniqueFd();
     }
 
     return sock;
 }
 
-os::unix::UniqueFd CreateUnixClientSocket()
+os::unique_fd::UniqueFd CreateUnixClientSocket()
 {
-    os::unix::UniqueFd sock(PANDA_FAILURE_RETRY(::socket(AF_UNIX, SOCK_STREAM, 0)));
+    os::unique_fd::UniqueFd sock(PANDA_FAILURE_RETRY(::socket(AF_UNIX, SOCK_STREAM, 0)));
     if (!sock.IsValid()) {
         PLOG(ERROR, DPROF) << "socket() failed";
-        return os::unix::UniqueFd();
+        return os::unique_fd::UniqueFd();
     }
 
     struct sockaddr_un serverAddr {
@@ -86,7 +86,7 @@ os::unix::UniqueFd CreateUnixClientSocket()
     if (PANDA_FAILURE_RETRY(
             ::connect(sock.Get(), reinterpret_cast<struct sockaddr *>(&serverAddr), sizeof(serverAddr))) == -1) {
         PLOG(ERROR, DPROF) << "connect() failed";
-        return os::unix::UniqueFd();
+        return os::unique_fd::UniqueFd();
     }
 
     return sock;

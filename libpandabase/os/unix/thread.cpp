@@ -23,7 +23,6 @@
 #include <unistd.h>
 
 namespace panda::os::thread {
-
 ThreadId GetCurrentThreadId()
 {
 #if defined(HAVE_GETTID)
@@ -33,30 +32,20 @@ ThreadId GetCurrentThreadId()
     uint64_t tid64;
     pthread_threadid_np(NULL, &tid64);
     return static_cast<ThreadId>(tid64);
-#elif defined(PANDA_TARGET_UNIX)
+#else
     // NOLINTNEXTLINE(cppcoreguidelines-pro-type-vararg)
     return static_cast<ThreadId>(syscall(SYS_gettid));
-#else
-#error "Unsupported platform"
 #endif
 }
 
 int SetPriority(int thread_id, int prio)
 {
-#if defined(PANDA_TARGET_UNIX)
     return setpriority(PRIO_PROCESS, thread_id, prio);
-#else
-#error "Unsupported platform"
-#endif
 }
 
 int GetPriority(int thread_id)
 {
-#if defined(PANDA_TARGET_UNIX)
     return getpriority(PRIO_PROCESS, thread_id);
-#else
-#error "Unsupported platform"
-#endif
 }
 
 int SetThreadName(native_handle_type pthread_id, const char *name)
@@ -64,65 +53,38 @@ int SetThreadName(native_handle_type pthread_id, const char *name)
     ASSERT(pthread_id != 0);
 #if defined(PANDA_TARGET_MACOS)
     return pthread_setname_np(name);
-#elif defined(PANDA_TARGET_UNIX)
-    return pthread_setname_np(pthread_id, name);
 #else
-#error "Unsupported platform"
+    return pthread_setname_np(pthread_id, name);
 #endif
 }
 
 native_handle_type GetNativeHandle()
 {
-#if defined(PANDA_TARGET_UNIX)
     return pthread_self();
-#else
-#error "Unsupported platform"
-#endif
 }
 
 void Yield()
 {
-#if defined(PANDA_TARGET_UNIX)
     std::this_thread::yield();
-#else
-#error "Unsupported platform"
-#endif
 }
 
 void NativeSleep(unsigned int ms)
 {
-#if defined(PANDA_TARGET_UNIX)
     std::this_thread::sleep_for(std::chrono::milliseconds(ms));
-#else
-#error "Unsupported platform"
-#endif
 }
 
 void ThreadDetach(native_handle_type pthread_id)
 {
-#if defined(PANDA_TARGET_UNIX)
     pthread_detach(pthread_id);
-#else
-#error "Unsupported platform"
-#endif
 }
 
 void ThreadExit(void *retval)
 {
-#if defined(PANDA_TARGET_UNIX)
     pthread_exit(retval);
-#else
-#error "Unsupported platform"
-#endif
 }
 
 void ThreadJoin(native_handle_type pthread_id, void **retval)
 {
-#if defined(PANDA_TARGET_UNIX)
     pthread_join(pthread_id, retval);
-#else
-#error "Unsupported platform"
-#endif
 }
-
 }  // namespace panda::os::thread

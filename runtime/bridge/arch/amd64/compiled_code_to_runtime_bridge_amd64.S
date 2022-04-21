@@ -17,7 +17,7 @@
 
 .macro ENTRYPOINT name, entry, paramsnum
 .global \name
-.type \name, %function
+TYPE_FUNCTION(\name)
 \name:
     CFI_STARTPROC
     CFI_DEF_CFA(rsp, 8)
@@ -65,7 +65,7 @@
 #include "entrypoints_bridge_asm_macro.inl"
 
 .global AbstractMethodStub
-.type AbstractMethodStub, %function
+TYPE_FUNCTION(AbstractMethodStub)
 AbstractMethodStub:
     CFI_STARTPROC
     CFI_DEF_CFA(rsp, 8)

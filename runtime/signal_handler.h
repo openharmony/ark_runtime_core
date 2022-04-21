@@ -22,6 +22,7 @@
 #include <vector>
 #include <libpandabase/macros.h>
 #include "runtime/include/mem/panda_containers.h"
+#include "libpandabase/os/sighook.h"
 
 namespace panda {
 

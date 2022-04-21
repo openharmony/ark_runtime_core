@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021-2022 Huawei Device Co., Ltd.
+ * Copyright (c) 2022 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -13,11 +13,12 @@
  * limitations under the License.
  */
 
-#include "time.h"  // NOLINTNEXTLINE(modernize-deprecated-headers, hicpp-deprecated-headers)
+#ifndef PANDA_LIBPANDABASE_OS_UNIX_TIME_H_
+#define PANDA_LIBPANDABASE_OS_UNIX_TIME_H_
+
 #include <chrono>
 
-namespace panda::os::unix::time {
-
+namespace panda::os::time {
 template <class T>
 static uint64_t GetClockTime(clockid_t clock)
 {
@@ -28,29 +29,6 @@ static uint64_t GetClockTime(clockid_t clock)
     }
     return 0;
 }
+}  // namespace panda::os::time
 
-/**
- *  Return current time in nanoseconds
- */
-uint64_t GetClockTimeInMicro()
-{
-    return GetClockTime<std::chrono::microseconds>(CLOCK_MONOTONIC);
-}
-
-/**
- *  Return current time in milliseconds
- */
-uint64_t GetClockTimeInMilli()
-{
-    return GetClockTime<std::chrono::milliseconds>(CLOCK_MONOTONIC);
-}
-
-/**
- *  Return thread CPU time in nanoseconds
- */
-uint64_t GetClockTimeInThreadCpuTime()
-{
-    return GetClockTime<std::chrono::nanoseconds>(CLOCK_THREAD_CPUTIME_ID);
-}
-
-}  // namespace panda::os::unix::time
+#endif  // PANDA_LIBPANDABASE_OS_UNIX_TIME_H_

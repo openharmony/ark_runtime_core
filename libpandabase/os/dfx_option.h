@@ -41,8 +41,9 @@ namespace panda::os::dfx_option {
     DFX_OPTION_ELEM(D, END_FLAG, "end-flag")
 #else
 // NOLINTNEXTLINE(cppcoreguidelines-macro-usage)
-#define DFX_OPTION_LIST(D)                \
-    DFX_OPTION_ELEM(D, DFXLOG, "dfx-log") \
+#define DFX_OPTION_LIST(D)                               \
+    DFX_OPTION_ELEM(D, REFERENCE_DUMP, "reference-dump") \
+    DFX_OPTION_ELEM(D, DFXLOG, "dfx-log")                \
     DFX_OPTION_ELEM(D, END_FLAG, "end-flag")
 #endif  // PANDA_TARGET_UNIX
 
@@ -51,7 +52,6 @@ public:
     enum DfxOptionId : uint8_t {
 #ifdef PANDA_TARGET_UNIX
         COMPILER_NULLCHECK_ID,
-        REFERENCE_DUMP_ID,
         SIGNAL_CATCHER_ID,
         SIGNAL_HANDLER_ID,
         ARK_SIGQUIT_ID,
@@ -59,6 +59,7 @@ public:
         ARK_SIGUSR2_ID,
         MOBILE_LOG_ID,
 #endif  // PANDA_TARGET_UNIX
+        REFERENCE_DUMP_ID,
         DFXLOG_ID,
         END_FLAG_ID,
     };

@@ -41,6 +41,15 @@ namespace panda::os::mem {
 void MmapDeleter(std::byte *ptr, size_t size) noexcept;
 
 /**
+ * \brief Make memory region \param mem with size \param size with protection flags \param prot
+ * @param mem  Pointer to memory region (should be aligned to page size)
+ * @param size Size of memory region
+ * @param prot Memory protection flags, a combination of MMAP_PROT_XXX values
+ * @return Error object if any errors occur
+ */
+std::optional<Error> MakeMemWithProtFlag(void *mem, size_t size, int prot);
+
+/**
  * \brief Make memory region \param mem with size \param size readable and executable
  * @param mem  Pointer to memory region (should be aligned to page size)
  * @param size Size of memory region
@@ -72,11 +81,19 @@ std::optional<Error> MakeMemReadOnly(void *mem, size_t size);
 uintptr_t AlignDownToPageSize(uintptr_t addr);
 
 /**
+ * \brief Allocated aligned memory with alignment \param alignment_in_bytes and
+ *  with size \param size. Use AlignedFree to free this memory.
  * @param alignment_in_bytes - alignment in bytes
  * @param size - min required size in bytes
  * @return
  */
 void *AlignedAlloc(size_t alignment_in_bytes, size_t size);
+
+/**
+ * \brief Free memory, allocated by AlignedAlloc.
+ * @param mem - Pointer to memory, allocated by AlignedAlloc
+ */
+void AlignedFree(void *mem);
 
 template <class T>
 class MapRange {
@@ -348,7 +365,7 @@ inline void ReleasePages([[maybe_unused]] uintptr_t pages_start, [[maybe_unused]
 #ifdef PANDA_TARGET_UNIX
     madvise(ToVoidPtr(pages_start), pages_end - pages_start, MADV_DONTNEED);
 #else
-    UNREACHABLE();
+    // On Windows system we can do nothing
 #endif
 }
 

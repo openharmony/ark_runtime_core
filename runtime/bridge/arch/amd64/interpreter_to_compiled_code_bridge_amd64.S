@@ -261,7 +261,7 @@
 
 // void InterpreterToCompiledCodeBridge(const BytecodeInstruction* insn, const Frame *iframe, const Method *method, ManagedThread* thread)
 .global InterpreterToCompiledCodeBridge
-.type InterpreterToCompiledCodeBridge, %function
+TYPE_FUNCTION(InterpreterToCompiledCodeBridge)
 InterpreterToCompiledCodeBridge:
     CFI_STARTPROC
     CFI_DEF_CFA(rsp, 8)
@@ -450,7 +450,7 @@ InterpreterToCompiledCodeBridge:
 
 // DecodedTaggedValue InvokeCompiledCodeWithArguments(const int64_t* args, const Frame *iframe, const Method *method, ManagedThread* thread)
 .global InvokeCompiledCodeWithArgArray
-.type InvokeCompiledCodeWithArgArray, %function
+TYPE_FUNCTION(InvokeCompiledCodeWithArgArray)
 InvokeCompiledCodeWithArgArray:
     CFI_STARTPROC
     CFI_DEF_CFA(rsp, 8)

@@ -26,9 +26,7 @@
 #include "utils/span.h"
 #include "zip_archive.h"
 #include "trace/trace.h"
-#if !PANDA_TARGET_WINDOWS
 #include "securec.h"
-#endif
 
 #include <cerrno>
 #include <cstring>
@@ -55,6 +53,30 @@ const std::array<uint8_t, File::MAGIC_SIZE> File::MAGIC {'P', 'A', 'N', 'D', 'A'
 // Name anonymous maps for perfing tools finding symbol file correctly.
 // NOLINTNEXTLINE(readability-identifier-naming, modernize-avoid-c-arrays)
 const char *ANONMAPNAME_PERFIX = "panda-";
+
+os::file::Mode GetMode(panda_file::File::OpenMode open_mode)
+{
+    switch (open_mode) {
+        case File::READ_ONLY: {
+            return os::file::Mode::READONLY;
+        }
+        case File::READ_WRITE: {
+#ifdef PANDA_TARGET_WINDOWS
+            return os::file::Mode::READWRITE;
+#else
+            return os::file::Mode::READONLY;
+#endif
+        }
+        case File::WRITE_ONLY: {
+            return os::file::Mode::WRITEONLY;
+        }
+        default: {
+            break;
+        }
+    }
+
+    UNREACHABLE();
+}
 
 static uint32_t GetProt(panda_file::File::OpenMode mode)
 {
@@ -417,7 +439,8 @@ inline std::string VersionToString(const std::array<uint8_t, File::VERSION_SIZE>
 std::unique_ptr<const File> File::Open(std::string_view filename, OpenMode open_mode)
 {
     trace::ScopedTrace scoped_trace("Open panda file " + std::string(filename));
-    os::file::File file = os::file::Open(filename, os::file::Mode::READONLY);
+    os::file::Mode mode = GetMode(open_mode);
+    os::file::File file = os::file::Open(filename, mode);
 
     if (!file.IsValid()) {
         PLOG(ERROR, PANDAFILE) << "Failed to open panda file '" << filename << "'";
