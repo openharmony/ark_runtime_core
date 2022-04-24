@@ -26,8 +26,8 @@ namespace panda::test::mem_range {
 
 constexpr uintptr_t MAX_PTR = std::numeric_limits<uintptr_t>::max();
 
-constexpr uint NUM_RANDOM_TESTS = 100;
-constexpr uint NUM_ITER_PER_TEST = 1000;
+constexpr uint64_t NUM_RANDOM_TESTS = 100;
+constexpr uint64_t NUM_ITER_PER_TEST = 1000;
 constexpr uintptr_t RANDOM_AREA_SIZE = 100000;
 
 std::default_random_engine g_generator;
@@ -133,13 +133,13 @@ TEST(MemRangeTest, IntersectTest)
 }
 
 // function to conduct num_iter random tests with addresses in given bounds
-static void randomTestInBounds(uintptr_t from, uintptr_t to, uint num_iter = NUM_ITER_PER_TEST)
+static void randomTestInBounds(uintptr_t from, uintptr_t to, uint64_t num_iter = NUM_ITER_PER_TEST)
 {
     ASSERT(from < to);
 
     panda::mem::MemRange mem_range_1(0, 1), mem_range_2(0, 1);
     // check intersection via cycle
-    for (uint iter = 0; iter < num_iter; iter++) {
+    for (uint64_t iter = 0; iter < num_iter; iter++) {
         mem_range_1 = randomMemRange(from, to);
         mem_range_2 = randomMemRange(from, to);
 
@@ -196,7 +196,7 @@ TEST(MemRangeTest, RandomIntersectTest)
 
     // tests in random ranges
     uintptr_t position;
-    for (uint i = 0; i < NUM_RANDOM_TESTS; i++) {
+    for (uint64_t i = 0; i < NUM_RANDOM_TESTS; i++) {
         position = random_uintptr();
         if (position > RANDOM_AREA_SIZE) {
             randomTestInBounds(position - RANDOM_AREA_SIZE, position);

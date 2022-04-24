@@ -13,9 +13,6 @@
  * limitations under the License.
  */
 
-#include "sighook.h"
-
-#include "utils/logger.h"
 #include <dlfcn.h>
 #include <errno.h>   // NOLINTNEXTLINE(modernize-deprecated-headers)
 #include <signal.h>  // NOLINTNEXTLINE(modernize-deprecated-headers)
@@ -23,6 +20,9 @@
 #include <stdlib.h>  // NOLINTNEXTLINE(modernize-deprecated-headers)
 #include <string.h>  // NOLINTNEXTLINE(modernize-deprecated-headers)
 #include <array>
+
+#include "utils/logger.h"
+#include "os/sighook.h"
 
 #include <algorithm>
 #include <initializer_list>
@@ -35,7 +35,6 @@
 #include <ucontext.h>
 
 namespace panda {
-
 static decltype(&sigaction) real_sigaction;
 static decltype(&sigprocmask) real_sigprocmask;
 static bool g_is_init_really {false};
@@ -495,5 +494,4 @@ void ClearSignalHooksHandlersArray()
         signal_hooks[i].ClearHookActionHandlers();
     }
 }
-
 }  // namespace panda

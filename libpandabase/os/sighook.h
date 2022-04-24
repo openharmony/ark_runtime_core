@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021-2022 Huawei Device Co., Ltd.
+ * Copyright (c) 2022 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -13,27 +13,13 @@
  * limitations under the License.
  */
 
-#ifndef PANDA_LIBPANDABASE_OS_UNIX_TIME_UNIX_H_
-#define PANDA_LIBPANDABASE_OS_UNIX_TIME_UNIX_H_
+#ifndef PANDA_LIBPANDABASE_OS_SIGHOOK_H_
+#define PANDA_LIBPANDABASE_OS_SIGHOOK_H_
 
-#include <cstdint>
+#ifdef PANDA_TARGET_UNIX
+#include "os/unix/sighook.h"
+#else
+#error "Unsupported platform"
+#endif  // PANDA_TARGET_UNIX
 
-namespace panda::os::unix::time {
-
-/**
- *  Return current time in nanoseconds
- */
-uint64_t GetClockTimeInMicro();
-/**
- *  Return current time in milliseconds
- */
-uint64_t GetClockTimeInMilli();
-
-/**
- *  Thread Cpu Time in nanoseconds
- */
-uint64_t GetClockTimeInThreadCpuTime();
-
-}  // namespace panda::os::unix::time
-
-#endif  // PANDA_LIBPANDABASE_OS_UNIX_TIME_UNIX_H_
+#endif  // PANDA_LIBPANDABASE_OS_SIGHOOK_H_

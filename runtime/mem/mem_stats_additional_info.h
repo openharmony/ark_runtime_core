@@ -57,7 +57,7 @@ private:
     std::array<duration, ToIndex(GCPhase::GC_PHASE_LAST)> min_phase_time_ = {};
     std::array<duration, ToIndex(GCPhase::GC_PHASE_LAST)> max_phase_time_ = {};
     std::array<duration, ToIndex(GCPhase::GC_PHASE_LAST)> sum_phase_time_ = {};
-    std::array<uint, ToIndex(GCPhase::GC_PHASE_LAST)> phase_count_ = {};
+    std::array<uint64_t, ToIndex(GCPhase::GC_PHASE_LAST)> phase_count_ = {};
     os::memory::Mutex phase_lock_;
 };
 

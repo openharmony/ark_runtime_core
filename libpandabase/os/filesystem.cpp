@@ -19,6 +19,9 @@
     defined PANDA_TARGET_ARM64
 #include <sys/stat.h>
 #endif
+#if defined(PANDA_TARGET_WINDOWS)
+#include <fileapi.h>
+#endif
 
 namespace panda::os {
 

@@ -121,7 +121,7 @@ public:
         uint32_t offset_ {0};
     };
 
-    enum OpenMode { READ_ONLY, READ_WRITE };
+    enum OpenMode { READ_ONLY, READ_WRITE, WRITE_ONLY };
 
     StringData GetStringData(EntityId id) const;
     EntityId GetLiteralArraysId() const;

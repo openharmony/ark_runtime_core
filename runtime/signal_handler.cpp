@@ -22,9 +22,6 @@
 #include "include/panda_vm.h"
 #include "include/thread.h"
 #include "include/stack_walker.h"
-#if defined(PANDA_TARGET_UNIX)
-#include "libpandabase/os/unix/sighooklib/sighook.h"
-#endif  // PANDA_TARGET_UNIX
 
 namespace panda {
 

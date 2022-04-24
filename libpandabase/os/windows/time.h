@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021-2022 Huawei Device Co., Ltd.
+ * Copyright (c) 2022 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -13,23 +13,23 @@
  * limitations under the License.
  */
 
-#ifndef PANDA_LIBPANDABASE_OS_TIME_H_
-#define PANDA_LIBPANDABASE_OS_TIME_H_
+#ifndef PANDA_LIBPANDABASE_OS_WINDOWS_TIME_H_
+#define PANDA_LIBPANDABASE_OS_WINDOWS_TIME_H_
 
-#ifdef PANDA_TARGET_UNIX
-#include "os/unix/time.h"
-#elif PANDA_TARGET_WINDOWS
-#include "os/windows/time.h"
-#else
-#error "Unsupported platform"
-#endif  // PANDA_TARGET_UNIX
-
-#include <cstdint>
+#include <chrono>
+#include <sys/time.h>
 
 namespace panda::os::time {
-uint64_t GetClockTimeInMicro();
-uint64_t GetClockTimeInMilli();
-uint64_t GetClockTimeInThreadCpuTime();
+template <class T>
+static uint64_t GetClockTime([[maybe_unused]] clockid_t clock)
+{
+    struct timeval time = {0, 0};
+    if (gettimeofday(&time, nullptr) != -1) {
+        auto duration = std::chrono::seconds {time.tv_sec} + std::chrono::microseconds {time.tv_usec};
+        return std::chrono::duration_cast<T>(duration).count();
+    }
+    return 0;
+}
 }  // namespace panda::os::time
 
-#endif  // PANDA_LIBPANDABASE_OS_TIME_H_
+#endif  // PANDA_LIBPANDABASE_OS_WINDOWS_TIME_H_

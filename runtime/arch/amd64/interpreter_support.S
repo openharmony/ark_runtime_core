@@ -13,7 +13,9 @@
  * limitations under the License.
  */
 
+#ifndef PANDA_TARGET_WINDOWS
 .type ExecuteImplStub, @function
+#endif
 .global ExecuteImplStub
 .balign 16
 ExecuteImplStub:

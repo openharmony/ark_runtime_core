@@ -20,7 +20,6 @@
 #include <string>
 
 #if defined(PANDA_TARGET_WINDOWS)
-#include <fileapi.h>
 #ifndef NAME_MAX
 constexpr size_t NAME_MAX = 255;
 #endif  // NAME_MAX

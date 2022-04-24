@@ -24,7 +24,6 @@
 
 #include "libpandabase/mem/arena_allocator.h"
 #include "libpandabase/os/mutex.h"
-#include "libpandabase/os/library_loader.h"
 #include "libpandabase/utils/expected.h"
 #include "libpandabase/utils/dfx.h"
 #include "libpandafile/file_items.h"
@@ -34,7 +33,9 @@
 #include "runtime/include/runtime_options.h"
 #include "runtime/include/gc_task.h"
 #include "runtime/include/tooling/debug_interface.h"
+#ifndef PANDA_TARGET_WINDOWS
 #include "runtime/signal_handler.h"
+#endif
 #include "runtime/mem/allocator_adapter.h"
 #include "runtime/mem/gc/gc.h"
 #include "runtime/mem/gc/gc_trigger.h"
@@ -43,6 +44,7 @@
 #include "runtime/string_table.h"
 #include "runtime/thread_manager.h"
 #include "verification/verification_options.h"
+#include "libpandabase/os/library_loader.h"
 
 namespace panda {
 
@@ -307,12 +309,12 @@ public:
         return is_stacktrace_;
     }
 
+#ifndef PANDA_TARGET_WINDOWS
     SignalManager *GetSignalManager()
     {
         return signal_manager_;
     }
-
-    Trace *CreateTrace(LanguageContext ctx, PandaUniquePtr<os::unix::file::File> trace_file, size_t buffer_size);
+#endif
 
     void SetPtLangExt(tooling::PtLangExt *pt_lang_ext);
 
@@ -377,7 +379,9 @@ private:
 
     PandaVM *panda_vm_ = nullptr;
 
+#ifndef PANDA_TARGET_WINDOWS
     SignalManager *signal_manager_ {nullptr};
+#endif
 
     // Language context
     static constexpr size_t LANG_EXTENSIONS_COUNT = static_cast<size_t>(panda_file::SourceLang::LAST) + 1;

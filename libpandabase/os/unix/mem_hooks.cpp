@@ -19,8 +19,7 @@
 
 #include "mem_hooks.h"
 
-namespace panda::mem {
-
+namespace panda::os::unix::mem_hooks {
 size_t PandaHooks::alloc_via_standard = 0;
 void *(*volatile PandaHooks::old_malloc_hook)(size_t, const void *) = nullptr;
 void *(*volatile PandaHooks::old_memalign_hook)(size_t, size_t, const void *) = nullptr;
@@ -113,5 +112,4 @@ void PandaHooks::Disable()
     __free_hook = old_free_hook;
 #endif  // __MUSL__
 }
-
-}  // namespace panda::mem
+}  // namespace panda::os::unix::mem_hooks

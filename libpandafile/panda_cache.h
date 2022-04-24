@@ -77,8 +77,10 @@ public:
         return panda::helpers::math::PowerOfTwoTableSlot(id.GetOffset(), CLASS_CACHE_SIZE);
     }
 
-    inline Method *GetMethodFromCache(File::EntityId id) const
+    inline Method *GetMethodFromCache([[maybe_unused]] File::EntityId id) const
     {
+// The os platform macro should be removed when "atomic" symbol is provided in mingw(issue #154FCK)
+#ifndef PANDA_TARGET_WINDOWS
         uint32_t index = GetMethodIndex(id);
         auto *pair_ptr =
             reinterpret_cast<std::atomic<MethodCachePair> *>(reinterpret_cast<uintptr_t>(&(method_cache_[index])));
@@ -87,11 +89,14 @@ public:
         if (pair.id_ == id) {
             return pair.ptr_;
         }
+#endif
         return nullptr;
     }
 
-    inline void SetMethodCache(File::EntityId id, Method *method)
+    inline void SetMethodCache([[maybe_unused]] File::EntityId id, [[maybe_unused]] Method *method)
     {
+// The os platform macro should be removed when "atomic" symbol is provided in mingw(issue #154FCK)
+#ifndef PANDA_TARGET_WINDOWS
         MethodCachePair pair;
         pair.id_ = id;
         pair.ptr_ = method;
@@ -100,10 +105,13 @@ public:
             reinterpret_cast<std::atomic<MethodCachePair> *>(reinterpret_cast<uintptr_t>(&(method_cache_[index])));
         TSAN_ANNOTATE_HAPPENS_BEFORE(pair_ptr);
         pair_ptr->store(pair, std::memory_order_release);
+#endif
     }
 
-    inline Field *GetFieldFromCache(File::EntityId id) const
+    inline Field *GetFieldFromCache([[maybe_unused]] File::EntityId id) const
     {
+// The os platform macro should be removed when "atomic" symbol is provided in mingw(issue #154FCK)
+#ifndef PANDA_TARGET_WINDOWS
         uint32_t index = GetFieldIndex(id);
         auto *pair_ptr =
             reinterpret_cast<std::atomic<FieldCachePair> *>(reinterpret_cast<uintptr_t>(&(field_cache_[index])));
@@ -112,11 +120,14 @@ public:
         if (pair.id_ == id) {
             return pair.ptr_;
         }
+#endif
         return nullptr;
     }
 
-    inline void SetFieldCache(File::EntityId id, Field *field)
+    inline void SetFieldCache([[maybe_unused]] File::EntityId id, [[maybe_unused]] Field *field)
     {
+// The os platform macro should be removed when "atomic" symbol is provided in mingw(issue #154FCK)
+#ifndef PANDA_TARGET_WINDOWS
         uint32_t index = GetFieldIndex(id);
         auto *pair_ptr =
             reinterpret_cast<std::atomic<FieldCachePair> *>(reinterpret_cast<uintptr_t>(&(field_cache_[index])));
@@ -125,10 +136,13 @@ public:
         pair.ptr_ = field;
         TSAN_ANNOTATE_HAPPENS_BEFORE(pair_ptr);
         pair_ptr->store(pair, std::memory_order_release);
+#endif
     }
 
-    inline Class *GetClassFromCache(File::EntityId id) const
+    inline Class *GetClassFromCache([[maybe_unused]] File::EntityId id) const
     {
+// The os platform macro should be removed when "atomic" symbol is provided in mingw(issue #154FCK)
+#ifndef PANDA_TARGET_WINDOWS
         uint32_t index = GetClassIndex(id);
         auto *pair_ptr =
             reinterpret_cast<std::atomic<ClassCachePair> *>(reinterpret_cast<uintptr_t>(&(class_cache_[index])));
@@ -137,11 +151,14 @@ public:
         if (pair.id_ == id) {
             return pair.ptr_;
         }
+#endif
         return nullptr;
     }
 
-    inline void SetClassCache(File::EntityId id, Class *clazz)
+    inline void SetClassCache([[maybe_unused]] File::EntityId id, [[maybe_unused]] Class *clazz)
     {
+// The os platform macro should be removed when "atomic" symbol is provided in mingw(issue #154FCK)
+#ifndef PANDA_TARGET_WINDOWS
         ClassCachePair pair;
         pair.id_ = id;
         pair.ptr_ = clazz;
@@ -150,11 +167,14 @@ public:
             reinterpret_cast<std::atomic<ClassCachePair> *>(reinterpret_cast<uintptr_t>(&(class_cache_[index])));
         TSAN_ANNOTATE_HAPPENS_BEFORE(pair_ptr);
         pair_ptr->store(pair, std::memory_order_release);
+#endif
     }
 
     template <class Callback>
-    bool EnumerateCachedClasses(const Callback &cb)
+    bool EnumerateCachedClasses([[maybe_unused]] const Callback &cb)
     {
+// The os platform macro should be removed when "atomic" symbol is provided in mingw(issue #154FCK)
+#ifndef PANDA_TARGET_WINDOWS
         for (uint32_t i = 0; i < CLASS_CACHE_SIZE; i++) {
             auto *pair_ptr =
                 reinterpret_cast<std::atomic<ClassCachePair> *>(reinterpret_cast<uintptr_t>(&(class_cache_[i])));
@@ -166,6 +186,7 @@ public:
                 }
             }
         }
+#endif
         return true;
     }
 

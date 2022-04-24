@@ -16,14 +16,16 @@
 #ifndef PANDA_LIBPANDABASE_OS_UNIX_PIPE_H_
 #define PANDA_LIBPANDABASE_OS_UNIX_PIPE_H_
 
-#include "unique_fd.h"
 #include "utils/expected.h"
 #include "os/error.h"
+#include "os/unique_fd.h"
 
 #include <utility>
 #include <optional>
 
 namespace panda::os::unix {
+
+using UniqueFd = panda::os::unique_fd::UniqueFd;
 
 std::pair<UniqueFd, UniqueFd> CreatePipe();
 

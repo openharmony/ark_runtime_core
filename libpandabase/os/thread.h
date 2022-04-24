@@ -22,6 +22,7 @@
 #include <cstdint>
 #include <memory>
 #include <thread>
+#include <pthread.h>
 
 namespace panda::os::thread {
 
@@ -108,7 +109,11 @@ static void *ProxyFunc(void *args)
 template <typename Func, typename... Args>
 native_handle_type ThreadStart(Func *func, Args... args)
 {
+#ifdef PANDA_TARGET_UNIX
     native_handle_type tid;
+#else
+    pthread_t tid;
+#endif
     auto args_tuple = std::make_tuple(func, std::move(args)...);
     internal::SharedPtrStruct<decltype(args_tuple)> *ptr = nullptr;
     {
@@ -124,7 +129,11 @@ native_handle_type ThreadStart(Func *func, Args... args)
     pthread_create(&tid, nullptr,
                    &internal::ProxyFunc<Func, decltype(args_tuple), std::tuple_size<decltype(args_tuple)>::value>,
                    static_cast<void *>(ptr));
+#ifdef PANDA_TARGET_UNIX
     return tid;
+#else
+    return reinterpret_cast<native_handle_type>(tid);
+#endif
 }
 
 }  // namespace panda::os::thread

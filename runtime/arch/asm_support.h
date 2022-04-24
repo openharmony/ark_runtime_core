@@ -37,6 +37,13 @@
 
 // clang-format off
 
+#ifndef PANDA_TARGET_WINDOWS
+// NOLINTNEXTLINE(cppcoreguidelines-macro-usage)
+#define TYPE_FUNCTION(name) .type name, %function
+#else
+#define TYPE_FUNCTION(name)
+#endif
+
 #ifndef NDEBUG
 
 // NOLINTNEXTLINE(cppcoreguidelines-macro-usage)

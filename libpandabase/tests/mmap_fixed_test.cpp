@@ -14,12 +14,11 @@
  */
 #include "os/mem.h"
 #include "mem/mem.h"
-#include <sys/mman.h>
 #include "utils/asan_interface.h"
 
 #include "gtest/gtest.h"
 
-namespace panda {
+namespace panda::os::mem {
 
 class MMapFixedTest : public testing::Test {
 protected:
@@ -45,8 +44,8 @@ TEST_F(MMapFixedTest, MMapAsanTest)
     uintptr_t end_addr = panda::os::mem::MMAP_FIXED_MAGIC_ADDR_FOR_ASAN;
     end_addr = AlignUp(end_addr, sizeof(uint64_t));
     void *result =  // NOLINTNEXTLINE(hicpp-signed-bitwise)
-        mmap(ToVoidPtr(cur_addr), MMAP_ALLOC_SIZE, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS | MAP_FIXED, -1,
-             0);
+        mmap(ToVoidPtr(cur_addr), MMAP_ALLOC_SIZE, MMAP_PROT_READ | MMAP_PROT_WRITE,
+             MMAP_FLAG_PRIVATE | MMAP_FLAG_ANONYMOUS | MMAP_FLAG_FIXED, -1, 0);
     ASSERT_TRUE(result != nullptr);
     ASSERT_TRUE(ToUintPtr(result) == cur_addr);
     while (cur_addr < end_addr) {
@@ -63,4 +62,4 @@ TEST_F(MMapFixedTest, MMapAsanTest)
     munmap(result, MMAP_ALLOC_SIZE);
 }
 
-}  // namespace panda
+}  // namespace panda::os::mem

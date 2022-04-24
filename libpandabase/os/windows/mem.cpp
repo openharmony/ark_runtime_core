@@ -14,7 +14,6 @@
  */
 
 #include "os/mem.h"
-#include "windows_mem.h"
 #include "utils/type_helpers.h"
 #include "utils/asan_interface.h"
 
@@ -24,6 +23,7 @@
 #include <errno.h>
 #include <io.h>
 
+#include <sysinfoapi.h>
 #include <type_traits>
 
 #define MAP_FAILED (reinterpret_cast<void *>(-1))
@@ -51,12 +51,21 @@ static DWORD mem_protection_flags_for_page(const int prot)
     return flags;
 }
 
-static DWORD mem_protection_flags_for_file(const int prot)
+static DWORD mem_protection_flags_for_file(const int prot, const uint32_t map_flags)
 {
     DWORD flags = 0;
 
     if (prot == MMAP_PROT_NONE) {
         return flags;
+    }
+
+    /* Notice that only single FILE_MAP_COPY flag can ensure a copy-on-write mapping which
+     * MMAP_FLAG_PRIVATE needs. It can't be bitwise OR'ed with FILE_MAP_ALL_ACCESS, FILE_MAP_READ
+     * or FILE_MAP_WRITE. Or else it will be converted to PAGE_READONLY or PAGE_READWRITE, and make
+     * the changes synced back to the original file.
+     */
+    if ((map_flags & MMAP_FLAG_PRIVATE) != 0) {
+        return FILE_MAP_COPY;
     }
 
     if ((static_cast<unsigned>(prot) & MMAP_PROT_READ) != 0) {
@@ -115,7 +124,7 @@ void *mmap([[maybe_unused]] void *addr, size_t len, int prot, uint32_t flags, in
         return MAP_FAILED;
     }
 
-    const auto prot_file = mem_protection_flags_for_file(prot);
+    const auto prot_file = mem_protection_flags_for_file(prot, flags);
     const auto file_off_low = mem_select_lower_bound(off);
     const auto file_off_high = mem_select_upper_bound(off);
     void *map = MapViewOfFile(fm, prot_file, file_off_high, file_off_low, len);
@@ -158,6 +167,46 @@ BytePtr MapFile(file::File file, uint32_t prot, uint32_t flags, size_t size, siz
     return BytePtr(static_cast<std::byte *>(result) + offset, size, MmapDeleter);
 }
 
+BytePtr MapExecuted(size_t size)
+{
+    // By design caller should pass valid size, so don't do any additional checks except ones that
+    // mmap do itself
+    // NOLINTNEXTLINE(hicpp-signed-bitwise)
+    void *result = mmap(nullptr, size, MMAP_PROT_EXEC | MMAP_PROT_WRITE, MMAP_FLAG_SHARED | MMAP_FLAG_ANONYMOUS, -1, 0);
+    if (result == reinterpret_cast<void *>(-1)) {
+        result = nullptr;
+    }
+
+    return BytePtr(static_cast<std::byte *>(result), (result == nullptr) ? 0 : size, MmapDeleter);
+}
+
+std::optional<Error> MakeMemWithProtFlag(void *mem, size_t size, int prot)
+{
+    PDWORD old = nullptr;
+    int r = VirtualProtect(mem, size, prot, old);
+    if (r != 0) {
+        return Error(GetLastError());
+    }
+    return {};
+}
+
+std::optional<Error> MakeMemReadExec(void *mem, size_t size)
+{
+    // NOLINTNEXTLINE(hicpp-signed-bitwise)
+    return MakeMemWithProtFlag(mem, size, MMAP_PROT_EXEC | MMAP_PROT_READ);
+}
+
+std::optional<Error> MakeMemReadWrite(void *mem, size_t size)
+{
+    // NOLINTNEXTLINE(hicpp-signed-bitwise)
+    return MakeMemWithProtFlag(mem, size, MMAP_PROT_WRITE | MMAP_PROT_READ);
+}
+
+std::optional<Error> MakeMemReadOnly(void *mem, size_t size)
+{
+    return MakeMemWithProtFlag(mem, size, MMAP_PROT_READ);
+}
+
 uint32_t GetPageSize()
 {
     constexpr size_t PAGE_SIZE = 4096;
@@ -194,17 +243,16 @@ void *MapRWAnonymousWithAlignmentRaw(size_t size, size_t aligment_in_bytes, bool
     uintptr_t aligned_mem = (allocated_mem & ~(aligment_in_bytes - 1U)) +
                             ((allocated_mem % aligment_in_bytes) != 0U ? aligment_in_bytes : 0U);
     ASSERT(aligned_mem >= allocated_mem);
-    size_t unused_in_start = aligned_mem - allocated_mem;
-    ASSERT(unused_in_start <= aligment_in_bytes);
-    size_t unused_in_end = aligment_in_bytes - unused_in_start;
-    if (unused_in_start != 0) {
-        UnmapRaw(result, unused_in_start);
-    }
-    if (unused_in_end != 0) {
-        auto end_part = reinterpret_cast<void *>(aligned_mem + size);
-        UnmapRaw(end_part, unused_in_end);
-    }
     return reinterpret_cast<void *>(aligned_mem);
+}
+
+uintptr_t AlignDownToPageSize(uintptr_t addr)
+{
+    SYSTEM_INFO sysInfo;
+    GetSystemInfo(&sysInfo);
+    const size_t SYS_PAGE_SIZE = sysInfo.dwPageSize;
+    addr &= ~(SYS_PAGE_SIZE - 1);
+    return addr;
 }
 
 void *AlignedAlloc(size_t alignment_in_bytes, size_t size)
@@ -215,6 +263,11 @@ void *AlignedAlloc(size_t alignment_in_bytes, size_t size)
     // _aligned_malloc returns aligned pointer so just add assertion, no need to do runtime checks
     ASSERT(reinterpret_cast<uintptr_t>(ret) == (reinterpret_cast<uintptr_t>(ret) & ~(alignment_in_bytes - 1)));
     return ret;
+}
+
+void AlignedFree(void *mem)
+{
+    _aligned_free(mem);
 }
 
 std::optional<Error> UnmapRaw(void *mem, size_t size)
@@ -232,6 +285,11 @@ std::optional<Error> TagAnonymousMemory([[maybe_unused]] const void *mem, [[mayb
                                         [[maybe_unused]] const char *tag)
 {
     return {};
+}
+
+size_t GetNativeBytesFromMallinfo()
+{
+    return DEFAULT_NATIVE_BYTES_FROM_MALLINFO;
 }
 
 }  // namespace panda::os::mem

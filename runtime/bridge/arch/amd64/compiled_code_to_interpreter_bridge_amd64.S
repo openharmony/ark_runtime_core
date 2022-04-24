@@ -30,7 +30,7 @@
 .extern IncrementHotnessCounter
 
 .global CompiledCodeToInterpreterBridge
-.type CompiledCodeToInterpreterBridge, %function
+TYPE_FUNCTION(CompiledCodeToInterpreterBridge)
 CompiledCodeToInterpreterBridge:
     CFI_STARTPROC
     CFI_DEF_CFA(rsp, 8)

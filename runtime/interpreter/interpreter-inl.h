@@ -58,7 +58,6 @@
 #include "runtime/interpreter/vregister_iterator.h"
 #include "runtime/jit/profiling_data.h"
 #include "runtime/mem/vm_handle.h"
-#include "runtime/object_accessor-impl.cpp"
 #include "runtime/handle_base-inl.h"
 
 // ALWAYS_INLINE is mandatory attribute for handlers. There are cases which will be failed without it.

@@ -30,7 +30,7 @@
 #include "generated/daemon_options.h"
 
 namespace panda::dprof {
-bool CheckVersion(const os::unix::UniqueFd &sock)
+bool CheckVersion(const os::unique_fd::UniqueFd &sock)
 {
     // Get version
     ipc::Message msg;
@@ -54,7 +54,7 @@ bool CheckVersion(const os::unix::UniqueFd &sock)
     return true;
 }
 
-static std::unique_ptr<AppData> ProcessingConnect(const os::unix::UniqueFd &sock)
+static std::unique_ptr<AppData> ProcessingConnect(const os::unique_fd::UniqueFd &sock)
 {
     if (!CheckVersion(sock)) {
         return nullptr;
@@ -106,7 +106,7 @@ static std::unique_ptr<AppData> ProcessingConnect(const os::unix::UniqueFd &sock
 
 class Worker {
 public:
-    void EnqueueClientSocket(os::unix::UniqueFd clientSock)
+    void EnqueueClientSocket(os::unique_fd::UniqueFd clientSock)
     {
         os::memory::LockHolder lock(queue_lock_);
         queue_.push(std::move(clientSock));
@@ -130,7 +130,7 @@ public:
     void DoRun(AppDataStorage *storage)
     {
         while (!done_) {
-            os::unix::UniqueFd clientSock;
+            os::unique_fd::UniqueFd clientSock;
             {
                 os::memory::LockHolder lock(queue_lock_);
                 while (queue_.empty() && !done_) {
@@ -157,7 +157,7 @@ public:
 private:
     std::thread thread_;
     os::memory::Mutex queue_lock_;
-    std::queue<os::unix::UniqueFd> queue_;
+    std::queue<os::unique_fd::UniqueFd> queue_;
     os::memory::ConditionVariable cond_ GUARDED_BY(queue_lock_);
     bool done_ = false;
 };
@@ -245,7 +245,7 @@ static int Main(panda::Span<const char *> args)
     }
 
     // Create server socket
-    os::unix::UniqueFd sock(ipc::CreateUnixServerSocket(MAX_PENDING_CONNECTIONS_QUEUE));
+    os::unique_fd::UniqueFd sock(ipc::CreateUnixServerSocket(MAX_PENDING_CONNECTIONS_QUEUE));
     if (!sock.IsValid()) {
         LOG(FATAL, DPROF) << "Cannot create socket";
         return -1;
@@ -257,7 +257,7 @@ static int Main(panda::Span<const char *> args)
     LOG(INFO, DPROF) << "Daemon is ready for connections";
     // Main loop
     while (!g_done) {
-        os::unix::UniqueFd clientSock(::accept4(sock.Get(), nullptr, nullptr, SOCK_CLOEXEC));
+        os::unique_fd::UniqueFd clientSock(::accept4(sock.Get(), nullptr, nullptr, SOCK_CLOEXEC));
         if (!clientSock.IsValid()) {
             if (errno == EINTR) {
                 continue;
