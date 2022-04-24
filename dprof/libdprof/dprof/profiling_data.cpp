@@ -35,7 +35,7 @@ bool ProfilingData::SetFeatureDate(const std::string &featureName, std::vector<u
 
 bool ProfilingData::DumpAndResetFeatures()
 {
-    os::unix::UniqueFd sock(ipc::CreateUnixClientSocket());
+    os::unique_fd::UniqueFd sock(ipc::CreateUnixClientSocket());
     if (!sock.IsValid()) {
         LOG(ERROR, DPROF) << "Cannot create client socket";
         return false;

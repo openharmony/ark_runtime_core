@@ -16,17 +16,19 @@
 #ifndef PANDA_LIBPANDABASE_OS_NATIVE_STACK_H_
 #define PANDA_LIBPANDABASE_OS_NATIVE_STACK_H_
 
+#include "os/thread.h"
 #if defined(PANDA_TARGET_UNIX)
 #include "os/unix/native_stack.h"
 #endif  // PANDA_TARGET_UNIX
+
 #include <string>
 #include <set>
 #include <signal.h>  // NOLINTNEXTLINE(modernize-deprecated-headers)
 
 namespace panda::os::native_stack {
 
-const auto g_PandaThreadSigmask = pthread_sigmask;  // NOLINT(readability-identifier-naming)
 #if defined(PANDA_TARGET_UNIX)
+const auto g_PandaThreadSigmask = pthread_sigmask;  // NOLINT(readability-identifier-naming)
 using DumpUnattachedThread = panda::os::unix::native_stack::DumpUnattachedThread;
 const auto DumpKernelStack = panda::os::unix::native_stack::DumpKernelStack;  // NOLINT(readability-identifier-naming)
 const auto GetNativeThreadNameForFile =                                       // NOLINT(readability-identifier-naming)

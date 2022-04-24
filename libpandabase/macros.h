@@ -47,8 +47,12 @@
 #define FIELD_UNUSED
 #endif
 
+#ifndef PANDA_TARGET_WINDOWS
 // NOLINTNEXTLINE(cppcoreguidelines-macro-usage)
 #define PANDA_PUBLIC_API __attribute__((visibility ("default")))
+#else
+#define PANDA_PUBLIC_API __declspec(dllexport)
+#endif
 
 // NOLINTNEXTLINE(cppcoreguidelines-macro-usage)
 #define MEMBER_OFFSET(T, F) offsetof(T, F)

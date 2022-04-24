@@ -29,7 +29,7 @@
 
 // CompiledCodeToInterpreterBridgeDyn(Method* method, uint32_t num_args, int64_t func_obj, int64_t func_tag, int64_t arg_i, int64_t tag_i, ...)
 .global CompiledCodeToInterpreterBridgeDyn
-.type CompiledCodeToInterpreterBridgeDyn, %function
+TYPE_FUNCTION(CompiledCodeToInterpreterBridgeDyn)
 CompiledCodeToInterpreterBridgeDyn:
     CFI_STARTPROC
     CFI_DEF_CFA(rsp, 8)

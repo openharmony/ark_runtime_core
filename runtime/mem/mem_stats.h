@@ -120,7 +120,7 @@ private:
     duration min_pause_ = duration(0);
     duration max_pause_ = duration(0);
     duration sum_pause_ = duration(0);
-    uint pause_count_ = 0;
+    uint64_t pause_count_ = 0;
 
     // make groups of different parts of the VM (JIT, interpreter, etc)
     std::atomic_uint64_t objects_allocated_ = 0;

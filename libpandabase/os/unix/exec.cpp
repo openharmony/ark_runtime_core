@@ -17,7 +17,7 @@
 
 #include <cstring>
 #include <unistd.h>
-#include "os/unix/failure_retry.h"
+#include "os/failure_retry.h"
 #include "sys/wait.h"
 
 namespace panda::os::exec {

@@ -26,7 +26,7 @@
 #include "libpandabase/events/events.h"
 #include "libpandabase/mem/mem_config.h"
 #include "libpandabase/mem/pool_manager.h"
-#include "libpandabase/os/library_loader.h"
+#include "libpandabase/os/mem_hooks.h"
 #include "libpandabase/os/native_stack.h"
 #include "libpandabase/os/thread.h"
 #include "libpandabase/utils/arena_containers.h"
@@ -53,7 +53,6 @@
 #include "runtime/mem/gc/stw-gc/stw-gc.h"
 #include "runtime/mem/gc/crossing_map_singleton.h"
 #include "runtime/mem/heap_manager.h"
-#include "runtime/mem/mem_hooks.h"
 #include "runtime/mem/memory_manager.h"
 #include "runtime/mem/internal_allocator-inl.h"
 #include "runtime/core/core_class_linker_extension.h"
@@ -407,14 +406,16 @@ Runtime::Runtime(const RuntimeOptions &options, mem::InternalAllocatorPtr intern
 
     // CODECHECK-NOLINTNEXTLINE(CPP_RULE_ID_SMARTPOINTER_INSTEADOF_ORIGINPOINTER)
     class_linker_ = new ClassLinker(internal_allocator_, std::move(extensions));
+#ifndef PANDA_TARGET_WINDOWS
     // CODECHECK-NOLINTNEXTLINE(CPP_RULE_ID_SMARTPOINTER_INSTEADOF_ORIGINPOINTER)
     signal_manager_ = new SignalManager(internal_allocator_);
+#endif
 
     if (IsEnableMemoryHooks()) {
         // libbfd (which is used to get debug info from elf files) does a lot of allocations.
         // Don't track allocations in this case.
         if (!options_.IsSafepointBacktrace()) {
-            mem::PandaHooks::Enable();
+            panda::os::mem_hooks::PandaHooks::Enable();
         }
     }
 
@@ -432,12 +433,14 @@ Runtime::~Runtime()
     panda::verifier::debug::DebugContext::Destroy();
 
     if (IsEnableMemoryHooks()) {
-        mem::PandaHooks::Disable();
+        panda::os::mem_hooks::PandaHooks::Disable();
     }
     trace::ScopedTrace scoped_trace("Delete state");
 
+#ifndef PANDA_TARGET_WINDOWS
     signal_manager_->DeleteHandlersArray();
     delete signal_manager_;
+#endif
     delete class_linker_;
     if (dprofiler_ != nullptr) {
         internal_allocator_->Delete(dprofiler_);
@@ -1174,11 +1177,4 @@ bool Runtime::SaveProfileInfo() const
     return save_profiling_info_;
 }
 
-Trace *Runtime::CreateTrace([[maybe_unused]] LanguageContext ctx,
-                            [[maybe_unused]] PandaUniquePtr<os::unix::file::File> trace_file,
-                            [[maybe_unused]] size_t buffer_size)
-{
-    LOG(FATAL, RUNTIME) << "Method tracing isn't supported at the moment!";
-    return nullptr;
-}
 }  // namespace panda

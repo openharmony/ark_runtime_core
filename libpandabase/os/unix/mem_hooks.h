@@ -13,13 +13,12 @@
  * limitations under the License.
  */
 
-#ifndef PANDA_RUNTIME_MEM_MEM_HOOKS_H_
-#define PANDA_RUNTIME_MEM_MEM_HOOKS_H_
+#ifndef PANDA_LIBPANDABASE_OS_UNIX_MEM_HOOKS_H_
+#define PANDA_LIBPANDABASE_OS_UNIX_MEM_HOOKS_H_
 
 #include "libpandabase/mem/mem.h"
 
-namespace panda::mem {
-
+namespace panda::os::unix::mem_hooks {
 class PandaHooks {
 public:
     static void Enable();
@@ -48,7 +47,10 @@ private:
 
     static size_t alloc_via_standard;
 };
+}  // namespace panda::os::unix::mem_hooks
 
-}  // namespace panda::mem
+namespace panda::os::mem_hooks {
+using PandaHooks = panda::os::unix::mem_hooks::PandaHooks;
+}  // namespace panda::os::mem_hooks
 
-#endif  // PANDA_RUNTIME_MEM_MEM_HOOKS_H_
+#endif  // PANDA_LIBPANDABASE_OS_UNIX_MEM_HOOKS_H_

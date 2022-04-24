@@ -65,36 +65,30 @@ BytePtr MapExecuted(size_t size)
     return BytePtr(static_cast<std::byte *>(result), (result == nullptr) ? 0 : size, MmapDeleter);
 }
 
-std::optional<Error> MakeMemReadExec(void *mem, size_t size)
+std::optional<Error> MakeMemWithProtFlag(void *mem, size_t size, int prot)
 {
-    // NOLINTNEXTLINE(hicpp-signed-bitwise)
-    int r = mprotect(mem, size, PROT_EXEC | PROT_READ);
+    int r = mprotect(mem, size, prot);
     if (r != 0) {
         return Error(errno);
     }
     return {};
+}
+
+std::optional<Error> MakeMemReadExec(void *mem, size_t size)
+{
+    // NOLINTNEXTLINE(hicpp-signed-bitwise)
+    return MakeMemWithProtFlag(mem, size, PROT_EXEC | PROT_READ);
 }
 
 std::optional<Error> MakeMemReadWrite(void *mem, size_t size)
 {
     // NOLINTNEXTLINE(hicpp-signed-bitwise)
-    int r = mprotect(mem, size, PROT_WRITE | PROT_READ);
-    if (r != 0) {
-        return Error(errno);
-    }
-
-    return {};
+    return MakeMemWithProtFlag(mem, size, PROT_WRITE | PROT_READ);
 }
 
 std::optional<Error> MakeMemReadOnly(void *mem, size_t size)
 {
-    // NOLINTNEXTLINE(hicpp-signed-bitwise)
-    int r = mprotect(mem, size, PROT_READ);
-    if (r != 0) {
-        return Error(errno);
-    }
-
-    return {};
+    return MakeMemWithProtFlag(mem, size, PROT_READ);
 }
 
 uintptr_t AlignDownToPageSize(uintptr_t addr)
@@ -119,6 +113,12 @@ void *AlignedAlloc(size_t alignment_in_bytes, size_t size)
 #endif
     ASSERT(reinterpret_cast<uintptr_t>(ret) == (reinterpret_cast<uintptr_t>(ret) & ~(alignment_in_bytes - 1)));
     return ret;
+}
+
+void AlignedFree(void *mem)
+{
+    // NOLINTNEXTLINE(cppcoreguidelines-no-malloc)
+    std::free(mem);
 }
 
 static uint32_t GetPageSizeFromOs()
