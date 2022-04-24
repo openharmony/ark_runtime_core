@@ -530,7 +530,7 @@ public:
         bool last_word_partially_filled = ((size() & POS_MASK) == 0) ? false : true;
         if (size_in_words() > 0) {
             for (; pos < (size_in_words() - (last_word_partially_filled ? 1 : 0)); ++pos) {
-                result += panda::Popcount(data_[pos]);
+                result += static_cast<size_t>(panda::Popcount(data_[pos]));
             }
         }
         if (last_word_partially_filled) {
@@ -559,12 +559,12 @@ public:
         if (sz > 0) {
             for (; pos < (sz - (last_word_partially_filled ? 1 : 0)); ++pos) {
                 auto val = get_processed_word(pos);
-                result += panda::Popcount(val);
+                result += static_cast<size_t>(panda::Popcount(val));
             }
         }
         if (last_word_partially_filled) {
             const Word MASK = MaskUpToIndex(size & POS_MASK);
-            result += panda::Popcount(get_processed_word(pos) & MASK);
+            result += static_cast<size_t>(panda::Popcount(get_processed_word(pos) & MASK));
         }
         return result;
     }

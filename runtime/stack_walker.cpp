@@ -134,7 +134,8 @@ void StackWalker::InitCalleeBuffer(SlotType *callee_stack, CalleeStorage *prev_c
         if (prev_callees == nullptr || prev_is_jni || (prev_callees->callee_fp_regs_mask & (1U << reg)) != 0) {
             callee_stack_.stack[offset] =
                 // NOLINTNEXTLINE(cppcoreguidelines-pro-bounds-pointer-arithmetic)
-                start_slot + (callee_vregs_count - Popcount(callee_stack_.callee_fp_regs_mask >> reg));
+                start_slot +
+                (callee_vregs_count - static_cast<size_t>(Popcount(callee_stack_.callee_fp_regs_mask >> reg)));
         } else {
             callee_stack_.stack[offset] = prev_callees->stack[offset];
         }
