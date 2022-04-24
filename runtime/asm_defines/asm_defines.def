@@ -52,7 +52,7 @@ DEFINE_VALUE(CALLEE_SAVED_SIZE, (GetCalleeRegsCount(RUNTIME_ARCH, false) + GetCa
 
 DEFINE_VALUE(BRIDGE_FRAME_SIZE, AlignUp(
     (CFrameFlags::End() + static_cast<ssize_t>(GetCalleeRegsCount(RUNTIME_ARCH, false) + GetCalleeRegsCount(RUNTIME_ARCH, true))) *
-    PointerSize(RUNTIME_ARCH),
+    static_cast<ssize_t>(PointerSize(RUNTIME_ARCH)),
     16))
 
 DEFINE_VALUE(CALLER_REG0_OFFSET, (CFrameLayout(RUNTIME_ARCH, 0).GetCallerRegsStartSlot() +

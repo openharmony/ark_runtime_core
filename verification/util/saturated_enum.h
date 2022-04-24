@@ -85,7 +85,7 @@ protected:
     template <typename Handler>
     void Enumerate(Handler &&handler, bool prev_set) const
     {
-        prev_set |= value_ == E;
+        prev_set = prev_set || (value_ == E);
         if (prev_set) {
             handler(E);
         }
