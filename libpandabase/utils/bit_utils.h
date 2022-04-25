@@ -137,7 +137,7 @@ template <typename T>
 constexpr T RoundUp(T x, size_t n)
 {
     static_assert(std::is_integral<T>::value, "T must be integral");
-    return static_cast<size_t>(x + n - 1) & (-n);
+    return (static_cast<size_t>(x) + n - 1U) & (-n);
 }
 
 constexpr size_t BitsToBytesRoundUp(size_t num_bits)
