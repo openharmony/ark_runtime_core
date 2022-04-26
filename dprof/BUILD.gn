@@ -22,14 +22,14 @@ config("libdprof_config") {
   ]
 }
 
-ohos_static_library("libdprof") {
+source_set("libdprof_static") {
   sources = [
     "libdprof/dprof/ipc/ipc_message.cpp",
     "libdprof/dprof/ipc/ipc_unix_socket.cpp",
     "libdprof/dprof/profiling_data.cpp",
   ]
 
-  configs = [
+  public_configs = [
     "$ark_root:ark_config",
     "$ark_root/libpandabase:arkbase_public_config",
     sdk_libc_secshared_config,
@@ -37,6 +37,10 @@ ohos_static_library("libdprof") {
   ]
 
   deps = [ "$ark_root/libpandabase:libarkbase" ]
+}
+
+ohos_static_library("libdprof") {
+  deps = [ ":libdprof_static" ]
 
   subsystem_name = "ark"
   part_name = "ark"

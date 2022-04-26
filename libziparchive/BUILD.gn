@@ -30,10 +30,10 @@ config("arkziparchive_config") {
   }
 }
 
-ohos_shared_library("libarkziparchive") {
+source_set("libarkziparchive_static") {
   sources = [ "zip_archive.cpp" ]
 
-  configs = [
+  public_configs = [
     ":arkziparchive_config",
     "$ark_root:ark_config",
     sdk_libc_secshared_config,
@@ -49,6 +49,11 @@ ohos_shared_library("libarkziparchive") {
   } else {
     deps += [ "$ark_third_party_root/miniz:libminiz" ]
   }
+}
+
+ohos_shared_library("libarkziparchive") {
+  deps = [ ":libarkziparchive_static" ]
+
   if (!is_standard_system) {
     relative_install_dir = "ark"
   }
@@ -60,10 +65,10 @@ ohos_shared_library("libarkziparchive") {
   part_name = "ark"
 }
 
-ohos_static_library("libarkziparchive_frontend_static") {
+source_set("libarkziparchive_frontend_set_static") {
   sources = [ "zip_archive.cpp" ]
 
-  configs = [
+  public_configs = [
     ":arkziparchive_config",
     "$ark_root:ark_config",
     sdk_libc_secshared_config,
@@ -79,6 +84,10 @@ ohos_static_library("libarkziparchive_frontend_static") {
   } else {
     deps += [ "$ark_third_party_root/miniz:libminiz" ]
   }
+}
+
+ohos_static_library("libarkziparchive_frontend_static") {
+  deps = [ ":libarkziparchive_frontend_set_static" ]
 
   subsystem_name = "ark"
   part_name = "ark"
