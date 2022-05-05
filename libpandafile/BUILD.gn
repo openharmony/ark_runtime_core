@@ -57,10 +57,10 @@ libarkfile_configs = [
   ":arkfile_public_config",
 ]
 
-ohos_shared_library("libarkfile") {
+source_set("libarkfile_static") {
   sources = libarkfile_sources
 
-  configs = libarkfile_configs
+  public_configs = libarkfile_configs
 
   deps = [
     ":isa_gen_libarkfile_bytecode_emitter_def_gen_h",
@@ -74,6 +74,10 @@ ohos_shared_library("libarkfile") {
     "$ark_root/libziparchive:libarkziparchive",
     sdk_libc_secshared_dep,
   ]
+}
+
+ohos_shared_library("libarkfile") {
+  deps = [ ":libarkfile_static" ]
 
   if (!is_standard_system) {
     relative_install_dir = "ark"
@@ -86,10 +90,10 @@ ohos_shared_library("libarkfile") {
   part_name = "ark"
 }
 
-ohos_static_library("libarkfile_frontend_static") {
+source_set("libarkfile_frontend_set_static") {
   sources = libarkfile_sources
 
-  configs = libarkfile_configs
+  public_configs = libarkfile_configs
 
   deps = [
     ":isa_gen_libarkfile_bytecode_emitter_def_gen_h",
@@ -103,6 +107,10 @@ ohos_static_library("libarkfile_frontend_static") {
     "$ark_root/libziparchive:libarkziparchive_frontend_static",
     sdk_libc_secshared_dep,
   ]
+}
+
+ohos_static_library("libarkfile_frontend_static") {
+  deps = [ ":libarkfile_frontend_set_static" ]
 
   part_name = "ark"
   subsystem_name = "ark"

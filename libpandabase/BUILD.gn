@@ -129,12 +129,24 @@ libarkbase_deps = [
   sdk_libc_secshared_dep,
 ]
 
-ohos_shared_library("libarkbase") {
+source_set("libarkbase_static") {
   sources = libarkbase_sources
 
-  configs = libarkbase_configs
+  public_configs = libarkbase_configs
 
   deps = libarkbase_deps
+}
+
+source_set("libarkbase_frontend_set_static") {
+  sources = libarkbase_sources
+
+  public_configs = libarkbase_configs
+
+  deps = libarkbase_deps
+}
+
+ohos_shared_library("libarkbase") {
+  deps = [ ":libarkbase_static" ]
 
   output_extension = "so"
   if (is_mingw) {
@@ -148,11 +160,7 @@ ohos_shared_library("libarkbase") {
 }
 
 ohos_static_library("libarkbase_frontend_static") {
-  sources = libarkbase_sources
-
-  configs = libarkbase_configs
-
-  deps = libarkbase_deps
+  deps = [ ":libarkbase_frontend_set_static" ]
 
   subsystem_name = "ark"
   part_name = "ark"
