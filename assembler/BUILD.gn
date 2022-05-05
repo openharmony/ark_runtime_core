@@ -47,10 +47,10 @@ libarkassembler_configs = [
   "$ark_root/libpandafile:arkfile_public_config",
 ]
 
-ohos_shared_library("libarkassembler") {
+source_set("libarkassembler_static") {
   sources = libarkassembler_sources
 
-  configs = libarkassembler_configs
+  public_configs = libarkassembler_configs
 
   deps = [
     ":ark_asm_ecmascript_meta_gen_h",
@@ -65,6 +65,10 @@ ohos_shared_library("libarkassembler") {
     "$ark_root/libpandafile:libarkfile",
     sdk_libc_secshared_dep,
   ]
+}
+
+ohos_shared_library("libarkassembler") {
+  deps = [ ":libarkassembler_static" ]
   if (!is_standard_system) {
     relative_install_dir = "ark"
   }
@@ -76,10 +80,10 @@ ohos_shared_library("libarkassembler") {
   part_name = "ark"
 }
 
-ohos_static_library("libarkassembler_frontend_static") {
+source_set("libarkassembler_frontend_set_static") {
   sources = libarkassembler_sources
 
-  configs = libarkassembler_configs
+  public_configs = libarkassembler_configs
 
   deps = [
     ":ark_asm_ecmascript_meta_gen_h",
@@ -94,17 +98,21 @@ ohos_static_library("libarkassembler_frontend_static") {
     "$ark_root/libpandafile:libarkfile_frontend_static",
     sdk_libc_secshared_dep,
   ]
+}
+
+ohos_static_library("libarkassembler_frontend_static") {
+  deps = [ ":libarkassembler_frontend_set_static" ]
 
   subsystem_name = "ark"
   part_name = "ark"
 }
 
-ohos_executable("ark_asm") {
+source_set("ark_asm_static") {
   sources = [ "pandasm.cpp" ]
 
   include_dirs = [ "$target_gen_dir" ]
 
-  configs = [
+  public_configs = [
     sdk_libc_secshared_config,
     ":arkassembler_public_config",
     "$ark_root:ark_config",
@@ -122,6 +130,10 @@ ohos_executable("ark_asm") {
   if (!is_mac && !is_mingw && !ark_standalone_build) {
     ldflags = [ "-static-libstdc++" ]
   }
+}
+
+ohos_executable("ark_asm") {
+  deps = [ ":ark_asm_static" ]
 
   install_enable = true
   subsystem_name = "ark"

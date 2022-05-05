@@ -63,7 +63,7 @@ group("arkruntime_header_deps") {
   ]
 }
 
-ohos_static_library("libarkruntime_static") {
+source_set("libarkruntime_set_static") {
   sources = [
     "arch/asm_support.cpp",
     "assert_gc_scope.cpp",
@@ -217,7 +217,7 @@ ohos_static_library("libarkruntime_static") {
   sources += core_vm_sources
   sources += verifier_sources
 
-  configs = [
+  public_configs = [
     "$ark_root:ark_config",
     "$ark_root/libpandabase:arkbase_public_config",
     "$ark_root/libpandafile:arkfile_public_config",
@@ -269,6 +269,10 @@ ohos_static_library("libarkruntime_static") {
       current_cpu == "x86_64") {
     ldflags = [ "-latomic" ]
   }
+}
+
+ohos_static_library("libarkruntime_static") {
+  deps = [ ":libarkruntime_set_static" ]
 
   output_extension = "a"
   subsystem_name = "ark"
@@ -322,10 +326,10 @@ config("arkruntime_interpreter_impl_config") {
   }
 }
 
-ohos_static_library("arkruntime_interpreter_impl") {
+source_set("arkruntime_interpreter_impl_static") {
   sources = [ "interpreter/interpreter_impl.cpp" ]
 
-  configs = [
+  public_configs = [
     "$ark_root:ark_config",
     "$ark_root/libpandabase:arkbase_public_config",
     "$ark_root/libpandafile:arkfile_public_config",
@@ -339,6 +343,10 @@ ohos_static_library("arkruntime_interpreter_impl") {
     "$ark_root/libpandabase:libarkbase",
     "$ark_root/libpandafile:libarkfile",
   ]
+}
+
+ohos_static_library("arkruntime_interpreter_impl") {
+  deps = [ ":arkruntime_interpreter_impl_static" ]
 
   subsystem_name = "ark"
   part_name = "ark"
