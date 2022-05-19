@@ -50,6 +50,9 @@ group("ark_host_mac_tools_packages") {
     deps = [
       "$ark_root/assembler:ark_asm(//build/toolchain/mac:clang_x64)",
       "$ark_root/disassembler:ark_disasm(//build/toolchain/mac:clang_x64)",
+      "$ark_root/libpandabase:libarkbase(//build/toolchain/mac:clang_x64)",
+      "$ark_root/libpandafile:libarkfile(//build/toolchain/mac:clang_x64)",
+      "$ark_root/libziparchive:libarkziparchive(//build/toolchain/mac:clang_x64)",
     ]
   }
 }
