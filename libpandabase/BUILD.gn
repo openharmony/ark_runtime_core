@@ -147,10 +147,8 @@ source_set("libarkbase_frontend_set_static") {
 
 ohos_shared_library("libarkbase") {
   deps = [ ":libarkbase_static" ]
-
-  output_extension = "so"
-  if (is_mingw) {
-    output_extension = "dll"
+  if (!is_mingw && !is_mac) {
+    output_extension = "so"
   }
   if (!is_standard_system) {
     relative_install_dir = "ark"
