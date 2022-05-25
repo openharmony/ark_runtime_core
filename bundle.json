@@ -29,7 +29,9 @@
                 "//ark/runtime_core:ark_packages"
             ],
             "inner_kits": [],
-            "test": []
+            "test": [
+                "//ark/runtime_core/tests/fuzztest:fuzztest"
+            ]
         }
     }
 }
