@@ -253,6 +253,13 @@ std::unique_ptr<const panda_file::File> OpenPandaFile(std::string_view location,
             LOG(ERROR, PANDAFILE) << "GetCurrentFileInfo error";
             return nullptr;
         }
+        // check that file is not empty, otherwise crash at CloseArchiveFile
+        if (entry.GetUncompressedSize() == 0) {
+            OpenPandaFileFromZipErrorHandler(zipfile);
+            LOG(ERROR, PANDAFILE) << "Invalid panda file '" << (try_default ? ARCHIVE_FILENAME : archive_filename)
+                                  << "'";
+            return nullptr;
+        }
         if (OpenCurrentFile(zipfile) != ZIPARCHIVE_OK) {
             CloseCurrentFile(zipfile);
             OpenPandaFileFromZipErrorHandler(zipfile);
@@ -531,7 +538,11 @@ std::unique_ptr<const File> File::OpenUncompressedArchive(int fd, const std::str
 
 bool CheckHeader(const os::mem::ConstBytePtr &ptr, const std::string_view &filename)
 {
-    auto header = reinterpret_cast<const File::Header *>(ptr.Get());
+    if (ptr.Get() == nullptr || ptr.GetSize() < sizeof(File::Header)) {
+        LOG(ERROR, PANDAFILE) << "Invalid panda file '" << filename << "'";
+        return false;
+    }
+    auto header = reinterpret_cast<const File::Header *>(reinterpret_cast<uintptr_t>(ptr.Get()));
     if (header->magic != File::MAGIC) {
         LOG(ERROR, PANDAFILE) << "Invalid panda file '" << filename << "'";
         return false;
@@ -543,7 +554,7 @@ bool CheckHeader(const os::mem::ConstBytePtr &ptr, const std::string_view &filen
 /* static */
 std::unique_ptr<const File> File::OpenFromMemory(os::mem::ConstBytePtr &&ptr)
 {
-    auto header = reinterpret_cast<const Header *>(ptr.Get());
+    auto header = reinterpret_cast<const Header *>(reinterpret_cast<uintptr_t>(ptr.Get()));
     if (header->magic != File::MAGIC) {
         LOG(ERROR, PANDAFILE) << "Invalid panda file";
         return nullptr;
