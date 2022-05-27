@@ -3,7 +3,7 @@
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
 #
-#     http://www.apache.org/licenses/LICENSE-2.0
+# http://www.apache.org/licenses/LICENSE-2.0
 #
 # Unless required by applicable law or agreed to in writing, software
 # distributed under the License is distributed on an "AS IS" BASIS,
@@ -18,13 +18,23 @@ group("fuzztest") {
   deps += [
     "annotationdataaccessor_fuzzer:fuzztest",
     "begintracepoint_fuzzer:fuzztest",
+    "checkheader_fuzzer:fuzztest",
     "classdataaccessor_fuzzer:fuzztest",
     "codedataaccessor_fuzzer:fuzztest",
     "debuginfodataaccessor_fuzzer:fuzztest",
     "fielddataaccessor_fuzzer:fuzztest",
     "int64tracepoint_fuzzer:fuzztest",
     "inttracepoint_fuzzer:fuzztest",
+    "literaldataaccessor_fuzzer:fuzztest",
     "load_fuzzer:fuzztest",
+    "methoddataaccessor_fuzzer:fuzztest",
+    "open_fuzzer:fuzztest",
+    "openfrommemory1arg_fuzzer:fuzztest",
+    "openfrommemory2arg_fuzzer:fuzztest",
+    "openpandafile_fuzzer:fuzztest",
+    "openpandafilefrommemory_fuzzer:fuzztest",
+    "openpandafileorzip_fuzzer:fuzztest",
+    "openuncompressedarchive_fuzzer:fuzztest",
     "resolvesymbol_fuzzer:fuzztest",
   ]
 }
