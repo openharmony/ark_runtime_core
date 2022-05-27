@@ -30,7 +30,7 @@ static int GetFlags(Mode mode)
 {
     switch (mode) {
         case Mode::READONLY:
-            return _O_RDONLY;
+            return _O_RDONLY | _O_BINARY;
 
         case Mode::READWRITE:
             return _O_RDWR;
