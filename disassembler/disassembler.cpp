@@ -237,6 +237,51 @@ void Disassembler::FillLiteralArrayData(pandasm::LiteralArray *lit_array, const 
     }
 }
 
+void Disassembler::FillLiteralData(pandasm::LiteralArray *lit_array,
+                                   const panda_file::LiteralDataAccessor::LiteralValue &value,
+                                   const panda_file::LiteralTag &tag) const
+{
+    pandasm::LiteralArray::Literal lit;
+    lit.tag_ = tag;
+    switch (tag) {
+        case panda_file::LiteralTag::BOOL: {
+            lit.value_ = std::get<bool>(value);
+            break;
+        }
+        case panda_file::LiteralTag::ACCESSOR:
+        case panda_file::LiteralTag::NULLVALUE: {
+            lit.value_ = std::get<uint8_t>(value);
+            break;
+        }
+        case panda_file::LiteralTag::METHODAFFILIATE: {
+            lit.value_ = std::get<uint16_t>(value);
+            break;
+        }
+        case panda_file::LiteralTag::INTEGER: {
+            lit.value_ = std::get<uint32_t>(value);
+            break;
+        }
+        case panda_file::LiteralTag::DOUBLE: {
+            lit.value_ = std::get<double>(value);
+            break;
+        }
+        case panda_file::LiteralTag::STRING:
+        case panda_file::LiteralTag::METHOD:
+        case panda_file::LiteralTag::GENERATORMETHOD: {
+            auto str_data = file_->GetStringData(panda_file::File::EntityId(std::get<uint32_t>(value)));
+            lit.value_ = StringDataToString(str_data);
+            break;
+        }
+        case panda_file::LiteralTag::TAGVALUE: {
+            return;
+        }
+        default: {
+            UNREACHABLE();
+        }
+    }
+    lit_array->literals_.push_back(lit);
+}
+
 void Disassembler::GetLiteralArray(pandasm::LiteralArray *lit_array, const size_t index) const
 {
     LOG(DEBUG, DISASSEMBLER) << "\n[getting literal array]\nindex: " << index;
@@ -275,13 +320,8 @@ void Disassembler::GetLiteralArray(pandasm::LiteralArray *lit_array, const size_
                     FillLiteralArrayData<uint32_t>(lit_array, tag, value);
                     break;
                 }
-                case panda_file::LiteralTag::TAGVALUE:
-                case panda_file::LiteralTag::ACCESSOR:
-                case panda_file::LiteralTag::NULLVALUE: {
-                    break;
-                }
                 default: {
-                    UNREACHABLE();
+                    FillLiteralData(lit_array, value, tag);
                     break;
                 }
             }
@@ -322,7 +362,7 @@ void Disassembler::GetRecords()
 
         const panda_file::File::EntityId record_id {id};
         auto language = GetClassLanguage(record_id);
-        if (language != file_language_) {
+        if (language != file_language_ && file_language_ != pandasm::extensions::Language::ECMASCRIPT) {
             if (file_language_ == pandasm::extensions::Language::PANDA_ASSEMBLY) {
                 file_language_ = language;
             } else {
@@ -1026,6 +1066,48 @@ void Disassembler::SerializeValues(const pandasm::LiteralArray &lit_array, std::
                 os << "\t"
                    << "string " << std::get<std::string>(lit_array.literals_[i].value_) << "\n";
             }
+            break;
+        }
+        case panda_file::LiteralTag::BOOL: {
+            os << "\t"
+               << "bool " <<  std::get<bool>(lit_array.literals_[0].value_)
+               << "\n";
+            break;
+        }
+        case panda_file::LiteralTag::INTEGER: {
+            os << "\t" << "i32 " << bit_cast<int32_t>(std::get<uint32_t>(lit_array.literals_[0].value_)) << "\n";
+            break;
+        }
+        case panda_file::LiteralTag::DOUBLE: {
+            os << "\t" << "i32 " << std::get<double>(lit_array.literals_[0].value_) << "\n";
+            break;
+        }
+        case panda_file::LiteralTag::STRING: {
+            os << "\t" << "string " << std::get<std::string>(lit_array.literals_[0].value_) << "\n";
+            break;
+        }
+        case panda_file::LiteralTag::METHOD: {
+            os << "\t" << "method " << std::get<std::string>(lit_array.literals_[0].value_) << "\n";
+            break;
+        }
+        case panda_file::LiteralTag::GENERATORMETHOD: {
+            os << "\t" << "generator_method " << std::get<std::string>(lit_array.literals_[0].value_) << "\n";
+            break;
+        }
+        case panda_file::LiteralTag::ACCESSOR: {
+            os << "\t"
+               << "accessor "
+               << static_cast<int16_t>(bit_cast<int8_t>(std::get<uint8_t>(lit_array.literals_[0].value_))) << "\n";
+            break;
+        }
+        case panda_file::LiteralTag::METHODAFFILIATE: {
+            os << "\t" << "method_affiliate " << std::get<uint16_t>(lit_array.literals_[0].value_) << "\n";
+            break;
+        }
+        case panda_file::LiteralTag::NULLVALUE: {
+            os << "\t"
+               << "null_value "
+               << static_cast<int16_t>(bit_cast<int8_t>(std::get<uint8_t>(lit_array.literals_[0].value_))) << "\n";
             break;
         }
         default:
