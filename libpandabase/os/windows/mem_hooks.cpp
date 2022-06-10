@@ -75,8 +75,8 @@ int PandaHooks::PandaAllocHook(int alloctype, [[maybe_unused]] void *data, std::
         first = false;
     }
 
-    const char* alloctype_name = GetAllocTypeName(alloctype);
-    const char* blocktype_name = GetBlockTypeName(blocktype);
+    const char *alloctype_name = GetAllocTypeName(alloctype);
+    const char *blocktype_name = GetBlockTypeName(blocktype);
 
     std::cout << std::left << std::setfill(' ') << std::setw(ALIGN_SIZE) << alloctype_name;
     std::cout << std::left << std::setfill(' ') << std::setw(ALIGN_SIZE) << blocktype_name;

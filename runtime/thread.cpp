@@ -36,7 +36,11 @@ using TaggedType = coretypes::TaggedType;
 
 bool ManagedThread::is_initialized = false;
 mem::TLAB *ManagedThread::zero_tlab = nullptr;
+#ifdef PANDA_TARGET_UNIX
 static const int MIN_PRIORITY = 19;
+#elif PANDA_TARGET_WINDOWS
+static const int MIN_PRIORITY = -2;
+#endif
 
 MTManagedThread::ThreadId MTManagedThread::GetInternalId()
 {
@@ -454,7 +458,11 @@ void ManagedThread::SetThreadPriority(int32_t prio)
 {
     ThreadId tid = GetId();
     int res = os::thread::SetPriority(tid, prio);
+#ifdef PANDA_TARGET_UNIX
     if (res == 0) {
+#elif PANDA_TARGET_WINDOWS
+    if (res != 0) {
+#endif
         LOG(DEBUG, RUNTIME) << "Successfully changed priority for thread " << tid << " to " << prio;
     } else {
         LOG(DEBUG, RUNTIME) << "Cannot change priority for thread " << tid << " to " << prio;

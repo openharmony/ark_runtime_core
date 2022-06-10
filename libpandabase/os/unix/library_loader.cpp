@@ -39,4 +39,10 @@ Expected<void *, Error> ResolveSymbol(const LibraryHandle &handle, std::string_v
     return msg != nullptr ? Unexpected(Error(msg)) : Unexpected(Error("no error message"));
 }
 
+void CloseHandle(void *handle)
+{
+    if (handle != nullptr) {
+        dlclose(handle);
+    }
+}
 }  // namespace panda::os::library_loader

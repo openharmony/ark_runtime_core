@@ -14,31 +14,59 @@
  */
 
 #include "os/thread.h"
+#include "utils/logger.h"
 
-#include <thread>
+#include <errhandlingapi.h>
+#include <handleapi.h>
 #include <processthreadsapi.h>
+#include <thread>
 
 namespace panda::os::thread {
-
 ThreadId GetCurrentThreadId()
 {
-    return static_cast<ThreadId>(std::hash<std::thread::id>()(std::this_thread::get_id()));
+    // The function is provided by mingw
+    return ::GetCurrentThreadId();
 }
 
-int SetPriority([[maybe_unused]] int thread_id, int prio)
+int GetPid()
 {
-    return SetThreadPriority(GetCurrentThread(), prio);
+    return _getpid();
 }
 
-int GetPriority([[maybe_unused]] int thread_id)
+int SetPriority(DWORD thread_id, int prio)
 {
-    return GetThreadPriority(GetCurrentThread());
+    // The priority can be set within range [-2, 2], and -2 is the lowest priority.
+    HANDLE thread = OpenThread(THREAD_SET_INFORMATION, false, thread_id);
+    if (thread == NULL) {
+        LOG(FATAL, COMMON) << "OpenThread failed, error code " << GetLastError();
+    }
+    auto ret = SetThreadPriority(thread, prio);
+    CloseHandle(thread);
+    // The return value is nonzero if the function succeeds, and zero if it fails.
+    return ret;
 }
 
-int SetThreadName([[maybe_unused]] native_handle_type pthread_id, const char *name)
+int GetPriority(DWORD thread_id)
 {
-    ASSERT(pthread_id != 0);
-    return pthread_setname_np(pthread_self(), name);
+    HANDLE thread = OpenThread(THREAD_QUERY_INFORMATION, false, thread_id);
+    if (thread == NULL) {
+        LOG(FATAL, COMMON) << "OpenThread failed, error code " << GetLastError();
+    }
+    auto ret = GetThreadPriority(thread);
+    CloseHandle(thread);
+    return ret;
+}
+
+int SetThreadName(native_handle_type pthread_handle, const char *name)
+{
+    ASSERT(pthread_handle != 0);
+    pthread_t thread = reinterpret_cast<pthread_t>(pthread_handle);
+    return pthread_setname_np(thread, name);
+}
+
+native_handle_type GetNativeHandle()
+{
+    return reinterpret_cast<native_handle_type>(pthread_self());
 }
 
 void Yield()
@@ -51,9 +79,18 @@ void NativeSleep(unsigned int ms)
     std::this_thread::sleep_for(std::chrono::milliseconds(ms));
 }
 
-void ThreadJoin(native_handle_type pthread_id, void **retval)
+void ThreadDetach(native_handle_type pthread_handle)
 {
-    pthread_join(reinterpret_cast<pthread_t>(pthread_id), retval);
+    pthread_detach(reinterpret_cast<pthread_t>(pthread_handle));
 }
 
+void ThreadExit(void *ret)
+{
+    pthread_exit(ret);
+}
+
+void ThreadJoin(native_handle_type pthread_handle, void **ret)
+{
+    pthread_join(reinterpret_cast<pthread_t>(pthread_handle), ret);
+}
 }  // namespace panda::os::thread
