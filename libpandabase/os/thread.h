@@ -23,27 +23,31 @@
 #include <memory>
 #include <thread>
 #include <pthread.h>
+#ifdef PANDA_TARGET_UNIX
+#include "os/unix/thread.h"
+#elif PANDA_TARGET_WINDOWS
+#include "os/windows/thread.h"
+#else
+#error "Unsupported platform"
+#endif
 
 namespace panda::os::thread {
-
 using ThreadId = uint32_t;
 using native_handle_type = std::thread::native_handle_type;
 
 ThreadId GetCurrentThreadId();
-int SetPriority(int thread_id, int prio);
-int GetPriority(int thread_id);
-int SetThreadName(native_handle_type pthread_id, const char *name);
+int GetPid();
+int SetThreadName(native_handle_type pthread_handle, const char *name);
 native_handle_type GetNativeHandle();
 void Yield();
 void NativeSleep(unsigned int ms);
-void ThreadDetach(native_handle_type pthread_id);
-void ThreadExit(void *retval);
-void ThreadJoin(native_handle_type pthread_id, void **retval);
+void ThreadDetach(native_handle_type pthread_handle);
+void ThreadExit(void *ret);
+void ThreadJoin(native_handle_type pthread_handle, void **ret);
 
 // Templated functions need to be defined here to be accessible everywhere
 
 namespace internal {
-
 template <typename T>
 struct SharedPtrStruct;
 
@@ -103,7 +107,6 @@ static void *ProxyFunc(void *args)
     CallFunc<Func, Tuple, N>(*func, args_tuple);
     return nullptr;
 }
-
 }  // namespace internal
 
 template <typename Func, typename... Args>
@@ -135,7 +138,6 @@ native_handle_type ThreadStart(Func *func, Args... args)
     return reinterpret_cast<native_handle_type>(tid);
 #endif
 }
-
 }  // namespace panda::os::thread
 
 #endif  // PANDA_LIBPANDABASE_OS_THREAD_H_

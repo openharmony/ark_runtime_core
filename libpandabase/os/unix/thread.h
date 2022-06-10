@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021-2022 Huawei Device Co., Ltd.
+ * Copyright (c) 2022 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -13,24 +13,12 @@
  * limitations under the License.
  */
 
-#include "os/error.h"
-#include <string.h>
+#ifndef PANDA_LIBPANDABASE_OS_UNIX_THREAD_H_
+#define PANDA_LIBPANDABASE_OS_UNIX_THREAD_H_
 
-namespace panda::os {
+namespace panda::os::thread {
+int GetPriority(int thread_id);
+int SetPriority(int thread_id, int prio);
+}  // namespace panda::os::thread
 
-std::string Error::ToString() const
-{
-    if (std::holds_alternative<std::string>(err_)) {
-        return std::get<std::string>(err_);
-    }
-
-    constexpr size_t BUFSIZE = 256;
-    int err = std::get<int>(err_);
-
-    char res[BUFSIZE];
-    strerror_s(res, BUFSIZE, err);
-
-    return std::string(res);
-}
-
-}  // namespace panda::os
+#endif  // PANDA_LIBPANDABASE_OS_UNIX_THREAD_H_

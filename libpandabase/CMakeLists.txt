@@ -226,6 +226,7 @@ set(ARKBASE_TESTS_SOURCES
     tests/native_bytes_from_mallinfo_test.cpp
     tests/json_parser_test.cpp
     tests/alloc_tracker_test.cpp
+    tests/base_thread_test.cpp
 )
 
 panda_add_gtest(

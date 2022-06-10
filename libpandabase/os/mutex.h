@@ -18,17 +18,16 @@
 
 #if defined(PANDA_USE_FUTEX)
 #include "os/unix/futex/mutex.h"
-#elif defined(PANDA_TARGET_UNIX) || defined(PANDA_TARGET_WINDOWS)
-#include "os/unix/mutex.h"
-#else
+#elif !defined(PANDA_TARGET_UNIX) && !defined(PANDA_TARGET_WINDOWS)
 #error "Unsupported platform"
 #endif
 
 #include "clang.h"
 #include "macros.h"
 
-namespace panda::os::memory {
+#include <pthread.h>
 
+namespace panda::os::memory {
 // Dummy lock which locks nothing
 // but has the same methods as RWLock and Mutex.
 // Can be used in Locks Holders.
@@ -46,12 +45,87 @@ using RecursiveMutex = panda::os::unix::memory::futex::RecursiveMutex;
 using RWLock = panda::os::unix::memory::futex::RWLock;
 using ConditionVariable = panda::os::unix::memory::futex::ConditionVariable;
 #else
-using Mutex = panda::os::unix::memory::Mutex;
-using RecursiveMutex = panda::os::unix::memory::RecursiveMutex;
-using RWLock = panda::os::unix::memory::RWLock;
+class ConditionVariable;
+
+class CAPABILITY("mutex") Mutex {
+public:
+    explicit Mutex(bool is_init = true);
+
+    ~Mutex();
+
+    void Lock() ACQUIRE();
+
+    bool TryLock() TRY_ACQUIRE(true);
+
+    void Unlock() RELEASE();
+
+protected:
+    void Init(pthread_mutexattr_t *attrs);
+
+private:
+    pthread_mutex_t mutex_;
+
+    NO_COPY_SEMANTIC(Mutex);
+    NO_MOVE_SEMANTIC(Mutex);
+
+    friend ConditionVariable;
+};
+
+class CAPABILITY("mutex") RecursiveMutex : public Mutex {
+public:
+    RecursiveMutex();
+
+    ~RecursiveMutex() = default;
+
+    NO_COPY_SEMANTIC(RecursiveMutex);
+    NO_MOVE_SEMANTIC(RecursiveMutex);
+};
+
+class CAPABILITY("mutex") RWLock {
+public:
+    RWLock();
+
+    ~RWLock();
+
+    void ReadLock() ACQUIRE_SHARED();
+
+    void WriteLock() ACQUIRE();
+
+    bool TryReadLock() TRY_ACQUIRE_SHARED(true);
+
+    bool TryWriteLock() TRY_ACQUIRE(true);
+
+    void Unlock() RELEASE_GENERIC();
+
+private:
+    pthread_rwlock_t rwlock_;
+
+    NO_COPY_SEMANTIC(RWLock);
+    NO_MOVE_SEMANTIC(RWLock);
+};
+
 // Some RTOS could not have support for condition variables, so this primitive should be used carefully
-using ConditionVariable = panda::os::unix::memory::ConditionVariable;
-#endif
+class ConditionVariable {
+public:
+    ConditionVariable();
+
+    ~ConditionVariable();
+
+    void Signal();
+
+    void SignalAll();
+
+    void Wait(Mutex *mutex);
+
+    bool TimedWait(Mutex *mutex, uint64_t ms, uint64_t ns = 0, bool is_absolute = false);
+
+private:
+    pthread_cond_t cond_;
+
+    NO_COPY_SEMANTIC(ConditionVariable);
+    NO_MOVE_SEMANTIC(ConditionVariable);
+};
+#endif  // PANDA_USE_FUTEX
 
 using PandaThreadKey = pthread_key_t;
 const auto PandaGetspecific = pthread_getspecific;     // NOLINT(readability-identifier-naming)
@@ -117,7 +191,6 @@ private:
     NO_COPY_SEMANTIC(WriteLockHolder);
     NO_MOVE_SEMANTIC(WriteLockHolder);
 };
-
 }  // namespace panda::os::memory
 
 #endif  // PANDA_LIBPANDABASE_OS_MUTEX_H_

@@ -15,11 +15,17 @@
 
 #include "os/thread.h"
 
+#include "utils/span.h"
+
+#include <array>
 #include <cstdint>
+#include "os/failure_retry.h"
 #ifdef PANDA_TARGET_UNIX
+#include <fcntl.h>
 #include <sys/syscall.h>
 #include <sys/resource.h>
 #endif
+#include <securec.h>
 #include <unistd.h>
 
 namespace panda::os::thread {
@@ -38,8 +44,15 @@ ThreadId GetCurrentThreadId()
 #endif
 }
 
+int GetPid()
+{
+    return getpid();
+}
+
 int SetPriority(int thread_id, int prio)
 {
+    // The priority can be set within range [-20, 19], and 19 is the lowest priority.
+    // The return value is 0 if the function succeeds, and -1 if it fails.
     return setpriority(PRIO_PROCESS, thread_id, prio);
 }
 
@@ -48,13 +61,13 @@ int GetPriority(int thread_id)
     return getpriority(PRIO_PROCESS, thread_id);
 }
 
-int SetThreadName(native_handle_type pthread_id, const char *name)
+int SetThreadName(native_handle_type pthread_handle, const char *name)
 {
-    ASSERT(pthread_id != 0);
+    ASSERT(pthread_handle != 0);
 #if defined(PANDA_TARGET_MACOS)
     return pthread_setname_np(name);
 #else
-    return pthread_setname_np(pthread_id, name);
+    return pthread_setname_np(pthread_handle, name);
 #endif
 }
 
@@ -73,18 +86,18 @@ void NativeSleep(unsigned int ms)
     std::this_thread::sleep_for(std::chrono::milliseconds(ms));
 }
 
-void ThreadDetach(native_handle_type pthread_id)
+void ThreadDetach(native_handle_type pthread_handle)
 {
-    pthread_detach(pthread_id);
+    pthread_detach(pthread_handle);
 }
 
-void ThreadExit(void *retval)
+void ThreadExit(void *ret)
 {
-    pthread_exit(retval);
+    pthread_exit(ret);
 }
 
-void ThreadJoin(native_handle_type pthread_id, void **retval)
+void ThreadJoin(native_handle_type pthread_handle, void **ret)
 {
-    pthread_join(pthread_id, retval);
+    pthread_join(pthread_handle, ret);
 }
 }  // namespace panda::os::thread

@@ -17,9 +17,9 @@
 #define PANDA_LIBPANDABASE_OS_LIBRARY_LOADER_H_
 
 #ifdef PANDA_TARGET_UNIX
-#include "os/unix/library_loader.h"
-#elif PANDA_TARGET_WINDOWS
-#include "os/windows/library_loader.h"
+#include <dlfcn.h>
+#elif defined PANDA_TARGET_WINDOWS
+// No platform-specific includes
 #else
 #error "Unsupported platform"
 #endif
@@ -30,8 +30,53 @@
 #include <string_view>
 
 namespace panda::os::library_loader {
+class LibraryHandle;
+
 Expected<LibraryHandle, Error> Load(std::string_view filename);
+
 Expected<void *, Error> ResolveSymbol(const LibraryHandle &handle, std::string_view name);
+
+void CloseHandle(void *handle);
+
+class LibraryHandle {
+public:
+    explicit LibraryHandle(void *handle) : handle_(handle) {}
+
+    LibraryHandle(LibraryHandle &&handle) noexcept
+    {
+        handle_ = handle.handle_;
+        handle.handle_ = nullptr;
+    }
+
+    LibraryHandle &operator=(LibraryHandle &&handle) noexcept
+    {
+        handle_ = handle.handle_;
+        handle.handle_ = nullptr;
+        return *this;
+    }
+
+    bool IsValid() const
+    {
+        return handle_ != nullptr;
+    }
+
+    void *GetNativeHandle() const
+    {
+        return handle_;
+    }
+
+    ~LibraryHandle()
+    {
+        if (handle_ != nullptr) {
+            CloseHandle(handle_);
+        }
+    }
+
+private:
+    void *handle_;
+
+    NO_COPY_SEMANTIC(LibraryHandle);
+};
 }  // namespace panda::os::library_loader
 
 #endif  // PANDA_LIBPANDABASE_OS_LIBRARY_LOADER_H_

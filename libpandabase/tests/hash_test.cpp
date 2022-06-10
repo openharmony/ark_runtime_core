@@ -120,7 +120,7 @@ void HashTest::EndOfPageStringHashTest() const
     void *mem = panda::os::mem::MapRWAnonymousRaw(ALLOC_SIZE);
     ASAN_UNPOISON_MEMORY_REGION(mem, ALLOC_SIZE);
     panda::os::mem::MakeMemWithProtFlag(
-        reinterpret_cast<void *>(reinterpret_cast<uintptr_t>(mem) + PAGE_SIZE), PAGE_SIZE, PROT_NONE);
+        reinterpret_cast<void *>(reinterpret_cast<uintptr_t>(mem) + PAGE_SIZE), PAGE_SIZE, os::mem::MMAP_PROT_NONE);
     char *string =
         reinterpret_cast<char *>((reinterpret_cast<uintptr_t>(mem) + PAGE_SIZE) - sizeof(char) * string_size);
     string[0] = 'O';
