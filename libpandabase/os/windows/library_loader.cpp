@@ -39,13 +39,11 @@ Expected<void *, Error> ResolveSymbol(const LibraryHandle &handle, std::string_v
     return Unexpected(Error(std::string("Failed to resolve symbol ") + name.data() + std::string(", error code ") +
                             std::to_string(GetLastError())));
 }
-}  // namespace panda::os::library_loader
 
-namespace panda::os::windows::library_loader {
-LibraryHandle::~LibraryHandle()
+void CloseHandle(void *handle)
 {
-    if (handle_ != nullptr) {
-        FreeLibrary(reinterpret_cast<HMODULE>(handle_));
+    if (handle != nullptr) {
+        FreeLibrary(reinterpret_cast<HMODULE>(handle));
     }
 }
-}  // namespace panda::os::windows::library_loader
+}  // namespace panda::os::library_loader

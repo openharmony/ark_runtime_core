@@ -19,7 +19,7 @@
 #include <cstring>
 #include <ctime>
 
-namespace panda::os::unix::memory {
+namespace panda::os::memory {
 const int64_t MILLISECONDS_PER_SEC = 1000;
 const int64_t NANOSECONDS_PER_MILLISEC = 1000000;
 const int64_t NANOSECONDS_PER_SEC = 1000000000;
@@ -196,4 +196,4 @@ bool ConditionVariable::TimedWait(Mutex *mutex, uint64_t ms, uint64_t ns, bool i
     FatalIfError("pthread_cond_timedwait", rc);
     return false;
 }
-}  // namespace panda::os::unix::memory
+}  // namespace panda::os::memory
