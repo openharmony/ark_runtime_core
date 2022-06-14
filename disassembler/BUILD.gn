@@ -109,6 +109,10 @@ ohos_executable("ark_disasm") {
     ldflags = [ "-static-libstdc++" ]
   }
 
+  if (is_standard_system) {
+    static_link = true
+  }
+
   install_enable = true
   subsystem_name = "ark"
   part_name = "ark"
