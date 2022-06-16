@@ -109,7 +109,7 @@ ohos_executable("ark_disasm") {
     ldflags = [ "-static-libstdc++" ]
   }
 
-  if (is_standard_system) {
+  if (is_standard_system && !is_mac) {
     static_link = true
   }
 
