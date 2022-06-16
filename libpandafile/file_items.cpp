@@ -1375,7 +1375,7 @@ bool LineNumberProgramItem::EmitSpecialOpcode(uint32_t pc_inc, int32_t line_inc)
         return false;
     }
 
-    size_t opcode = (line_inc - LINE_BASE) + (pc_inc * LINE_RANGE) + OPCODE_BASE;
+    auto opcode = static_cast<size_t>(line_inc - LINE_BASE) + static_cast<size_t>(pc_inc * LINE_RANGE) + OPCODE_BASE;
     if (opcode > std::numeric_limits<uint8_t>::max()) {
         return false;
     }
