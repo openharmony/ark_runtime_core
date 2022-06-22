@@ -207,6 +207,12 @@ public:
         annotations_.insert(annotations_.end(), annotations.begin(), annotations.end());
     }
 
+    void SetOrAddAnnotationElementByIndex(size_t anno_idx, size_t ele_idx, AnnotationElement &&element)
+    {
+        ASSERT(anno_idx < annotations_.size());
+        annotations_[anno_idx].SetOrAddElementByIndex(ele_idx, std::forward<AnnotationElement>(element));
+    }
+
     std::optional<Error> ValidateData() override;
 
 protected:
