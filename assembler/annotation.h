@@ -60,6 +60,26 @@ public:
         elements_.push_back(std::forward<AnnotationElement>(element));
     }
 
+    void SetOrAddElementByIndex(size_t ele_idx, AnnotationElement &&element)
+    {
+        // did not find a simple way to replace element directly because of circular dependency of class definition
+        auto len = elements_.size();
+        ASSERT(ele_idx <= len);
+        if (ele_idx == len) {
+            AddElement(std::move(element));
+            return;
+        }
+        std::vector<AnnotationElement> eles;
+        for (size_t i = 0; i < ele_idx; i++) {
+            eles.push_back(std::forward<AnnotationElement>(elements_[i]));
+        }
+        eles.push_back(std::forward<AnnotationElement>(element));
+        for (size_t i = ele_idx + 1; i < len; i++) {
+            eles.push_back(std::forward<AnnotationElement>(elements_[i]));
+        }
+        elements_ = std::forward<std::vector<AnnotationElement>>(eles);
+    }
+
 private:
     std::string record_name_;
     std::vector<AnnotationElement> elements_;
