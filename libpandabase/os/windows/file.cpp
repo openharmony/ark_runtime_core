@@ -33,13 +33,13 @@ static int GetFlags(Mode mode)
             return _O_RDONLY | _O_BINARY;
 
         case Mode::READWRITE:
-            return _O_RDWR;
+            return _O_RDWR | _O_BINARY;
 
         case Mode::WRITEONLY:
             return _O_WRONLY | _O_CREAT | _O_TRUNC | _O_BINARY;  // NOLINT(hicpp-signed-bitwise)
 
         case Mode::READWRITECREATE:
-            return _O_RDWR | _O_CREAT;  // NOLINT(hicpp-signed-bitwise)
+            return _O_RDWR | _O_CREAT | _O_BINARY;  // NOLINT(hicpp-signed-bitwise)
 
         default:
             break;
