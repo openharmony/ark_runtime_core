@@ -243,4 +243,14 @@ std::string AnnotationElement::TypeToString(Value::Type type)
     }
 }
 
+void AnnotationData::SetOrAddElementByIndex(size_t ele_idx, AnnotationElement &&element)
+{
+    auto len = elements_.size();
+    ASSERT(ele_idx <= len);
+    if (ele_idx == len) {
+        AddElement(std::move(element));
+        return;
+    }
+    elements_[ele_idx] = std::forward<AnnotationElement>(element);
+}
 }  // namespace panda::pandasm
