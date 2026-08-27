@@ -14,6 +14,7 @@
  */
 
 #include "dfx.h"
+#include "parse_dfx_int.h"
 #include "logger.h"
 
 namespace panda {
@@ -71,8 +72,18 @@ void DfxController::ResetOptionValueFromString(const std::string &s)
         std::string arg = s.substr(last_pos, pos - last_pos);
         last_pos = s.find_first_not_of(';', pos);
         pos = s.find(';', last_pos);
-        std::string option_str = arg.substr(0, arg.find(':'));
-        uint8_t value = static_cast<uint8_t>(std::stoi(arg.substr(arg.find(':') + 1)));
+        auto colon = arg.find(':');
+        if (colon == std::string::npos) {
+            LOG(ERROR, DFX) << "Malformed DFX option " << arg;
+            continue;
+        }
+        std::string option_str = arg.substr(0, colon);
+        int32_t parsed = 0;
+        if (!ParseDfxInt(arg.substr(colon + 1), parsed) || parsed < 0 || parsed > 255) {
+            LOG(ERROR, DFX) << "Invalid DFX option value " << arg;
+            continue;
+        }
+        uint8_t value = static_cast<uint8_t>(parsed);
         auto dfx_option = DfxOptionHandler::DfxOptionFromString(option_str);
         if (dfx_option != DfxOptionHandler::END_FLAG) {
             DfxController::SetOptionValue(dfx_option, value);
